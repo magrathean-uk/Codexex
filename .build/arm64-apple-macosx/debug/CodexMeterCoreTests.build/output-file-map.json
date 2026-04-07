@@ -1,0 +1,26 @@
+{
+  "": {
+    "swift-dependencies": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterCoreTests.build/primary.swiftdeps"
+  },
+  "/Users/bolyki/dev/source/Codexex/Tests/CodexMeterCoreTests/CodexBinaryLocatorTests.swift": {
+    "dependencies": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterCoreTests.build/CodexBinaryLocatorTests.d",
+    "object": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterCoreTests.build/CodexBinaryLocatorTests.swift.o",
+    "swiftmodule": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterCoreTests.build/CodexBinaryLocatorTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterCoreTests.build/CodexBinaryLocatorTests.swiftdeps",
+    "diagnostics": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterCoreTests.build/CodexBinaryLocatorTests.dia"
+  },
+  "/Users/bolyki/dev/source/Codexex/Tests/CodexMeterCoreTests/CodexFormattingTests.swift": {
+    "dependencies": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterCoreTests.build/CodexFormattingTests.d",
+    "object": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterCoreTests.build/CodexFormattingTests.swift.o",
+    "swiftmodule": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterCoreTests.build/CodexFormattingTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterCoreTests.build/CodexFormattingTests.swiftdeps",
+    "diagnostics": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterCoreTests.build/CodexFormattingTests.dia"
+  },
+  "/Users/bolyki/dev/source/Codexex/Tests/CodexMeterCoreTests/CodexSnapshotParsingTests.swift": {
+    "dependencies": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterCoreTests.build/CodexSnapshotParsingTests.d",
+    "object": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterCoreTests.build/CodexSnapshotParsingTests.swift.o",
+    "swiftmodule": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterCoreTests.build/CodexSnapshotParsingTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterCoreTests.build/CodexSnapshotParsingTests.swiftdeps",
+    "diagnostics": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterCoreTests.build/CodexSnapshotParsingTests.dia"
+  }
+}

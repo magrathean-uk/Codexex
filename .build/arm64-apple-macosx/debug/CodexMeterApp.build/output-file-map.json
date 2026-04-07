@@ -1,0 +1,54 @@
+{
+  "": {
+    "swift-dependencies": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/primary.swiftdeps"
+  },
+  "/Users/bolyki/dev/source/Codexex/Sources/CodexMeterApp/CodexAppSettings.swift": {
+    "dependencies": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/CodexAppSettings.d",
+    "object": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/CodexAppSettings.swift.o",
+    "swiftmodule": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/CodexAppSettings~partial.swiftmodule",
+    "swift-dependencies": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/CodexAppSettings.swiftdeps",
+    "diagnostics": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/CodexAppSettings.dia"
+  },
+  "/Users/bolyki/dev/source/Codexex/Sources/CodexMeterApp/CodexMenuBarModel.swift": {
+    "dependencies": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/CodexMenuBarModel.d",
+    "object": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/CodexMenuBarModel.swift.o",
+    "swiftmodule": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/CodexMenuBarModel~partial.swiftmodule",
+    "swift-dependencies": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/CodexMenuBarModel.swiftdeps",
+    "diagnostics": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/CodexMenuBarModel.dia"
+  },
+  "/Users/bolyki/dev/source/Codexex/Sources/CodexMeterApp/GlassCard.swift": {
+    "dependencies": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/GlassCard.d",
+    "object": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/GlassCard.swift.o",
+    "swiftmodule": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/GlassCard~partial.swiftmodule",
+    "swift-dependencies": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/GlassCard.swiftdeps",
+    "diagnostics": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/GlassCard.dia"
+  },
+  "/Users/bolyki/dev/source/Codexex/Sources/CodexMeterApp/PopupRootView.swift": {
+    "dependencies": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/PopupRootView.d",
+    "object": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/PopupRootView.swift.o",
+    "swiftmodule": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/PopupRootView~partial.swiftmodule",
+    "swift-dependencies": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/PopupRootView.swiftdeps",
+    "diagnostics": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/PopupRootView.dia"
+  },
+  "/Users/bolyki/dev/source/Codexex/Sources/CodexMeterApp/SettingsRootView.swift": {
+    "dependencies": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/SettingsRootView.d",
+    "object": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/SettingsRootView.swift.o",
+    "swiftmodule": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/SettingsRootView~partial.swiftmodule",
+    "swift-dependencies": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/SettingsRootView.swiftdeps",
+    "diagnostics": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/SettingsRootView.dia"
+  },
+  "/Users/bolyki/dev/source/Codexex/Sources/CodexMeterApp/StatusBarLabel.swift": {
+    "dependencies": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/StatusBarLabel.d",
+    "object": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/StatusBarLabel.swift.o",
+    "swiftmodule": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/StatusBarLabel~partial.swiftmodule",
+    "swift-dependencies": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/StatusBarLabel.swiftdeps",
+    "diagnostics": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/StatusBarLabel.dia"
+  },
+  "/Users/bolyki/dev/source/Codexex/Sources/CodexMeterApp/main.swift": {
+    "dependencies": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/main.d",
+    "object": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/main.swift.o",
+    "swiftmodule": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/main~partial.swiftmodule",
+    "swift-dependencies": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/main.swiftdeps",
+    "diagnostics": "/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterApp.build/main.dia"
+  }
+}
