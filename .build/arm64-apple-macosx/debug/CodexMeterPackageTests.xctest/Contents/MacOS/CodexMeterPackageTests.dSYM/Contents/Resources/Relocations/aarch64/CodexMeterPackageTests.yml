@@ -1,5 +1,0 @@
----
-triple:          'arm64-apple-darwin'
-binary-path:     '/Users/bolyki/dev/source/Codexex/.build/arm64-apple-macosx/debug/CodexMeterPackageTests.xctest/Contents/MacOS/CodexMeterPackageTests'
-relocations:     []
-...
