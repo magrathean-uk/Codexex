@@ -120,6 +120,24 @@ public struct CodexLimit: Sendable, Equatable, Codable, Identifiable {
     public var sortOrder: Int {
         bucket.sortOrder
     }
+
+    public var fiveHourWindow: CodexQuotaWindow? {
+        resolvedWindow(preferredMinutes: 300, fallback: primary ?? secondary)
+    }
+
+    public var weeklyWindow: CodexQuotaWindow? {
+        resolvedWindow(preferredMinutes: 10_080, fallback: secondary ?? primary)
+    }
+
+    private func resolvedWindow(preferredMinutes: Int, fallback: CodexQuotaWindow?) -> CodexQuotaWindow? {
+        if primary?.windowDurationMinutes == preferredMinutes {
+            return primary
+        }
+        if secondary?.windowDurationMinutes == preferredMinutes {
+            return secondary
+        }
+        return fallback
+    }
 }
 
 public struct CodexQuotaWindow: Sendable, Equatable, Codable {

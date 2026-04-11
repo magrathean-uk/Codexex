@@ -24,39 +24,52 @@ struct StatusBarLabel: View {
         .padding(.horizontal, 2)
     }
 
-    private var labelText: String {
+    static func makeTitle(
+        snapshot: CodexSnapshot?,
+        isRefreshing: Bool,
+        hasError: Bool,
+        showFiveHour: Bool,
+        showWeekly: Bool
+    ) -> String {
         guard let snapshot else {
-            return hasError ? "CH -- CW --" : "CH … CW …"
+            let fiveHour = showFiveHour ? (hasError ? "5H --" : "5H …") : nil
+            let weekly = showWeekly ? (hasError ? "W --" : "W …") : nil
+            return [fiveHour, weekly].compactMap { $0 }.joined(separator: " ")
         }
 
         let codexLimit = snapshot.codexLimit
-        let fiveHour = codexLimit?.primary?.windowDurationMinutes == 300
-            ? codexLimit?.primary
-            : codexLimit?.secondary?.windowDurationMinutes == 300
-            ? codexLimit?.secondary
-            : codexLimit?.primary ?? codexLimit?.secondary
-
-        let weekly = codexLimit?.primary?.windowDurationMinutes == 10_080
-            ? codexLimit?.primary
-            : codexLimit?.secondary?.windowDurationMinutes == 10_080
-            ? codexLimit?.secondary
-            : codexLimit?.secondary ?? codexLimit?.primary
+        let fiveHour = codexLimit?.fiveHourWindow
+        let weekly = codexLimit?.weeklyWindow
 
         var pieces: [String] = []
 
-        if let codex = fiveHour {
-            pieces.append("CH \(codex.usedPercentText)")
-        } else {
-            pieces.append("CH --")
+        if showFiveHour {
+            if let codex = fiveHour {
+                pieces.append("5H \(codex.usedPercentText)")
+            } else {
+                pieces.append("5H --")
+            }
         }
 
-        if let codexWeek = weekly {
-            pieces.append("CW \(codexWeek.usedPercentText)")
-        } else {
-            pieces.append("CW --")
+        if showWeekly {
+            if let codexWeek = weekly {
+                pieces.append("W \(codexWeek.usedPercentText)")
+            } else {
+                pieces.append("W --")
+            }
         }
 
-        return pieces.joined(separator: " ")
+        return pieces.isEmpty ? "Codexex" : pieces.joined(separator: " ")
+    }
+
+    private var labelText: String {
+        Self.makeTitle(
+            snapshot: snapshot,
+            isRefreshing: isRefreshing,
+            hasError: hasError,
+            showFiveHour: true,
+            showWeekly: true
+        )
     }
 }
 #endif

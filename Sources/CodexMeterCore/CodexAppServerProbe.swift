@@ -36,10 +36,15 @@ public enum CodexProbeError: Error, LocalizedError, Sendable, Equatable {
     }
 }
 
-public struct CodexAppServerProbe: Sendable {
-    public init() {}
+/// Legacy probe for direct `codex app-server` access.
+/// Internal parity only. App Store builds must use the bundled helper/XPC path.
+@available(*, deprecated, message: "Legacy/internal parity probe only. Not for the App Store helper path.")
+struct CodexAppServerProbe: Sendable {
+    init() {}
 
-    public func capture(
+    /// Captures a snapshot from the legacy external `codex app-server` process.
+    /// App Store builds must not depend on this path.
+    func capture(
         executablePath: String? = nil,
         timeout: Duration = .seconds(8),
         refreshToken: Bool = false
