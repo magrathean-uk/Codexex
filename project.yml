@@ -1,7 +1,7 @@
 name: CodexMeter
 
 options:
-  bundleIdPrefix: com.bolyki
+  bundleIdPrefix: com.magrathean
   deploymentTarget:
     macOS: 26.0
 
@@ -11,6 +11,8 @@ settings:
     SUPPORTS_MACCATALYST: NO
     MARKETING_VERSION: 1.0
     CURRENT_PROJECT_VERSION: 1
+    DEVELOPMENT_TEAM: NPSQV9WYS5
+    CODE_SIGN_STYLE: Automatic
 
 targets:
   CodexMeterCore:
@@ -20,7 +22,7 @@ targets:
       - path: Sources/CodexMeterCore
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.bolyki.CodexMeterCore
+        PRODUCT_BUNDLE_IDENTIFIER: com.magrathean.CodexexApp.CodexMeterCore
         GENERATE_INFOPLIST_FILE: YES
         SKIP_INSTALL: YES
 
@@ -35,7 +37,7 @@ targets:
     settings:
       base:
         PRODUCT_NAME: Codexex
-        PRODUCT_BUNDLE_IDENTIFIER: com.bolyki.Codexex
+        PRODUCT_BUNDLE_IDENTIFIER: com.magrathean.CodexexApp
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: YES
         CODE_SIGN_ENTITLEMENTS: AppStore/Codexex.entitlements
@@ -75,7 +77,7 @@ targets:
       - target: CodexMeterCore
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.bolyki.Codexex.CodexexXPCService
+        PRODUCT_BUNDLE_IDENTIFIER: com.magrathean.CodexexApp.CodexexXPCService
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: Sources/CodexexXPCService/Info.plist
         CODE_SIGN_ENTITLEMENTS: AppStore/CodexexXPCService.entitlements
@@ -90,7 +92,7 @@ targets:
       - target: CodexMeterCore
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.bolyki.CodexMeterCoreTests
+        PRODUCT_BUNDLE_IDENTIFIER: com.magrathean.CodexexApp.CodexMeterCoreTests
         GENERATE_INFOPLIST_FILE: YES
 
 schemes:

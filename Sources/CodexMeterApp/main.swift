@@ -5,6 +5,7 @@ import Observation
 
 private let sharedModel = CodexMenuBarModel()
 private let sharedSettingsWindowController = SettingsWindowController(model: sharedModel)
+private let sharedOnboardingWindowController = OnboardingWindowController(model: sharedModel)
 private var sharedStatusItemController: CodexStatusItemController?
 
 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -24,6 +25,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 sharedSettingsWindowController.showSettingsWindow()
             }
         )
+
+        if sharedModel.hasCompletedOnboarding == false {
+            sharedOnboardingWindowController.showWelcomeWindow()
+        }
+    }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard sharedSettingsWindowController.isVisible else {
+            return .terminateNow
+        }
+
+        let alert = NSAlert()
+        alert.messageText = "Quit Codexex?"
+        alert.informativeText = "You can keep Codexex running in the menu bar and close only Settings."
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "Keep in Menu Bar")
+        alert.addButton(withTitle: "Quit")
+
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
+            sharedSettingsWindowController.closeSettingsWindow()
+            return .terminateCancel
+        }
+
+        return .terminateNow
     }
 }
 
@@ -34,7 +60,7 @@ struct CodexMeterMenuBarApp: App {
         Settings {
             SettingsRootView(model: sharedModel)
         }
-        .defaultSize(width: 560, height: GlassTokens.settingsHeight)
+        .defaultSize(width: GlassTokens.settingsWidth, height: GlassTokens.settingsHeight)
         .windowResizability(.automatic)
     }
 }

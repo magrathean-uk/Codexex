@@ -100,10 +100,10 @@ final class CodexSnapshotParityTests: XCTestCase {
         }
     }
 
-    func testSnapshotReducerThrowsForApiKeyAccount() {
+    func testSnapshotReducerThrowsForNonChatGPTAccount() {
         let account = _AccountReadResult(dictionary: [
             "account": [
-                "type": "apiKey",
+                "type": "other",
                 "email": "user@example.com"
             ]
         ])
@@ -116,7 +116,7 @@ final class CodexSnapshotParityTests: XCTestCase {
                 rateLimits: rateLimits
             )
         ) { error in
-            XCTAssertEqual(error as? CodexProbeError, .apiKeyModeUnsupported)
+            XCTAssertEqual(error as? CodexProbeError, .unauthenticated)
         }
     }
 }

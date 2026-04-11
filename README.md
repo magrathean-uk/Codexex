@@ -8,7 +8,7 @@ It shows:
 - reset times
 - 30-day usage history
 - weekly pace marker and forecast
-- ChatGPT OAuth or API key sign-in
+- ChatGPT OAuth sign-in and Preview Mode
 
 ## Main features
 
@@ -26,7 +26,7 @@ It shows:
 
 Codexex supports:
 - `Sign in with ChatGPT`
-- `API key`
+- `Preview Mode`
 
 ChatGPT sign-in uses device code flow:
 1. Open `Settings`
@@ -34,6 +34,8 @@ ChatGPT sign-in uses device code flow:
 3. Copy the code shown in the app
 4. Click `Open Safari`
 5. Finish sign-in in Safari
+
+First launch also offers `Preview Mode` for review and offline testing.
 
 ## Build
 
@@ -49,7 +51,9 @@ xcodebuild -project CodexMeter.xcodeproj \
 
 ## Project layout
 
-- `Sources/CodexMeterApp/` app UI, menu bar shell, settings, history
+- `Sources/CodexMeterApp/Support/` app state, auth, storage, helper client
+- `Sources/CodexMeterApp/UI/` menu bar, popup, settings, onboarding views
+- `Sources/CodexMeterApp/Windows/` window controllers
 - `Sources/CodexMeterCore/` shared models and reducers
 - `Sources/CodexexXPCService/` XPC service target
 - `Helper/CodexexHelper/` embedded helper

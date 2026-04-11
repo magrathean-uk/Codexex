@@ -40,6 +40,7 @@ struct LimitPayload {
     bucket: String,
     primary: Option<WindowPayload>,
     secondary: Option<WindowPayload>,
+    credits: Option<CreditsPayload>,
 }
 
 #[derive(Debug, Serialize)]
@@ -48,6 +49,14 @@ struct WindowPayload {
     used_percent: f64,
     window_duration_minutes: Option<i64>,
     resets_at: Option<f64>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CreditsPayload {
+    has_credits: bool,
+    unlimited: bool,
+    balance: Option<String>,
 }
 
 fn runtime() -> Result<tokio::runtime::Runtime> {
@@ -76,9 +85,9 @@ async fn fetch_snapshot_payload() -> Result<ServiceSnapshotPayload> {
 
     if auth.is_chatgpt_auth() == false {
         return Ok(ServiceSnapshotPayload {
-            auth_mode: Some("apiKey".to_string()),
+            auth_mode: None,
             snapshot: None,
-            error_message: Some("Signed in with API key. ChatGPT quota is not available.".to_string()),
+            error_message: Some("Codex is not signed in with ChatGPT.".to_string()),
         });
     }
 
@@ -94,7 +103,7 @@ async fn fetch_snapshot_payload() -> Result<ServiceSnapshotPayload> {
             .as_secs_f64(),
         executable_path: state::executable_path(),
         account: AccountPayload {
-            auth_type: "chatgpt".to_string(),
+            auth_type: "chatGPT".to_string(),
             email: auth.get_account_email(),
             plan_type: auth.account_plan_type().map(|plan| format!("{plan:?}")),
         },
@@ -117,8 +126,14 @@ async fn fetch_snapshot_payload() -> Result<ServiceSnapshotPayload> {
                         window_duration_minutes: window.window_minutes,
                         resets_at: window.resets_at.map(|value| value as f64),
                     }),
+                    credits: limit.credits.map(|credits| CreditsPayload {
+                        has_credits: credits.has_credits,
+                        unlimited: credits.unlimited,
+                        balance: credits.balance,
+                    }),
                 }
             })
+            .filter(|limit| limit.primary.is_some() || limit.secondary.is_some() || limit.credits.is_some())
             .collect(),
     };
 

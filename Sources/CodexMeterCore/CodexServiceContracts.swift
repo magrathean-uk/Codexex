@@ -2,7 +2,6 @@ import Foundation
 
 public enum CodexAuthMode: String, Codable, Sendable {
     case chatGPT
-    case apiKey
 }
 
 public struct CodexServiceSnapshotResponse: Codable, Sendable {

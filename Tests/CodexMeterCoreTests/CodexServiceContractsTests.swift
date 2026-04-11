@@ -11,9 +11,9 @@ final class CodexServiceContractsTests: XCTestCase {
     }
 
     func testAuthModeEncodesHelperWireValue() throws {
-        let data = try JSONEncoder().encode(CodexAuthMode.apiKey)
+        let data = try JSONEncoder().encode(CodexAuthMode.chatGPT)
 
-        XCTAssertEqual(String(decoding: data, as: UTF8.self), #""apiKey""#)
+        XCTAssertEqual(String(decoding: data, as: UTF8.self), #""chatGPT""#)
     }
 
     func testServiceSnapshotResponseDecodesSignedOutState() {

@@ -4,6 +4,7 @@ import Foundation
 import CodexMeterCore
 import SwiftUI
 import Observation
+import OSLog
 
 @MainActor
 @Observable
@@ -23,6 +24,7 @@ final class CodexMenuBarModel {
     private(set) var authStatusMessage: String = "Ready."
     private(set) var authDeviceCode: String?
     private(set) var authVerificationURL: URL?
+    private(set) var authFlowID: String?
     private(set) var isSigningIn = false
     private(set) var isSignedIn = false
     private(set) var hasResolvedAuthState = false
@@ -33,8 +35,9 @@ final class CodexMenuBarModel {
     private(set) var showHistoryEnabled = CodexAppSettings.showHistoryEnabled
     private(set) var showFiveHourInMenubar = CodexAppSettings.showFiveHourInMenubar
     private(set) var showWeeklyInMenubar = CodexAppSettings.showWeeklyInMenubar
+    private(set) var hasCompletedOnboarding = CodexAppSettings.hasCompletedOnboarding
+    private(set) var previewModeEnabled = CodexAppSettings.previewModeEnabled
     private(set) var usageHistory: [CodexUsageHistorySample] = []
-    private(set) var hasStoredAPIKey = CodexSecretStore.hasAPIKey()
     private(set) var reduceMotionEnabled = false
 
     private let service: any CodexServiceClient
@@ -42,19 +45,24 @@ final class CodexMenuBarModel {
     private let lifecycle = Lifecycle()
     private var didStart = false
     private var stateGeneration = 0
+    private var authRetryNotBefore: Date?
 
     init(service: any CodexServiceClient = CodexXPCClient()) {
         self.service = service
         launchAtLoginEnabled = CodexLaunchAtLoginManager.syncStoredState()
-        hasStoredAPIKey = CodexSecretStore.hasAPIKey()
     }
 
     func start() async {
         guard didStart == false else { return }
         didStart = true
+        CodexLog.ui.log("model start onboarding=\(self.hasCompletedOnboarding, privacy: .public) preview=\(self.previewModeEnabled, privacy: .public)")
 
-        usageHistory = await usageHistoryStore.load()
-        await refreshNow()
+        if previewModeEnabled {
+            applyPreviewData(now: Date())
+        } else {
+            usageHistory = await usageHistoryStore.load()
+            await refreshNow()
+        }
 
         lifecycle.refreshLoopTask = Task { [weak self] in
             while Task.isCancelled == false {
@@ -83,7 +91,13 @@ final class CodexMenuBarModel {
 
     func refreshNow() async {
         guard isRefreshing == false else { return }
+        if previewModeEnabled {
+            CodexLog.refresh.log("refresh preview mode")
+            applyPreviewData(now: Date())
+            return
+        }
         let generation = stateGeneration
+        CodexLog.refresh.log("refresh start generation=\(generation, privacy: .public)")
         animateStateChange(.easeInOut(duration: 0.16)) {
             isRefreshing = true
         }
@@ -93,15 +107,8 @@ final class CodexMenuBarModel {
             var response = try await service.fetchSnapshotResponse()
             guard generation == stateGeneration else { return }
 
-            if response.snapshot == nil, response.authMode == nil, hasStoredAPIKey {
-                response = CodexServiceSnapshotResponse(
-                    authMode: .apiKey,
-                    snapshot: nil,
-                    errorMessage: "Signed in with API key. ChatGPT quota is not available."
-                )
-            }
-
             if let result = response.snapshot {
+                CodexLog.refresh.log("refresh success snapshot")
                 animateStateChange(.easeInOut(duration: 0.18)) {
                     snapshot = result
                     lastUpdatedAt = result.capturedAt
@@ -119,11 +126,13 @@ final class CodexMenuBarModel {
                     usageHistory = updatedHistory
                 }
             } else {
+                CodexLog.refresh.log("refresh no snapshot authMode=\(String(describing: response.authMode), privacy: .public)")
                 animateStateChange(.easeInOut(duration: 0.18)) {
                     applySnapshotResponse(response)
                 }
             }
         } catch {
+            CodexLog.refresh.error("refresh failed message=\(error.localizedDescription, privacy: .public)")
             guard generation == stateGeneration else { return }
             animateStateChange(.easeInOut(duration: 0.18)) {
                 lastError = error.localizedDescription
@@ -136,11 +145,24 @@ final class CodexMenuBarModel {
 
     func startChatGPTSignIn() {
         guard isSigningIn == false else { return }
+        if let authRetryNotBefore, authRetryNotBefore > Date() {
+            let seconds = max(Int(authRetryNotBefore.timeIntervalSinceNow.rounded(.up)), 1)
+            let message = "Please wait \(seconds)s before trying sign-in again."
+            CodexLog.auth.log("startChatGPTSignIn blocked cooldown seconds=\(seconds, privacy: .public)")
+            lastError = message
+            authStatusMessage = message
+            hasResolvedAuthState = true
+            return
+        }
+        CodexLog.auth.log("startChatGPTSignIn")
+        disablePreviewMode()
+        completeOnboarding()
 
         invalidateRefreshResults()
         let generation = stateGeneration
         authDeviceCode = nil
         authVerificationURL = nil
+        authFlowID = nil
         lastError = nil
         authStatusMessage = "Starting ChatGPT sign-in."
         isSigningIn = true
@@ -157,34 +179,24 @@ final class CodexMenuBarModel {
                 self.lastError = nil
                 self.authDeviceCode = auth.userCode
                 self.authVerificationURL = auth.verificationURL
-
-                Task { @MainActor [weak self] in
-                    guard let self else { return }
-
-                    do {
-                        try await self.service.completeChatGPTSignIn(flowID: auth.flowID)
-                        guard self.stateGeneration == generation else { return }
-
-                        self.authStatusMessage = "Finishing sign-in."
-                        self.authDeviceCode = nil
-                        self.authVerificationURL = nil
-                        await self.refreshNow()
-                    } catch {
-                        guard self.stateGeneration == generation else { return }
-
-                        self.authStatusMessage = error.localizedDescription
-                        self.hasResolvedAuthState = true
-                        self.lastError = error.localizedDescription
-                        self.isSigningIn = false
-                    }
-                }
+                self.authFlowID = auth.flowID
+                self.isSigningIn = false
+                CodexLog.auth.log("device code ready flow=\(auth.flowID, privacy: .private(mask: .hash))")
             } catch {
                 guard self.stateGeneration == generation else { return }
 
-                self.authStatusMessage = error.localizedDescription
+                let message: String
+                if error.localizedDescription.contains("429") {
+                    self.authRetryNotBefore = Date().addingTimeInterval(10)
+                    message = "OpenAI is rate-limiting sign-in right now. Wait 10 seconds and try again."
+                } else {
+                    message = error.localizedDescription
+                }
+                self.authStatusMessage = message
                 self.hasResolvedAuthState = true
-                self.lastError = error.localizedDescription
+                self.lastError = message
                 self.isSigningIn = false
+                CodexLog.auth.error("begin sign-in failed message=\(error.localizedDescription, privacy: .public)")
             }
         }
     }
@@ -193,12 +205,48 @@ final class CodexMenuBarModel {
         invalidateRefreshResults()
         authDeviceCode = nil
         authVerificationURL = nil
+        authFlowID = nil
         authStatusMessage = clearedAuthGuidanceMessage()
+    }
+
+    func completePendingChatGPTSignIn() {
+        guard let authFlowID else { return }
+        CodexLog.auth.log("poll pending sign-in flow=\(authFlowID, privacy: .private(mask: .hash))")
+        let generation = stateGeneration
+        isSigningIn = true
+        authStatusMessage = "Finishing sign-in."
+        lastError = nil
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            do {
+                try await self.service.completeChatGPTSignIn(flowID: authFlowID)
+                guard self.stateGeneration == generation else { return }
+
+                self.authDeviceCode = nil
+                self.authVerificationURL = nil
+                self.authFlowID = nil
+                self.authRetryNotBefore = nil
+                CodexLog.auth.log("sign-in complete; refreshing snapshot")
+                await self.refreshNow()
+            } catch {
+                guard self.stateGeneration == generation else { return }
+                self.authStatusMessage = error.localizedDescription
+                self.hasResolvedAuthState = true
+                self.lastError = error.localizedDescription
+                self.isSigningIn = false
+                CodexLog.auth.error("poll sign-in failed message=\(error.localizedDescription, privacy: .public)")
+            }
+        }
     }
 
     func openAuthVerificationPage() {
         guard let authVerificationURL else { return }
+        completeOnboarding()
+        CodexLog.auth.log("opening Safari for device auth")
         NSWorkspace.shared.open(authVerificationURL)
+        completePendingChatGPTSignIn()
     }
 
     func setLaunchAtLoginEnabled(_ enabled: Bool) {
@@ -241,52 +289,47 @@ final class CodexMenuBarModel {
         reduceMotionEnabled = enabled
     }
 
-    func saveAPIKey(_ key: String) {
-        invalidateRefreshResults()
-        do {
-            try CodexSecretStore.saveAPIKey(key)
-            hasStoredAPIKey = true
-            lastError = nil
-            authDeviceCode = nil
-            authVerificationURL = nil
-            authStatusMessage = "API key saved to Keychain."
-            hasResolvedAuthState = true
-            isSigningIn = false
-            isSignedIn = true
-        } catch {
-            lastError = error.localizedDescription
-            authStatusMessage = "Failed to save API key."
-        }
+    func completeOnboarding() {
+        CodexLog.ui.log("complete onboarding")
+        hasCompletedOnboarding = true
+        CodexAppSettings.hasCompletedOnboarding = true
     }
 
-    func removeAPIKey() {
-        invalidateRefreshResults()
-        do {
-            try CodexSecretStore.removeAPIKey()
-            hasStoredAPIKey = false
-            lastError = nil
-            authStatusMessage = "API key removed from Keychain."
-        } catch {
-            lastError = error.localizedDescription
-            authStatusMessage = "Failed to remove API key."
-        }
+    func enablePreviewMode() {
+        CodexLog.ui.log("enable preview mode")
+        completeOnboarding()
+        CodexAppSettings.previewModeEnabled = true
+        previewModeEnabled = true
+        applyPreviewData(now: Date())
+    }
+
+    func disablePreviewMode() {
+        guard previewModeEnabled else { return }
+        CodexLog.ui.log("disable preview mode")
+        CodexAppSettings.previewModeEnabled = false
+        previewModeEnabled = false
+        snapshot = nil
+        usageHistory = []
+        lastUpdatedAt = nil
+        authStatusMessage = "Preview mode off."
+        hasResolvedAuthState = false
+        isSignedIn = false
+        lastError = nil
     }
 
     func signOut() {
-        invalidateRefreshResults()
-        let generation = stateGeneration
-        if snapshot == nil && hasStoredAPIKey {
-            removeAPIKey()
-            authDeviceCode = nil
-            isSigningIn = false
-            isSignedIn = false
-            hasResolvedAuthState = true
+        CodexLog.auth.log("signOut")
+        if previewModeEnabled {
+            disablePreviewMode()
             return
         }
+        invalidateRefreshResults()
 
         authStatusMessage = "Signing out…"
         authDeviceCode = nil
         authVerificationURL = nil
+        authFlowID = nil
+        authRetryNotBefore = nil
         isSigningIn = false
         lastError = nil
 
@@ -295,16 +338,17 @@ final class CodexMenuBarModel {
 
             do {
                 try await service.signOut()
-                guard self.stateGeneration == generation else { return }
+                CodexLog.auth.log("signOut complete")
                 self.isSignedIn = false
                 self.hasResolvedAuthState = true
                 self.snapshot = nil
                 self.authDeviceCode = nil
                 self.authVerificationURL = nil
+                self.authFlowID = nil
                 self.lastError = nil
                 self.authStatusMessage = "Signed out."
             } catch {
-                guard self.stateGeneration == generation else { return }
+                CodexLog.auth.error("signOut failed message=\(error.localizedDescription, privacy: .public)")
                 self.lastError = error.localizedDescription
                 self.authStatusMessage = error.localizedDescription
             }
@@ -315,14 +359,12 @@ final class CodexMenuBarModel {
         snapshot = nil
         authDeviceCode = nil
         authVerificationURL = nil
+        authFlowID = nil
         isSigningIn = false
         hasResolvedAuthState = true
         lastError = response.errorMessage
 
         switch response.authMode {
-        case .apiKey:
-            isSignedIn = true
-            authStatusMessage = response.errorMessage ?? "Signed in with API key. ChatGPT quota is not available."
         case .chatGPT:
             isSignedIn = true
             authStatusMessage = response.errorMessage ?? "Signed in with ChatGPT."
@@ -337,12 +379,6 @@ final class CodexMenuBarModel {
         if snapshot != nil {
             return "Signed in with ChatGPT."
         }
-        if hasStoredAPIKey {
-            return "API key saved to Keychain. Helper path is not wired yet."
-        }
-        if isSignedIn {
-            return "Signed in with API key. ChatGPT quota is not available."
-        }
         if hasResolvedAuthState {
             return lastError ?? "Not signed in. Use the button below."
         }
@@ -351,6 +387,21 @@ final class CodexMenuBarModel {
 
     private func invalidateRefreshResults() {
         stateGeneration += 1
+    }
+
+    private func applyPreviewData(now: Date) {
+        let previewSnapshot = CodexPreviewData.snapshot(now: now)
+        snapshot = previewSnapshot
+        usageHistory = CodexPreviewData.history(now: now)
+        lastUpdatedAt = now
+        authDeviceCode = nil
+        authVerificationURL = nil
+        authFlowID = nil
+        isSigningIn = false
+        isSignedIn = true
+        hasResolvedAuthState = true
+        lastError = nil
+        authStatusMessage = "Preview mode."
     }
 
     private func animateStateChange(

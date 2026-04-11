@@ -73,6 +73,16 @@ fn quota_fetch_snapshot_returns_snapshot_variant() {
 }
 
 #[test]
+fn save_api_key_requests_are_rejected() {
+    let response = protocol::handle_line(r#"{"method":"saveApiKey","api_key":"sk-test-key"}"#);
+
+    assert!(matches!(
+        response,
+        HelperResponse::Error { message } if message.starts_with("invalid request:")
+    ));
+}
+
+#[test]
 fn poll_device_auth_does_not_succeed_for_random_flow_id() {
     let error = auth::poll_device_auth("flow-123").unwrap_err();
 

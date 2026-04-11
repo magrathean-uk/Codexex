@@ -1,4 +1,5 @@
 #if os(macOS)
+import AppKit
 import Foundation
 import SwiftUI
 import Observation
@@ -6,14 +7,13 @@ import Observation
 struct SettingsRootView: View {
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
     @Bindable var model: CodexMenuBarModel
-    @State private var apiKey = ""
 
     var body: some View {
         GlassEffectContainer(spacing: GlassTokens.sectionSpacing) {
             ScrollView {
-                VStack(alignment: .leading, spacing: GlassTokens.sectionSpacing) {
-                    accountCard
-                    behaviorCard
+                ViewThatFits(in: .horizontal) {
+                    wideLayout
+                    stackedLayout
                 }
                 .padding(GlassTokens.pagePadding)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -29,6 +29,27 @@ struct SettingsRootView: View {
         }
     }
 
+    private var wideLayout: some View {
+        HStack(alignment: .top, spacing: GlassTokens.sectionSpacing) {
+            VStack(alignment: .leading, spacing: GlassTokens.sectionSpacing) {
+                accountCard
+                behaviorCard
+            }
+            .frame(maxWidth: 372, alignment: .topLeading)
+
+            SettingsAboutCard()
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+    }
+
+    private var stackedLayout: some View {
+        VStack(alignment: .leading, spacing: GlassTokens.sectionSpacing) {
+            accountCard
+            behaviorCard
+            SettingsAboutCard()
+        }
+    }
+
     private var accountCard: some View {
         GlassCard(style: .primary) {
             VStack(alignment: .leading, spacing: 14) {
@@ -40,17 +61,32 @@ struct SettingsRootView: View {
                         Text(accountHeadline)
                             .font(.title3.weight(.semibold))
 
-                        if let detail = accountDetail {
-                            Text(detail)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
+                if let detail = accountDetail {
+                    Text(detail)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
 
                     Spacer(minLength: 0)
 
                     accountAction
+                }
+
+                HStack(spacing: 12) {
+                    Button(model.previewModeEnabled ? "Leave Preview Mode" : "Preview Mode") {
+                        if model.previewModeEnabled {
+                            model.disablePreviewMode()
+                        } else {
+                            model.enablePreviewMode()
+                        }
+                    }
+                    .buttonStyle(.bordered)
+
+                    Text(model.previewModeEnabled ? "Sample data is active." : "App Review can use sample data here.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
 
                 if let code = model.authDeviceCode {
@@ -89,9 +125,6 @@ struct SettingsRootView: View {
                     .transition(accessibilityReduceMotion ? .identity : .opacity)
                 }
 
-                if model.isSignedIn == false && model.authDeviceCode == nil {
-                    signedOutAuthSection
-                }
             }
         }
         .animation(accessibilityReduceMotion ? nil : .easeInOut(duration: 0.18), value: model.authDeviceCode)
@@ -185,45 +218,12 @@ struct SettingsRootView: View {
         }
     }
 
-    private var signedOutAuthSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Sign in with ChatGPT to load quota.")
-                .font(.subheadline)
-
-            Divider()
-
-            Text("API key")
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(.secondary)
-
-            SecureField("Paste API key", text: $apiKey)
-                .textFieldStyle(.roundedBorder)
-                .disabled(model.isSigningIn)
-
-            HStack(spacing: 12) {
-                Button("Save API Key") {
-                    saveAPIKey()
-                }
-                .buttonStyle(.bordered)
-                .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.isSigningIn)
-
-                if model.hasStoredAPIKey {
-                    Button("Remove API Key") {
-                        model.removeAPIKey()
-                    }
-                    .buttonStyle(.bordered)
-
-                    Text("Stored in Keychain.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
-    }
-
     private var accountHeadline: String {
         if model.isSigningIn {
             return "Signing in"
+        }
+        if model.previewModeEnabled {
+            return "Preview Mode"
         }
         if model.authDeviceCode != nil {
             return "Open Safari"
@@ -232,9 +232,6 @@ struct SettingsRootView: View {
            let email = snapshot.account.email,
            email.isEmpty == false {
             return email
-        }
-        if model.isSignedIn, model.hasStoredAPIKey {
-            return "API key"
         }
         if model.isSignedIn {
             return "Signed in"
@@ -249,28 +246,24 @@ struct SettingsRootView: View {
         if model.isSigningIn {
             return "Use the code in your browser."
         }
+        if model.previewModeEnabled {
+            return "SAMPLE DATA · Preview"
+        }
         if let deviceCode = model.authDeviceCode {
-            return "Use code \(deviceCode), then open Safari. Codexex will finish sign-in automatically."
+            if model.isSigningIn {
+                return "Code \(deviceCode) · Waiting for approval from Safari."
+            }
+            return "Code \(deviceCode) · Open Safari and approve sign-in there."
         }
         if let snapshot = model.snapshot {
-            let auth = snapshot.account.authType.lowercased() == "chatgpt" ? "OAuth" : "API key"
+            let auth = "OAuth"
             let plan = snapshot.account.planType?.uppercased()
             return [plan, auth].compactMap { $0 }.joined(separator: " · ")
-        }
-        if model.hasStoredAPIKey {
-            return "API key · stored in Keychain"
         }
         if model.hasResolvedAuthState {
             return "Sign in to load quota."
         }
         return nil
-    }
-
-    private func saveAPIKey() {
-        let trimmed = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.isEmpty == false else { return }
-        model.saveAPIKey(trimmed)
-        apiKey = ""
     }
 }
 #endif

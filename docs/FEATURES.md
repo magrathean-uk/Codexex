@@ -19,7 +19,7 @@
 ## Settings
 
 - sign in with ChatGPT
-- API key save/remove
+- Preview Mode for App Review
 - sign out
 - launch at login
 - auto refresh
@@ -32,6 +32,7 @@
 - right-click menu with settings and quit
 - device code shown before Safari opens
 - code copy action
+- automatic sign-in completion after Safari approval
 - subtle motion with reduce motion support
 
 ## Tech

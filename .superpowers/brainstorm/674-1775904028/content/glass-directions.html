@@ -1,0 +1,84 @@
+
+<h2>Pick the glass direction</h2>
+<p class="subtitle">Goal: macOS 26+ feel, cleaner settings, tighter popup, no cheap blur.</p>
+
+<div class="cards" style="grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;align-items:start;">
+  <div class="card" data-choice="native" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup" style="background:linear-gradient(180deg,#f6f7f9,#eef1f5);border-radius:24px;overflow:hidden;min-height:320px;">
+        <div style="padding:18px;border-bottom:1px solid rgba(0,0,0,.08);font-weight:700;color:#1f2937;">Codexex Settings</div>
+        <div style="padding:18px;display:grid;gap:14px;">
+          <div style="background:rgba(255,255,255,.72);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.7);border-radius:18px;padding:16px;display:grid;gap:10px;">
+            <div style="font-weight:700;color:#111827;">Account</div>
+            <div style="color:#4b5563;">Signed in</div>
+            <div style="display:flex;justify-content:flex-end;"><div class="mock-button" style="background:#ffffff;color:#111827;">Sign out</div></div>
+          </div>
+          <div style="background:rgba(255,255,255,.72);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.7);border-radius:18px;padding:16px;display:grid;gap:12px;">
+            <div style="font-weight:700;color:#111827;">Behavior</div>
+            <div style="display:flex;justify-content:space-between;color:#111827;"><span>Launch at login</span><span>On</span></div>
+            <div style="display:flex;justify-content:space-between;color:#111827;"><span>Auto-refresh</span><span>On</span></div>
+            <div class="mock-input" style="background:rgba(255,255,255,.7);color:#111827;">5 min | 10 min | 60 min</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. Native glass</h3>
+      <p>Closest to Apple Settings. Calm, light, spaced, minimal chrome.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="utility" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup" style="background:radial-gradient(circle at top,#2d3a4d,#131820 65%);border-radius:24px;overflow:hidden;min-height:320px;">
+        <div style="padding:16px 18px;color:#e5edf8;font-weight:700;">Codexex</div>
+        <div style="padding:18px;display:grid;gap:12px;">
+          <div style="background:rgba(255,255,255,.10);backdrop-filter:blur(26px);border:1px solid rgba(255,255,255,.14);border-radius:18px;padding:14px;color:#f8fafc;display:grid;gap:8px;">
+            <div style="display:flex;justify-content:space-between;"><span>Codex</span><strong>42%</strong></div>
+            <div style="height:8px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;"><div style="width:42%;height:100%;background:linear-gradient(90deg,#69a8ff,#9dd6ff);"></div></div>
+            <div style="display:flex;justify-content:space-between;color:#cbd5e1;font-size:12px;"><span>USED 42%</span><span>LEFT 58%</span><span>2h left</span></div>
+          </div>
+          <div style="background:rgba(255,255,255,.10);backdrop-filter:blur(26px);border:1px solid rgba(255,255,255,.14);border-radius:18px;padding:14px;color:#f8fafc;display:grid;gap:10px;">
+            <div style="font-weight:700;">Settings</div>
+            <div style="display:flex;justify-content:space-between;"><span>Auto-refresh</span><span>On</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>History chart</span><span>On</span></div>
+            <div style="color:#cbd5e1;font-size:12px;">More compact. More utility-app feel.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. Utility glass</h3>
+      <p>Sharper, denser, richer glass. Best if popup is the star.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="hybrid" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup" style="background:linear-gradient(180deg,#f7f8fb,#f0f3f8);border-radius:24px;overflow:hidden;min-height:320px;">
+        <div style="padding:16px 18px;color:#111827;font-weight:700;">Codexex Settings</div>
+        <div style="padding:18px;display:grid;gap:14px;">
+          <div style="background:rgba(255,255,255,.75);backdrop-filter:blur(22px);border:1px solid rgba(255,255,255,.7);border-radius:20px;padding:16px;display:grid;gap:10px;">
+            <div style="font-weight:700;color:#111827;">Signed in</div>
+            <div style="color:#4b5563;">bolyki@bolyki.eu · PRO</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div style="background:rgba(255,255,255,.72);backdrop-filter:blur(22px);border:1px solid rgba(255,255,255,.7);border-radius:18px;padding:16px;color:#111827;display:grid;gap:10px;">
+              <div style="font-weight:700;">Behavior</div>
+              <div style="color:#4b5563;font-size:13px;">Native toggles</div>
+            </div>
+            <div style="background:rgba(255,255,255,.72);backdrop-filter:blur(22px);border:1px solid rgba(255,255,255,.7);border-radius:18px;padding:16px;color:#111827;display:grid;gap:10px;">
+              <div style="font-weight:700;">Status</div>
+              <div style="color:#4b5563;font-size:13px;">Quota + refresh info</div>
+            </div>
+          </div>
+          <div style="background:rgba(255,255,255,.72);backdrop-filter:blur(22px);border:1px solid rgba(255,255,255,.7);border-radius:18px;padding:14px;color:#111827;">Segmented refresh control</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. Hybrid</h3>
+      <p>Apple-native base, but with a few stronger glass cards for focus areas.</p>
+    </div>
+  </div>
+</div>

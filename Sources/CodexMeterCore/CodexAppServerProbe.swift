@@ -5,7 +5,6 @@ public enum CodexProbeError: Error, LocalizedError, Sendable, Equatable {
     case launchFailed(message: String)
     case rpcError(method: String, code: Int?, message: String)
     case unauthenticated
-    case apiKeyModeUnsupported
     case missingRateLimits
     case timeout(seconds: Double, stderr: String?)
     case malformedResponse(message: String)
@@ -21,8 +20,6 @@ public enum CodexProbeError: Error, LocalizedError, Sendable, Equatable {
             return "\(method) failed: \(message)"
         case .unauthenticated:
             return "Codex is not signed in with a ChatGPT account."
-        case .apiKeyModeUnsupported:
-            return "Codex is signed in with an API key, so ChatGPT quota buckets are not available."
         case .missingRateLimits:
             return "Codex returned no rate-limit buckets for this account."
         case .timeout(let seconds, let stderr):
@@ -279,10 +276,6 @@ enum _SnapshotReducer {
             throw CodexProbeError.unauthenticated
         }
 
-        if accountPayload.type.lowercased() == "apikey" {
-            throw CodexProbeError.apiKeyModeUnsupported
-        }
-
         let buckets: [_RateLimitPayload]
         if let byId = rateLimits.rateLimitsByLimitId, byId.isEmpty == false {
             buckets = byId
@@ -314,7 +307,15 @@ enum _SnapshotReducer {
                 )
             }
 
-            if primary == nil, secondary == nil {
+            let credits = payload.credits.map {
+                CodexCredits(
+                    hasCredits: $0.hasCredits,
+                    unlimited: $0.unlimited,
+                    balance: $0.balance
+                )
+            }
+
+            if primary == nil, secondary == nil, credits == nil {
                 return nil
             }
 
@@ -323,7 +324,8 @@ enum _SnapshotReducer {
                 rawLimitName: payload.limitName,
                 bucket: bucket,
                 primary: primary,
-                secondary: secondary
+                secondary: secondary,
+                credits: credits
             )
         }
 
@@ -419,12 +421,26 @@ struct _RateLimitPayload {
     let limitName: String?
     let primary: _QuotaWindowPayload?
     let secondary: _QuotaWindowPayload?
+    let credits: _CreditsPayload?
 
     init(dictionary: [String: Any]) {
         self.limitId = dictionary.stringValue(forKey: "limitId")
         self.limitName = dictionary.stringValue(forKey: "limitName")
         self.primary = dictionary.dictionaryValue(forKey: "primary").map(_QuotaWindowPayload.init(dictionary:))
         self.secondary = dictionary.dictionaryValue(forKey: "secondary").map(_QuotaWindowPayload.init(dictionary:))
+        self.credits = dictionary.dictionaryValue(forKey: "credits").map(_CreditsPayload.init(dictionary:))
+    }
+}
+
+struct _CreditsPayload {
+    let hasCredits: Bool
+    let unlimited: Bool
+    let balance: String?
+
+    init(dictionary: [String: Any]) {
+        self.hasCredits = dictionary.boolValue(forKey: "hasCredits") ?? false
+        self.unlimited = dictionary.boolValue(forKey: "unlimited") ?? false
+        self.balance = dictionary.stringValue(forKey: "balance")
     }
 }
 
