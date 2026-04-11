@@ -26,6 +26,12 @@ struct CodexUsageHistoryWindow: Codable, Sendable, Equatable {
     let windowDurationMinutes: Int?
     let resetsAt: Date?
 
+    init(usedPercent: Double, windowDurationMinutes: Int?, resetsAt: Date?) {
+        self.usedPercent = usedPercent
+        self.windowDurationMinutes = windowDurationMinutes
+        self.resetsAt = resetsAt
+    }
+
     init(from window: CodexQuotaWindow) {
         self.usedPercent = window.usedPercent
         self.windowDurationMinutes = window.windowDurationMinutes

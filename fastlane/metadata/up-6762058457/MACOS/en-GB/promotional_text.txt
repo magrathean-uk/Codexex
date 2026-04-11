@@ -1,0 +1,1 @@
+Track Codex usage in the menu bar, review 5-hour and weekly windows, and switch between ChatGPT OAuth or Preview Mode.

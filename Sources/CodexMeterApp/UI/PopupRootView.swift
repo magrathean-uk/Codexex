@@ -13,6 +13,10 @@ struct PopupRootView: View {
     var body: some View {
         GlassEffectContainer(spacing: GlassTokens.sectionSpacing) {
             VStack(alignment: .leading, spacing: GlassTokens.contentSpacing) {
+                if model.previewModeEnabled {
+                    previewBadge
+                }
+
                 if let snapshot = model.snapshot {
                     ForEach(snapshot.limits) { limit in
                         LimitCardView(limit: limit)
@@ -53,6 +57,15 @@ struct PopupRootView: View {
             }
         }
         .transition(accessibilityReduceMotion ? .identity : .opacity)
+    }
+
+    private var previewBadge: some View {
+        Text("Sample Data")
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(.white.opacity(0.08), in: Capsule())
     }
 
     private var footer: some View {
@@ -142,6 +155,22 @@ private struct LimitCardView: View {
                         title: weekly.windowDurationMinutes == 10_080 ? "Weekly" : weekly.windowText,
                         window: weekly
                     )
+                }
+
+                if let credits = limit.credits {
+                    Divider()
+                        .opacity(0.35)
+
+                    HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        Text("Credits")
+                            .font(.subheadline.weight(.semibold))
+
+                        Spacer()
+
+                        Text(credits.displayText)
+                            .font(.subheadline.monospacedDigit().weight(.semibold))
+                            .foregroundStyle(credits.isNegativeBalance ? Color.red : .secondary)
+                    }
                 }
             }
         }

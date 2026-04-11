@@ -52,11 +52,11 @@ final class CodexSnapshotParsingTests: XCTestCase {
         XCTAssertEqual(snapshot.sparkLimit?.primary?.usedPercentText, "42%")
     }
 
-    func testApiKeyModeRejected() throws {
+    func testNonChatGPTAuthRejected() throws {
         let account = """
         {
           "account": {
-            "type": "apiKey"
+            "type": "other"
           },
           "requiresOpenaiAuth": true
         }
@@ -80,7 +80,7 @@ final class CodexSnapshotParsingTests: XCTestCase {
                 rateLimitsJSON: rateLimits
             )
         ) { error in
-            XCTAssertEqual(error as? CodexProbeError, .apiKeyModeUnsupported)
+            XCTAssertEqual(error as? CodexProbeError, .unauthenticated)
         }
     }
 }

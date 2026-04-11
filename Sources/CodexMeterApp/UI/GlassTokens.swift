@@ -3,7 +3,7 @@ import SwiftUI
 
 enum GlassTokens {
     static let popupWidth: CGFloat = 384
-    static let settingsWidth: CGFloat = 480
+    static let settingsWidth: CGFloat = 760
     static let settingsHeight: CGFloat = 560
 
     static let pagePadding: CGFloat = 20

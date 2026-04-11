@@ -57,6 +57,35 @@ public struct CodexAccount: Sendable, Equatable, Codable {
     }
 }
 
+public struct CodexCredits: Sendable, Equatable, Codable {
+    public let hasCredits: Bool
+    public let unlimited: Bool
+    public let balance: String?
+
+    public init(hasCredits: Bool, unlimited: Bool, balance: String?) {
+        self.hasCredits = hasCredits
+        self.unlimited = unlimited
+        self.balance = balance
+    }
+
+    public var displayText: String {
+        if unlimited {
+            return "Unlimited"
+        }
+        if let balance, balance.isEmpty == false {
+            return balance
+        }
+        if hasCredits {
+            return "Unavailable"
+        }
+        return "None"
+    }
+
+    public var isNegativeBalance: Bool {
+        balance?.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("-") == true
+    }
+}
+
 public enum CodexLimitBucket: String, Sendable, Codable, CaseIterable {
     case codex
     case spark
@@ -88,19 +117,22 @@ public struct CodexLimit: Sendable, Equatable, Codable, Identifiable {
     public let bucket: CodexLimitBucket
     public let primary: CodexQuotaWindow?
     public let secondary: CodexQuotaWindow?
+    public let credits: CodexCredits?
 
     public init(
         id: String,
         rawLimitName: String?,
         bucket: CodexLimitBucket,
         primary: CodexQuotaWindow?,
-        secondary: CodexQuotaWindow?
+        secondary: CodexQuotaWindow?,
+        credits: CodexCredits? = nil
     ) {
         self.id = id
         self.rawLimitName = rawLimitName
         self.bucket = bucket
         self.primary = primary
         self.secondary = secondary
+        self.credits = credits
     }
 
     public var displayName: String {

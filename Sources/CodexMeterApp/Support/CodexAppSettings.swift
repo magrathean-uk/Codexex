@@ -4,6 +4,8 @@ import CodexMeterCore
 
 enum CodexAppSettings {
     private enum Key {
+        static let hasCompletedOnboarding = "codexex.hasCompletedOnboarding"
+        static let previewModeEnabled = "codexex.previewModeEnabled"
         static let autoRefreshEnabled = "codexex.autoRefreshEnabled"
         static let refreshIntervalSeconds = "codexex.refreshIntervalSeconds"
         static let launchAtLoginEnabled = "codexex.launchAtLoginEnabled"
@@ -13,6 +15,23 @@ enum CodexAppSettings {
     }
 
     static let refreshIntervals: [Int] = [300, 600, 3600]
+
+    static var hasCompletedOnboarding: Bool {
+        get { UserDefaults.standard.bool(forKey: Key.hasCompletedOnboarding) }
+        set { UserDefaults.standard.set(newValue, forKey: Key.hasCompletedOnboarding) }
+    }
+
+    static var previewModeEnabled: Bool {
+        get {
+            if UserDefaults.standard.object(forKey: Key.previewModeEnabled) == nil {
+                return false
+            }
+            return UserDefaults.standard.bool(forKey: Key.previewModeEnabled)
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Key.previewModeEnabled)
+        }
+    }
 
     static var autoRefreshEnabled: Bool {
         get {
