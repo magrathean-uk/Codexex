@@ -1,0 +1,26 @@
+[package]
+name = "codexex-helper"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1"
+codex-backend-client = { git = "https://github.com/openai/codex", rev = "be13f03c396b54b85b858bd023bf930b06164e33", package = "codex-backend-client" }
+codex-login = { git = "https://github.com/openai/codex", rev = "be13f03c396b54b85b858bd023bf930b06164e33", package = "codex-login" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tokio = { version = "1", features = ["rt", "time"] }
+uuid = { version = "1", features = ["v4"] }
+
+[dev-dependencies]
+base64 = "0.22"
+pretty_assertions = "1"
+serial_test = "3"
+tempfile = "3"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+wiremock = "0.6"
+
+[patch.crates-io]
+tokio-tungstenite = { git = "https://github.com/openai-oss-forks/tokio-tungstenite", rev = "132f5b39c862e3a970f731d709608b3e6276d5f6" }
+tungstenite = { git = "https://github.com/openai-oss-forks/tungstenite-rs", rev = "9200079d3b54a1ff51072e24d81fd354f085156f" }

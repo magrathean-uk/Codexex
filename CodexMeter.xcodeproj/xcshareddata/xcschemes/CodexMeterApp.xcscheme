@@ -35,6 +35,20 @@
                ReferencedContainer = "container:CodexMeter.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "9848F6C94726058FF7AE6F06"
+               BuildableName = "CodexexXPCService.xpc"
+               BlueprintName = "CodexexXPCService"
+               ReferencedContainer = "container:CodexMeter.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction

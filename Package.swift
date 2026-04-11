@@ -16,7 +16,10 @@ let package = Package(
         ),
         .executableTarget(
             name: "CodexMeterApp",
-            dependencies: ["CodexMeterCore"]
+            dependencies: ["CodexMeterCore"],
+            resources: [
+                .process("Assets.xcassets")
+            ]
         ),
         .testTarget(
             name: "CodexMeterCoreTests",

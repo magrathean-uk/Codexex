@@ -9,6 +9,8 @@ settings:
   base:
     SWIFT_VERSION: 6.0
     SUPPORTS_MACCATALYST: NO
+    MARKETING_VERSION: 1.0
+    CURRENT_PROJECT_VERSION: 1
 
 targets:
   CodexMeterCore:
@@ -29,13 +31,55 @@ targets:
       - path: Sources/CodexMeterApp
     dependencies:
       - target: CodexMeterCore
+      - target: CodexexXPCService
     settings:
       base:
         PRODUCT_NAME: Codexex
         PRODUCT_BUNDLE_IDENTIFIER: com.bolyki.Codexex
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_ENTITLEMENTS: AppStore/Codexex.entitlements
+        ENABLE_APP_SANDBOX: YES
         INFOPLIST_KEY_LSUIElement: YES
         INFOPLIST_KEY_CFBundleDisplayName: Codexex
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+    preBuildScripts:
+      - name: Build Codexex Helper
+        inputFiles:
+          - $(PROJECT_DIR)/Helper/CodexexHelper/Cargo.toml
+          - $(PROJECT_DIR)/Helper/CodexexHelper/Cargo.lock
+          - $(PROJECT_DIR)/Helper/CodexexHelper/src/lib.rs
+          - $(PROJECT_DIR)/Helper/CodexexHelper/src/main.rs
+          - $(PROJECT_DIR)/Helper/CodexexHelper/src/protocol.rs
+        outputFiles:
+          - $(DERIVED_FILE_DIR)/codexex-helper/codexex-helper
+        script: |
+          "$PROJECT_DIR/Scripts/build-codexex-helper.sh"
+    postBuildScripts:
+      - name: Embed Codexex Helper
+        inputFiles:
+          - $(DERIVED_FILE_DIR)/codexex-helper/codexex-helper
+          - $(PROJECT_DIR)/AppStore/CodexexHelper.entitlements
+        outputFiles:
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/codexex-helper
+        script: |
+          "$PROJECT_DIR/Scripts/embed-codexex-helper.sh"
+
+  CodexexXPCService:
+    type: xpc-service
+    platform: macOS
+    sources:
+      - path: Sources/CodexexXPCService
+    dependencies:
+      - target: CodexMeterCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bolyki.Codexex.CodexexXPCService
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Sources/CodexexXPCService/Info.plist
+        CODE_SIGN_ENTITLEMENTS: AppStore/CodexexXPCService.entitlements
+        ENABLE_APP_SANDBOX: YES
 
   CodexMeterCoreTests:
     type: bundle.unit-test
@@ -54,6 +98,7 @@ schemes:
     build:
       targets:
         CodexMeterApp: all
+        CodexexXPCService: all
         CodexMeterCore: all
     test:
       targets:

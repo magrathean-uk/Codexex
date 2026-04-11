@@ -1,10 +1,11 @@
 #if os(macOS)
 import SwiftUI
 import AppKit
-import CodexMeterCore
 import Observation
 
 private let sharedModel = CodexMenuBarModel()
+private let sharedSettingsWindowController = SettingsWindowController(model: sharedModel)
+private var sharedStatusItemController: CodexStatusItemController?
 
 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
     Task { @MainActor in
@@ -14,12 +15,15 @@ DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    override init() {
-        super.init()
-    }
-
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
+        CodexLaunchAtLoginManager.syncStoredState()
+        sharedStatusItemController = CodexStatusItemController(
+            model: sharedModel,
+            openSettings: {
+                sharedSettingsWindowController.showSettingsWindow()
+            }
+        )
     }
 }
 
@@ -27,20 +31,11 @@ struct CodexMeterMenuBarApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {
-        MenuBarExtra {
-            PopupRootView(model: sharedModel)
-        } label: {
-            StatusBarLabel(
-                snapshot: sharedModel.snapshot,
-                isRefreshing: sharedModel.isRefreshing,
-                hasError: sharedModel.lastError != nil
-            )
-        }
-        .menuBarExtraStyle(.window)
-
         Settings {
             SettingsRootView(model: sharedModel)
         }
+        .defaultSize(width: 560, height: GlassTokens.settingsHeight)
+        .windowResizability(.automatic)
     }
 }
 

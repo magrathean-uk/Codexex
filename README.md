@@ -1,87 +1,75 @@
-# CodexMeter
+# Codexex
 
-Pure Swift 6 menu bar app for macOS 26+ that shows **Codex** quota usage only.
+Codexex is a native macOS 26+ menu bar app for watching Codex quota use.
 
-It does **not** monitor Claude or other providers.
-It reuses the existing cached authentication that the official **Codex app / Codex CLI / Codex IDE extension** already use, via the official `codex app-server` JSON-RPC interface.
-No second login flow is built into this app.
+It shows:
+- `5H` and `W` Codex usage in the menu bar
+- detailed Codex and Spark windows in the popup
+- reset times
+- 30-day usage history
+- weekly pace marker and forecast
+- ChatGPT OAuth or API key sign-in
 
-## What it shows
+## Main features
 
-- Codex usage bucket
-- Codex Spark usage bucket when Codex exposes it as a separate rate-limit bucket
-- Reset time for each bucket
-- Relative time until reset
-- Account email / plan when available
-- Last successful refresh time
-- Exact executable path being used
+- Menu bar first. No dock UI.
+- Native Swift 6 app.
+- SwiftUI UI with small AppKit shell for menu bar behavior.
+- Sandboxed app target.
+- Embedded helper for auth and quota reads.
+- Launch at login.
+- Auto refresh with 5 min, 10 min, or 60 min intervals.
+- Optional history chart in popup.
+- Menubar label can show `5H`, `W`, or both.
 
-## Design choices
+## Sign-in
 
-- One account only
-- No browser scraping
-- No cookie theft
-- No webview login
-- No long-lived daemon process
-- Very small steady-state RAM use: each refresh launches `codex app-server`, reads two JSON-RPC methods, then exits
-- Wake-from-sleep refresh to avoid stale quota/reset data
-- Liquid Glass styling for macOS 26+ custom cards
+Codexex supports:
+- `Sign in with ChatGPT`
+- `API key`
 
-## Auth source
-
-`CodexMeter` does **not** read or parse tokens itself.
-Instead it asks the official Codex binary for account and rate-limit state.
-
-That means it can reuse whichever credential store Codex is already using:
-
-- `~/.codex/auth.json`
-- OS credential store / keychain
-- bundled Codex app binary auth state
-- Codex CLI auth state
-
-## Important limitation
-
-There is no documented public source proving that the standalone ChatGPT macOS app exposes a reusable local Codex auth cache to third-party apps.
-So this project supports the **official Codex auth path** only.
-If your ChatGPT account is also the one you use inside Codex, and Codex is already signed in, this app works without another login.
-
-## Binary discovery order
-
-1. `CODEXMETER_CODEX_PATH`
-2. `codex` found on `PATH`
-3. Common manual locations:
-   - `/opt/homebrew/bin/codex`
-   - `/usr/local/bin/codex`
-   - `~/bin/codex`
-   - `~/.local/bin/codex`
-   - `/Applications/Codex.app/Contents/Resources/codex`
-   - `~/Applications/Codex.app/Contents/Resources/codex`
+ChatGPT sign-in uses device code flow:
+1. Open `Settings`
+2. Click `Sign In with ChatGPT`
+3. Copy the code shown in the app
+4. Click `Open Safari`
+5. Finish sign-in in Safari
 
 ## Build
 
 ```bash
-swift build
-```
-
-Generate the Xcode project from `project.yml`:
-
-```bash
+source ../build-env.sh
+swift test
 xcodegen generate
+xcodebuild -project CodexMeter.xcodeproj \
+  -scheme CodexMeterApp \
+  -derivedDataPath "$XCODE_DERIVED_DATA_PATH" \
+  -clonedSourcePackagesDirPath "$SWIFTPM_SHARED_CACHE" build
 ```
 
-On macOS 26+:
+## Project layout
 
-```bash
-swift run CodexMeterApp
-```
+- `Sources/CodexMeterApp/` app UI, menu bar shell, settings, history
+- `Sources/CodexMeterCore/` shared models and reducers
+- `Sources/CodexexXPCService/` XPC service target
+- `Helper/CodexexHelper/` embedded helper
+- `AppStore/` entitlements
+- `Scripts/` helper build and embed scripts
+- `Tests/CodexMeterCoreTests/` unit tests
 
-Open in Xcode if you prefer:
+## App Store notes
 
-```bash
-open CodexMeter.xcodeproj
-```
+Current app shape is App-Store-oriented:
+- App Sandbox enabled
+- utility category set
+- no browser scraping
+- no cookie theft
+- no private APIs
+- helper is bundled inside app
 
-## Notes
+Before App Store submission, do a Release archive and validation pass.
 
-- If you are signed in to Codex with an API key instead of ChatGPT, ChatGPT quota buckets may not exist.
-- If Codex is not installed or not signed in, the app shows a precise error in the popover.
+See:
+- `docs/FEATURES.md`
+- `docs/APP_REVIEW.md`
+- `CHANGELOG.md`

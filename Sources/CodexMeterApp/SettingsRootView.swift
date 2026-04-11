@@ -1,98 +1,276 @@
 #if os(macOS)
-import AppKit
-import CodexMeterCore
+import Foundation
 import SwiftUI
 import Observation
 
 struct SettingsRootView: View {
+    @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
     @Bindable var model: CodexMenuBarModel
-    @State private var autoRefreshEnabled = CodexAppSettings.autoRefreshEnabled
-    @State private var refreshIntervalSeconds = CodexAppSettings.refreshIntervalSeconds
+    @State private var apiKey = ""
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            GlassCard {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Refresh")
-                        .font(.headline)
+        GlassEffectContainer(spacing: GlassTokens.sectionSpacing) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: GlassTokens.sectionSpacing) {
+                    accountCard
+                    behaviorCard
+                }
+                .padding(GlassTokens.pagePadding)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .scrollIndicators(.hidden)
+        }
+        .onAppear {
+            model.setReduceMotionEnabled(accessibilityReduceMotion)
+        }
+        .onChange(of: accessibilityReduceMotion) { _, newValue in
+            model.setReduceMotionEnabled(newValue)
+        }
+    }
 
-                    Toggle("Auto refresh", isOn: $autoRefreshEnabled)
+    private var accountCard: some View {
+        GlassCard(style: .primary) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .top, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Account")
+                            .font(.headline)
 
-                    Picker("Interval", selection: $refreshIntervalSeconds) {
-                        Text("30 seconds").tag(30)
-                        Text("1 minute").tag(60)
-                        Text("5 minutes").tag(300)
+                        Text(accountHeadline)
+                            .font(.title3.weight(.semibold))
+
+                        if let detail = accountDetail {
+                            Text(detail)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                     }
-                    .pickerStyle(.segmented)
-                    .disabled(autoRefreshEnabled == false)
 
-                    Text("Menubar data updates from the local Codex CLI.")
+                    Spacer(minLength: 0)
+
+                    accountAction
+                }
+
+                if let code = model.authDeviceCode {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Device code")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+
+                        Text(code)
+                            .textSelection(.enabled)
+                            .font(.system(.title3, design: .monospaced, weight: .semibold))
+
+                        HStack(spacing: 10) {
+                            Button("Open Safari") {
+                                model.openAuthVerificationPage()
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .disabled(model.authVerificationURL == nil)
+
+                            Button("Copy Code") {
+                                NSPasteboard.general.clearContents()
+                                NSPasteboard.general.setString(code, forType: .string)
+                            }
+                            .buttonStyle(.bordered)
+                        }
+                        .padding(.top, 4)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .glassEffect(
+                        GlassSurfaceStyle.inset.glass,
+                        in: .rect(cornerRadius: GlassSurfaceStyle.inset.radius)
+                    )
+                    .contentTransition(accessibilityReduceMotion ? .identity : .opacity)
+                    .transition(accessibilityReduceMotion ? .identity : .opacity)
+                }
+
+                if model.isSignedIn == false && model.authDeviceCode == nil {
+                    signedOutAuthSection
+                }
+            }
+        }
+        .animation(accessibilityReduceMotion ? nil : .easeInOut(duration: 0.18), value: model.authDeviceCode)
+        .animation(accessibilityReduceMotion ? nil : .easeInOut(duration: 0.18), value: model.isSigningIn)
+        .animation(accessibilityReduceMotion ? nil : .easeInOut(duration: 0.18), value: model.isSignedIn)
+    }
+
+    private var behaviorCard: some View {
+        GlassCard(style: .secondary) {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Behavior")
+                    .font(.headline)
+
+                Toggle("Launch at login", isOn: Binding(
+                    get: { model.launchAtLoginEnabled },
+                    set: { model.setLaunchAtLoginEnabled($0) }
+                ))
+
+                if let launchAtLoginStatusMessage = model.launchAtLoginStatusMessage {
+                    Text(launchAtLoginStatusMessage)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Toggle("Auto-refresh", isOn: Binding(
+                    get: { model.autoRefreshEnabled },
+                    set: { model.setAutoRefreshEnabled($0) }
+                ))
+
+                Toggle("Show history", isOn: Binding(
+                    get: { model.showHistoryEnabled },
+                    set: { model.setShowHistoryEnabled($0) }
+                ))
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Menubar")
+                        .font(.subheadline.weight(.medium))
+
+                    Toggle("Show 5H", isOn: Binding(
+                        get: { model.showFiveHourInMenubar },
+                        set: { model.setShowFiveHourInMenubar($0) }
+                    ))
+
+                    Toggle("Show W", isOn: Binding(
+                        get: { model.showWeeklyInMenubar },
+                        set: { model.setShowWeeklyInMenubar($0) }
+                    ))
+                }
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Refresh every")
+                        .font(.subheadline.weight(.medium))
+
+                    Picker("Refresh every", selection: Binding(
+                        get: { model.refreshIntervalSeconds },
+                        set: { model.setRefreshIntervalSeconds($0) }
+                    )) {
+                        Text("5 min").tag(300)
+                        Text("10 min").tag(600)
+                        Text("60 min").tag(3600)
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.segmented)
+                    .disabled(model.autoRefreshEnabled == false)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    @ViewBuilder
+    private var accountAction: some View {
+        if model.isSignedIn {
+            Button("Sign Out") {
+                model.signOut()
+            }
+            .buttonStyle(.bordered)
+        } else if model.authDeviceCode != nil {
+            Button("Clear Code") {
+                model.clearAuthCode()
+            }
+            .buttonStyle(.bordered)
+        } else {
+            Button("Sign In with ChatGPT") {
+                model.startChatGPTSignIn()
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(model.isSigningIn || model.hasResolvedAuthState == false && model.isRefreshing)
+        }
+    }
+
+    private var signedOutAuthSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Sign in with ChatGPT to load quota.")
+                .font(.subheadline)
+
+            Divider()
+
+            Text("API key")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.secondary)
+
+            SecureField("Paste API key", text: $apiKey)
+                .textFieldStyle(.roundedBorder)
+                .disabled(model.isSigningIn)
+
+            HStack(spacing: 12) {
+                Button("Save API Key") {
+                    saveAPIKey()
+                }
+                .buttonStyle(.bordered)
+                .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.isSigningIn)
+
+                if model.hasStoredAPIKey {
+                    Button("Remove API Key") {
+                        model.removeAPIKey()
+                    }
+                    .buttonStyle(.bordered)
+
+                    Text("Stored in Keychain.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
             }
-
-            GlassCard {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Diagnostics")
-                        .font(.headline)
-
-                    if let snapshot = model.snapshot {
-                        HStack(spacing: 8) {
-                            pill("Binary", value: URL(fileURLWithPath: snapshot.executablePath).lastPathComponent)
-                            pill("Updated", value: CodexFormatting.absoluteResetText(model.lastUpdatedAt))
-                        }
-                    }
-
-                    Text(model.diagnosticsText)
-                        .font(.footnote.monospaced())
-                        .foregroundStyle(.secondary)
-                        .textSelection(.enabled)
-
-                    HStack(spacing: 8) {
-                        Button("Refresh now") {
-                            Task { @MainActor in
-                                await model.refreshNow()
-                            }
-                        }
-                        .buttonStyle(.bordered)
-
-                        Button("Copy diagnostics") {
-                            NSPasteboard.general.clearContents()
-                            NSPasteboard.general.setString(model.diagnosticsText, forType: .string)
-                        }
-                        .buttonStyle(.bordered)
-                    }
-                }
-            }
-        }
-        .padding(16)
-        .frame(width: 420, height: 320)
-        .onAppear {
-            autoRefreshEnabled = CodexAppSettings.autoRefreshEnabled
-            refreshIntervalSeconds = CodexAppSettings.refreshIntervalSeconds
-        }
-        .onChange(of: autoRefreshEnabled) { _, newValue in
-            CodexAppSettings.autoRefreshEnabled = newValue
-        }
-        .onChange(of: refreshIntervalSeconds) { _, newValue in
-            CodexAppSettings.refreshIntervalSeconds = newValue
         }
     }
 
-    private func pill(_ title: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title.uppercased())
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-            Text(value)
-                .font(.caption.weight(.medium))
-                .lineLimit(1)
+    private var accountHeadline: String {
+        if model.isSigningIn {
+            return "Signing in"
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .glassEffect(.regular, in: .capsule)
+        if model.authDeviceCode != nil {
+            return "Open Safari"
+        }
+        if let snapshot = model.snapshot,
+           let email = snapshot.account.email,
+           email.isEmpty == false {
+            return email
+        }
+        if model.isSignedIn, model.hasStoredAPIKey {
+            return "API key"
+        }
+        if model.isSignedIn {
+            return "Signed in"
+        }
+        if model.hasResolvedAuthState {
+            return "Not signed in"
+        }
+        return "Checking"
+    }
+
+    private var accountDetail: String? {
+        if model.isSigningIn {
+            return "Use the code in your browser."
+        }
+        if let deviceCode = model.authDeviceCode {
+            return "Use code \(deviceCode), then open Safari. Codexex will finish sign-in automatically."
+        }
+        if let snapshot = model.snapshot {
+            let auth = snapshot.account.authType.lowercased() == "chatgpt" ? "OAuth" : "API key"
+            let plan = snapshot.account.planType?.uppercased()
+            return [plan, auth].compactMap { $0 }.joined(separator: " · ")
+        }
+        if model.hasStoredAPIKey {
+            return "API key · stored in Keychain"
+        }
+        if model.hasResolvedAuthState {
+            return "Sign in to load quota."
+        }
+        return nil
+    }
+
+    private func saveAPIKey() {
+        let trimmed = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.isEmpty == false else { return }
+        model.saveAPIKey(trimmed)
+        apiKey = ""
     }
 }
 #endif

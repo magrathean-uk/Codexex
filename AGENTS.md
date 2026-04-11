@@ -15,10 +15,11 @@ Keep UI code in the app target and parsing or state logic in `CodexMeterCore`.
 
 ## Build, Test, and Development Commands
 
+- `source ../build-env.sh` before `swift build`, `swift test`, or `swift run` so builds use the shared caches.
 - `swift build` builds the package.
 - `swift test` runs the XCTest suite.
 - `xcodegen generate` regenerates `CodexMeter.xcodeproj` from `project.yml`.
-- `xcodebuild -project CodexMeter.xcodeproj -scheme CodexMeterApp build` builds the Xcode project.
+- `xcodebuild -project CodexMeter.xcodeproj -scheme CodexMeterApp -derivedDataPath "$XCODE_DERIVED_DATA_PATH" -clonedSourcePackagesDirPath "$SWIFTPM_SHARED_CACHE" build` builds the Xcode project.
 - `swift run CodexMeterApp` launches the app from the command line on macOS.
 - `open CodexMeter.xcodeproj` opens the project in Xcode.
 
