@@ -1,0 +1,32 @@
+{
+  "fill" : {
+    "solid" : "extended-srgb:0.00000,0.53333,1.00000,1.00000"
+  },
+  "groups" : [
+    {
+      "blur-material" : 0.5,
+      "hidden" : false,
+      "layers" : [
+        {
+          "glass" : true,
+          "hidden" : false,
+          "image-name" : "grok-image-a1bec407-3572-4ff6-8b7f-c74785e6d3e4-topaz-wonder-crop.png",
+          "name" : "grok-image-a1bec407-3572-4ff6-8b7f-c74785e6d3e4-topaz-wonder-crop"
+        }
+      ],
+      "lighting" : "individual",
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.5
+      },
+      "specular" : false,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "squares" : "shared"
+  }
+}
