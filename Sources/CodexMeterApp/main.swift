@@ -18,6 +18,9 @@ DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
+        let appIcon = NSWorkspace.shared.icon(forFile: Bundle.main.bundlePath)
+        appIcon.isTemplate = false
+        NSApp.applicationIconImage = appIcon
         CodexLaunchAtLoginManager.syncStoredState()
         sharedStatusItemController = CodexStatusItemController(
             model: sharedModel,

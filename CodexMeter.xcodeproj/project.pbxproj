@@ -23,6 +23,7 @@
 		4DBB1B07B795DDAEED280F65 /* CodexMeterCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6869618B2897346A3AB60D26 /* CodexMeterCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		589F77FEADA1044E87EFEAC6 /* CodexServiceContractsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1861D53A1F57EB01F26800B /* CodexServiceContractsTests.swift */; };
 		60FDC5DB302DDBA630D4C40C /* CodexAppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3341C9D3222116EB47334518 /* CodexAppSettings.swift */; };
+		6256AA0A194ABF81E19D313A /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = AE6B26C897C050086555E22C /* AppIcon.icon */; };
 		647FBBC6090D48536D9B232D /* SettingsAboutCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE190C5B99912EAC0B0887CB /* SettingsAboutCard.swift */; };
 		6BF3CA164FBA64B561253B53 /* CodexUsageHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3209217BB7F873DF4FF8D1AF /* CodexUsageHistoryStore.swift */; };
 		71B3E39977240A141201FC7A /* CodexPreviewData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0F373CE46619902781235BE /* CodexPreviewData.swift */; };
@@ -147,6 +148,7 @@
 		A0F373CE46619902781235BE /* CodexPreviewData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexPreviewData.swift; sourceTree = "<group>"; };
 		A52CF560D83450EF83AB67DA /* CodexUsageHistoryAnalytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexUsageHistoryAnalytics.swift; sourceTree = "<group>"; };
 		A6006DA1C920A31C12C2BB4E /* CodexMeterApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CodexMeterApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AE6B26C897C050086555E22C /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		B1861D53A1F57EB01F26800B /* CodexServiceContractsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexServiceContractsTests.swift; sourceTree = "<group>"; };
 		B56802AB05B67B2A4F883DA3 /* CodexSnapshotParsingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexSnapshotParsingTests.swift; sourceTree = "<group>"; };
 		B735A3B02D954FDEAE629D2C /* CodexexXPCService.xpc */ = {isa = PBXFileReference; explicitFileType = "wrapper.xpc-service"; includeInIndex = 0; path = CodexexXPCService.xpc; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -194,6 +196,7 @@
 		22C2E9B9ABD2A67200EAB7ED /* CodexMeterApp */ = {
 			isa = PBXGroup;
 			children = (
+				AE6B26C897C050086555E22C /* AppIcon.icon */,
 				9AADE08E274111411DA1BFE4 /* Assets.xcassets */,
 				00DEADCC4A6A1910F07EC9CC /* main.swift */,
 				9AD8EDA8621D617420327DBF /* Support */,
@@ -445,6 +448,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6256AA0A194ABF81E19D313A /* AppIcon.icon in Resources */,
 				730F3BE8815401FF450C0155 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

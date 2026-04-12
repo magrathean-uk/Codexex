@@ -1,1 +1,0 @@
-codex,menu bar,quota,usage,chatgpt,oauth,api key,history,macos

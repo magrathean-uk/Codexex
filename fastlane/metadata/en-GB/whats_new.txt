@@ -1,1 +1,0 @@
-Codexex 1.0 launches with Preview Mode for App Review, ChatGPT OAuth sign-in, 30-day usage history, and a compact menu bar meter.
