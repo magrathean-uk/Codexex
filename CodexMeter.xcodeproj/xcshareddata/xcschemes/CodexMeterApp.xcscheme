@@ -79,6 +79,17 @@
                ReferencedContainer = "container:CodexMeter.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "4FE2642647A310D0B7E2A6E6"
+               BuildableName = "CodexMeterAppTests.xctest"
+               BlueprintName = "CodexMeterAppTests"
+               ReferencedContainer = "container:CodexMeter.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>

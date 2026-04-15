@@ -95,6 +95,19 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.magrathean.CodexexApp.CodexMeterCoreTests
         GENERATE_INFOPLIST_FILE: YES
 
+  CodexMeterAppTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests/CodexMeterAppTests
+    dependencies:
+      - target: CodexMeterApp
+      - target: CodexMeterCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.magrathean.CodexexApp.CodexMeterAppTests
+        GENERATE_INFOPLIST_FILE: YES
+
 schemes:
   CodexMeterApp:
     build:
@@ -105,4 +118,5 @@ schemes:
     test:
       targets:
         - CodexMeterCoreTests
+        - CodexMeterAppTests
       gatherCoverageData: true

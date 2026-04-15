@@ -24,6 +24,10 @@ let package = Package(
         .testTarget(
             name: "CodexMeterCoreTests",
             dependencies: ["CodexMeterCore"]
+        ),
+        .testTarget(
+            name: "CodexMeterAppTests",
+            dependencies: ["CodexMeterApp", "CodexMeterCore"]
         )
     ]
 )

@@ -8,6 +8,47 @@ enum CodexUsageHistorySeries {
     case weekly
 }
 
+enum CodexUsageInsightTone: Equatable {
+    case safe
+    case caution
+    case danger
+
+    var color: Color {
+        switch self {
+        case .safe:
+            .green
+        case .caution:
+            .orange
+        case .danger:
+            .red
+        }
+    }
+
+    init(_ tone: CodexUsageForecast.Tone) {
+        switch tone {
+        case .safe:
+            self = .safe
+        case .caution:
+            self = .caution
+        case .danger:
+            self = .danger
+        }
+    }
+}
+
+struct CodexUsageInsightRow: Equatable {
+    let title: String
+    let message: String
+    let detail: String?
+    let tone: CodexUsageInsightTone
+}
+
+struct CodexUsageInsights: Equatable {
+    let weeklyPace: CodexUsageForecast
+    let fiveHourPressure: CodexUsageInsightRow
+    let recentPeaks: CodexUsageInsightRow
+}
+
 struct CodexUsageHistoryPoint: Identifiable, Equatable {
     let id: String
     let date: Date
@@ -41,6 +82,25 @@ struct CodexUsageForecast: Equatable {
 }
 
 enum CodexUsageHistoryAnalytics {
+    static func insights(
+        snapshot: CodexSnapshot?,
+        samples: [CodexUsageHistorySample],
+        now: Date = Date()
+    ) -> CodexUsageInsights? {
+        guard let codexLimit = snapshot?.limits.first(where: { $0.bucket == .codex }) else {
+            return nil
+        }
+
+        return CodexUsageInsights(
+            weeklyPace: forecast(from: samples, series: .weekly),
+            fiveHourPressure: self.fiveHourPressure(
+                from: codexLimit.fiveHourWindow,
+                now: now
+            ),
+            recentPeaks: self.recentPeaks(from: samples, now: now)
+        )
+    }
+
     static func points(
         from samples: [CodexUsageHistorySample],
         series: CodexUsageHistorySeries,
@@ -164,6 +224,94 @@ enum CodexUsageHistoryAnalytics {
         }
         guard denominator > 0 else { return 0 }
         return numerator / denominator
+    }
+
+    private static func fiveHourPressure(
+        from window: CodexQuotaWindow?,
+        now: Date
+    ) -> CodexUsageInsightRow {
+        guard let window else {
+            return CodexUsageInsightRow(
+                title: "5-hour pressure",
+                message: "Building history",
+                detail: nil,
+                tone: .caution
+            )
+        }
+
+        let usedPercent = window.clampedUsedPercent
+        guard let resetAt = window.resetsAt else {
+            return CodexUsageInsightRow(
+                title: "5-hour pressure",
+                message: "\(Int(usedPercent.rounded()))% used",
+                detail: CodexFormatting.relativeResetText(now: now, resetAt: nil),
+                tone: .caution
+            )
+        }
+
+        let secondsToReset = Int(resetAt.timeIntervalSince(now).rounded())
+        let tone: CodexUsageInsightTone
+
+        if secondsToReset <= 0 {
+            tone = .caution
+        } else if (usedPercent >= 90 && secondsToReset > 30 * 60) || (usedPercent >= 80 && secondsToReset > 120 * 60) {
+            tone = .danger
+        } else if (usedPercent >= 70 && secondsToReset > 30 * 60) || (usedPercent >= 50 && secondsToReset > 120 * 60) {
+            tone = .caution
+        } else {
+            tone = .safe
+        }
+
+        return CodexUsageInsightRow(
+            title: "5-hour pressure",
+            message: "\(Int(usedPercent.rounded()))% used",
+            detail: CodexFormatting.relativeResetText(now: now, resetAt: resetAt),
+            tone: tone
+        )
+    }
+
+    private static func recentPeaks(
+        from samples: [CodexUsageHistorySample],
+        now: Date
+    ) -> CodexUsageInsightRow {
+        let fiveHourCutoff = now.addingTimeInterval(-(24 * 60 * 60))
+        let weeklyCutoff = now.addingTimeInterval(-(7 * 24 * 60 * 60))
+
+        let fiveHourPeak = samples
+            .filter { $0.capturedAt >= fiveHourCutoff }
+            .compactMap(\.fiveHour?.usedPercent)
+            .max()
+
+        let weeklyPeak = samples
+            .filter { $0.capturedAt >= weeklyCutoff }
+            .compactMap(\.weekly?.usedPercent)
+            .max()
+
+        guard let fiveHourPeak, let weeklyPeak else {
+            return CodexUsageInsightRow(
+                title: "Recent peaks",
+                message: "Building history",
+                detail: nil,
+                tone: .caution
+            )
+        }
+
+        let maxPeak = max(fiveHourPeak, weeklyPeak)
+        let tone: CodexUsageInsightTone
+        if maxPeak >= 90 {
+            tone = .danger
+        } else if maxPeak >= 70 {
+            tone = .caution
+        } else {
+            tone = .safe
+        }
+
+        return CodexUsageInsightRow(
+            title: "Recent peaks",
+            message: "5H \(Int(fiveHourPeak.rounded()))% · W \(Int(weeklyPeak.rounded()))%",
+            detail: nil,
+            tone: tone
+        )
     }
 }
 #endif

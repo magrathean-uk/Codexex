@@ -17,7 +17,9 @@ final class CodexMenuBarModel {
         }
     }
 
-    private(set) var snapshot: CodexSnapshot?
+    private(set) var snapshot: CodexSnapshot? {
+        didSet { refreshUsageInsights() }
+    }
     private(set) var isRefreshing = false
     private(set) var lastError: String?
     private(set) var lastUpdatedAt: Date?
@@ -33,11 +35,17 @@ final class CodexMenuBarModel {
     private(set) var launchAtLoginEnabled = CodexAppSettings.launchAtLoginEnabled
     private(set) var launchAtLoginStatusMessage: String?
     private(set) var showHistoryEnabled = CodexAppSettings.showHistoryEnabled
+    private(set) var showHistoryChartEnabled = CodexAppSettings.showHistoryChartEnabled
+    private(set) var showInsightsEnabled = CodexAppSettings.showInsightsEnabled
+    private(set) var showSparkEnabled = CodexAppSettings.showSparkEnabled
     private(set) var showFiveHourInMenubar = CodexAppSettings.showFiveHourInMenubar
     private(set) var showWeeklyInMenubar = CodexAppSettings.showWeeklyInMenubar
     private(set) var hasCompletedOnboarding = CodexAppSettings.hasCompletedOnboarding
     private(set) var previewModeEnabled = CodexAppSettings.previewModeEnabled
-    private(set) var usageHistory: [CodexUsageHistorySample] = []
+    private(set) var usageHistory: [CodexUsageHistorySample] = [] {
+        didSet { refreshUsageInsights() }
+    }
+    private(set) var usageInsights: CodexUsageInsights?
     private(set) var reduceMotionEnabled = false
 
     private let service: any CodexServiceClient
@@ -104,7 +112,7 @@ final class CodexMenuBarModel {
         defer { isRefreshing = false }
 
         do {
-            var response = try await service.fetchSnapshotResponse()
+            let response = try await service.fetchSnapshotResponse()
             guard generation == stateGeneration else { return }
 
             if let result = response.snapshot {
@@ -275,6 +283,21 @@ final class CodexMenuBarModel {
         CodexAppSettings.showHistoryEnabled = enabled
     }
 
+    func setShowInsightsEnabled(_ enabled: Bool) {
+        showInsightsEnabled = enabled
+        CodexAppSettings.showInsightsEnabled = enabled
+    }
+
+    func setShowHistoryChartEnabled(_ enabled: Bool) {
+        showHistoryChartEnabled = enabled
+        CodexAppSettings.showHistoryChartEnabled = enabled
+    }
+
+    func setShowSparkEnabled(_ enabled: Bool) {
+        showSparkEnabled = enabled
+        CodexAppSettings.showSparkEnabled = enabled
+    }
+
     func setShowFiveHourInMenubar(_ enabled: Bool) {
         showFiveHourInMenubar = enabled
         CodexAppSettings.showFiveHourInMenubar = enabled
@@ -387,6 +410,14 @@ final class CodexMenuBarModel {
 
     private func invalidateRefreshResults() {
         stateGeneration += 1
+    }
+
+    private func refreshUsageInsights() {
+        usageInsights = CodexUsageHistoryAnalytics.insights(
+            snapshot: snapshot,
+            samples: usageHistory,
+            now: snapshot?.capturedAt ?? lastUpdatedAt ?? Date()
+        )
     }
 
     private func applyPreviewData(now: Date) {

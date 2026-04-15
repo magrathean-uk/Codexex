@@ -10,6 +10,9 @@ enum CodexAppSettings {
         static let refreshIntervalSeconds = "codexex.refreshIntervalSeconds"
         static let launchAtLoginEnabled = "codexex.launchAtLoginEnabled"
         static let showHistoryEnabled = "codexex.showHistoryEnabled"
+        static let showHistoryChartEnabled = "codexex.showHistoryChartEnabled"
+        static let showInsightsEnabled = "codexex.showInsightsEnabled"
+        static let showSparkEnabled = "codexex.showSparkEnabled"
         static let showFiveHourInMenubar = "codexex.showFiveHourInMenubar"
         static let showWeeklyInMenubar = "codexex.showWeeklyInMenubar"
     }
@@ -85,6 +88,42 @@ enum CodexAppSettings {
         }
         set {
             UserDefaults.standard.set(newValue, forKey: Key.showHistoryEnabled)
+        }
+    }
+
+    static var showInsightsEnabled: Bool {
+        get {
+            if UserDefaults.standard.object(forKey: Key.showInsightsEnabled) == nil {
+                return true
+            }
+            return UserDefaults.standard.bool(forKey: Key.showInsightsEnabled)
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Key.showInsightsEnabled)
+        }
+    }
+
+    static var showHistoryChartEnabled: Bool {
+        get {
+            if UserDefaults.standard.object(forKey: Key.showHistoryChartEnabled) == nil {
+                return true
+            }
+            return UserDefaults.standard.bool(forKey: Key.showHistoryChartEnabled)
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Key.showHistoryChartEnabled)
+        }
+    }
+
+    static var showSparkEnabled: Bool {
+        get {
+            if UserDefaults.standard.object(forKey: Key.showSparkEnabled) == nil {
+                return true
+            }
+            return UserDefaults.standard.bool(forKey: Key.showSparkEnabled)
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Key.showSparkEnabled)
         }
     }
 
