@@ -37,7 +37,10 @@ struct SettingsRootView: View {
             }
             .frame(maxWidth: 372, alignment: .topLeading)
 
-            SettingsAboutCard()
+            VStack(alignment: .leading, spacing: GlassTokens.sectionSpacing) {
+                displayCard
+                SettingsAboutCard()
+            }
                 .frame(maxWidth: .infinity, alignment: .topLeading)
         }
     }
@@ -46,6 +49,7 @@ struct SettingsRootView: View {
         VStack(alignment: .leading, spacing: GlassTokens.sectionSpacing) {
             accountCard
             behaviorCard
+            displayCard
             SettingsAboutCard()
         }
     }
@@ -75,7 +79,7 @@ struct SettingsRootView: View {
                 }
 
                 HStack(spacing: 12) {
-                    Button(model.previewModeEnabled ? "Leave Preview Mode" : "Preview Mode") {
+                    Button(model.previewModeEnabled ? "Leave Preview" : "Use Sample Data") {
                         if model.previewModeEnabled {
                             model.disablePreviewMode()
                         } else {
@@ -155,26 +159,6 @@ struct SettingsRootView: View {
                     set: { model.setAutoRefreshEnabled($0) }
                 ))
 
-                Toggle("Show history", isOn: Binding(
-                    get: { model.showHistoryEnabled },
-                    set: { model.setShowHistoryEnabled($0) }
-                ))
-
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Menubar")
-                        .font(.subheadline.weight(.medium))
-
-                    Toggle("Show 5H", isOn: Binding(
-                        get: { model.showFiveHourInMenubar },
-                        set: { model.setShowFiveHourInMenubar($0) }
-                    ))
-
-                    Toggle("Show W", isOn: Binding(
-                        get: { model.showWeeklyInMenubar },
-                        set: { model.setShowWeeklyInMenubar($0) }
-                    ))
-                }
-
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Refresh every")
                         .font(.subheadline.weight(.medium))
@@ -191,10 +175,76 @@ struct SettingsRootView: View {
                     .pickerStyle(.segmented)
                     .disabled(model.autoRefreshEnabled == false)
                 }
+
+                Button {
+                    Task { await model.refreshNow() }
+                } label: {
+                    Label(model.isRefreshing ? "Refreshing" : "Refresh Now", systemImage: "arrow.clockwise")
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(model.isRefreshing)
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private var displayCard: some View {
+        GlassCard(style: .secondary) {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Display")
+                    .font(.headline)
+
+                settingsGroup(title: "Popup") {
+                    Toggle("Show Codex Spark", isOn: Binding(
+                        get: { model.showSparkEnabled },
+                        set: { model.setShowSparkEnabled($0) }
+                    ))
+
+                    Toggle("Show insights", isOn: Binding(
+                        get: { model.showInsightsEnabled },
+                        set: { model.setShowInsightsEnabled($0) }
+                    ))
+
+                    Toggle("Show history", isOn: Binding(
+                        get: { model.showHistoryEnabled },
+                        set: { model.setShowHistoryEnabled($0) }
+                    ))
+
+                    Toggle("Show history chart", isOn: Binding(
+                        get: { model.showHistoryChartEnabled },
+                        set: { model.setShowHistoryChartEnabled($0) }
+                    ))
+                    .disabled(model.showHistoryEnabled == false)
+                }
+
+                settingsGroup(title: "Menu bar") {
+                    Toggle("Show 5H", isOn: Binding(
+                        get: { model.showFiveHourInMenubar },
+                        set: { model.setShowFiveHourInMenubar($0) }
+                    ))
+
+                    Toggle("Show W", isOn: Binding(
+                        get: { model.showWeeklyInMenubar },
+                        set: { model.setShowWeeklyInMenubar($0) }
+                    ))
+                }
+            }
+        }
+    }
+
+    private func settingsGroup<Content: View>(
+        title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        GlassCard(style: .inset) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+
+                content()
+            }
+        }
     }
 
     @ViewBuilder
