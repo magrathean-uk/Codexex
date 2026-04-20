@@ -1,7 +1,7 @@
 #if os(macOS)
 import AppKit
-import SwiftUI
 import Observation
+import SwiftUI
 
 struct OnboardingRootView: View {
     @Bindable var model: CodexMenuBarModel
@@ -81,11 +81,23 @@ struct OnboardingRootView: View {
                         model.openAuthVerificationPage()
                     }
                     .buttonStyle(.borderedProminent)
+                    .keyboardShortcut(.defaultAction)
                     .disabled(model.authVerificationURL == nil)
 
                     Button("Copy Code") {
                         NSPasteboard.general.clearContents()
                         NSPasteboard.general.setString(code, forType: .string)
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button("Check Status") {
+                        model.checkPendingChatGPTSignIn()
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(model.canCheckPendingChatGPTSignIn == false)
+
+                    Button("Cancel") {
+                        model.cancelPendingChatGPTSignIn()
                     }
                     .buttonStyle(.bordered)
                 }
@@ -98,7 +110,7 @@ struct OnboardingRootView: View {
             if model.isSigningIn {
                 return "Waiting for approval from Safari."
             }
-            return "Copy the code, open Safari, and approve sign-in there."
+            return "Copy the code, approve sign-in in Safari, then check status here."
         }
         if model.lastError != nil {
             return model.lastError

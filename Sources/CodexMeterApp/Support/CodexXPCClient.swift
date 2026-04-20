@@ -1,21 +1,17 @@
+#if os(macOS)
 import Foundation
 import CodexMeterCore
-import OSLog
 
 protocol CodexServiceClient: Sendable {
     func fetchSnapshotResponse() async throws -> CodexServiceSnapshotResponse
     func beginChatGPTSignIn() async throws -> CodexDeviceAuthStart
-    func completeChatGPTSignIn(flowID: String) async throws
+    func completeChatGPTSignIn(flowID: String) async throws -> CodexDeviceAuthPollResult
     func signOut() async throws
+    func cancelPendingOperations()
 }
 
-private struct HelperEnvelope: Decodable {
-    let type: String
-    let payloadJson: String?
-    let message: String?
-    let flowId: String?
-    let verificationUri: URL?
-    let userCode: String?
+extension CodexServiceClient {
+    func cancelPendingOperations() {}
 }
 
 final class CodexXPCClient: CodexServiceClient, @unchecked Sendable {
@@ -23,102 +19,69 @@ final class CodexXPCClient: CodexServiceClient, @unchecked Sendable {
 
     func fetchSnapshotResponse() async throws -> CodexServiceSnapshotResponse {
         CodexLog.helper.log("request fetchSnapshot")
-        let envelope = try await send(method: "fetchSnapshot")
-        guard envelope.type == "snapshot", let payload = envelope.payloadJson else {
-            CodexLog.helper.error("bad snapshot envelope type=\(envelope.type, privacy: .public)")
-            throw Self.helperError("Helper returned an unexpected snapshot response.")
-        }
+        let envelope = try await send(CodexHelperRequest(method: .fetchSnapshot))
+        let response = try envelope.decodedSnapshotResponse()
         CodexLog.helper.log("response fetchSnapshot ok")
-        return try Self.decoder.decode(CodexServiceSnapshotResponse.self, from: Data(payload.utf8))
+        return response
     }
 
     func beginChatGPTSignIn() async throws -> CodexDeviceAuthStart {
         CodexLog.auth.log("request beginDeviceAuth")
-        let envelope = try await send(method: "beginDeviceAuth")
-        guard
-            envelope.type == "deviceAuthStarted",
-            let flowID = envelope.flowId,
-            let verificationURL = envelope.verificationUri,
-            let userCode = envelope.userCode
-        else {
-            CodexLog.auth.error("bad beginDeviceAuth envelope type=\(envelope.type, privacy: .public)")
-            throw Self.helperError("Helper returned an unexpected sign-in response.")
-        }
-
-        CodexLog.auth.log("response beginDeviceAuth ok flow=\(flowID, privacy: .private(mask: .hash))")
-
-        return CodexDeviceAuthStart(
-            flowID: flowID,
-            verificationURL: verificationURL,
-            userCode: userCode
-        )
+        let envelope = try await send(CodexHelperRequest(method: .beginDeviceAuth))
+        let auth = try envelope.decodedDeviceAuthStart()
+        CodexLog.auth.log("response beginDeviceAuth ok flow=\(auth.flowID, privacy: .private(mask: .hash))")
+        return auth
     }
 
-    func completeChatGPTSignIn(flowID: String) async throws {
+    func completeChatGPTSignIn(flowID: String) async throws -> CodexDeviceAuthPollResult {
         CodexLog.auth.log("request pollDeviceAuth flow=\(flowID, privacy: .private(mask: .hash))")
-        let envelope = try await send(method: "pollDeviceAuth", flowID: flowID)
-        guard envelope.type == "signedIn" else {
-            CodexLog.auth.error("pollDeviceAuth failed type=\(envelope.type, privacy: .public)")
-            throw Self.helperError("Helper did not confirm sign-in.")
-        }
-        CodexLog.auth.log("response pollDeviceAuth signedIn")
+        let envelope = try await send(CodexHelperRequest(method: .pollDeviceAuth, flowID: flowID))
+        let result = try envelope.decodedDeviceAuthPollResult()
+        CodexLog.auth.log("response pollDeviceAuth status=\(result.status.rawValue, privacy: .public)")
+        return result
     }
 
     func signOut() async throws {
         CodexLog.auth.log("request signOut")
-        let envelope = try await send(method: "signOut")
-        guard envelope.type == "signedOut" else {
-            CodexLog.auth.error("bad signOut envelope type=\(envelope.type, privacy: .public)")
-            throw Self.helperError("Helper did not confirm sign-out.")
-        }
+        let envelope = try await send(CodexHelperRequest(method: .signOut))
+        try envelope.requireResponse(.signedOut)
         CodexLog.auth.log("response signOut signedOut")
     }
 
-    private func send(method: String, flowID: String? = nil) async throws -> HelperEnvelope {
-        let line = try Self.requestLine(method: method, flowID: flowID)
+    func cancelPendingOperations() {
+        CodexLog.helper.log("reset helper transport")
+        transport.reset()
+    }
+
+    private func send(_ request: CodexHelperRequest) async throws -> CodexHelperResponseEnvelope {
+        let line = try Self.requestLine(for: request)
         let response = try await transport.send(line)
-        let envelope = try Self.decoder.decode(HelperEnvelope.self, from: Data(response.utf8))
-        if envelope.type == "error" {
-            CodexLog.helper.error("helper error method=\(method, privacy: .public) message=\(envelope.message ?? "unknown", privacy: .public)")
-            throw Self.helperError(envelope.message ?? "Helper returned an unknown error.")
+        let envelope = try Self.decoder.decode(CodexHelperResponseEnvelope.self, from: Data(response.utf8))
+        if envelope.type == .error {
+            CodexLog.helper.error(
+                "helper error method=\(request.method.rawValue, privacy: .public) message=\(envelope.message ?? "unknown", privacy: .public)"
+            )
         }
         return envelope
     }
 
-    private static func requestLine(method: String, flowID: String?) throws -> String {
-        var object: [String: String] = ["method": method]
-        if let flowID {
-            object["flow_id"] = flowID
-        }
-        let data = try JSONSerialization.data(withJSONObject: object, options: [])
+    private static func requestLine(for request: CodexHelperRequest) throws -> String {
+        let data = try JSONEncoder().encode(request)
         return String(decoding: data, as: UTF8.self)
     }
 
-    private static let decoder: JSONDecoder = {
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .secondsSince1970
-        return decoder
-    }()
-
-    private static func helperError(_ message: String) -> NSError {
-        NSError(
-            domain: "CodexHelperClient",
-            code: 1,
-            userInfo: [NSLocalizedDescriptionKey: message]
-        )
-    }
+    private static let decoder = JSONDecoder()
 }
 
 private final class CodexEmbeddedHelperTransport: @unchecked Sendable {
     private let queue = DispatchQueue(label: "Codexex.helper.transport")
+    private let stateLock = NSLock()
     private var process: Process?
     private var stdinHandle: FileHandle?
     private var stdoutHandle: FileHandle?
 
     deinit {
-        queue.sync {
-            shutdownLocked()
-        }
+        shutdownNow()
     }
 
     func send(_ line: String) async throws -> String {
@@ -133,29 +96,44 @@ private final class CodexEmbeddedHelperTransport: @unchecked Sendable {
         }
     }
 
+    func reset() {
+        shutdownNow()
+    }
+
     private func sendLocked(_ line: String) throws -> String {
         try ensureStartedLocked()
-
-        guard let stdinHandle, let stdoutHandle else {
-            throw helperError("Helper process handles are unavailable.")
-        }
+        let handles = try currentHandles()
 
         do {
-            try stdinHandle.write(contentsOf: Data((line + "\n").utf8))
+            try handles.stdin.write(contentsOf: Data((line + "\n").utf8))
         } catch {
             CodexLog.helper.error("write to helper failed")
-            shutdownLocked()
+            shutdownNow()
             throw error
         }
 
         var buffer = Data()
         while true {
-            guard let chunk = try stdoutHandle.read(upToCount: 1), chunk.isEmpty == false else {
+            let chunk: Data
+            do {
+                guard let data = try handles.stdout.read(upToCount: 1) else {
+                    shutdownNow()
+                    throw helperError("Helper process closed unexpectedly.")
+                }
+                chunk = data
+            } catch {
+                shutdownNow()
+                throw error
+            }
+
+            if chunk.isEmpty {
                 CodexLog.helper.error("helper closed unexpectedly")
-                shutdownLocked()
+                shutdownNow()
                 throw helperError("Helper process closed unexpectedly.")
             }
-            if chunk.first == 0x0A { break }
+            if chunk.first == 0x0A {
+                break
+            }
             buffer.append(chunk)
         }
 
@@ -163,11 +141,11 @@ private final class CodexEmbeddedHelperTransport: @unchecked Sendable {
     }
 
     private func ensureStartedLocked() throws {
-        if let process, process.isRunning {
+        if isRunning {
             return
         }
 
-        shutdownLocked()
+        shutdownNow()
 
         let helperURL = Bundle.main.bundleURL.appending(path: "Contents/Helpers/codexex-helper")
         guard FileManager.default.isExecutableFile(atPath: helperURL.path()) else {
@@ -187,23 +165,47 @@ private final class CodexEmbeddedHelperTransport: @unchecked Sendable {
         try process.run()
         CodexLog.helper.log("helper started pid=\(process.processIdentifier, privacy: .public)")
 
+        stateLock.lock()
         self.process = process
         stdinHandle = stdin.fileHandleForWriting
         stdoutHandle = stdout.fileHandleForReading
+        stateLock.unlock()
     }
 
-    private func shutdownLocked() {
+    private var isRunning: Bool {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return process?.isRunning == true
+    }
+
+    private func currentHandles() throws -> (stdin: FileHandle, stdout: FileHandle) {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        guard let stdinHandle, let stdoutHandle else {
+            throw helperError("Helper process handles are unavailable.")
+        }
+        return (stdinHandle, stdoutHandle)
+    }
+
+    private func shutdownNow() {
+        stateLock.lock()
+        let process = self.process
+        let stdinHandle = self.stdinHandle
+        let stdoutHandle = self.stdoutHandle
+        self.process = nil
+        self.stdinHandle = nil
+        self.stdoutHandle = nil
+        stateLock.unlock()
+
         if let process, process.isRunning {
             CodexLog.helper.log("helper stopping pid=\(process.processIdentifier, privacy: .public)")
         }
+
         stdinHandle?.closeFile()
         stdoutHandle?.closeFile()
         if let process, process.isRunning {
             process.terminate()
         }
-        process = nil
-        stdinHandle = nil
-        stdoutHandle = nil
     }
 
     private func helperError(_ message: String) -> NSError {
@@ -214,3 +216,4 @@ private final class CodexEmbeddedHelperTransport: @unchecked Sendable {
         )
     }
 }
+#endif

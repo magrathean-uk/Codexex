@@ -4,7 +4,7 @@ public enum CodexAuthMode: String, Codable, Sendable {
     case chatGPT
 }
 
-public struct CodexServiceSnapshotResponse: Codable, Sendable {
+public struct CodexServiceSnapshotResponse: Codable, Sendable, Equatable {
     public let authMode: CodexAuthMode?
     public let snapshot: CodexSnapshot?
     public let errorMessage: String?
@@ -16,7 +16,7 @@ public struct CodexServiceSnapshotResponse: Codable, Sendable {
     }
 }
 
-public struct CodexDeviceAuthStart: Codable, Sendable {
+public struct CodexDeviceAuthStart: Codable, Sendable, Equatable {
     public let flowID: String
     public let verificationURL: URL
     public let userCode: String
@@ -32,4 +32,164 @@ public struct CodexDeviceAuthStart: Codable, Sendable {
         case verificationURL = "verificationUri"
         case userCode
     }
+}
+
+public enum CodexDeviceAuthPollStatus: String, Codable, Sendable, Equatable {
+    case pending
+    case signedIn
+}
+
+public struct CodexDeviceAuthPollResult: Codable, Sendable, Equatable {
+    public let status: CodexDeviceAuthPollStatus
+    public let message: String?
+
+    public init(status: CodexDeviceAuthPollStatus, message: String? = nil) {
+        self.status = status
+        self.message = message
+    }
+}
+
+public enum CodexHelperRequestMethod: String, Codable, Sendable, Equatable {
+    case fetchSnapshot
+    case beginDeviceAuth
+    case pollDeviceAuth
+    case signOut
+}
+
+public struct CodexHelperRequest: Codable, Sendable, Equatable {
+    public let method: CodexHelperRequestMethod
+    public let flowID: String?
+
+    public init(method: CodexHelperRequestMethod, flowID: String? = nil) {
+        self.method = method
+        self.flowID = flowID
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case method
+        case flowID = "flow_id"
+    }
+}
+
+public enum CodexHelperResponseType: String, Codable, Sendable, Equatable {
+    case snapshot
+    case deviceAuthStarted
+    case deviceAuthPending
+    case signedIn
+    case signedOut
+    case error
+}
+
+public enum CodexHelperWireError: LocalizedError, Sendable, Equatable {
+    case helper(message: String)
+    case unexpectedResponse(expected: String, actual: String)
+    case missingPayload(String)
+    case missingField(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .helper(let message):
+            return message
+        case .unexpectedResponse(let expected, let actual):
+            return "Expected \(expected) from the helper, but received \(actual)."
+        case .missingPayload(let payload):
+            return "Helper returned no \(payload) payload."
+        case .missingField(let field):
+            return "Helper response was missing \(field)."
+        }
+    }
+}
+
+public struct CodexHelperResponseEnvelope: Codable, Sendable, Equatable {
+    public let type: CodexHelperResponseType
+    public let payloadJSON: String?
+    public let message: String?
+    public let flowID: String?
+    public let verificationURL: URL?
+    public let userCode: String?
+
+    public init(
+        type: CodexHelperResponseType,
+        payloadJSON: String? = nil,
+        message: String? = nil,
+        flowID: String? = nil,
+        verificationURL: URL? = nil,
+        userCode: String? = nil
+    ) {
+        self.type = type
+        self.payloadJSON = payloadJSON
+        self.message = message
+        self.flowID = flowID
+        self.verificationURL = verificationURL
+        self.userCode = userCode
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case payloadJSON = "payloadJson"
+        case message
+        case flowID = "flowId"
+        case verificationURL = "verificationUri"
+        case userCode
+    }
+
+    public func decodedSnapshotResponse() throws -> CodexServiceSnapshotResponse {
+        try requireResponse(.snapshot)
+        guard let payloadJSON else {
+            throw CodexHelperWireError.missingPayload("snapshot")
+        }
+        return try Self.decoder.decode(CodexServiceSnapshotResponse.self, from: Data(payloadJSON.utf8))
+    }
+
+    public func decodedDeviceAuthStart() throws -> CodexDeviceAuthStart {
+        try requireResponse(.deviceAuthStarted)
+        guard let flowID else {
+            throw CodexHelperWireError.missingField("flowId")
+        }
+        guard let verificationURL else {
+            throw CodexHelperWireError.missingField("verificationUri")
+        }
+        guard let userCode else {
+            throw CodexHelperWireError.missingField("userCode")
+        }
+        return CodexDeviceAuthStart(
+            flowID: flowID,
+            verificationURL: verificationURL,
+            userCode: userCode
+        )
+    }
+
+    public func decodedDeviceAuthPollResult() throws -> CodexDeviceAuthPollResult {
+        switch type {
+        case .signedIn:
+            return CodexDeviceAuthPollResult(status: .signedIn, message: message)
+        case .deviceAuthPending:
+            return CodexDeviceAuthPollResult(status: .pending, message: message)
+        case .error:
+            throw CodexHelperWireError.helper(message: message ?? "Helper returned an unknown error.")
+        default:
+            throw CodexHelperWireError.unexpectedResponse(
+                expected: "\(CodexHelperResponseType.deviceAuthPending.rawValue) or \(CodexHelperResponseType.signedIn.rawValue)",
+                actual: type.rawValue
+            )
+        }
+    }
+
+    public func requireResponse(_ expected: CodexHelperResponseType) throws {
+        if type == .error {
+            throw CodexHelperWireError.helper(message: message ?? "Helper returned an unknown error.")
+        }
+        guard type == expected else {
+            throw CodexHelperWireError.unexpectedResponse(
+                expected: expected.rawValue,
+                actual: type.rawValue
+            )
+        }
+    }
+
+    private static let decoder: JSONDecoder = {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .secondsSince1970
+        return decoder
+    }()
 }

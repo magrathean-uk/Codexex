@@ -4,6 +4,10 @@ use codexex_helper::{
     quota,
 };
 use base64::Engine;
+use chrono::Utc;
+use codex_app_server_protocol::AuthMode;
+use codex_login::{AuthCredentialsStoreMode, AuthDotJson, TokenData, save_auth};
+use codex_login::token_data::parse_chatgpt_jwt_claims;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
 use serial_test::serial;
@@ -73,6 +77,48 @@ fn quota_fetch_snapshot_returns_snapshot_variant() {
 }
 
 #[test]
+#[serial]
+fn fetch_snapshot_keeps_chatgpt_auth_when_rate_limit_fetch_fails() {
+    let _guard = EnvGuard::new();
+    let temp_dir = TempDir::new().unwrap();
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    let server = runtime.block_on(async {
+        let server = MockServer::start().await;
+
+        EnvGuard::set("CODEXEX_HELPER_STATE_DIR", temp_dir.path().display().to_string());
+        EnvGuard::set("CODEXEX_HELPER_CHATGPT_BASE_URL", server.uri());
+
+        Mock::given(method("GET"))
+            .and(path("/api/codex/usage"))
+            .and(header("authorization", "Bearer access-token-123"))
+            .and(header("chatgpt-account-id", "account-123"))
+            .respond_with(ResponseTemplate::new(500).set_body_string("boom"))
+            .mount(&server)
+            .await;
+
+        server
+    });
+
+    persist_chatgpt_auth(temp_dir.path());
+
+    let snapshot = quota::fetch_snapshot().unwrap();
+    match snapshot {
+        HelperResponse::Snapshot { payload_json } => {
+            let value: Value = serde_json::from_str(&payload_json).unwrap();
+            assert_eq!(value["authMode"], "chatGPT");
+            assert_eq!(value["snapshot"], Value::Null);
+            assert!(value["errorMessage"].as_str().unwrap().contains("boom"));
+        }
+        other => panic!("expected snapshot payload, got {other:?}"),
+    }
+
+    drop(server);
+}
+
+#[test]
 fn save_api_key_requests_are_rejected() {
     let response = protocol::handle_line(r#"{"method":"saveApiKey","api_key":"sk-test-key"}"#);
 
@@ -86,7 +132,7 @@ fn save_api_key_requests_are_rejected() {
 fn poll_device_auth_does_not_succeed_for_random_flow_id() {
     let error = auth::poll_device_auth("flow-123").unwrap_err();
 
-    assert_eq!(error.to_string(), "unknown flow id: flow-123");
+    assert_eq!(error.to_string(), "unknown flow id");
 }
 
 #[test]
@@ -129,6 +175,59 @@ fn stream_continues_after_invalid_line() {
     assert!(lines[0].contains(r#""type":"error""#));
     assert!(lines[0].contains("invalid request:"));
     assert_eq!(lines[1], r#"{"type":"signedOut"}"#);
+}
+
+#[test]
+#[serial]
+fn device_auth_flow_can_poll_pending_without_losing_flow_state() {
+    let _guard = EnvGuard::new();
+    let temp_dir = TempDir::new().unwrap();
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    let server = runtime.block_on(async {
+        let server = MockServer::start().await;
+
+        EnvGuard::set("CODEXEX_HELPER_STATE_DIR", temp_dir.path().display().to_string());
+        EnvGuard::set("CODEXEX_HELPER_ISSUER", server.uri());
+        EnvGuard::set("CODEXEX_HELPER_CHATGPT_BASE_URL", server.uri());
+
+        Mock::given(method("POST"))
+            .and(path("/api/accounts/deviceauth/usercode"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "device_auth_id": "device-auth-123",
+                "user_code": "CODE-12345",
+                "interval": "0"
+            })))
+            .mount(&server)
+            .await;
+
+        Mock::given(method("POST"))
+            .and(path("/api/accounts/deviceauth/token"))
+            .respond_with(ResponseTemplate::new(404))
+            .mount(&server)
+            .await;
+
+        server
+    });
+
+    let flow_id = match auth::begin_device_auth().unwrap() {
+        HelperResponse::DeviceAuthStarted { flow_id, .. } => flow_id,
+        other => panic!("expected device auth start, got {other:?}"),
+    };
+
+    let first = auth::poll_device_auth(&flow_id).unwrap();
+    let second = auth::poll_device_auth(&flow_id).unwrap();
+
+    assert_eq!(
+        first,
+        HelperResponse::DeviceAuthPending {
+            message: "Still waiting for approval. Finish in Safari, then check again.".to_string(),
+        }
+    );
+    assert_eq!(second, first);
+    drop(server);
 }
 
 #[test]
@@ -263,6 +362,30 @@ fn fake_jwt(payload: Value) -> String {
         base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(serde_json::to_vec(value).unwrap())
     };
     format!("{}.{}.sig", encode(&header), encode(&payload))
+}
+
+fn persist_chatgpt_auth(codex_home: &std::path::Path) {
+    let id_token = fake_jwt(serde_json::json!({
+        "email": "user@example.com",
+        "https://api.openai.com/auth": {
+            "chatgpt_account_id": "account-123",
+            "chatgpt_plan_type": "pro"
+        }
+    }));
+
+    let auth = AuthDotJson {
+        auth_mode: Some(AuthMode::Chatgpt),
+        openai_api_key: None,
+        tokens: Some(TokenData {
+            id_token: parse_chatgpt_jwt_claims(&id_token).unwrap(),
+            access_token: "access-token-123".to_string(),
+            refresh_token: "refresh-token-123".to_string(),
+            account_id: Some("account-123".to_string()),
+        }),
+        last_refresh: Some(Utc::now()),
+    };
+
+    save_auth(codex_home, &auth, AuthCredentialsStoreMode::File).unwrap();
 }
 
 struct EnvGuard;

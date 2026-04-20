@@ -9,8 +9,8 @@ settings:
   base:
     SWIFT_VERSION: 6.0
     SUPPORTS_MACCATALYST: NO
-    MARKETING_VERSION: 1.0
-    CURRENT_PROJECT_VERSION: 1
+    MARKETING_VERSION: 2.0
+    CURRENT_PROJECT_VERSION: 2
     DEVELOPMENT_TEAM: NPSQV9WYS5
     CODE_SIGN_STYLE: Automatic
 
@@ -51,9 +51,12 @@ targets:
         inputFiles:
           - $(PROJECT_DIR)/Helper/CodexexHelper/Cargo.toml
           - $(PROJECT_DIR)/Helper/CodexexHelper/Cargo.lock
+          - $(PROJECT_DIR)/Helper/CodexexHelper/src/auth.rs
           - $(PROJECT_DIR)/Helper/CodexexHelper/src/lib.rs
           - $(PROJECT_DIR)/Helper/CodexexHelper/src/main.rs
           - $(PROJECT_DIR)/Helper/CodexexHelper/src/protocol.rs
+          - $(PROJECT_DIR)/Helper/CodexexHelper/src/quota.rs
+          - $(PROJECT_DIR)/Helper/CodexexHelper/src/state.rs
         outputFiles:
           - $(DERIVED_FILE_DIR)/codexex-helper/codexex-helper
         script: |

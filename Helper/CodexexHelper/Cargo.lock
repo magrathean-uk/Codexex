@@ -1132,16 +1132,20 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "base64",
+ "chrono",
+ "codex-app-server-protocol",
  "codex-backend-client",
+ "codex-client",
  "codex-login",
  "pretty_assertions",
+ "reqwest",
  "serde",
  "serde_json",
  "serial_test",
  "tempfile",
  "thiserror 2.0.18",
  "tokio",
- "uuid",
+ "urlencoding",
  "wiremock",
 ]
 

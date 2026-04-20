@@ -27,6 +27,9 @@ pub enum HelperResponse {
         #[serde(rename = "userCode")]
         user_code: String,
     },
+    DeviceAuthPending {
+        message: String,
+    },
     SignedIn,
     SignedOut,
     Error {
