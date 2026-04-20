@@ -22,7 +22,7 @@ Deliberately *not* copied:
 
 ### 2. ClaudeBar
 Useful takeaways:
-- single source of truth state object
+- state kept close to UI entrypoints, with separable auth and dashboard logic
 - clean separation between probing and presentation
 - protocol-friendly architecture for testability
 - direct SwiftUI views instead of unnecessary ViewModel layers
@@ -50,9 +50,9 @@ Chosen synthesis:
 
 - native Swift 6
 - Swift Package project
-- one-shot `codex app-server` probe
-- one observable state owner
-- menu bar extra with glass cards
-- no extra auth flow
+- split app state across menu bar shell, auth session, and dashboard state
+- menu bar extra with focused popup/settings/onboarding views
+- bundled helper plus XPC bridge for auth and quota reads
+- ChatGPT device code sign-in and Preview Mode
 - no unsupported token scraping
 - Spark displayed separately when the upstream bucket id/name exposes it

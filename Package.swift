@@ -17,6 +17,7 @@ let package = Package(
         .executableTarget(
             name: "CodexMeterApp",
             dependencies: ["CodexMeterCore"],
+            exclude: ["AppIcon.icon"],
             resources: [
                 .process("Assets.xcassets")
             ]

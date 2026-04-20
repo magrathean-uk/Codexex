@@ -1,4 +1,4 @@
-use anyhow::{Result, bail};
+use anyhow::Result;
 use codex_backend_client::Client as BackendClient;
 use codex_login::{AuthCredentialsStoreMode, AuthManager};
 use serde::Serialize;
@@ -92,10 +92,23 @@ async fn fetch_snapshot_payload() -> Result<ServiceSnapshotPayload> {
     }
 
     let client = BackendClient::from_auth(state::chatgpt_base_url(), &auth)?;
-    let rate_limits = client.get_rate_limits_many().await?;
-    if rate_limits.is_empty() {
-        bail!("failed to fetch codex rate limits: no snapshots returned");
-    }
+    let rate_limits = match client.get_rate_limits_many().await {
+        Ok(rate_limits) if rate_limits.is_empty() == false => rate_limits,
+        Ok(_) => {
+            return Ok(ServiceSnapshotPayload {
+                auth_mode: Some("chatGPT".to_string()),
+                snapshot: None,
+                error_message: Some("Failed to fetch codex rate limits: no snapshots returned".to_string()),
+            })
+        }
+        Err(error) => {
+            return Ok(ServiceSnapshotPayload {
+                auth_mode: Some("chatGPT".to_string()),
+                snapshot: None,
+                error_message: Some(error.to_string()),
+            })
+        }
+    };
 
     let snapshot = SnapshotPayload {
         captured_at: std::time::SystemTime::now()

@@ -1,0 +1,207 @@
+#if os(macOS)
+import CodexMeterCore
+import SwiftUI
+
+struct LimitCardView: View {
+    @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
+    let presentation: PopupLimitPresentation
+
+    private var limit: CodexLimit { presentation.limit }
+    private var cardStyle: GlassSurfaceStyle {
+        presentation.style == .hero ? .primary : .secondary
+    }
+    private var headlineFont: Font {
+        presentation.style == .hero
+            ? .title3.monospacedDigit().weight(.bold)
+            : .headline.monospacedDigit().weight(.semibold)
+    }
+    private var contentSpacing: CGFloat { 8 }
+
+    var body: some View {
+        GlassCard(style: cardStyle) {
+            VStack(alignment: .leading, spacing: contentSpacing) {
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    Text(limit.displayName)
+                        .font(.headline)
+
+                    Spacer()
+
+                    if let headlineWindow = limit.primary ?? limit.secondary {
+                        Text(headlineWindow.usedPercentText)
+                            .font(headlineFont)
+                            .contentTransition(
+                                accessibilityReduceMotion
+                                    ? .identity
+                                    : .numericText(value: headlineWindow.clampedUsedPercent)
+                            )
+                    }
+                }
+
+                if let fiveHour = limit.fiveHourWindow ?? limit.primary {
+                    windowRow(
+                        title: fiveHour.windowDurationMinutes == 300 ? "5H" : fiveHour.windowText,
+                        window: fiveHour
+                    )
+                }
+
+                if let weekly = limit.weeklyWindow,
+                   weekly != limit.fiveHourWindow
+                {
+                    windowRow(
+                        title: weekly.windowDurationMinutes == 10_080 ? "Weekly" : weekly.windowText,
+                        window: weekly
+                    )
+                }
+
+                if let credits = presentation.visibleCredits {
+                    HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        Text("Credits")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+
+                        Spacer()
+
+                        Text(credits.displayText)
+                            .font(.caption.monospacedDigit().weight(.semibold))
+                            .foregroundStyle(credits.isNegativeBalance ? Color.red : .secondary)
+                    }
+                    .padding(.top, 2)
+                }
+            }
+        }
+        .transition(accessibilityReduceMotion ? .identity : .opacity.combined(with: .scale(scale: 0.985)))
+    }
+
+    private func windowRow(title: String, window: CodexQuotaWindow) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
+                Text(window.usedPercentText)
+                    .font(.caption.monospacedDigit().weight(.semibold))
+                    .contentTransition(
+                        accessibilityReduceMotion
+                            ? .identity
+                            : .numericText(value: window.clampedUsedPercent)
+                    )
+
+                Text(CodexFormatting.relativeResetText(now: .init(), resetAt: window.resetsAt))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+
+            UsageBar(
+                progress: window.clampedUsedPercent / 100,
+                bucket: limit.bucket,
+                label: "\(title) usage",
+                value: "\(window.usedPercentText), \(CodexFormatting.relativeResetText(now: .init(), resetAt: window.resetsAt))"
+            )
+        }
+    }
+}
+
+struct CompactLimitCardView: View {
+    @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
+    let presentation: PopupLimitPresentation
+
+    var body: some View {
+        GlassCard(style: .secondary) {
+            HStack(spacing: 10) {
+                Circle()
+                    .fill(limitAccentColor(for: presentation.limit.bucket))
+                    .frame(width: 8, height: 8)
+
+                Text(presentation.limit.displayName)
+                    .font(.subheadline.weight(.semibold))
+
+                Spacer()
+
+                Text("Idle")
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .transition(accessibilityReduceMotion ? .identity : .opacity)
+    }
+}
+
+struct UsageBar: View {
+    @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
+    let progress: Double
+    let bucket: CodexLimitBucket
+    let label: String
+    let value: String
+
+    init(progress: Double, bucket: CodexLimitBucket, label: String = "Usage", value: String = "") {
+        self.progress = progress
+        self.bucket = bucket
+        self.label = label
+        self.value = value
+    }
+
+    var body: some View {
+        GeometryReader { proxy in
+            let clamped = progress.clamped(to: 0 ... 1)
+            ZStack(alignment: .leading) {
+                Capsule(style: .continuous)
+                    .fill(limitTrackColor(for: bucket))
+
+                if clamped > 0 {
+                    Capsule(style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: limitGradient(for: bucket),
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: max(6, proxy.size.width * clamped))
+                }
+            }
+        }
+        .frame(height: 6)
+        .allowsHitTesting(false)
+        .animation(accessibilityReduceMotion ? nil : .easeInOut(duration: 0.18), value: progress)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(label)
+        .accessibilityValue(value.isEmpty ? "\(Int((progress * 100).rounded()))%" : value)
+    }
+}
+
+func limitAccentColor(for bucket: CodexLimitBucket) -> Color {
+    switch bucket {
+    case .spark:
+        return .purple
+    case .codex, .other:
+        return .blue
+    }
+}
+
+func limitGradient(for bucket: CodexLimitBucket) -> [Color] {
+    switch bucket {
+    case .spark:
+        return [Color.indigo.opacity(0.9), Color.purple.opacity(0.85)]
+    case .codex, .other:
+        return [Color.blue.opacity(0.92), Color.cyan.opacity(0.8)]
+    }
+}
+
+func limitTrackColor(for bucket: CodexLimitBucket) -> Color {
+    switch bucket {
+    case .spark:
+        return Color.purple.opacity(0.10)
+    case .codex, .other:
+        return Color.blue.opacity(0.10)
+    }
+}
+
+private extension Double {
+    func clamped(to range: ClosedRange<Double>) -> Double {
+        min(max(self, range.lowerBound), range.upperBound)
+    }
+}
+#endif

@@ -54,6 +54,7 @@ struct CodexUsageHistoryPoint: Identifiable, Equatable {
     let date: Date
     let usedPercent: Double
     let resetsAt: Date?
+    let windowDurationMinutes: Int?
 }
 
 struct CodexUsageForecast: Equatable {
@@ -79,9 +80,33 @@ struct CodexUsageForecast: Equatable {
     let currentPercent: Double?
     let projectedPercentAtReset: Double?
     let paceVariancePercent: Double?
+    let detail: String?
+
+    init(
+        message: String,
+        tone: Tone,
+        currentPercent: Double?,
+        projectedPercentAtReset: Double?,
+        paceVariancePercent: Double?,
+        detail: String? = nil
+    ) {
+        self.message = message
+        self.tone = tone
+        self.currentPercent = currentPercent
+        self.projectedPercentAtReset = projectedPercentAtReset
+        self.paceVariancePercent = paceVariancePercent
+        self.detail = detail
+    }
 }
 
 enum CodexUsageHistoryAnalytics {
+    private struct Observation {
+        let date: Date
+        let usedPercent: Double
+        let resetsAt: Date?
+        let windowDurationMinutes: Int?
+    }
+
     static func insights(
         snapshot: CodexSnapshot?,
         samples: [CodexUsageHistorySample],
@@ -106,7 +131,123 @@ enum CodexUsageHistoryAnalytics {
         series: CodexUsageHistorySeries,
         limit: Int = 30
     ) -> [CodexUsageHistoryPoint] {
-        let resolved = samples.compactMap { sample -> CodexUsageHistoryPoint? in
+        guard limit > 0 else { return [] }
+
+        let observations = resolvedObservations(from: samples, series: series)
+        guard observations.isEmpty == false else { return [] }
+
+        let calendar = Calendar.autoupdatingCurrent
+        let grouped = Dictionary(grouping: observations) { observation in
+            calendar.startOfDay(for: observation.date)
+        }
+
+        return grouped
+            .keys
+            .sorted()
+            .suffix(limit)
+            .compactMap { day in
+                guard let dayObservations = grouped[day] else { return nil }
+                let selected = dayObservations.max { lhs, rhs in
+                    if lhs.usedPercent != rhs.usedPercent {
+                        return lhs.usedPercent < rhs.usedPercent
+                    }
+                    return lhs.date < rhs.date
+                }
+                guard let selected else { return nil }
+
+                let suffix = series == .fiveHour ? "h" : "w"
+                return CodexUsageHistoryPoint(
+                    id: "\(day.timeIntervalSince1970)-\(suffix)",
+                    date: day,
+                    usedPercent: selected.usedPercent,
+                    resetsAt: selected.resetsAt,
+                    windowDurationMinutes: selected.windowDurationMinutes
+                )
+            }
+    }
+
+    static func forecast(
+        from samples: [CodexUsageHistorySample],
+        series: CodexUsageHistorySeries
+    ) -> CodexUsageForecast {
+        let observations = currentCycleObservations(from: samples, series: series)
+        guard let latest = observations.last else {
+            return CodexUsageForecast(
+                message: "Need reset data",
+                tone: .caution,
+                currentPercent: nil,
+                projectedPercentAtReset: nil,
+                paceVariancePercent: nil,
+                detail: nil
+            )
+        }
+
+        guard let resetAt = latest.resetsAt else {
+            return CodexUsageForecast(
+                message: "Need reset data",
+                tone: .caution,
+                currentPercent: latest.usedPercent,
+                projectedPercentAtReset: nil,
+                paceVariancePercent: nil,
+                detail: nil
+            )
+        }
+
+        guard let durationMinutes = latest.windowDurationMinutes, durationMinutes > 0 else {
+            return CodexUsageForecast(
+                message: "Need window data",
+                tone: .caution,
+                currentPercent: latest.usedPercent,
+                projectedPercentAtReset: nil,
+                paceVariancePercent: nil,
+                detail: nil
+            )
+        }
+
+        let cycleDuration = TimeInterval(durationMinutes * 60)
+        let cycleStart = resetAt.addingTimeInterval(-cycleDuration)
+        let elapsedSeconds = latest.date.timeIntervalSince(cycleStart)
+        let elapsedFraction = (elapsedSeconds / cycleDuration).clamped(to: 0 ... 1)
+        let currentPercent = latest.usedPercent.clamped(to: 0 ... 100)
+
+        guard observations.count >= 3, elapsedFraction >= 0.12 else {
+            return CodexUsageForecast(
+                message: "Learning this cycle",
+                tone: .caution,
+                currentPercent: currentPercent,
+                projectedPercentAtReset: nil,
+                paceVariancePercent: nil,
+                detail: "Waiting for a few more samples"
+            )
+        }
+
+        let projectedPercentAtReset = max(currentPercent, currentPercent / max(elapsedFraction, 0.05))
+        let expectedPercentNow = (elapsedFraction * 100).clamped(to: 0 ... 100)
+        let variance = currentPercent - expectedPercentNow
+        let tone: CodexUsageForecast.Tone
+        if projectedPercentAtReset > 100 {
+            tone = .danger
+        } else if projectedPercentAtReset >= 85 {
+            tone = .caution
+        } else {
+            tone = .safe
+        }
+
+        return CodexUsageForecast(
+            message: "Projected \(Int(projectedPercentAtReset.rounded()))% by reset",
+            tone: tone,
+            currentPercent: currentPercent,
+            projectedPercentAtReset: projectedPercentAtReset,
+            paceVariancePercent: variance,
+            detail: paceDetail(variance: variance, sampleCount: observations.count)
+        )
+    }
+
+    private static func resolvedObservations(
+        from samples: [CodexUsageHistorySample],
+        series: CodexUsageHistorySeries
+    ) -> [Observation] {
+        samples.compactMap { sample -> Observation? in
             let window = switch series {
             case .fiveHour:
                 sample.fiveHour
@@ -115,115 +256,38 @@ enum CodexUsageHistoryAnalytics {
             }
 
             guard let window else { return nil }
-            let suffix = series == .fiveHour ? "h" : "w"
-            return CodexUsageHistoryPoint(
-                id: "\(sample.capturedAt.timeIntervalSince1970)-\(suffix)",
+            return Observation(
                 date: sample.capturedAt,
                 usedPercent: window.usedPercent,
-                resetsAt: window.resetsAt
+                resetsAt: window.resetsAt,
+                windowDurationMinutes: window.windowDurationMinutes
             )
         }
-
-        if resolved.count <= limit {
-            return resolved
-        }
-        return Array(resolved.suffix(limit))
+        .sorted { $0.date < $1.date }
     }
 
-    static func forecast(
+    private static func currentCycleObservations(
         from samples: [CodexUsageHistorySample],
         series: CodexUsageHistorySeries
-    ) -> CodexUsageForecast {
-        let points = self.points(from: samples, series: series)
-        guard let latestReset = points.compactMap(\.resetsAt).last else {
-            return CodexUsageForecast(message: "Need reset data", tone: .caution, currentPercent: nil, projectedPercentAtReset: nil, paceVariancePercent: nil)
+    ) -> [Observation] {
+        let observations = resolvedObservations(from: samples, series: series)
+        guard let latestReset = observations.compactMap(\.resetsAt).last else {
+            return []
         }
-
-        let cycle = points.filter { $0.resetsAt == latestReset }
-        guard cycle.count >= 3, let latest = cycle.last else {
-            return CodexUsageForecast(message: "Learning pattern", tone: .caution, currentPercent: cycle.last?.usedPercent, projectedPercentAtReset: nil, paceVariancePercent: nil)
-        }
-
-        let firstDate = cycle[0].date
-        let xs = cycle.map { $0.date.timeIntervalSince(firstDate) / 3600 }
-        let ys = cycle.map(\.usedPercent)
-        let slope = self.linearRegressionSlope(xs: xs, ys: ys)
-        let currentPercent = latest.usedPercent
-
-        guard slope > 0.01 else {
-            return CodexUsageForecast(
-                message: "On a safe pace",
-                tone: .safe,
-                currentPercent: currentPercent,
-                projectedPercentAtReset: currentPercent,
-                paceVariancePercent: 0
-            )
-        }
-
-        let hoursToFull = max(0, (100 - latest.usedPercent) / slope)
-        let secondsToFull = Int(hoursToFull * 3600)
-        if let resetAt = latest.resetsAt {
-            let secondsToReset = Int(resetAt.timeIntervalSince(latest.date))
-            let projectedPercentAtReset = max(
-                currentPercent,
-                min(100, currentPercent + slope * (Double(secondsToReset) / 3600))
-            )
-            let cycleDuration = resetAt.timeIntervalSince(firstDate)
-            let elapsed = latest.date.timeIntervalSince(firstDate)
-            let expectedPercentNow = cycleDuration > 0
-                ? max(0, min(100, (elapsed / cycleDuration) * 100))
-                : currentPercent
-            let variance = currentPercent - expectedPercentNow
-            if secondsToFull > secondsToReset {
-                return CodexUsageForecast(
-                    message: "\(Int(currentPercent.rounded()))% used",
-                    tone: .safe,
-                    currentPercent: currentPercent,
-                    projectedPercentAtReset: projectedPercentAtReset,
-                    paceVariancePercent: variance
-                )
-            }
-
-            if secondsToFull < 6 * 3600 {
-                return CodexUsageForecast(
-                    message: "Likely over in \(CodexFormatting.compactDuration(seconds: secondsToFull))",
-                    tone: .danger,
-                    currentPercent: currentPercent,
-                    projectedPercentAtReset: projectedPercentAtReset,
-                    paceVariancePercent: variance
-                )
-            }
-
-            return CodexUsageForecast(
-                message: "Likely over in \(CodexFormatting.compactDuration(seconds: secondsToFull))",
-                tone: .caution,
-                currentPercent: currentPercent,
-                projectedPercentAtReset: projectedPercentAtReset,
-                paceVariancePercent: variance
-            )
-        }
-
-        return CodexUsageForecast(
-            message: "Likely over in \(CodexFormatting.compactDuration(seconds: secondsToFull))",
-            tone: .caution,
-            currentPercent: currentPercent,
-            projectedPercentAtReset: nil,
-            paceVariancePercent: nil
-        )
+        return observations.filter { $0.resetsAt == latestReset }
     }
 
-    private static func linearRegressionSlope(xs: [Double], ys: [Double]) -> Double {
-        guard xs.count == ys.count, xs.count >= 2 else { return 0 }
-        let meanX = xs.reduce(0, +) / Double(xs.count)
-        let meanY = ys.reduce(0, +) / Double(ys.count)
-        let numerator = zip(xs, ys).reduce(0) { partial, pair in
-            partial + ((pair.0 - meanX) * (pair.1 - meanY))
+    private static func paceDetail(variance: Double, sampleCount: Int) -> String {
+        let roundedVariance = Int(variance.rounded())
+        let paceText: String
+        if roundedVariance > 0 {
+            paceText = "\(roundedVariance)% over pace"
+        } else if roundedVariance < 0 {
+            paceText = "\(-roundedVariance)% under pace"
+        } else {
+            paceText = "On pace"
         }
-        let denominator = xs.reduce(0) { partial, x in
-            partial + pow(x - meanX, 2)
-        }
-        guard denominator > 0 else { return 0 }
-        return numerator / denominator
+        return "\(paceText) · \(sampleCount) samples"
     }
 
     private static func fiveHourPressure(
@@ -309,9 +373,15 @@ enum CodexUsageHistoryAnalytics {
         return CodexUsageInsightRow(
             title: "Recent peaks",
             message: "5H \(Int(fiveHourPeak.rounded()))% · W \(Int(weeklyPeak.rounded()))%",
-            detail: nil,
+            detail: "Last 24h / 7d",
             tone: tone
         )
+    }
+}
+
+private extension Double {
+    func clamped(to range: ClosedRange<Double>) -> Double {
+        min(max(self, range.lowerBound), range.upperBound)
     }
 }
 #endif

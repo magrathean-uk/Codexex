@@ -275,6 +275,9 @@ enum _SnapshotReducer {
         guard let accountPayload = account.account else {
             throw CodexProbeError.unauthenticated
         }
+        guard accountPayload.type.caseInsensitiveCompare("chatgpt") == .orderedSame else {
+            throw CodexProbeError.unauthenticated
+        }
 
         let buckets: [_RateLimitPayload]
         if let byId = rateLimits.rateLimitsByLimitId, byId.isEmpty == false {

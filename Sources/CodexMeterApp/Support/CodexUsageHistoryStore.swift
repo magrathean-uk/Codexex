@@ -43,39 +43,59 @@ actor CodexUsageHistoryStore {
     private let fileURL: URL
     private let retention: TimeInterval = 30 * 24 * 60 * 60
 
-    init(fileManager: FileManager = .default) {
+    init(fileManager: FileManager = .default, fileURL: URL? = nil) {
+        if let fileURL {
+            self.fileURL = fileURL
+            return
+        }
+
         let applicationSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? fileManager.temporaryDirectory
         let directory = applicationSupport.appendingPathComponent("Codexex", isDirectory: true)
         self.fileURL = directory.appendingPathComponent("usage-history.json")
     }
 
-    func load() async -> [CodexUsageHistorySample] {
+    func load(now: Date = Date()) async -> [CodexUsageHistorySample] {
         do {
             let data = try Data(contentsOf: self.fileURL)
             let samples = try JSONDecoder.codexHistoryDecoder.decode([CodexUsageHistorySample].self, from: data)
-            return self.trim(samples)
+            return self.trim(samples, now: now)
         } catch {
             return []
         }
     }
 
-    func append(snapshot: CodexSnapshot) async -> [CodexUsageHistorySample] {
-        var samples = await self.load()
+    func append(snapshot: CodexSnapshot, now: Date = Date()) async -> [CodexUsageHistorySample] {
+        var samples = await self.load(now: now)
         let fiveHour = snapshot.codexLimit?.fiveHourWindow.map(CodexUsageHistoryWindow.init(from:))
         let weekly = snapshot.codexLimit?.weeklyWindow.map(CodexUsageHistoryWindow.init(from:))
         guard fiveHour != nil || weekly != nil else { return samples }
 
-        samples.append(
-            CodexUsageHistorySample(
-                capturedAt: snapshot.capturedAt,
-                fiveHour: fiveHour,
-                weekly: weekly
-            )
+        let newSample = CodexUsageHistorySample(
+            capturedAt: snapshot.capturedAt,
+            fiveHour: fiveHour,
+            weekly: weekly
         )
-        samples = self.trim(samples)
+
+        if shouldSkipAppend(existing: samples.last, incoming: newSample) {
+            return samples
+        }
+
+        samples.append(newSample)
+        samples = self.trim(samples, now: now)
         self.save(samples)
         return samples
+    }
+
+    private func shouldSkipAppend(
+        existing: CodexUsageHistorySample?,
+        incoming: CodexUsageHistorySample
+    ) -> Bool {
+        guard let existing else { return false }
+        guard existing.fiveHour == incoming.fiveHour, existing.weekly == incoming.weekly else {
+            return false
+        }
+        return abs(existing.capturedAt.timeIntervalSince(incoming.capturedAt)) < 60
     }
 
     private func save(_ samples: [CodexUsageHistorySample]) {
@@ -91,8 +111,8 @@ actor CodexUsageHistoryStore {
         }
     }
 
-    private func trim(_ samples: [CodexUsageHistorySample]) -> [CodexUsageHistorySample] {
-        let cutoff = Date().addingTimeInterval(-self.retention)
+    private func trim(_ samples: [CodexUsageHistorySample], now: Date) -> [CodexUsageHistorySample] {
+        let cutoff = now.addingTimeInterval(-self.retention)
         return samples
             .filter { $0.capturedAt >= cutoff }
             .sorted { $0.capturedAt < $1.capturedAt }
