@@ -16,6 +16,12 @@ struct LimitCardView: View {
             : .headline.monospacedDigit().weight(.semibold)
     }
     private var contentSpacing: CGFloat { 8 }
+    private var headlineWindow: CodexQuotaWindow? {
+        let windows = [limit.fiveHourWindow, limit.weeklyWindow].compactMap { $0 }
+        return windows.max { lhs, rhs in
+            lhs.clampedUsedPercent < rhs.clampedUsedPercent
+        } ?? limit.primary ?? limit.secondary
+    }
 
     var body: some View {
         GlassCard(style: cardStyle) {
@@ -26,7 +32,7 @@ struct LimitCardView: View {
 
                     Spacer()
 
-                    if let headlineWindow = limit.primary ?? limit.secondary {
+                    if let headlineWindow {
                         Text(headlineWindow.usedPercentText)
                             .font(headlineFont)
                             .contentTransition(
@@ -175,27 +181,33 @@ struct UsageBar: View {
 func limitAccentColor(for bucket: CodexLimitBucket) -> Color {
     switch bucket {
     case .spark:
-        return .purple
+        return Color(red: 0.66, green: 0.38, blue: 0.84)
     case .codex, .other:
-        return .blue
+        return Color(red: 0.21, green: 0.53, blue: 0.93)
     }
 }
 
 func limitGradient(for bucket: CodexLimitBucket) -> [Color] {
     switch bucket {
     case .spark:
-        return [Color.indigo.opacity(0.9), Color.purple.opacity(0.85)]
+        return [
+            Color(red: 0.48, green: 0.43, blue: 0.92).opacity(0.92),
+            Color(red: 0.83, green: 0.38, blue: 0.73).opacity(0.84)
+        ]
     case .codex, .other:
-        return [Color.blue.opacity(0.92), Color.cyan.opacity(0.8)]
+        return [
+            Color(red: 0.21, green: 0.53, blue: 0.93).opacity(0.9),
+            Color(red: 0.29, green: 0.77, blue: 0.84).opacity(0.82)
+        ]
     }
 }
 
 func limitTrackColor(for bucket: CodexLimitBucket) -> Color {
     switch bucket {
     case .spark:
-        return Color.purple.opacity(0.10)
+        return Color(red: 0.67, green: 0.38, blue: 0.83).opacity(0.10)
     case .codex, .other:
-        return Color.blue.opacity(0.10)
+        return Color(red: 0.21, green: 0.53, blue: 0.93).opacity(0.10)
     }
 }
 

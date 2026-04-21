@@ -1,4 +1,5 @@
 #if os(macOS)
+import AppKit
 import SwiftUI
 import CodexMeterCore
 
@@ -6,6 +7,7 @@ struct StatusBarLabel: View {
     let snapshot: CodexSnapshot?
     let isRefreshing: Bool
     let hasError: Bool
+    let severity: CodexQuotaSeverity?
 
     var body: some View {
         HStack(spacing: 6) {
@@ -19,6 +21,10 @@ struct StatusBarLabel: View {
             } else if hasError {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 11))
+            } else if let severity {
+                Circle()
+                    .fill(Self.dotColor(for: severity))
+                    .frame(width: 7, height: 7)
             }
         }
         .padding(.horizontal, 2)
@@ -62,6 +68,31 @@ struct StatusBarLabel: View {
         return pieces.isEmpty ? "Codexex" : pieces.joined(separator: " ")
     }
 
+    static func menuBarImage(
+        isRefreshing: Bool,
+        hasError: Bool,
+        severity: CodexQuotaSeverity?
+    ) -> NSImage? {
+        if isRefreshing {
+            return NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: nil)
+        }
+        if hasError {
+            let image = NSImage(systemSymbolName: "exclamationmark.triangle.fill", accessibilityDescription: nil)
+            image?.isTemplate = true
+            return image
+        }
+        guard let severity else { return nil }
+
+        let size = NSSize(width: 8, height: 8)
+        let image = NSImage(size: size)
+        image.lockFocus()
+        dotNSColor(for: severity).setFill()
+        NSBezierPath(ovalIn: NSRect(origin: .zero, size: size)).fill()
+        image.unlockFocus()
+        image.isTemplate = false
+        return image
+    }
+
     private var labelText: String {
         Self.makeTitle(
             snapshot: snapshot,
@@ -70,6 +101,23 @@ struct StatusBarLabel: View {
             showFiveHour: true,
             showWeekly: true
         )
+    }
+
+    private static func dotColor(for severity: CodexQuotaSeverity) -> Color {
+        Color(nsColor: dotNSColor(for: severity))
+    }
+
+    private static func dotNSColor(for severity: CodexQuotaSeverity) -> NSColor {
+        switch severity {
+        case .tooEarly:
+            return .systemGray
+        case .safe:
+            return .systemGreen
+        case .watch:
+            return .systemYellow
+        case .risk:
+            return .systemRed
+        }
     }
 }
 #endif

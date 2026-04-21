@@ -9,29 +9,43 @@ struct SettingsAccountCardView: View {
 
     var body: some View {
         GlassCard(style: .primary) {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack(alignment: .top, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Account")
-                            .font(.headline)
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Account")
+                        .font(.headline)
 
-                        Text(model.accountHeadline)
-                            .font(.title3.weight(.semibold))
+                    Text(model.accountHeadline)
+                        .font(.title3.weight(.semibold))
 
-                        if let detail = model.accountDetail {
-                            Text(detail)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
+                    if let detail = model.accountDetail {
+                        Text(detail)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
-
-                    Spacer(minLength: 0)
-
-                    accountAction
                 }
 
-                previewRow
+                HStack(spacing: 10) {
+                    accountAction
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Button(model.previewModeEnabled ? "Leave Sample Data" : "Use Sample Data") {
+                        if model.previewModeEnabled {
+                            model.disablePreviewMode()
+                        } else {
+                            model.enablePreviewMode()
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                Divider()
+
+                Text(model.previewModeEnabled ? "Sample data is active." : "Sample data lets you inspect the UI without touching live usage.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 if let code = model.authDeviceCode {
                     deviceCodeCard(code: code)
@@ -41,24 +55,6 @@ struct SettingsAccountCardView: View {
         .animation(accessibilityReduceMotion ? nil : .easeInOut(duration: 0.18), value: model.authDeviceCode)
         .animation(accessibilityReduceMotion ? nil : .easeInOut(duration: 0.18), value: model.isSigningIn)
         .animation(accessibilityReduceMotion ? nil : .easeInOut(duration: 0.18), value: model.isSignedIn)
-    }
-
-    private var previewRow: some View {
-        HStack(spacing: 12) {
-            Button(model.previewModeEnabled ? "Leave Preview" : "Use Sample Data") {
-                if model.previewModeEnabled {
-                    model.disablePreviewMode()
-                } else {
-                    model.enablePreviewMode()
-                }
-            }
-            .buttonStyle(.bordered)
-
-            Text(model.previewModeEnabled ? "Sample data is active." : "Preview Mode uses local sample data for review and offline checks.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
     }
 
     private func deviceCodeCard(code: String) -> some View {
@@ -115,7 +111,7 @@ struct SettingsAccountCardView: View {
             Button("Sign Out") {
                 model.signOut()
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.borderedProminent)
         } else if model.authDeviceCode != nil {
             Button("Clear Code") {
                 model.clearAuthCode()

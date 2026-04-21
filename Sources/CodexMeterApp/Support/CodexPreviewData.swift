@@ -62,7 +62,9 @@ enum CodexPreviewData {
                     usedPercent: weekly,
                     windowDurationMinutes: 10_080,
                     resetsAt: Calendar.current.date(byAdding: .day, value: 5, to: date)
-                )
+                ),
+                codexCreditsBalance: String(format: "%.2f", max(0, 24.0 - (Double(day) * 0.35))),
+                sparkCreditsBalance: nil
             )
         }
     }

@@ -1,16 +1,12 @@
 import Foundation
 import CoreGraphics
+import SwiftUI
 import CodexMeterCore
 
 enum PopupLimitCardStyle: Equatable {
     case hero
     case standard
     case compact
-}
-
-enum PopupSupplementalSection: Hashable {
-    case history
-    case insights
 }
 
 struct PopupLimitPresentation: Equatable, Identifiable {
@@ -21,26 +17,183 @@ struct PopupLimitPresentation: Equatable, Identifiable {
     var id: String { limit.id }
 }
 
-enum PopupPresentation {
-    static func supplementalSections(
-        showHistory: Bool,
-        showInsights: Bool
-    ) -> [PopupSupplementalSection] {
-        var sections: [PopupSupplementalSection] = []
-        if showHistory {
-            sections.append(.history)
+enum PopupSummaryAction: Equatable {
+    case openSettings
+    case refresh
+    case useSampleData
+
+    var title: String {
+        switch self {
+        case .openSettings:
+            return "Open Settings"
+        case .refresh:
+            return "Refresh"
+        case .useSampleData:
+            return "Use Sample Data"
         }
-        if showInsights {
-            sections.append(.insights)
-        }
-        return sections
     }
 
+    var systemImage: String {
+        switch self {
+        case .openSettings:
+            return "slider.horizontal.3"
+        case .refresh:
+            return "arrow.clockwise"
+        case .useSampleData:
+            return "wand.and.stars"
+        }
+    }
+}
+
+enum CodexQuotaSeverity: Int, Equatable {
+    case tooEarly = 0
+    case safe = 1
+    case watch = 2
+    case risk = 3
+
+    var title: String {
+        switch self {
+        case .tooEarly:
+            return "Too early"
+        case .safe:
+            return "Safe"
+        case .watch:
+            return "Watch"
+        case .risk:
+            return "Risk"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .tooEarly:
+            return .secondary
+        case .safe:
+            return .green
+        case .watch:
+            return .orange
+        case .risk:
+            return .red
+        }
+    }
+
+    static func from(_ tone: CodexUsageForecast.Tone) -> CodexQuotaSeverity {
+        switch tone {
+        case .safe:
+            return .safe
+        case .caution:
+            return .watch
+        case .danger:
+            return .risk
+        }
+    }
+
+    static func from(_ tone: CodexUsageInsightTone) -> CodexQuotaSeverity {
+        switch tone {
+        case .safe:
+            return .safe
+        case .caution:
+            return .watch
+        case .danger:
+            return .risk
+        }
+    }
+}
+
+struct PopupSummaryPresentation: Equatable {
+    let severity: CodexQuotaSeverity
+    let title: String
+    let message: String
+    let supportingLabel: String
+    let supportingValue: String
+    let supportingDetail: String?
+    let action: PopupSummaryAction?
+}
+
+enum PopupPresentation {
     static func historyLegendValue(for forecast: CodexUsageForecast) -> String {
         guard let currentPercent = forecast.currentPercent else {
-            return "Learning"
+            return forecast.confidence.label
         }
         return "\(Int(currentPercent.rounded()))%"
+    }
+
+    static func summary(
+        snapshot: CodexSnapshot?,
+        insights: CodexUsageInsights?,
+        previewModeEnabled: Bool,
+        hasRefreshIssue: Bool
+    ) -> PopupSummaryPresentation? {
+        guard snapshot != nil, let insights else { return nil }
+
+        let weekly = insights.weeklyPace
+        let refreshAction: PopupSummaryAction? = hasRefreshIssue ? .refresh : nil
+
+        if weekly.confidence == .tooEarly || weekly.confidence == .learning {
+            return PopupSummaryPresentation(
+                severity: .tooEarly,
+                title: CodexQuotaSeverity.tooEarly.title,
+                message: weekly.confidence == .tooEarly
+                    ? "Not enough cycle data yet."
+                    : "Still learning this cycle.",
+                supportingLabel: "Weekly pace",
+                supportingValue: weekly.message,
+                supportingDetail: weekly.detail,
+                action: refreshAction
+            )
+        }
+
+        let weeklySeverity = CodexQuotaSeverity.from(weekly.tone)
+        let fiveHourSeverity = CodexQuotaSeverity.from(insights.fiveHourPressure.tone)
+        let severity = fiveHourSeverity.rawValue > weeklySeverity.rawValue
+            ? fiveHourSeverity
+            : weeklySeverity
+        let usesFiveHourPressure = fiveHourSeverity.rawValue > weeklySeverity.rawValue
+
+        let weeklySupport = weeklySupporting(forecast: weekly)
+
+        switch severity {
+        case .safe:
+            return PopupSummaryPresentation(
+                severity: .safe,
+                title: CodexQuotaSeverity.safe.title,
+                message: "You are on track for this cycle.",
+                supportingLabel: weeklySupport.label,
+                supportingValue: weeklySupport.value,
+                supportingDetail: weeklySupport.detail,
+                action: previewModeEnabled ? nil : refreshAction
+            )
+        case .watch:
+            return PopupSummaryPresentation(
+                severity: .watch,
+                title: CodexQuotaSeverity.watch.title,
+                message: usesFiveHourPressure
+                    ? "Short-term pressure is building."
+                    : "Usage is rising faster than planned.",
+                supportingLabel: usesFiveHourPressure ? insights.fiveHourPressure.title : weeklySupport.label,
+                supportingValue: usesFiveHourPressure ? insights.fiveHourPressure.message : weeklySupport.value,
+                supportingDetail: usesFiveHourPressure
+                    ? insights.fiveHourPressure.detail
+                    : weeklySupport.detail,
+                action: previewModeEnabled ? nil : refreshAction
+            )
+        case .risk:
+            return PopupSummaryPresentation(
+                severity: .risk,
+                title: CodexQuotaSeverity.risk.title,
+                message: usesFiveHourPressure
+                    ? "Short-term pressure is unusually high."
+                    : "You are likely to hit the weekly limit.",
+                supportingLabel: usesFiveHourPressure ? insights.fiveHourPressure.title : weeklySupport.label,
+                supportingValue: usesFiveHourPressure ? insights.fiveHourPressure.message : weeklySupport.value,
+                supportingDetail: usesFiveHourPressure
+                    ? insights.fiveHourPressure.detail
+                    : weeklySupport.detail,
+                action: previewModeEnabled ? nil : refreshAction
+            )
+        case .tooEarly:
+            return nil
+        }
     }
 
     static func historyBarRect(
@@ -99,6 +252,12 @@ enum PopupPresentation {
         }
     }
 
+    static func isIdle(_ limit: CodexLimit) -> Bool {
+        [limit.fiveHourWindow, limit.weeklyWindow]
+            .compactMap { $0?.clampedUsedPercent }
+            .allSatisfy { $0 < 0.5 }
+    }
+
     private static func style(
         for limit: CodexLimit,
         visibleCredits: CodexCredits?
@@ -110,12 +269,6 @@ enum PopupPresentation {
             return .hero
         }
         return .standard
-    }
-
-    private static func isIdle(_ limit: CodexLimit) -> Bool {
-        [limit.fiveHourWindow, limit.weeklyWindow]
-            .compactMap { $0?.clampedUsedPercent }
-            .allSatisfy { $0 < 0.5 }
     }
 
     private static func visibleCredits(for credits: CodexCredits?) -> CodexCredits? {
@@ -137,4 +290,37 @@ enum PopupPresentation {
         let cleaned = text.replacingOccurrences(of: ",", with: "")
         return Double(cleaned)
     }
+
+    private static func weeklySupporting(
+        forecast: CodexUsageForecast
+    ) -> (label: String, value: String, detail: String?) {
+        let currentValue = forecast.currentPercent.map { "\(Int($0.rounded()))% used" } ?? forecast.message
+        return (
+            label: "Current weekly",
+            value: currentValue,
+            detail: summaryForecastDetail(forecast)
+        )
+    }
+
+    private static func summaryForecastDetail(_ forecast: CodexUsageForecast) -> String? {
+        switch forecast.confidence {
+        case .tooEarly, .learning:
+            return forecast.detail
+        case .estimatedFromHistory:
+            return "Based on history"
+        case .stable:
+            guard let projected = forecast.projectedPercentAtReset,
+                  let current = forecast.currentPercent,
+                  abs(projected - current) >= 1 else {
+                return nil
+            }
+            return "\(Int(projected.rounded()))% by reset"
+        case .volatile:
+            guard let projected = forecast.projectedPercentAtReset else {
+                return "Volatile projection"
+            }
+            return "Volatile projection · \(Int(projected.rounded()))% by reset"
+        }
+    }
+
 }

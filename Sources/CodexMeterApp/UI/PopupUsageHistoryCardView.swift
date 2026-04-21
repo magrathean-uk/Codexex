@@ -1,21 +1,38 @@
 #if os(macOS)
 import SwiftUI
+import CodexMeterCore
 
 struct UsageHistoryCardView: View {
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
     let samples: [CodexUsageHistorySample]
     let showsChart: Bool
+    let historyMode: PopupHistoryMode
+    let showPaceConfidence: Bool
+    let onHistoryModeChange: (PopupHistoryMode) -> Void
 
     private let fiveHourPoints: [CodexUsageHistoryPoint]
     private let weeklyPoints: [CodexUsageHistoryPoint]
+    private let currentCycleFiveHourPoints: [CodexUsageHistoryPoint]
+    private let currentCycleWeeklyPoints: [CodexUsageHistoryPoint]
     private let fiveHourForecast: CodexUsageForecast
     private let weeklyForecast: CodexUsageForecast
 
-    init(samples: [CodexUsageHistorySample], showsChart: Bool) {
+    init(
+        samples: [CodexUsageHistorySample],
+        showsChart: Bool,
+        historyMode: PopupHistoryMode,
+        showPaceConfidence: Bool,
+        onHistoryModeChange: @escaping (PopupHistoryMode) -> Void
+    ) {
         self.samples = samples
         self.showsChart = showsChart
+        self.historyMode = historyMode
+        self.showPaceConfidence = showPaceConfidence
+        self.onHistoryModeChange = onHistoryModeChange
         self.fiveHourPoints = CodexUsageHistoryAnalytics.points(from: samples, series: .fiveHour)
         self.weeklyPoints = CodexUsageHistoryAnalytics.points(from: samples, series: .weekly)
+        self.currentCycleFiveHourPoints = CodexUsageHistoryAnalytics.currentCyclePoints(from: samples, series: .fiveHour)
+        self.currentCycleWeeklyPoints = CodexUsageHistoryAnalytics.currentCyclePoints(from: samples, series: .weekly)
         self.fiveHourForecast = CodexUsageHistoryAnalytics.forecast(from: samples, series: .fiveHour)
         self.weeklyForecast = CodexUsageHistoryAnalytics.forecast(from: samples, series: .weekly)
     }
@@ -23,18 +40,98 @@ struct UsageHistoryCardView: View {
     var body: some View {
         GlassCard(style: .secondary) {
             VStack(alignment: .leading, spacing: 10) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text("Usage history")
-                        .font(.headline)
-
-                    Spacer()
-
-                    Text("Last 30 days")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-
+                header
                 forecastSummary
+                contentSection
+            }
+        }
+    }
+
+    private var header: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text("Usage history")
+                .font(.headline)
+
+            Spacer()
+
+            Picker("History mode", selection: Binding(
+                get: { historyMode },
+                set: { onHistoryModeChange($0) }
+            )) {
+                Text("Peaks").tag(PopupHistoryMode.dailyPeaks)
+                Text("Cycle").tag(PopupHistoryMode.thisCycle)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .frame(width: 148)
+        }
+    }
+
+    private var weeklySeriesColor: Color {
+        Color(red: 0.35, green: 0.77, blue: 0.47).opacity(0.86)
+    }
+
+    private var forecastSummary: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text("Weekly pace")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                Spacer(minLength: 8)
+
+                Text(weeklyForecast.message)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(forecastMessageColor)
+                    .contentTransition(accessibilityReduceMotion ? .identity : .opacity)
+                    .lineLimit(1)
+            }
+
+            if showPaceConfidence, let detail = weeklyForecast.detail {
+                Text(detail)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if let current = weeklyForecast.currentPercent,
+               let projected = weeklyForecast.projectedPercentAtReset {
+                ForecastUsageBar(
+                    currentPercent: current,
+                    projectedPercent: projected
+                )
+
+                HStack(spacing: 8) {
+                    Text("Now \(Int(current.rounded()))%")
+                    Spacer()
+                    Text("By reset \(Int(projected.rounded()))%")
+                }
+                .font(.caption2.monospacedDigit())
+                .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var forecastMessageColor: Color {
+        switch weeklyForecast.confidence {
+        case .tooEarly, .learning, .estimatedFromHistory:
+            return .primary.opacity(0.84)
+        case .stable:
+            return weeklyForecast.tone.color.opacity(0.9)
+        case .volatile:
+            return .orange.opacity(0.9)
+        }
+    }
+
+    @ViewBuilder
+    private var contentSection: some View {
+        switch historyMode {
+        case .dailyPeaks:
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Last 30 days")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
 
                 if showsChart {
                     MiniUsageHistoryGraph(
@@ -57,34 +154,29 @@ struct UsageHistoryCardView: View {
                     )
                 }
             }
-        }
-    }
+        case .thisCycle:
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Current cycle")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
 
-    private var weeklySeriesColor: Color {
-        Color.green.opacity(0.82)
-    }
+                if showsChart {
+                    MiniUsageHistoryGraph(
+                        fiveHourPoints: currentCycleFiveHourPoints,
+                        weeklyPoints: currentCycleWeeklyPoints,
+                        weeklyColor: weeklySeriesColor
+                    )
+                }
 
-    private var forecastSummary: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            if let current = weeklyForecast.currentPercent,
-               let projected = weeklyForecast.projectedPercentAtReset {
-                ForecastUsageBar(
-                    currentPercent: current,
-                    projectedPercent: projected
-                )
-            }
-
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text(weeklyForecast.message)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(weeklyForecast.tone.color)
-                    .contentTransition(accessibilityReduceMotion ? .identity : .opacity)
-
-                if let detail = weeklyForecast.detail {
-                    Text(detail)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                HStack(spacing: 10) {
+                    cycleChip(label: "Confidence", value: weeklyForecast.confidence.label)
+                    cycleChip(label: "Samples", value: "\(weeklyForecast.sampleCount)")
+                    if let resetAt = weeklyForecast.resetAt {
+                        cycleChip(
+                            label: "Reset",
+                            value: CodexFormatting.relativeResetText(now: .init(), resetAt: resetAt)
+                        )
+                    }
                 }
             }
         }
@@ -106,7 +198,23 @@ struct UsageHistoryCardView: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
-        .background(.white.opacity(0.16), in: Capsule())
+        .background(.white.opacity(0.12), in: Capsule())
+    }
+
+    private func cycleChip(label: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            Text(value)
+                .font(.caption.monospacedDigit().weight(.semibold))
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.white.opacity(0.10), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
@@ -192,6 +300,15 @@ private struct ForecastUsageBar: View {
                         )
                     )
                     .frame(width: max(10, currentX))
+
+                Circle()
+                    .fill(Color.white.opacity(0.92))
+                    .frame(width: 8, height: 8)
+                    .overlay {
+                        Circle()
+                            .stroke(Color.blue.opacity(0.35), lineWidth: 1)
+                    }
+                    .offset(x: max(0, currentX - 4))
 
                 RoundedRectangle(cornerRadius: 1)
                     .fill(Color.white.opacity(0.85))

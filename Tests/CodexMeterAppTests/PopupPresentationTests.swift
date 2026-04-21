@@ -71,17 +71,134 @@ final class PopupPresentationTests: XCTestCase {
         XCTAssertEqual(presentation.visibleCredits?.displayText, "12.50")
     }
 
-    func testSupplementalSectionsPutHistoryBeforeInsights() {
-        XCTAssertEqual(
-            PopupPresentation.supplementalSections(showHistory: true, showInsights: true),
-            [.history, .insights]
+    func testSummaryUsesTooEarlySeverityForLearningForecast() {
+        let summary = PopupPresentation.summary(
+            snapshot: makeSnapshot(),
+            insights: CodexUsageInsights(
+                weeklyPace: CodexUsageForecast(
+                    message: "Learning this cycle",
+                    tone: .caution,
+                    confidence: .learning,
+                    currentPercent: 10,
+                    projectedPercentAtReset: nil,
+                    paceVariancePercent: nil,
+                    sampleCount: 2,
+                    resetAt: Date(timeIntervalSince1970: 1_800_000_000),
+                    detail: "Need 1 more samples"
+                ),
+                fiveHourPressure: CodexUsageInsightRow(
+                    title: "5-hour pressure",
+                    message: "18% used",
+                    detail: "resets in 4h",
+                    tone: .safe
+                ),
+                recentPeaks: CodexUsageInsightRow(
+                    title: "Recent peaks",
+                    message: "5H 18% · W 22%",
+                    detail: "Last 24h / 7d",
+                    tone: .safe
+                )
+            ),
+            previewModeEnabled: false,
+            hasRefreshIssue: false
         )
+
+        XCTAssertEqual(summary?.severity, .tooEarly)
+        XCTAssertEqual(summary?.title, "Too early")
+    }
+
+    func testSummaryEscalatesToFiveHourPressureWhenWeeklyLooksSafe() {
+        let summary = PopupPresentation.summary(
+            snapshot: makeSnapshot(),
+            insights: CodexUsageInsights(
+                weeklyPace: CodexUsageForecast(
+                    message: "Projected 62% by reset",
+                    tone: .safe,
+                    confidence: .stable,
+                    currentPercent: 41,
+                    projectedPercentAtReset: 62,
+                    paceVariancePercent: -4,
+                    sampleCount: 6,
+                    resetAt: Date(timeIntervalSince1970: 1_800_000_000),
+                    detail: "4% under pace · 6 samples"
+                ),
+                fiveHourPressure: CodexUsageInsightRow(
+                    title: "5-hour pressure",
+                    message: "88% used",
+                    detail: "resets in 2h",
+                    tone: .danger
+                ),
+                recentPeaks: CodexUsageInsightRow(
+                    title: "Recent peaks",
+                    message: "5H 88% · W 63%",
+                    detail: "Last 24h / 7d",
+                    tone: .danger
+                )
+            ),
+            previewModeEnabled: false,
+            hasRefreshIssue: false
+        )
+
+        XCTAssertEqual(summary?.severity, .risk)
+        XCTAssertEqual(summary?.supportingLabel, "5-hour pressure")
+    }
+
+    func testSummaryIgnoresSparkLimitsForAlerting() {
+        let sparkLimit = makeLimit(id: "spark", name: "Codex Spark", bucket: .spark, fiveHour: 0, weekly: 100)
+        let snapshot = CodexSnapshot(
+            capturedAt: Date(timeIntervalSince1970: 1_800_000_000),
+            executablePath: "/Applications/Codexex.app",
+            account: CodexAccount(
+                authType: "chatGPT",
+                email: "user@example.com",
+                planType: "PRO"
+            ),
+            limits: [
+                makeLimit(id: "codex", name: "Codex", bucket: .codex, fiveHour: 12, weekly: 41),
+                sparkLimit
+            ]
+        )
+
+        let summary = PopupPresentation.summary(
+            snapshot: snapshot,
+            insights: CodexUsageInsights(
+                weeklyPace: CodexUsageForecast(
+                    message: "Projected 62% by reset",
+                    tone: .safe,
+                    confidence: .stable,
+                    currentPercent: 41,
+                    projectedPercentAtReset: 62,
+                    paceVariancePercent: -4,
+                    sampleCount: 6,
+                    resetAt: Date(timeIntervalSince1970: 1_800_000_000),
+                    detail: "4% under pace · 6 samples"
+                ),
+                fiveHourPressure: CodexUsageInsightRow(
+                    title: "5-hour pressure",
+                    message: "12% used",
+                    detail: "resets in 4h",
+                    tone: .safe
+                ),
+                recentPeaks: CodexUsageInsightRow(
+                    title: "Recent peaks",
+                    message: "5H 18% · W 62%",
+                    detail: "Last 24h / 7d",
+                    tone: .safe
+                )
+            ),
+            previewModeEnabled: false,
+            hasRefreshIssue: false
+        )
+
+        XCTAssertEqual(summary?.severity, .safe)
+        XCTAssertEqual(summary?.message, "You are on track for this cycle.")
     }
 
     func testHistoryLegendUsesCurrentPercentNotForecastWarning() {
         let forecast = CodexUsageForecast(
             message: "Likely over in 6h",
             tone: .danger,
+            confidence: .volatile,
             currentPercent: 91,
             projectedPercentAtReset: 100,
             paceVariancePercent: 82
@@ -127,6 +244,20 @@ final class PopupPresentationTests: XCTestCase {
                 resetsAt: now.addingTimeInterval(24 * 60 * 60)
             ),
             credits: credits
+        )
+    }
+
+    private func makeSnapshot() -> CodexSnapshot {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        return CodexSnapshot(
+            capturedAt: now,
+            executablePath: "/Applications/Codexex.app",
+            account: CodexAccount(
+                authType: "chatGPT",
+                email: "user@example.com",
+                planType: "PRO"
+            ),
+            limits: [makeLimit(id: "codex", name: "Codex", bucket: .codex, fiveHour: 12, weekly: 41)]
         )
     }
 }

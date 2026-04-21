@@ -7,21 +7,21 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0350F768560D8A4EB52D2596 /* PopupSummaryCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D15D66529D9E2B5CCB5D169 /* PopupSummaryCardView.swift */; };
 		0B4C80DD15E0974A1C293062 /* OnboardingRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39EDD9819BF6B9A3204E3F0F /* OnboardingRootView.swift */; };
 		0D1EDC1B9A047BE21A729FEA /* PopupPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7DC9461D5A89DDD41915EB /* PopupPresentation.swift */; };
 		0D5147B0A0D575B227E2C660 /* CodexFormattingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFA0B71CFFD2820EA439D76C /* CodexFormattingTests.swift */; };
 		0D82E69093B19642898C2603 /* CodexDashboardState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 305AAF2B86E0F73329DCBC56 /* CodexDashboardState.swift */; };
 		0F1ABA1AE10DC28793A2B00F /* OnboardingWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4669C1614F876F713F88760 /* OnboardingWindowController.swift */; };
-		1171F51B394C592B6FF8CD63 /* PopupInsightsCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A24E26B53E0F2A55769DFC1F /* PopupInsightsCardView.swift */; };
 		11FB5E69156BB0A8CB8C7ABA /* Bundle+CodexVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05CCE50FE148626A7EEABCA7 /* Bundle+CodexVersion.swift */; };
 		17640F87C09FECBB553D5520 /* CodexAppLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E5F053505E884FBD559ACCC /* CodexAppLinks.swift */; };
 		193EC7AFFB032DFA821500B6 /* CodexAuthSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = D24D957C6CAB61789A1C7AD1 /* CodexAuthSession.swift */; };
 		1BF94E136A807E6684341548 /* CodexMeterCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6869618B2897346A3AB60D26 /* CodexMeterCore.framework */; };
+		1F716FB31CC97F437C153AD1 /* SettingsForecastCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7A0915351DD97681A213FCB /* SettingsForecastCardView.swift */; };
 		2036B60D86528A7C1F7A8DD4 /* PopupLimitCardViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E944DBB615061BEA8E462D9 /* PopupLimitCardViews.swift */; };
 		22F81F822F338DDEE87B7455 /* CodexLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B61AAE1DA3B39D0AD2CB203 /* CodexLog.swift */; };
 		2464986D9560A0BD07E6C0F2 /* CodexDeviceAuthCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2532C9697CC6730FC45790DE /* CodexDeviceAuthCoordinator.swift */; };
 		2612BDEDDA88004D9176D78D /* GlassCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE2909B5F3DAB30B7BDCACD5 /* GlassCard.swift */; };
-		292F858BF3AD35D66A0E5C8D /* SettingsDisplayCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1686F7508B7B74CF2DE52996 /* SettingsDisplayCardView.swift */; };
 		2DD7F4B32FDD59E6D23C78E7 /* CodexMeterCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6869618B2897346A3AB60D26 /* CodexMeterCore.framework */; };
 		3345862044A399E80C2EAFC9 /* CodexMenuBarModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB02F9086358A6968D76E1F /* CodexMenuBarModel.swift */; };
 		3E4271A0C7BEE3807FDACFC4 /* GlassTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76C70A444F90564AD40EA87B /* GlassTokens.swift */; };
@@ -31,6 +31,7 @@
 		6092EF48D5067D3AEA443F7A /* PopupStatusCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5BFA2D05C17A74BBBB6DF3E /* PopupStatusCardView.swift */; };
 		60FDC5DB302DDBA630D4C40C /* CodexAppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3341C9D3222116EB47334518 /* CodexAppSettings.swift */; };
 		6256AA0A194ABF81E19D313A /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = AE6B26C897C050086555E22C /* AppIcon.icon */; };
+		644B39D01815A567068D9F3D /* SettingsFormRows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E75A58577491FB73E1AC4BF /* SettingsFormRows.swift */; };
 		647FBBC6090D48536D9B232D /* SettingsAboutCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE190C5B99912EAC0B0887CB /* SettingsAboutCard.swift */; };
 		6BF3CA164FBA64B561253B53 /* CodexUsageHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3209217BB7F873DF4FF8D1AF /* CodexUsageHistoryStore.swift */; };
 		71B3E39977240A141201FC7A /* CodexPreviewData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0F373CE46619902781235BE /* CodexPreviewData.swift */; };
@@ -50,7 +51,9 @@
 		B197AD5E0AF396598F59B2AC /* CodexMenuBarModelAuthRestoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5995BBB6A6A916972A573E87 /* CodexMenuBarModelAuthRestoreTests.swift */; };
 		B2E6AF2E9FEF66375E81002D /* SettingsBehaviorCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E94F48CFE7F5990105B8F6D9 /* SettingsBehaviorCardView.swift */; };
 		B421A2A4926ED0971E359253 /* TestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E634F7A460DDEFBA77A8D6C2 /* TestSupport.swift */; };
+		BC8B438281A72BF4B14E15BC /* SettingsPopupCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D596007917A46C19EBD5349 /* SettingsPopupCardView.swift */; };
 		C12091F1FC2EF1E4C5A57DBC /* SettingsAccountCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1FDAFB849CE5DF61B0DFC7E /* SettingsAccountCardView.swift */; };
+		C12CD61D80218EB9FA4D0A22 /* SettingsPreferencesCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8C076A9585FA44E239EAE67 /* SettingsPreferencesCardView.swift */; };
 		C43B02F97D41EF39DB75A23C /* CodexAppSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCB6B7530865AEDFA9D5203D /* CodexAppSettingsTests.swift */; };
 		C76BCA0E924E1B8753F68881 /* CodexHelperProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F11D4461703FF707B59579E /* CodexHelperProcess.swift */; };
 		CD116997DA122E934905992A /* CodexSnapshotParityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DA33B4078836DE67FB6AA58 /* CodexSnapshotParityTests.swift */; };
@@ -166,8 +169,8 @@
 		00DEADCC4A6A1910F07EC9CC /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		05CCE50FE148626A7EEABCA7 /* Bundle+CodexVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bundle+CodexVersion.swift"; sourceTree = "<group>"; };
 		0A6E3A9F28BCC97FDAEAA476 /* CodexMeterCoreTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CodexMeterCoreTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		0D15D66529D9E2B5CCB5D169 /* PopupSummaryCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupSummaryCardView.swift; sourceTree = "<group>"; };
 		0F5C3585137CA0195CDC7B3A /* CodexModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexModels.swift; sourceTree = "<group>"; };
-		1686F7508B7B74CF2DE52996 /* SettingsDisplayCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsDisplayCardView.swift; sourceTree = "<group>"; };
 		1A7DC9461D5A89DDD41915EB /* PopupPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupPresentation.swift; sourceTree = "<group>"; };
 		1B61AAE1DA3B39D0AD2CB203 /* CodexLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexLog.swift; sourceTree = "<group>"; };
 		2532C9697CC6730FC45790DE /* CodexDeviceAuthCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexDeviceAuthCoordinator.swift; sourceTree = "<group>"; };
@@ -185,10 +188,12 @@
 		39EDD9819BF6B9A3204E3F0F /* OnboardingRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingRootView.swift; sourceTree = "<group>"; };
 		45ECD99179170D7137CE6A6B /* PopupPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupPresentationTests.swift; sourceTree = "<group>"; };
 		4A0EFEAE8F340B06D8800306 /* SettingsRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsRootView.swift; sourceTree = "<group>"; };
+		4E75A58577491FB73E1AC4BF /* SettingsFormRows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsFormRows.swift; sourceTree = "<group>"; };
 		55540A16D4495A09BD25A98F /* CodexBinaryLocator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexBinaryLocator.swift; sourceTree = "<group>"; };
 		5995BBB6A6A916972A573E87 /* CodexMenuBarModelAuthRestoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexMenuBarModelAuthRestoreTests.swift; sourceTree = "<group>"; };
 		59BF4687D491CA6035EC1E43 /* CodexAppServerProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexAppServerProbe.swift; sourceTree = "<group>"; };
 		5B85225D5F3B2A1899DCF5C6 /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
+		5D596007917A46C19EBD5349 /* SettingsPopupCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPopupCardView.swift; sourceTree = "<group>"; };
 		5FF2F47904F3343A31F70E84 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		6295BEFAAD3C4835D1687CFA /* CodexBinaryLocatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexBinaryLocatorTests.swift; sourceTree = "<group>"; };
 		6869618B2897346A3AB60D26 /* CodexMeterCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CodexMeterCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -198,7 +203,6 @@
 		9AADE08E274111411DA1BFE4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9E5F053505E884FBD559ACCC /* CodexAppLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexAppLinks.swift; sourceTree = "<group>"; };
 		A0F373CE46619902781235BE /* CodexPreviewData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexPreviewData.swift; sourceTree = "<group>"; };
-		A24E26B53E0F2A55769DFC1F /* PopupInsightsCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupInsightsCardView.swift; sourceTree = "<group>"; };
 		A52CF560D83450EF83AB67DA /* CodexUsageHistoryAnalytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexUsageHistoryAnalytics.swift; sourceTree = "<group>"; };
 		A6006DA1C920A31C12C2BB4E /* CodexMeterApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CodexMeterApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AE6B26C897C050086555E22C /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
@@ -208,6 +212,7 @@
 		C15019DEB1216ABB27FF4B76 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		C4669C1614F876F713F88760 /* OnboardingWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWindowController.swift; sourceTree = "<group>"; };
 		C7B21E431498D1F93FE20578 /* CodexMenuBarModel+UI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CodexMenuBarModel+UI.swift"; sourceTree = "<group>"; };
+		C8C076A9585FA44E239EAE67 /* SettingsPreferencesCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPreferencesCardView.swift; sourceTree = "<group>"; };
 		CBB02F9086358A6968D76E1F /* CodexMenuBarModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexMenuBarModel.swift; sourceTree = "<group>"; };
 		CDE6B79C4A71C89D19D67F4A /* CodexXPCClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexXPCClient.swift; sourceTree = "<group>"; };
 		CFA0B71CFFD2820EA439D76C /* CodexFormattingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexFormattingTests.swift; sourceTree = "<group>"; };
@@ -222,6 +227,7 @@
 		EE114164113759D2DF5B3823 /* CodexStatusItemController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexStatusItemController.swift; sourceTree = "<group>"; };
 		EE190C5B99912EAC0B0887CB /* SettingsAboutCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsAboutCard.swift; sourceTree = "<group>"; };
 		F2912FA060561F4B750A662B /* CodexLaunchAtLoginManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexLaunchAtLoginManager.swift; sourceTree = "<group>"; };
+		F7A0915351DD97681A213FCB /* SettingsForecastCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsForecastCardView.swift; sourceTree = "<group>"; };
 		FE2909B5F3DAB30B7BDCACD5 /* GlassCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassCard.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -309,16 +315,19 @@
 				FE2909B5F3DAB30B7BDCACD5 /* GlassCard.swift */,
 				76C70A444F90564AD40EA87B /* GlassTokens.swift */,
 				39EDD9819BF6B9A3204E3F0F /* OnboardingRootView.swift */,
-				A24E26B53E0F2A55769DFC1F /* PopupInsightsCardView.swift */,
 				8E944DBB615061BEA8E462D9 /* PopupLimitCardViews.swift */,
 				1A7DC9461D5A89DDD41915EB /* PopupPresentation.swift */,
 				E6337B4BF12C9256AF34E241 /* PopupRootView.swift */,
 				D5BFA2D05C17A74BBBB6DF3E /* PopupStatusCardView.swift */,
+				0D15D66529D9E2B5CCB5D169 /* PopupSummaryCardView.swift */,
 				2D4239A5022878524982EB35 /* PopupUsageHistoryCardView.swift */,
 				EE190C5B99912EAC0B0887CB /* SettingsAboutCard.swift */,
 				E1FDAFB849CE5DF61B0DFC7E /* SettingsAccountCardView.swift */,
 				E94F48CFE7F5990105B8F6D9 /* SettingsBehaviorCardView.swift */,
-				1686F7508B7B74CF2DE52996 /* SettingsDisplayCardView.swift */,
+				F7A0915351DD97681A213FCB /* SettingsForecastCardView.swift */,
+				4E75A58577491FB73E1AC4BF /* SettingsFormRows.swift */,
+				5D596007917A46C19EBD5349 /* SettingsPopupCardView.swift */,
+				C8C076A9585FA44E239EAE67 /* SettingsPreferencesCardView.swift */,
 				4A0EFEAE8F340B06D8800306 /* SettingsRootView.swift */,
 				3134479F012B906A7D8DD00F /* StatusBarLabel.swift */,
 			);
@@ -650,16 +659,19 @@
 				3E4271A0C7BEE3807FDACFC4 /* GlassTokens.swift in Sources */,
 				0B4C80DD15E0974A1C293062 /* OnboardingRootView.swift in Sources */,
 				0F1ABA1AE10DC28793A2B00F /* OnboardingWindowController.swift in Sources */,
-				1171F51B394C592B6FF8CD63 /* PopupInsightsCardView.swift in Sources */,
 				2036B60D86528A7C1F7A8DD4 /* PopupLimitCardViews.swift in Sources */,
 				0D1EDC1B9A047BE21A729FEA /* PopupPresentation.swift in Sources */,
 				8B944EC71A661E1310E2D184 /* PopupRootView.swift in Sources */,
 				6092EF48D5067D3AEA443F7A /* PopupStatusCardView.swift in Sources */,
+				0350F768560D8A4EB52D2596 /* PopupSummaryCardView.swift in Sources */,
 				7F89E5F27D60DD0CEFA9CDBB /* PopupUsageHistoryCardView.swift in Sources */,
 				647FBBC6090D48536D9B232D /* SettingsAboutCard.swift in Sources */,
 				C12091F1FC2EF1E4C5A57DBC /* SettingsAccountCardView.swift in Sources */,
 				B2E6AF2E9FEF66375E81002D /* SettingsBehaviorCardView.swift in Sources */,
-				292F858BF3AD35D66A0E5C8D /* SettingsDisplayCardView.swift in Sources */,
+				1F716FB31CC97F437C153AD1 /* SettingsForecastCardView.swift in Sources */,
+				644B39D01815A567068D9F3D /* SettingsFormRows.swift in Sources */,
+				BC8B438281A72BF4B14E15BC /* SettingsPopupCardView.swift in Sources */,
+				C12CD61D80218EB9FA4D0A22 /* SettingsPreferencesCardView.swift in Sources */,
 				F55AFF29F54237991EFDB250 /* SettingsRootView.swift in Sources */,
 				7CBC557D3EBEE8CA7F57E6D4 /* SettingsWindowController.swift in Sources */,
 				4B1A1E766C201D31CDE00E6E /* StatusBarLabel.swift in Sources */,

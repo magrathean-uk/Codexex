@@ -28,6 +28,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 sharedSettingsWindowController.showSettingsWindow()
             }
         )
+        sharedSettingsWindowController.onVisibilityChange = { visible in
+            sharedStatusItemController?.setSettingsVisible(visible)
+        }
 
         if sharedModel.hasCompletedOnboarding == false {
             sharedOnboardingWindowController.showWelcomeWindow()

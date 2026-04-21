@@ -5,7 +5,7 @@ import SwiftUI
 struct SettingsAboutCard: View {
     var body: some View {
         GlassCard(style: .secondary) {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 14) {
                 Text("About")
                     .font(.headline)
 
@@ -31,9 +31,7 @@ struct SettingsAboutCard: View {
                     }
                 }
 
-                Divider()
-
-                VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 10) {
                     Button("Terms of Use") {
                         NSWorkspace.shared.open(CodexAppLinks.termsURL)
                     }
