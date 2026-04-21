@@ -2,6 +2,20 @@
 import Foundation
 import CodexMeterCore
 
+enum PopupHistoryMode: String, CaseIterable {
+    case dailyPeaks
+    case thisCycle
+
+    var title: String {
+        switch self {
+        case .dailyPeaks:
+            return "Daily peaks"
+        case .thisCycle:
+            return "This cycle"
+        }
+    }
+}
+
 enum CodexAppSettings {
     private enum Key {
         static let hasCompletedOnboarding = "codexex.hasCompletedOnboarding"
@@ -15,6 +29,9 @@ enum CodexAppSettings {
         static let showSparkEnabled = "codexex.showSparkEnabled"
         static let showFiveHourInMenubar = "codexex.showFiveHourInMenubar"
         static let showWeeklyInMenubar = "codexex.showWeeklyInMenubar"
+        static let defaultHistoryMode = "codexex.defaultHistoryMode"
+        static let showPaceConfidence = "codexex.showPaceConfidence"
+        static let hideIdleSecondaryLimits = "codexex.hideIdleSecondaryLimits"
     }
 
     static let refreshIntervals: [Int] = [300, 600, 3600]
@@ -148,6 +165,43 @@ enum CodexAppSettings {
         }
         set {
             UserDefaults.standard.set(newValue, forKey: Key.showWeeklyInMenubar)
+        }
+    }
+
+    static var defaultHistoryMode: PopupHistoryMode {
+        get {
+            guard let rawValue = UserDefaults.standard.string(forKey: Key.defaultHistoryMode),
+                  let mode = PopupHistoryMode(rawValue: rawValue) else {
+                return .dailyPeaks
+            }
+            return mode
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: Key.defaultHistoryMode)
+        }
+    }
+
+    static var showPaceConfidence: Bool {
+        get {
+            if UserDefaults.standard.object(forKey: Key.showPaceConfidence) == nil {
+                return true
+            }
+            return UserDefaults.standard.bool(forKey: Key.showPaceConfidence)
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Key.showPaceConfidence)
+        }
+    }
+
+    static var hideIdleSecondaryLimits: Bool {
+        get {
+            if UserDefaults.standard.object(forKey: Key.hideIdleSecondaryLimits) == nil {
+                return false
+            }
+            return UserDefaults.standard.bool(forKey: Key.hideIdleSecondaryLimits)
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Key.hideIdleSecondaryLimits)
         }
     }
 }

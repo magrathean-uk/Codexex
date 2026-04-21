@@ -6,45 +6,54 @@ struct SettingsBehaviorCardView: View {
     @Bindable var model: CodexMenuBarModel
 
     var body: some View {
-        GlassCard(style: .secondary) {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Behavior")
-                    .font(.headline)
-
-                Toggle("Launch at login", isOn: Binding(
+        SettingsSectionView(
+            title: "Behavior",
+            detail: "Startup and refresh preferences."
+        ) {
+            SettingsToggleRow(
+                title: "Launch at login",
+                detail: model.launchAtLoginStatusMessage,
+                isOn: Binding(
                     get: { model.launchAtLoginEnabled },
                     set: { model.setLaunchAtLoginEnabled($0) }
-                ))
+                )
+            )
 
-                if let launchAtLoginStatusMessage = model.launchAtLoginStatusMessage {
-                    Text(launchAtLoginStatusMessage)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+            Divider()
 
-                Toggle("Auto-refresh", isOn: Binding(
+            SettingsToggleRow(
+                title: "Auto-refresh",
+                detail: "Refresh usage automatically in the background.",
+                isOn: Binding(
                     get: { model.autoRefreshEnabled },
                     set: { model.setAutoRefreshEnabled($0) }
-                ))
+                )
+            )
 
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Refresh every")
-                        .font(.subheadline.weight(.medium))
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Refresh every")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
 
-                    Picker("Refresh every", selection: Binding(
-                        get: { model.refreshIntervalSeconds },
-                        set: { model.setRefreshIntervalSeconds($0) }
-                    )) {
-                        Text("5 min").tag(300)
-                        Text("10 min").tag(600)
-                        Text("60 min").tag(3600)
-                    }
-                    .labelsHidden()
-                    .pickerStyle(.segmented)
-                    .disabled(model.autoRefreshEnabled == false)
+                Picker("Refresh every", selection: Binding(
+                    get: { model.refreshIntervalSeconds },
+                    set: { model.setRefreshIntervalSeconds($0) }
+                )) {
+                    Text("5 min").tag(300)
+                    Text("10 min").tag(600)
+                    Text("60 min").tag(3600)
                 }
+                .labelsHidden()
+                .pickerStyle(.segmented)
+                .disabled(model.autoRefreshEnabled == false)
+            }
 
+            Divider()
+
+            SettingsActionRow(
+                title: "Manual refresh",
+                detail: "Pull the latest quota data right now."
+            ) {
                 Button {
                     Task { await model.refreshNow() }
                 } label: {
@@ -53,9 +62,7 @@ struct SettingsBehaviorCardView: View {
                 .buttonStyle(.borderedProminent)
                 .disabled(model.isRefreshing)
             }
-            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 #endif

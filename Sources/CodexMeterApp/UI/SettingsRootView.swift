@@ -8,17 +8,19 @@ struct SettingsRootView: View {
     @Bindable var model: CodexMenuBarModel
 
     var body: some View {
-        GlassEffectContainer(spacing: GlassTokens.sectionSpacing) {
-            ScrollView {
-                ViewThatFits(in: .horizontal) {
-                    wideLayout
-                    stackedLayout
+        GeometryReader { proxy in
+            GlassEffectContainer(spacing: GlassTokens.sectionSpacing) {
+                ScrollView {
+                    if proxy.size.width >= 820 {
+                        wideLayout
+                    } else {
+                        stackedLayout
+                    }
                 }
                 .padding(GlassTokens.pagePadding)
-                .frame(maxWidth: .infinity, alignment: .topLeading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .scrollIndicators(.hidden)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .scrollIndicators(.hidden)
         }
         .onAppear {
             model.setReduceMotionEnabled(accessibilityReduceMotion)
@@ -30,17 +32,11 @@ struct SettingsRootView: View {
 
     private var wideLayout: some View {
         HStack(alignment: .top, spacing: GlassTokens.sectionSpacing) {
-            VStack(alignment: .leading, spacing: GlassTokens.sectionSpacing) {
-                SettingsAccountCardView(model: model)
-                SettingsBehaviorCardView(model: model)
-            }
-            .frame(maxWidth: 372, alignment: .topLeading)
+            sidebarColumn
+                .frame(width: 280, alignment: .topLeading)
 
-            VStack(alignment: .leading, spacing: GlassTokens.sectionSpacing) {
-                SettingsDisplayCardView(model: model)
-                SettingsAboutCard()
-            }
-            .frame(maxWidth: .infinity, alignment: .topLeading)
+            controlsColumn
+                .frame(maxWidth: .infinity, alignment: .topLeading)
         }
     }
 
@@ -48,8 +44,24 @@ struct SettingsRootView: View {
         VStack(alignment: .leading, spacing: GlassTokens.sectionSpacing) {
             SettingsAccountCardView(model: model)
             SettingsBehaviorCardView(model: model)
-            SettingsDisplayCardView(model: model)
+            SettingsPopupCardView(model: model)
+            SettingsForecastCardView(model: model)
             SettingsAboutCard()
+        }
+    }
+
+    private var sidebarColumn: some View {
+        VStack(alignment: .leading, spacing: GlassTokens.sectionSpacing) {
+            SettingsAccountCardView(model: model)
+            SettingsBehaviorCardView(model: model)
+            SettingsAboutCard()
+        }
+    }
+
+    private var controlsColumn: some View {
+        VStack(alignment: .leading, spacing: GlassTokens.sectionSpacing) {
+            SettingsPopupCardView(model: model)
+            SettingsForecastCardView(model: model)
         }
     }
 }

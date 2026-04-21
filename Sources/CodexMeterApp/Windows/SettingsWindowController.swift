@@ -4,6 +4,8 @@ import SwiftUI
 
 @MainActor
 final class SettingsWindowController: NSWindowController, NSWindowDelegate {
+    var onVisibilityChange: ((Bool) -> Void)?
+
     var isVisible: Bool {
         window?.isVisible == true
     }
@@ -16,7 +18,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
         window.titleVisibility = .visible
         window.setContentSize(NSSize(width: GlassTokens.settingsWidth, height: GlassTokens.settingsHeight))
-        window.contentMinSize = NSSize(width: 640, height: 500)
+        window.contentMinSize = NSSize(width: 760, height: 540)
         window.isReleasedWhenClosed = false
         window.center()
 
@@ -35,10 +37,12 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         NSApp.setActivationPolicy(.regular)
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        onVisibilityChange?(true)
     }
 
     func windowWillClose(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
+        onVisibilityChange?(false)
     }
 
     func closeSettingsWindow() {

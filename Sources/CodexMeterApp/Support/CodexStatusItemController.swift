@@ -12,6 +12,7 @@ final class CodexStatusItemController: NSObject {
     private let menu = NSMenu()
     private var hostingController: NSHostingController<PopupRootView>?
     private var eventMonitor: Any?
+    private var settingsVisible = false
 
     init(model: CodexMenuBarModel, openSettings: @escaping () -> Void) {
         self.model = model
@@ -89,8 +90,24 @@ final class CodexStatusItemController: NSObject {
     }
 
     private func openSettings() {
-        popover.performClose(nil)
         openSettingsAction()
+    }
+
+    func setSettingsVisible(_ visible: Bool) {
+        settingsVisible = visible
+        popover.behavior = visible ? .applicationDefined : .transient
+
+        guard let button = statusItem.button else { return }
+
+        if visible {
+            if popover.isShown == false {
+                updatePopoverSize()
+                popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            }
+            stopEventMonitor()
+        } else if popover.isShown {
+            startEventMonitor()
+        }
     }
 
     @objc private func quitApp() {
@@ -104,7 +121,9 @@ final class CodexStatusItemController: NSObject {
         } else {
             updatePopoverSize()
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            startEventMonitor()
+            if settingsVisible == false {
+                startEventMonitor()
+            }
         }
     }
 
@@ -143,6 +162,7 @@ final class CodexStatusItemController: NSObject {
         _ = model.snapshot
         _ = model.isRefreshing
         _ = model.lastError
+        _ = model.popupSummary
         _ = model.isSigningIn
         _ = model.isSignedIn
         _ = model.hasResolvedAuthState
@@ -150,6 +170,9 @@ final class CodexStatusItemController: NSObject {
         _ = model.authStatusMessage
         _ = model.lastUpdatedAt
         _ = model.showHistoryEnabled
+        _ = model.defaultHistoryMode
+        _ = model.showPaceConfidence
+        _ = model.hideIdleSecondaryLimits
         _ = model.showFiveHourInMenubar
         _ = model.showWeeklyInMenubar
         _ = model.usageHistory
@@ -165,13 +188,21 @@ final class CodexStatusItemController: NSObject {
     }
 
     private func updateTitle() {
-        statusItem.button?.title = StatusBarLabel.makeTitle(
+        let hasError = model.lastError != nil
+        let button = statusItem.button
+        button?.title = StatusBarLabel.makeTitle(
             snapshot: model.snapshot,
             isRefreshing: model.isRefreshing,
-            hasError: model.lastError != nil,
+            hasError: hasError,
             showFiveHour: model.showFiveHourInMenubar,
             showWeekly: model.showWeeklyInMenubar
         )
+        button?.image = StatusBarLabel.menuBarImage(
+            isRefreshing: model.isRefreshing,
+            hasError: hasError,
+            severity: hasError || model.isRefreshing ? nil : model.popupSummary?.severity
+        )
+        button?.imagePosition = .imageLeading
     }
 }
 #endif

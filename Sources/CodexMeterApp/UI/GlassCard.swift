@@ -9,9 +9,9 @@ enum GlassSurfaceStyle {
     var glass: Glass {
         switch self {
         case .primary:
-            return .regular.tint(.white.opacity(0.18))
-        case .secondary:
             return .regular.tint(.white.opacity(0.14))
+        case .secondary:
+            return .regular.tint(.white.opacity(0.10))
         case .inset:
             return .clear.tint(.clear)
         }
@@ -38,22 +38,22 @@ enum GlassSurfaceStyle {
     var fill: Color {
         switch self {
         case .primary:
-            return Color.white.opacity(0.18)
+            return Color.white.opacity(0.16)
         case .secondary:
-            return Color.white.opacity(0.12)
+            return Color.white.opacity(0.09)
         case .inset:
-            return Color.clear
+            return Color.primary.opacity(0.025)
         }
     }
 
     var border: Color {
         switch self {
         case .primary:
-            return Color.white.opacity(0.22)
+            return Color.white.opacity(0.18)
         case .secondary:
-            return Color.white.opacity(0.16)
+            return Color.white.opacity(0.13)
         case .inset:
-            return Color.primary.opacity(0.035)
+            return Color.primary.opacity(0.05)
         }
     }
 }
@@ -85,6 +85,7 @@ struct GlassCard<Content: View>: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(style.fill, in: shape)
                 .glassEffect(style.glass, in: .rect(cornerRadius: style.radius))
+                .shadow(color: .black.opacity(0.035), radius: 10, y: 2)
                 .overlay {
                     shape.strokeBorder(style.border, lineWidth: 1)
                 }

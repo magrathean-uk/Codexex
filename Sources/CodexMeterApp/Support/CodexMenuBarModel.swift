@@ -26,6 +26,9 @@ final class CodexMenuBarModel {
     private(set) var showHistoryChartEnabled = CodexAppSettings.showHistoryChartEnabled
     private(set) var showInsightsEnabled = CodexAppSettings.showInsightsEnabled
     private(set) var showSparkEnabled = CodexAppSettings.showSparkEnabled
+    private(set) var defaultHistoryMode = CodexAppSettings.defaultHistoryMode
+    private(set) var showPaceConfidence = CodexAppSettings.showPaceConfidence
+    private(set) var hideIdleSecondaryLimits = CodexAppSettings.hideIdleSecondaryLimits
     private(set) var showFiveHourInMenubar = CodexAppSettings.showFiveHourInMenubar
     private(set) var showWeeklyInMenubar = CodexAppSettings.showWeeklyInMenubar
     private(set) var hasCompletedOnboarding = CodexAppSettings.hasCompletedOnboarding
@@ -56,6 +59,14 @@ final class CodexMenuBarModel {
     var hasResolvedAuthState: Bool { authSession.hasResolvedState }
     var usageHistory: [CodexUsageHistorySample] { dashboard.usageHistory }
     var usageInsights: CodexUsageInsights? { dashboard.usageInsights }
+    var popupSummary: PopupSummaryPresentation? {
+        PopupPresentation.summary(
+            snapshot: snapshot,
+            insights: usageInsights,
+            previewModeEnabled: previewModeEnabled,
+            hasRefreshIssue: dashboard.lastError != nil
+        )
+    }
 
     func start() async {
         guard didStart == false else { return }
@@ -304,6 +315,21 @@ final class CodexMenuBarModel {
     func setShowSparkEnabled(_ enabled: Bool) {
         showSparkEnabled = enabled
         CodexAppSettings.showSparkEnabled = enabled
+    }
+
+    func setDefaultHistoryMode(_ mode: PopupHistoryMode) {
+        defaultHistoryMode = mode
+        CodexAppSettings.defaultHistoryMode = mode
+    }
+
+    func setShowPaceConfidence(_ enabled: Bool) {
+        showPaceConfidence = enabled
+        CodexAppSettings.showPaceConfidence = enabled
+    }
+
+    func setHideIdleSecondaryLimits(_ enabled: Bool) {
+        hideIdleSecondaryLimits = enabled
+        CodexAppSettings.hideIdleSecondaryLimits = enabled
     }
 
     func setShowFiveHourInMenubar(_ enabled: Bool) {
