@@ -2,6 +2,9 @@
 import SwiftUI
 import AppKit
 import Observation
+#if canImport(Sentry)
+import Sentry
+#endif
 
 private let sharedModel = CodexMenuBarModel()
 private let sharedSettingsWindowController = SettingsWindowController(model: sharedModel)
@@ -17,6 +20,7 @@ DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
+        startSentryIfConfigured()
         NSApp.setActivationPolicy(.accessory)
         let appIcon = NSWorkspace.shared.icon(forFile: Bundle.main.bundlePath)
         appIcon.isTemplate = false
@@ -57,6 +61,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         return .terminateNow
     }
+}
+
+private func startSentryIfConfigured() {
+    #if canImport(Sentry)
+    guard ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1" else {
+        return
+    }
+
+    let rawDSN = (Bundle.main.object(forInfoDictionaryKey: "SENTRY_DSN") as? String)
+        ?? ProcessInfo.processInfo.environment["SENTRY_DSN"]
+        ?? ""
+    let dsn = rawDSN.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard dsn.isEmpty == false else {
+        return
+    }
+
+    SentrySDK.start { options in
+        options.dsn = dsn
+        options.debug = false
+        options.enableSwizzling = false
+        options.sendDefaultPii = false
+        options.tracesSampleRate = 0
+        options.profilesSampleRate = 0
+    }
+    #endif
 }
 
 struct CodexMeterMenuBarApp: App {
