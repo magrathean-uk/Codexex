@@ -441,8 +441,10 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 49B29182AE2606AB095E6F43 /* Build configuration list for PBXNativeTarget "CodexexXPCService" */;
 			buildPhases = (
+				56DC379434F65145DD06B714 /* Build Codexex Helper */,
 				535A4149D90009E98AB2F04B /* Sources */,
 				015925E17C5A8D9382EFB1DA /* Frameworks */,
+				EEB4127EC125626DAC8A875C /* Embed Codexex Helper */,
 			);
 			buildRules = (
 			);
@@ -585,6 +587,33 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		56DC379434F65145DD06B714 /* Build Codexex Helper */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(PROJECT_DIR)/Helper/CodexexHelper/Cargo.toml",
+				"$(PROJECT_DIR)/Helper/CodexexHelper/Cargo.lock",
+				"$(PROJECT_DIR)/Helper/CodexexHelper/src/auth.rs",
+				"$(PROJECT_DIR)/Helper/CodexexHelper/src/lib.rs",
+				"$(PROJECT_DIR)/Helper/CodexexHelper/src/main.rs",
+				"$(PROJECT_DIR)/Helper/CodexexHelper/src/protocol.rs",
+				"$(PROJECT_DIR)/Helper/CodexexHelper/src/quota.rs",
+				"$(PROJECT_DIR)/Helper/CodexexHelper/src/state.rs",
+			);
+			name = "Build Codexex Helper";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/codexex-helper/codexex-helper",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"$PROJECT_DIR/Scripts/build-codexex-helper.sh\"\n";
+		};
 		6FA2BD08D34A799493300803 /* Embed Codexex Helper */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -632,6 +661,27 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"$PROJECT_DIR/Scripts/build-codexex-helper.sh\"\n";
+		};
+		EEB4127EC125626DAC8A875C /* Embed Codexex Helper */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(DERIVED_FILE_DIR)/codexex-helper/codexex-helper",
+				"$(PROJECT_DIR)/AppStore/CodexexHelper.entitlements",
+			);
+			name = "Embed Codexex Helper";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/codexex-helper",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"$PROJECT_DIR/Scripts/embed-codexex-helper.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -789,6 +839,7 @@
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.magrathean.CodexexApp.CodexexXPCService;
 				SDKROOT = macosx;
@@ -1075,6 +1126,7 @@
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.magrathean.CodexexApp.CodexexXPCService;
 				SDKROOT = macosx;

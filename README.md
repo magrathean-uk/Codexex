@@ -1,43 +1,33 @@
 # Codexex
 
-Codexex is a native macOS 26+ menu bar app for watching Codex quota use.
+Codexex is a macOS menu bar app for viewing Codex quota state, reset windows, history, and forecast without turning into a full desktop dashboard.
 
-It shows:
-- `5H` and `W` Codex usage in the menu bar
-- detailed Codex and Spark windows in the popup
-- reset times
-- 30-day usage history
-- weekly pace marker and forecast
-- ChatGPT OAuth sign-in and Preview Mode
+## Canonical docs
 
-## Main features
+- [AGENTS.md](./AGENTS.md)
+- [RUNBOOK.md](./RUNBOOK.md)
+- [PRIVACY.md](./PRIVACY.md)
 
-- Menu bar first. No dock UI.
-- Native Swift 6 app.
-- SwiftUI UI with small AppKit shell for menu bar behavior.
-- Sandboxed app target.
-- Embedded helper for auth and quota reads.
-- Launch at login.
-- Auto refresh with 5 min, 10 min, or 60 min intervals.
-- Optional history chart in popup.
-- Menubar label can show `5H`, `W`, or both.
+## Product shape
 
-## Sign-in
+- Menu bar first. No dock-facing main window.
+- SwiftUI app content with a small AppKit shell for status item behavior.
+- `5H` and weekly quota views, reset times, local history, and forecast.
+- ChatGPT device-code sign-in plus Preview Mode for offline review.
+- Sandboxed app with a bundled helper and XPC bridge.
 
-Codexex supports:
-- `Sign in with ChatGPT`
-- `Preview Mode`
+## Repo layout
 
-ChatGPT sign-in uses device code flow:
-1. Open `Settings`
-2. Click `Sign In with ChatGPT`
-3. Copy the code shown in the app
-4. Click `Open Safari`
-5. Finish sign-in in Safari
+- `Sources/CodexMeterCore/`: quota models, formatting, binary discovery, and service contracts.
+- `Sources/CodexMeterApp/`: app lifecycle, menu bar model, popup, settings, onboarding, and history UI.
+- `Sources/CodexexXPCService/`: XPC service that brokers the helper process.
+- `Helper/CodexexHelper/`: Rust helper used for auth and quota reads.
+- `Scripts/`: helper build and embed scripts used by the Xcode target.
+- `AppStore/`: entitlements and App Store-facing bundle settings.
+- `Tests/`: XCTest coverage for both core logic and app behavior.
+- `fastlane/metadata/`: checked-in App Store text inputs.
 
-First launch also offers `Preview Mode` for review and offline testing.
-
-## Build
+## Quick start
 
 ```bash
 source ../build-env.sh
@@ -46,34 +36,8 @@ xcodegen generate
 xcodebuild -project CodexMeter.xcodeproj \
   -scheme CodexMeterApp \
   -derivedDataPath "$XCODE_DERIVED_DATA_PATH" \
-  -clonedSourcePackagesDirPath "$SWIFTPM_SHARED_CACHE" build
+  -clonedSourcePackagesDirPath "$SWIFTPM_SHARED_CACHE" \
+  build
 ```
 
-## Project layout
-
-- `Sources/CodexMeterApp/Support/` app state, auth, storage, helper client
-- `Sources/CodexMeterApp/UI/` menu bar, popup, settings, onboarding views
-- `Sources/CodexMeterApp/Windows/` window controllers
-- `Sources/CodexMeterCore/` shared models and reducers
-- `Sources/CodexexXPCService/` XPC service target
-- `Helper/CodexexHelper/` embedded helper
-- `AppStore/` entitlements
-- `Scripts/` helper build and embed scripts
-- `Tests/CodexMeterCoreTests/` unit tests
-
-## App Store notes
-
-Current app shape is App-Store-oriented:
-- App Sandbox enabled
-- utility category set
-- no browser scraping
-- no cookie theft
-- no private APIs
-- helper is bundled inside app
-
-Before App Store submission, do a Release archive and validation pass.
-
-See:
-- `docs/FEATURES.md`
-- `docs/APP_REVIEW.md`
-- `CHANGELOG.md`
+Use [RUNBOOK.md](./RUNBOOK.md) for helper flow, XPC notes, and release hygiene.

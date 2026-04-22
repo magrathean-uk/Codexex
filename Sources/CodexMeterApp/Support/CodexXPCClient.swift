@@ -2,6 +2,14 @@
 import Foundation
 import CodexMeterCore
 
+@objc protocol CodexXPCServiceProtocol {
+    func fetchSnapshot(reply: @escaping (Data?, String?) -> Void)
+    func beginChatGPTSignIn(reply: @escaping (Data?, String?) -> Void)
+    func completeChatGPTSignIn(flowID: String, reply: @escaping (Data?, String?) -> Void)
+    func signOut(reply: @escaping (String?) -> Void)
+    func cancelPendingOperations(reply: @escaping () -> Void)
+}
+
 protocol CodexServiceClient: Sendable {
     func fetchSnapshotResponse() async throws -> CodexServiceSnapshotResponse
     func beginChatGPTSignIn() async throws -> CodexDeviceAuthStart
@@ -15,205 +23,186 @@ extension CodexServiceClient {
 }
 
 final class CodexXPCClient: CodexServiceClient, @unchecked Sendable {
-    private let transport = CodexEmbeddedHelperTransport()
+    private let queue = DispatchQueue(label: "Codexex.xpc.client")
+    private let serviceName = "com.magrathean.CodexexApp.CodexexXPCService"
+    private var connection: NSXPCConnection?
+
+    deinit {
+        connection?.invalidate()
+    }
 
     func fetchSnapshotResponse() async throws -> CodexServiceSnapshotResponse {
-        CodexLog.helper.log("request fetchSnapshot")
-        let envelope = try await send(CodexHelperRequest(method: .fetchSnapshot))
-        let response = try envelope.decodedSnapshotResponse()
-        CodexLog.helper.log("response fetchSnapshot ok")
-        return response
+        let data = try await dataReply { service, reply in
+            service.fetchSnapshot(reply: reply)
+        }
+        return try Self.decoder.decode(CodexServiceSnapshotResponse.self, from: data)
     }
 
     func beginChatGPTSignIn() async throws -> CodexDeviceAuthStart {
-        CodexLog.auth.log("request beginDeviceAuth")
-        let envelope = try await send(CodexHelperRequest(method: .beginDeviceAuth))
-        let auth = try envelope.decodedDeviceAuthStart()
-        CodexLog.auth.log("response beginDeviceAuth ok flow=\(auth.flowID, privacy: .private(mask: .hash))")
-        return auth
+        let data = try await dataReply { service, reply in
+            service.beginChatGPTSignIn(reply: reply)
+        }
+        return try Self.decoder.decode(CodexDeviceAuthStart.self, from: data)
     }
 
     func completeChatGPTSignIn(flowID: String) async throws -> CodexDeviceAuthPollResult {
-        CodexLog.auth.log("request pollDeviceAuth flow=\(flowID, privacy: .private(mask: .hash))")
-        let envelope = try await send(CodexHelperRequest(method: .pollDeviceAuth, flowID: flowID))
-        let result = try envelope.decodedDeviceAuthPollResult()
-        CodexLog.auth.log("response pollDeviceAuth status=\(result.status.rawValue, privacy: .public)")
-        return result
+        let data = try await dataReply { service, reply in
+            service.completeChatGPTSignIn(flowID: flowID, reply: reply)
+        }
+        return try Self.decoder.decode(CodexDeviceAuthPollResult.self, from: data)
     }
 
     func signOut() async throws {
-        CodexLog.auth.log("request signOut")
-        let envelope = try await send(CodexHelperRequest(method: .signOut))
-        try envelope.requireResponse(.signedOut)
-        CodexLog.auth.log("response signOut signedOut")
+        try await errorOnlyReply { service, reply in
+            service.signOut(reply: reply)
+        }
     }
 
     func cancelPendingOperations() {
-        CodexLog.helper.log("reset helper transport")
-        transport.reset()
-    }
-
-    private func send(_ request: CodexHelperRequest) async throws -> CodexHelperResponseEnvelope {
-        let line = try Self.requestLine(for: request)
-        let response = try await transport.send(line)
-        let envelope = try Self.decoder.decode(CodexHelperResponseEnvelope.self, from: Data(response.utf8))
-        if envelope.type == .error {
-            CodexLog.helper.error(
-                "helper error method=\(request.method.rawValue, privacy: .public) message=\(envelope.message ?? "unknown", privacy: .public)"
-            )
+        queue.async { [weak self] in
+            guard let self else { return }
+            let invalidate: () -> Void = { [weak self] in
+                self?.invalidateConnection()
+            }
+            guard let service = self.connection?.remoteObjectProxyWithErrorHandler { error in
+                CodexLog.helper.error("xpc cancel failed message=\(error.localizedDescription, privacy: .public)")
+                invalidate()
+            } as? CodexXPCServiceProtocol else {
+                invalidate()
+                return
+            }
+            service.cancelPendingOperations(reply: invalidate)
         }
-        return envelope
-    }
-
-    private static func requestLine(for request: CodexHelperRequest) throws -> String {
-        let data = try JSONEncoder().encode(request)
-        return String(decoding: data, as: UTF8.self)
     }
 
     private static let decoder = JSONDecoder()
+
+    private func dataReply(
+        _ operation: @escaping @Sendable (CodexXPCServiceProtocol, @escaping @Sendable (Data?, String?) -> Void) -> Void
+    ) async throws -> Data {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
+            let reply = CodexXPCReplyBox<Data>(continuation)
+            queue.async { [weak self] in
+                guard let self else {
+                    reply.resume(throwing: Self.helperError("XPC client was released."))
+                    return
+                }
+
+                do {
+                    let service = try self.serviceProxyLocked { error in
+                        reply.resume(throwing: error)
+                        self.invalidateConnection()
+                    }
+                    operation(service) { data, message in
+                        if let message {
+                            reply.resume(throwing: Self.helperError(message))
+                            return
+                        }
+                        guard let data else {
+                            reply.resume(throwing: Self.helperError("XPC service returned no data."))
+                            return
+                        }
+                        reply.resume(returning: data)
+                    }
+                } catch {
+                    reply.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    private func errorOnlyReply(
+        _ operation: @escaping @Sendable (CodexXPCServiceProtocol, @escaping @Sendable (String?) -> Void) -> Void
+    ) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            let reply = CodexXPCReplyBox<Void>(continuation)
+            queue.async { [weak self] in
+                guard let self else {
+                    reply.resume(throwing: Self.helperError("XPC client was released."))
+                    return
+                }
+
+                do {
+                    let service = try self.serviceProxyLocked { error in
+                        reply.resume(throwing: error)
+                        self.invalidateConnection()
+                    }
+                    operation(service) { message in
+                        if let message {
+                            reply.resume(throwing: Self.helperError(message))
+                        } else {
+                            reply.resume(returning: ())
+                        }
+                    }
+                } catch {
+                    reply.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    private func serviceProxyLocked(errorHandler: @escaping @Sendable (Error) -> Void) throws -> CodexXPCServiceProtocol {
+        let connection = connectionLocked()
+        guard let service = connection.remoteObjectProxyWithErrorHandler(errorHandler) as? CodexXPCServiceProtocol else {
+            throw Self.helperError("XPC service proxy is unavailable.")
+        }
+        return service
+    }
+
+    private func connectionLocked() -> NSXPCConnection {
+        if let connection {
+            return connection
+        }
+
+        let connection = NSXPCConnection(serviceName: serviceName)
+        connection.remoteObjectInterface = NSXPCInterface(with: CodexXPCServiceProtocol.self)
+        connection.interruptionHandler = { [weak self] in
+            CodexLog.helper.error("xpc connection interrupted")
+            self?.invalidateConnection()
+        }
+        connection.invalidationHandler = { [weak self] in
+            self?.invalidateConnection()
+        }
+        connection.resume()
+        self.connection = connection
+        return connection
+    }
+
+    private func invalidateConnection() {
+        queue.async { [weak self] in
+            guard let self else { return }
+            self.connection?.invalidate()
+            self.connection = nil
+        }
+    }
+
+    private static func helperError(_ message: String) -> NSError {
+        NSError(domain: "CodexXPCClient", code: 1, userInfo: [NSLocalizedDescriptionKey: message])
+    }
 }
 
-private final class CodexEmbeddedHelperTransport: @unchecked Sendable {
-    private let queue = DispatchQueue(label: "Codexex.helper.transport")
-    private let stateLock = NSLock()
-    private var process: Process?
-    private var stdinHandle: FileHandle?
-    private var stdoutHandle: FileHandle?
+private final class CodexXPCReplyBox<T: Sendable>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<T, Error>?
 
-    deinit {
-        shutdownNow()
+    init(_ continuation: CheckedContinuation<T, Error>) {
+        self.continuation = continuation
     }
 
-    func send(_ line: String) async throws -> String {
-        try await withCheckedThrowingContinuation { continuation in
-            queue.async {
-                do {
-                    continuation.resume(returning: try self.sendLocked(line))
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-            }
-        }
+    func resume(returning value: T) {
+        take()?.resume(returning: value)
     }
 
-    func reset() {
-        shutdownNow()
+    func resume(throwing error: Error) {
+        take()?.resume(throwing: error)
     }
 
-    private func sendLocked(_ line: String) throws -> String {
-        try ensureStartedLocked()
-        let handles = try currentHandles()
-
-        do {
-            try handles.stdin.write(contentsOf: Data((line + "\n").utf8))
-        } catch {
-            CodexLog.helper.error("write to helper failed")
-            shutdownNow()
-            throw error
-        }
-
-        var buffer = Data()
-        while true {
-            let chunk: Data
-            do {
-                guard let data = try handles.stdout.read(upToCount: 1) else {
-                    shutdownNow()
-                    throw helperError("Helper process closed unexpectedly.")
-                }
-                chunk = data
-            } catch {
-                shutdownNow()
-                throw error
-            }
-
-            if chunk.isEmpty {
-                CodexLog.helper.error("helper closed unexpectedly")
-                shutdownNow()
-                throw helperError("Helper process closed unexpectedly.")
-            }
-            if chunk.first == 0x0A {
-                break
-            }
-            buffer.append(chunk)
-        }
-
-        return String(decoding: buffer, as: UTF8.self)
-    }
-
-    private func ensureStartedLocked() throws {
-        if isRunning {
-            return
-        }
-
-        shutdownNow()
-
-        let helperURL = Bundle.main.bundleURL.appending(path: "Contents/Helpers/codexex-helper")
-        guard FileManager.default.isExecutableFile(atPath: helperURL.path()) else {
-            CodexLog.helper.error("embedded helper missing at \(helperURL.path(), privacy: .public)")
-            throw helperError("Embedded helper is missing.")
-        }
-
-        let process = Process()
-        process.executableURL = helperURL
-
-        let stdin = Pipe()
-        let stdout = Pipe()
-        process.standardInput = stdin
-        process.standardOutput = stdout
-        process.standardError = Pipe()
-
-        try process.run()
-        CodexLog.helper.log("helper started pid=\(process.processIdentifier, privacy: .public)")
-
-        stateLock.lock()
-        self.process = process
-        stdinHandle = stdin.fileHandleForWriting
-        stdoutHandle = stdout.fileHandleForReading
-        stateLock.unlock()
-    }
-
-    private var isRunning: Bool {
-        stateLock.lock()
-        defer { stateLock.unlock() }
-        return process?.isRunning == true
-    }
-
-    private func currentHandles() throws -> (stdin: FileHandle, stdout: FileHandle) {
-        stateLock.lock()
-        defer { stateLock.unlock() }
-        guard let stdinHandle, let stdoutHandle else {
-            throw helperError("Helper process handles are unavailable.")
-        }
-        return (stdinHandle, stdoutHandle)
-    }
-
-    private func shutdownNow() {
-        stateLock.lock()
-        let process = self.process
-        let stdinHandle = self.stdinHandle
-        let stdoutHandle = self.stdoutHandle
-        self.process = nil
-        self.stdinHandle = nil
-        self.stdoutHandle = nil
-        stateLock.unlock()
-
-        if let process, process.isRunning {
-            CodexLog.helper.log("helper stopping pid=\(process.processIdentifier, privacy: .public)")
-        }
-
-        stdinHandle?.closeFile()
-        stdoutHandle?.closeFile()
-        if let process, process.isRunning {
-            process.terminate()
-        }
-    }
-
-    private func helperError(_ message: String) -> NSError {
-        NSError(
-            domain: "CodexEmbeddedHelperTransport",
-            code: 1,
-            userInfo: [NSLocalizedDescriptionKey: message]
-        )
+    private func take() -> CheckedContinuation<T, Error>? {
+        lock.lock()
+        defer { lock.unlock() }
+        let continuation = self.continuation
+        self.continuation = nil
+        return continuation
     }
 }
 #endif

@@ -56,16 +56,31 @@ public enum CodexHelperRequestMethod: String, Codable, Sendable, Equatable {
     case signOut
 }
 
+public enum CodexHelperProtocol: Sendable {
+    public static let currentVersion = 1
+}
+
 public struct CodexHelperRequest: Codable, Sendable, Equatable {
+    public let protocolVersion: Int
+    public let requestID: String
     public let method: CodexHelperRequestMethod
     public let flowID: String?
 
-    public init(method: CodexHelperRequestMethod, flowID: String? = nil) {
+    public init(
+        method: CodexHelperRequestMethod,
+        flowID: String? = nil,
+        protocolVersion: Int = CodexHelperProtocol.currentVersion,
+        requestID: String = UUID().uuidString
+    ) {
+        self.protocolVersion = protocolVersion
+        self.requestID = requestID
         self.method = method
         self.flowID = flowID
     }
 
     enum CodingKeys: String, CodingKey {
+        case protocolVersion
+        case requestID = "requestId"
         case method
         case flowID = "flow_id"
     }
@@ -85,6 +100,8 @@ public enum CodexHelperWireError: LocalizedError, Sendable, Equatable {
     case unexpectedResponse(expected: String, actual: String)
     case missingPayload(String)
     case missingField(String)
+    case unsupportedProtocolVersion(expected: Int, actual: Int)
+    case requestIDMismatch(expected: String, actual: String)
 
     public var errorDescription: String? {
         switch self {
@@ -96,11 +113,17 @@ public enum CodexHelperWireError: LocalizedError, Sendable, Equatable {
             return "Helper returned no \(payload) payload."
         case .missingField(let field):
             return "Helper response was missing \(field)."
+        case .unsupportedProtocolVersion(let expected, let actual):
+            return "Helper protocol version \(actual) is unsupported. Expected \(expected)."
+        case .requestIDMismatch(let expected, let actual):
+            return "Helper response requestId \(actual) did not match requestId \(expected)."
         }
     }
 }
 
 public struct CodexHelperResponseEnvelope: Codable, Sendable, Equatable {
+    public let protocolVersion: Int?
+    public let requestID: String?
     public let type: CodexHelperResponseType
     public let payloadJSON: String?
     public let message: String?
@@ -109,6 +132,8 @@ public struct CodexHelperResponseEnvelope: Codable, Sendable, Equatable {
     public let userCode: String?
 
     public init(
+        protocolVersion: Int? = CodexHelperProtocol.currentVersion,
+        requestID: String? = nil,
         type: CodexHelperResponseType,
         payloadJSON: String? = nil,
         message: String? = nil,
@@ -116,6 +141,8 @@ public struct CodexHelperResponseEnvelope: Codable, Sendable, Equatable {
         verificationURL: URL? = nil,
         userCode: String? = nil
     ) {
+        self.protocolVersion = protocolVersion
+        self.requestID = requestID
         self.type = type
         self.payloadJSON = payloadJSON
         self.message = message
@@ -125,12 +152,36 @@ public struct CodexHelperResponseEnvelope: Codable, Sendable, Equatable {
     }
 
     enum CodingKeys: String, CodingKey {
+        case protocolVersion
+        case requestID = "requestId"
         case type
         case payloadJSON = "payloadJson"
         case message
         case flowID = "flowId"
         case verificationURL = "verificationUri"
         case userCode
+    }
+
+    public func validated(against request: CodexHelperRequest) throws -> Self {
+        guard let protocolVersion else {
+            throw CodexHelperWireError.missingField("protocolVersion")
+        }
+        guard protocolVersion == request.protocolVersion else {
+            throw CodexHelperWireError.unsupportedProtocolVersion(
+                expected: request.protocolVersion,
+                actual: protocolVersion
+            )
+        }
+        guard let requestID else {
+            throw CodexHelperWireError.missingField("requestId")
+        }
+        guard requestID == request.requestID else {
+            throw CodexHelperWireError.requestIDMismatch(
+                expected: request.requestID,
+                actual: requestID
+            )
+        }
+        return self
     }
 
     public func decodedSnapshotResponse() throws -> CodexServiceSnapshotResponse {
@@ -143,20 +194,10 @@ public struct CodexHelperResponseEnvelope: Codable, Sendable, Equatable {
 
     public func decodedDeviceAuthStart() throws -> CodexDeviceAuthStart {
         try requireResponse(.deviceAuthStarted)
-        guard let flowID else {
-            throw CodexHelperWireError.missingField("flowId")
-        }
-        guard let verificationURL else {
-            throw CodexHelperWireError.missingField("verificationUri")
-        }
-        guard let userCode else {
-            throw CodexHelperWireError.missingField("userCode")
-        }
-        return CodexDeviceAuthStart(
-            flowID: flowID,
-            verificationURL: verificationURL,
-            userCode: userCode
-        )
+        guard let flowID else { throw CodexHelperWireError.missingField("flowId") }
+        guard let verificationURL else { throw CodexHelperWireError.missingField("verificationUri") }
+        guard let userCode else { throw CodexHelperWireError.missingField("userCode") }
+        return CodexDeviceAuthStart(flowID: flowID, verificationURL: verificationURL, userCode: userCode)
     }
 
     public func decodedDeviceAuthPollResult() throws -> CodexDeviceAuthPollResult {
@@ -180,10 +221,7 @@ public struct CodexHelperResponseEnvelope: Codable, Sendable, Equatable {
             throw CodexHelperWireError.helper(message: message ?? "Helper returned an unknown error.")
         }
         guard type == expected else {
-            throw CodexHelperWireError.unexpectedResponse(
-                expected: expected.rawValue,
-                actual: type.rawValue
-            )
+            throw CodexHelperWireError.unexpectedResponse(expected: expected.rawValue, actual: type.rawValue)
         }
     }
 
