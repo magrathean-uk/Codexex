@@ -1,13 +1,14 @@
-use codexex_helper::{
-    auth, protocol,
-    protocol::{HelperRequest, HelperResponse},
-    quota,
-};
 use base64::Engine;
 use chrono::Utc;
 use codex_app_server_protocol::AuthMode;
-use codex_login::{AuthCredentialsStoreMode, AuthDotJson, TokenData, save_auth};
 use codex_login::token_data::parse_chatgpt_jwt_claims;
+use codex_login::{save_auth, AuthCredentialsStoreMode, AuthDotJson, TokenData};
+use codexex_helper::{
+    auth,
+    protocol,
+    protocol::{HelperRequest, HelperRequestEnvelope, HelperResponse, HelperResponseEnvelope, PROTOCOL_VERSION},
+    quota,
+};
 use pretty_assertions::assert_eq;
 use serde_json::Value;
 use serial_test::serial;
@@ -18,34 +19,44 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 
 #[test]
 fn request_round_trips() {
-    let request = HelperRequest::PollDeviceAuth {
-        flow_id: "flow-123".to_string(),
-    };
+    let request = HelperRequestEnvelope::new(
+        HelperRequest::PollDeviceAuth {
+            flow_id: "flow-123".to_string(),
+        },
+        Some("request-123".to_string()),
+    );
 
     let json = serde_json::to_string(&request).unwrap();
-    let decoded: HelperRequest = serde_json::from_str(&json).unwrap();
+    let decoded: HelperRequestEnvelope = serde_json::from_str(&json).unwrap();
 
     assert_eq!(decoded, request);
 
     let value: Value = serde_json::from_str(&json).unwrap();
+    assert_eq!(value["protocolVersion"], PROTOCOL_VERSION);
+    assert_eq!(value["requestId"], "request-123");
     assert_eq!(value["method"], "pollDeviceAuth");
     assert_eq!(value["flow_id"], "flow-123");
 }
 
 #[test]
 fn response_round_trips() {
-    let response = HelperResponse::DeviceAuthStarted {
-        flow_id: "flow-123".to_string(),
-        verification_uri: "https://example.com/verify".to_string(),
-        user_code: "ABCD-EFGH".to_string(),
-    };
+    let response = HelperResponseEnvelope::from_response(
+        Some("request-123".to_string()),
+        HelperResponse::DeviceAuthStarted {
+            flow_id: "flow-123".to_string(),
+            verification_uri: "https://example.com/verify".to_string(),
+            user_code: "ABCD-EFGH".to_string(),
+        },
+    );
 
     let json = serde_json::to_string(&response).unwrap();
-    let decoded: HelperResponse = serde_json::from_str(&json).unwrap();
+    let decoded: HelperResponseEnvelope = serde_json::from_str(&json).unwrap();
 
     assert_eq!(decoded, response);
 
     let value: Value = serde_json::from_str(&json).unwrap();
+    assert_eq!(value["protocolVersion"], PROTOCOL_VERSION);
+    assert_eq!(value["requestId"], "request-123");
     assert_eq!(value["type"], "deviceAuthStarted");
     assert_eq!(value["flowId"], "flow-123");
     assert_eq!(value["verificationUri"], "https://example.com/verify");
@@ -119,13 +130,92 @@ fn fetch_snapshot_keeps_chatgpt_auth_when_rate_limit_fetch_fails() {
 }
 
 #[test]
-fn save_api_key_requests_are_rejected() {
-    let response = protocol::handle_line(r#"{"method":"saveApiKey","api_key":"sk-test-key"}"#);
+#[serial]
+fn fetch_snapshot_returns_clear_no_quota_message_when_empty() {
+    let _guard = EnvGuard::new();
+    let temp_dir = TempDir::new().unwrap();
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    let server = runtime.block_on(async {
+        let server = MockServer::start().await;
 
-    assert!(matches!(
-        response,
-        HelperResponse::Error { message } if message.starts_with("invalid request:")
-    ));
+        EnvGuard::set("CODEXEX_HELPER_STATE_DIR", temp_dir.path().display().to_string());
+        EnvGuard::set("CODEXEX_HELPER_CHATGPT_BASE_URL", server.uri());
+
+        Mock::given(method("GET"))
+            .and(path("/api/codex/usage"))
+            .and(header("authorization", "Bearer access-token-123"))
+            .and(header("chatgpt-account-id", "account-123"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "plan_type": "pro",
+                "rate_limit": null,
+                "credits": null,
+                "additional_rate_limits": null
+            })))
+            .mount(&server)
+            .await;
+
+        server
+    });
+
+    persist_chatgpt_auth(temp_dir.path());
+
+    let snapshot = quota::fetch_snapshot().unwrap();
+    match snapshot {
+        HelperResponse::Snapshot { payload_json } => {
+            let value: Value = serde_json::from_str(&payload_json).unwrap();
+            assert_eq!(value["authMode"], "chatGPT");
+            assert_eq!(value["snapshot"], Value::Null);
+            assert_eq!(
+                value["errorMessage"],
+                "Signed in, but no quota windows were returned for this account."
+            );
+        }
+        other => panic!("expected snapshot payload, got {other:?}"),
+    }
+
+    drop(server);
+}
+
+#[test]
+fn save_api_key_requests_are_rejected() {
+    let response = protocol::handle_wire_line(
+        r#"{"protocolVersion":1,"requestId":"request-1","method":"saveApiKey","api_key":"sk-test-key"}"#,
+    );
+
+    let value = serde_json::to_value(response).unwrap();
+    assert_eq!(value["protocolVersion"], PROTOCOL_VERSION);
+    assert_eq!(value["requestId"], "request-1");
+    assert_eq!(value["type"], "error");
+    assert!(value["message"].as_str().unwrap().starts_with("invalid request:"));
+}
+
+#[test]
+fn missing_protocol_version_is_rejected() {
+    let response = protocol::handle_wire_line(r#"{"requestId":"request-1","method":"signOut"}"#);
+
+    let value = serde_json::to_value(response).unwrap();
+    assert_eq!(value["protocolVersion"], PROTOCOL_VERSION);
+    assert_eq!(value["type"], "error");
+    assert!(value["message"].as_str().unwrap().contains("protocolVersion"));
+}
+
+#[test]
+fn unsupported_protocol_version_returns_error_with_request_id() {
+    let response = protocol::handle_wire_line(
+        r#"{"protocolVersion":99,"requestId":"request-99","method":"signOut"}"#,
+    );
+
+    let value = serde_json::to_value(response).unwrap();
+    assert_eq!(value["protocolVersion"], PROTOCOL_VERSION);
+    assert_eq!(value["requestId"], "request-99");
+    assert_eq!(value["type"], "error");
+    assert_eq!(
+        value["message"],
+        format!("unsupported protocol version 99 (expected {PROTOCOL_VERSION})")
+    );
 }
 
 #[test]
@@ -163,7 +253,12 @@ fn malformed_input_becomes_error_response() {
 
 #[test]
 fn stream_continues_after_invalid_line() {
-    let input = Cursor::new(b"not-json\n{\"method\":\"signOut\"}\n".as_slice());
+    let input = Cursor::new(
+        br#"not-json
+{"protocolVersion":1,"requestId":"request-2","method":"signOut"}
+"#
+        .as_slice(),
+    );
     let mut output = Vec::new();
 
     codexex_helper::protocol::process_stream(input, &mut output).unwrap();
@@ -172,9 +267,15 @@ fn stream_continues_after_invalid_line() {
     let lines: Vec<&str> = output.lines().collect();
 
     assert_eq!(lines.len(), 2);
-    assert!(lines[0].contains(r#""type":"error""#));
-    assert!(lines[0].contains("invalid request:"));
-    assert_eq!(lines[1], r#"{"type":"signedOut"}"#);
+    let first: Value = serde_json::from_str(lines[0]).unwrap();
+    assert_eq!(first["protocolVersion"], PROTOCOL_VERSION);
+    assert_eq!(first["type"], "error");
+    assert!(first["message"].as_str().unwrap().starts_with("invalid request:"));
+
+    let second: Value = serde_json::from_str(lines[1]).unwrap();
+    assert_eq!(second["protocolVersion"], PROTOCOL_VERSION);
+    assert_eq!(second["requestId"], "request-2");
+    assert_eq!(second["type"], "signedOut");
 }
 
 #[test]

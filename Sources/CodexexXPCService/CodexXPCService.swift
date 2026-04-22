@@ -6,6 +6,7 @@ import CodexMeterCore
     func beginChatGPTSignIn(reply: @escaping (Data?, String?) -> Void)
     func completeChatGPTSignIn(flowID: String, reply: @escaping (Data?, String?) -> Void)
     func signOut(reply: @escaping (String?) -> Void)
+    func cancelPendingOperations(reply: @escaping () -> Void)
 }
 
 final class CodexXPCServiceDelegate: NSObject, NSXPCListenerDelegate {
@@ -60,10 +61,22 @@ final class CodexXPCService: NSObject, CodexXPCServiceProtocol {
         }
     }
 
+    func cancelPendingOperations(reply: @escaping () -> Void) {
+        helper.reset()
+        reply()
+    }
+
     private func send(_ request: CodexHelperRequest) throws -> CodexHelperResponseEnvelope {
         let data = try JSONEncoder().encode(request)
         let line = String(decoding: data, as: UTF8.self)
         let response = try helper.send(line)
-        return try JSONDecoder().decode(CodexHelperResponseEnvelope.self, from: Data(response.utf8))
+        do {
+            return try JSONDecoder()
+                .decode(CodexHelperResponseEnvelope.self, from: Data(response.utf8))
+                .validated(against: request)
+        } catch {
+            helper.reset()
+            throw error
+        }
     }
 }

@@ -98,7 +98,7 @@ async fn fetch_snapshot_payload() -> Result<ServiceSnapshotPayload> {
             return Ok(ServiceSnapshotPayload {
                 auth_mode: Some("chatGPT".to_string()),
                 snapshot: None,
-                error_message: Some("Failed to fetch codex rate limits: no snapshots returned".to_string()),
+                error_message: Some("Signed in, but no quota windows were returned for this account.".to_string()),
             })
         }
         Err(error) => {
@@ -110,6 +110,43 @@ async fn fetch_snapshot_payload() -> Result<ServiceSnapshotPayload> {
         }
     };
 
+    let limits: Vec<LimitPayload> = rate_limits
+        .into_iter()
+        .map(|limit| {
+            let id = limit.limit_id.unwrap_or_else(|| "codex".to_string());
+            let raw_limit_name = limit.limit_name;
+            LimitPayload {
+                bucket: infer_bucket(&id, raw_limit_name.as_deref()).to_string(),
+                id,
+                raw_limit_name,
+                primary: limit.primary.map(|window| WindowPayload {
+                    used_percent: window.used_percent,
+                    window_duration_minutes: window.window_minutes,
+                    resets_at: window.resets_at.map(|value| value as f64),
+                }),
+                secondary: limit.secondary.map(|window| WindowPayload {
+                    used_percent: window.used_percent,
+                    window_duration_minutes: window.window_minutes,
+                    resets_at: window.resets_at.map(|value| value as f64),
+                }),
+                credits: limit.credits.map(|credits| CreditsPayload {
+                    has_credits: credits.has_credits,
+                    unlimited: credits.unlimited,
+                    balance: credits.balance,
+                }),
+            }
+        })
+        .filter(|limit| limit.primary.is_some() || limit.secondary.is_some() || limit.credits.is_some())
+        .collect();
+
+    if limits.is_empty() {
+        return Ok(ServiceSnapshotPayload {
+            auth_mode: Some("chatGPT".to_string()),
+            snapshot: None,
+            error_message: Some("Signed in, but no quota windows were returned for this account.".to_string()),
+        });
+    }
+
     let snapshot = SnapshotPayload {
         captured_at: std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)?
@@ -120,34 +157,7 @@ async fn fetch_snapshot_payload() -> Result<ServiceSnapshotPayload> {
             email: auth.get_account_email(),
             plan_type: auth.account_plan_type().map(|plan| format!("{plan:?}")),
         },
-        limits: rate_limits
-            .into_iter()
-            .map(|limit| {
-                let id = limit.limit_id.unwrap_or_else(|| "codex".to_string());
-                let raw_limit_name = limit.limit_name;
-                LimitPayload {
-                    bucket: infer_bucket(&id, raw_limit_name.as_deref()).to_string(),
-                    id,
-                    raw_limit_name,
-                    primary: limit.primary.map(|window| WindowPayload {
-                        used_percent: window.used_percent,
-                        window_duration_minutes: window.window_minutes,
-                        resets_at: window.resets_at.map(|value| value as f64),
-                    }),
-                    secondary: limit.secondary.map(|window| WindowPayload {
-                        used_percent: window.used_percent,
-                        window_duration_minutes: window.window_minutes,
-                        resets_at: window.resets_at.map(|value| value as f64),
-                    }),
-                    credits: limit.credits.map(|credits| CreditsPayload {
-                        has_credits: credits.has_credits,
-                        unlimited: credits.unlimited,
-                        balance: credits.balance,
-                    }),
-                }
-            })
-            .filter(|limit| limit.primary.is_some() || limit.secondary.is_some() || limit.credits.is_some())
-            .collect(),
+        limits,
     };
 
     Ok(ServiceSnapshotPayload {

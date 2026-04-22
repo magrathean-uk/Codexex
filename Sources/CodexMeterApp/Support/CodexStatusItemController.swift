@@ -11,7 +11,8 @@ final class CodexStatusItemController: NSObject {
     private let popover = NSPopover()
     private let menu = NSMenu()
     private var hostingController: NSHostingController<PopupRootView>?
-    private var eventMonitor: Any?
+    private var globalEventMonitor: Any?
+    private var localEventMonitor: Any?
     private var settingsVisible = false
 
     init(model: CodexMenuBarModel, openSettings: @escaping () -> Void) {
@@ -129,21 +130,51 @@ final class CodexStatusItemController: NSObject {
 
     private func startEventMonitor() {
         stopEventMonitor()
-        eventMonitor = NSEvent.addGlobalMonitorForEvents(
+        globalEventMonitor = NSEvent.addGlobalMonitorForEvents(
             matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]
         ) { [weak self] _ in
             Task { @MainActor in
-                self?.popover.performClose(nil)
-                self?.stopEventMonitor()
+                self?.closePopoverFromMonitor()
             }
+        }
+        localEventMonitor = NSEvent.addLocalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]
+        ) { [weak self] event in
+            guard let self else { return event }
+            guard self.shouldClosePopover(for: event) else { return event }
+            self.closePopoverFromMonitor()
+            return event
         }
     }
 
     private func stopEventMonitor() {
-        if let eventMonitor {
-            NSEvent.removeMonitor(eventMonitor)
-            self.eventMonitor = nil
+        if let globalEventMonitor {
+            NSEvent.removeMonitor(globalEventMonitor)
+            self.globalEventMonitor = nil
         }
+        if let localEventMonitor {
+            NSEvent.removeMonitor(localEventMonitor)
+            self.localEventMonitor = nil
+        }
+    }
+
+    private func shouldClosePopover(for event: NSEvent) -> Bool {
+        guard popover.isShown else { return false }
+
+        if event.window == statusItem.button?.window {
+            return false
+        }
+
+        if event.window == hostingController?.view.window {
+            return false
+        }
+
+        return true
+    }
+
+    private func closePopoverFromMonitor() {
+        popover.performClose(nil)
+        stopEventMonitor()
     }
 
     private func observeModel() {
@@ -169,7 +200,10 @@ final class CodexStatusItemController: NSObject {
         _ = model.authDeviceCode
         _ = model.authStatusMessage
         _ = model.lastUpdatedAt
+        _ = model.previewModeEnabled
+        _ = model.showSparkEnabled
         _ = model.showHistoryEnabled
+        _ = model.showHistoryChartEnabled
         _ = model.defaultHistoryMode
         _ = model.showPaceConfidence
         _ = model.hideIdleSecondaryLimits

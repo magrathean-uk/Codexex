@@ -329,6 +329,63 @@ final class CodexUsageInsightsTests: XCTestCase {
         XCTAssertEqual(second.last?.codexCreditsBalance, "11.90")
     }
 
+    func testWeeklyForecastIgnoresSamplesMissingWeeklyWindow() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let resetAt = now.addingTimeInterval(5 * 24 * 60 * 60)
+        let fiveHourOnlySample = CodexUsageHistorySample(
+            capturedAt: now.addingTimeInterval(-2 * 60 * 60),
+            fiveHour: CodexUsageHistoryWindow(
+                usedPercent: 35,
+                windowDurationMinutes: 300,
+                resetsAt: now.addingTimeInterval(90 * 60)
+            ),
+            weekly: nil,
+            codexCreditsBalance: nil,
+            sparkCreditsBalance: nil
+        )
+        let samples = [
+            makeSample(hoursAgo: 3, fiveHour: 20, weekly: 12, weeklyReset: resetAt, now: now),
+            fiveHourOnlySample,
+            makeSample(hoursAgo: 1, fiveHour: 21, weekly: 18, weeklyReset: resetAt, now: now),
+            makeSample(hoursAgo: 0, fiveHour: 22, weekly: 24, weeklyReset: resetAt, now: now),
+        ]
+
+        let forecast = CodexUsageHistoryAnalytics.forecast(from: samples, series: .weekly)
+
+        XCTAssertEqual(forecast.sampleCount, 3)
+        XCTAssertEqual(forecast.currentPercent, 24)
+        XCTAssertEqual(forecast.projectedPercentAtReset ?? -1, 84, accuracy: 0.001)
+        XCTAssertEqual(forecast.message, "Projected 84% by reset")
+    }
+
+    func testInsightsHandleCreditsOnlyCodexLimitAsEmptyQuotaState() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let snapshot = makeSnapshot(
+            now: now,
+            limits: [
+                CodexLimit(
+                    id: "codex-credits",
+                    rawLimitName: "Codex",
+                    bucket: .codex,
+                    primary: nil,
+                    secondary: nil,
+                    credits: CodexCredits(hasCredits: true, unlimited: false, balance: "12.50")
+                )
+            ]
+        )
+
+        let insights = CodexUsageHistoryAnalytics.insights(
+            snapshot: snapshot,
+            samples: [],
+            now: now
+        )
+
+        XCTAssertNotNil(insights)
+        XCTAssertEqual(insights?.weeklyPace.message, "Need reset data")
+        XCTAssertEqual(insights?.fiveHourPressure.message, "Building history")
+        XCTAssertEqual(insights?.recentPeaks.message, "Building history")
+    }
+
     private func makeSnapshot(
         now: Date,
         fiveHourUsed: Double = 42,

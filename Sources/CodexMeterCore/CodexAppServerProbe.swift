@@ -1,5 +1,7 @@
 import Foundation
 
+// Direct codex app-server capture is compiled only with CODEXEX_ENABLE_LEGACY_PROBE; reducers remain available for tests.
+
 public enum CodexProbeError: Error, LocalizedError, Sendable, Equatable {
     case binaryNotFound(candidates: [String])
     case launchFailed(message: String)
@@ -33,6 +35,7 @@ public enum CodexProbeError: Error, LocalizedError, Sendable, Equatable {
     }
 }
 
+#if CODEXEX_ENABLE_LEGACY_PROBE
 /// Legacy probe for direct `codex app-server` access.
 /// Internal parity only. App Store builds must use the bundled helper/XPC path.
 @available(*, deprecated, message: "Legacy/internal parity probe only. Not for the App Store helper path.")
@@ -264,6 +267,7 @@ struct CodexAppServerProbe: Sendable {
         }
     }
 }
+#endif
 
 enum _SnapshotReducer {
     static func makeSnapshot(
