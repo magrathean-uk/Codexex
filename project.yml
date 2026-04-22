@@ -34,6 +34,8 @@ targets:
     dependencies:
       - target: CodexMeterCore
       - target: CodexexXPCService
+      - package: Sentry
+        product: Sentry
     settings:
       base:
         PRODUCT_NAME: Codexex
@@ -46,6 +48,7 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: Codexex
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_SENTRY_DSN: ""
     preBuildScripts:
       - name: Build Codexex Helper
         inputFiles:
@@ -151,3 +154,8 @@ schemes:
         - CodexMeterCoreTests
         - CodexMeterAppTests
       gatherCoverageData: true
+
+packages:
+  Sentry:
+    url: https://github.com/getsentry/sentry-cocoa.git
+    exactVersion: 8.58.0

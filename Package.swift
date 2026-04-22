@@ -6,6 +6,9 @@ let package = Package(
     platforms: [
         .macOS("26.0")
     ],
+    dependencies: [
+        .package(url: "https://github.com/getsentry/sentry-cocoa.git", exact: "8.58.0")
+    ],
     products: [
         .library(name: "CodexMeterCore", targets: ["CodexMeterCore"]),
         .executable(name: "CodexMeterApp", targets: ["CodexMeterApp"])
@@ -16,7 +19,10 @@ let package = Package(
         ),
         .executableTarget(
             name: "CodexMeterApp",
-            dependencies: ["CodexMeterCore"],
+            dependencies: [
+                "CodexMeterCore",
+                .product(name: "Sentry", package: "sentry-cocoa")
+            ],
             exclude: ["AppIcon.icon"],
             resources: [
                 .process("Assets.xcassets")
