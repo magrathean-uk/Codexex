@@ -12,7 +12,7 @@ struct SettingsForecastCardView: View {
         ) {
             SettingsToggleRow(
                 title: "Show pace confidence",
-                detail: "Display labels like Early estimate, Stable, and Volatile.",
+                detail: "Display labels like Early estimate, Stable, ML tuned, and Volatile.",
                 isOn: Binding(
                     get: { model.showPaceConfidence },
                     set: { model.setShowPaceConfidence($0) }
@@ -46,7 +46,7 @@ struct SettingsForecastCardView: View {
 
             Divider()
 
-            Text("Early estimate uses prior cycles. Stable uses the current weekly pace. Volatile appears when the projection swings sharply.")
+            Text("Early estimate uses prior cycles. Stable uses the current weekly pace. ML tuned starts after one month with enough data. Volatile appears when the projection swings sharply.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

@@ -308,7 +308,7 @@ enum PopupPresentation {
             return forecast.detail
         case .estimatedFromHistory:
             return "Based on history"
-        case .stable:
+        case .patternMatched, .machineLearned, .stable:
             guard let projected = forecast.projectedPercentAtReset,
                   let current = forecast.currentPercent,
                   abs(projected - current) >= 1 else {

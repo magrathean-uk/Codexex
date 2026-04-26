@@ -12,10 +12,10 @@ struct LimitCardView: View {
     }
     private var headlineFont: Font {
         presentation.style == .hero
-            ? .title3.monospacedDigit().weight(.bold)
-            : .headline.monospacedDigit().weight(.semibold)
+            ? .system(size: 28, weight: .semibold, design: .default).monospacedDigit()
+            : .system(size: 23, weight: .semibold, design: .default).monospacedDigit()
     }
-    private var contentSpacing: CGFloat { 8 }
+    private var contentSpacing: CGFloat { 14 }
     private var headlineWindow: CodexQuotaWindow? {
         let windows = [limit.fiveHourWindow, limit.weeklyWindow].compactMap { $0 }
         return windows.max { lhs, rhs in
@@ -28,7 +28,8 @@ struct LimitCardView: View {
             VStack(alignment: .leading, spacing: contentSpacing) {
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
                     Text(limit.displayName)
-                        .font(.headline)
+                        .font(.system(size: presentation.style == .hero ? 15 : 14, weight: .semibold))
+                        .foregroundStyle(CodexTheme.text)
 
                     Spacer()
 
@@ -82,13 +83,14 @@ struct LimitCardView: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(title)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(CodexTheme.muted)
 
                 Spacer()
 
                 Text(window.usedPercentText)
-                    .font(.caption.monospacedDigit().weight(.semibold))
+                    .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(CodexTheme.text)
                     .contentTransition(
                         accessibilityReduceMotion
                             ? .identity
@@ -96,8 +98,8 @@ struct LimitCardView: View {
                     )
 
                 Text(CodexFormatting.relativeResetText(now: .init(), resetAt: window.resetsAt))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12))
+                    .foregroundStyle(CodexTheme.dim)
             }
 
             UsageBar(
@@ -183,7 +185,7 @@ func limitAccentColor(for bucket: CodexLimitBucket) -> Color {
     case .spark:
         return Color(red: 0.66, green: 0.38, blue: 0.84)
     case .codex, .other:
-        return Color(red: 0.21, green: 0.53, blue: 0.93)
+        return CodexTheme.accent
     }
 }
 
@@ -191,13 +193,13 @@ func limitGradient(for bucket: CodexLimitBucket) -> [Color] {
     switch bucket {
     case .spark:
         return [
-            Color(red: 0.48, green: 0.43, blue: 0.92).opacity(0.92),
-            Color(red: 0.83, green: 0.38, blue: 0.73).opacity(0.84)
+            CodexTheme.spark,
+            CodexTheme.spark2
         ]
     case .codex, .other:
         return [
-            Color(red: 0.21, green: 0.53, blue: 0.93).opacity(0.9),
-            Color(red: 0.29, green: 0.77, blue: 0.84).opacity(0.82)
+            CodexTheme.accent,
+            CodexTheme.accent2
         ]
     }
 }
@@ -205,9 +207,9 @@ func limitGradient(for bucket: CodexLimitBucket) -> [Color] {
 func limitTrackColor(for bucket: CodexLimitBucket) -> Color {
     switch bucket {
     case .spark:
-        return Color(red: 0.67, green: 0.38, blue: 0.83).opacity(0.10)
+        return Color.white.opacity(0.06)
     case .codex, .other:
-        return Color(red: 0.21, green: 0.53, blue: 0.93).opacity(0.10)
+        return Color.white.opacity(0.06)
     }
 }
 

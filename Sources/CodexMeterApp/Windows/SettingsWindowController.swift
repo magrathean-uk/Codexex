@@ -4,6 +4,7 @@ import SwiftUI
 
 @MainActor
 final class SettingsWindowController: NSWindowController, NSWindowDelegate {
+    private let model: CodexMenuBarModel
     var onVisibilityChange: ((Bool) -> Void)?
 
     var isVisible: Bool {
@@ -11,20 +12,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     }
 
     init(model: CodexMenuBarModel) {
-        let hostingController = NSHostingController(rootView: SettingsRootView(model: model))
-        let window = NSWindow(contentViewController: hostingController)
-
-        window.title = "Settings"
-        window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
-        window.titleVisibility = .visible
-        window.setContentSize(NSSize(width: GlassTokens.settingsWidth, height: GlassTokens.settingsHeight))
-        window.contentMinSize = NSSize(width: 760, height: 540)
-        window.isReleasedWhenClosed = false
-        window.center()
-
-        super.init(window: window)
+        self.model = model
+        super.init(window: nil)
         shouldCascadeWindows = false
-        window.delegate = self
     }
 
     @available(*, unavailable)
@@ -32,8 +22,30 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         nil
     }
 
+    private func makeWindowIfNeeded() -> NSWindow {
+        if let window {
+            return window
+        }
+
+        let hostingController = NSHostingController(rootView: SettingsRootView(model: model))
+        let window = NSWindow(contentViewController: hostingController)
+
+        window.title = "Settings"
+        window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.setContentSize(NSSize(width: GlassTokens.settingsWidth, height: GlassTokens.settingsHeight))
+        window.contentMinSize = NSSize(width: 760, height: 540)
+        window.isReleasedWhenClosed = false
+        window.center()
+        window.delegate = self
+
+        self.window = window
+        return window
+    }
+
     func showSettingsWindow() {
-        guard let window else { return }
+        let window = makeWindowIfNeeded()
         NSApp.setActivationPolicy(.regular)
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)

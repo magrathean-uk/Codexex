@@ -29,7 +29,12 @@ struct PopupRootView: View {
     }
 
     var body: some View {
-        GlassEffectContainer(spacing: GlassTokens.sectionSpacing) {
+        ZStack(alignment: .top) {
+            Triangle()
+                .fill(CodexTheme.window)
+                .frame(width: 18, height: 12)
+                .offset(y: -7)
+
             VStack(alignment: .leading, spacing: GlassTokens.contentSpacing) {
                 if shouldShowStatusCard {
                     PopupStatusCardView(model: model)
@@ -38,7 +43,8 @@ struct PopupRootView: View {
                 if let summary = presentedSummary {
                     PopupSummaryCardView(
                         summary: summary,
-                        performAction: performSummaryAction(_:)
+                        performAction: performSummaryAction(_:),
+                        onSnooze: displayMode == .live ? { model.snoozeSummary(summary) } : nil
                     )
                 }
 
@@ -76,6 +82,13 @@ struct PopupRootView: View {
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .background(CodexTheme.window, in: RoundedRectangle(cornerRadius: GlassTokens.popupRadius, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: GlassTokens.popupRadius, style: .continuous)
+                .strokeBorder(CodexTheme.hairline, lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(0.42), radius: 34, y: 22)
+        .preferredColorScheme(.dark)
         .frame(width: GlassTokens.popupWidth)
         .onAppear {
             model.setReduceMotionEnabled(accessibilityReduceMotion)
@@ -91,21 +104,16 @@ struct PopupRootView: View {
                 onOpenSettings()
             } label: {
                 Label("Settings", systemImage: "gearshape.fill")
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 7)
-                    .background(.white.opacity(0.18), in: Capsule())
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
-            .font(.footnote.weight(.medium))
+            .buttonStyle(CodexGhostButtonStyle())
             .keyboardShortcut(",", modifiers: .command)
 
             Spacer()
 
             if let lastUpdatedAt = presentedLastUpdatedAt {
                 Text(updatedText(for: lastUpdatedAt))
-                    .font(.footnote.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 11.5).monospacedDigit())
+                    .foregroundStyle(CodexTheme.dim)
                     .contentTransition(accessibilityReduceMotion ? .identity : .numericText())
             }
         }
@@ -189,12 +197,14 @@ struct PopupRootView: View {
     }
 
     private var presentedSummary: PopupSummaryPresentation? {
-        PopupPresentation.summary(
+        let summary = PopupPresentation.summary(
             snapshot: presentedSnapshot,
             insights: presentedInsights,
             previewModeEnabled: displayMode == .live && model.previewModeEnabled,
             hasRefreshIssue: displayMode == .live && model.lastError != nil
         )
+        guard displayMode == .live, let summary else { return summary }
+        return model.isSummarySnoozed(summary) ? nil : summary
     }
 
     private var presentedLastUpdatedAt: Date? {
@@ -213,6 +223,17 @@ struct PopupRootView: View {
         case .useSampleData:
             model.enablePreviewMode()
         }
+    }
+}
+
+private struct Triangle: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        path.closeSubpath()
+        return path
     }
 }
 #endif

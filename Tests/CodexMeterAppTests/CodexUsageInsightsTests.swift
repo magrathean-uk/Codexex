@@ -197,6 +197,115 @@ final class CodexUsageInsightsTests: XCTestCase {
         XCTAssertTrue(forecast.detail?.contains("Volatile") ?? false)
     }
 
+    func testWeeklyPaceUsesMatchingLocalPatternWhenHistoryIsStrong() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let currentReset = now.addingTimeInterval(5 * 24 * 60 * 60)
+        let firstPriorReset = currentReset.addingTimeInterval(-7 * 24 * 60 * 60)
+        let secondPriorReset = currentReset.addingTimeInterval(-14 * 24 * 60 * 60)
+
+        let samples = [
+            makeSample(hoursAgo: 2, fiveHour: 20, weekly: 20, weeklyReset: currentReset, now: now),
+            makeSample(hoursAgo: 1, fiveHour: 21, weekly: 21, weeklyReset: currentReset, now: now),
+            makeSample(hoursAgo: 0, fiveHour: 22, weekly: 22, weeklyReset: currentReset, now: now),
+            makeSample(at: now.addingTimeInterval(-7 * 24 * 60 * 60), fiveHour: 18, weekly: 24, weeklyReset: firstPriorReset),
+            makeSample(at: firstPriorReset.addingTimeInterval(-60 * 60), fiveHour: 19, weekly: 90, weeklyReset: firstPriorReset),
+            makeSample(at: now.addingTimeInterval(-14 * 24 * 60 * 60), fiveHour: 17, weekly: 20, weeklyReset: secondPriorReset),
+            makeSample(at: secondPriorReset.addingTimeInterval(-60 * 60), fiveHour: 18, weekly: 86, weeklyReset: secondPriorReset),
+        ]
+
+        let forecast = CodexUsageHistoryAnalytics.forecast(from: samples, series: .weekly)
+
+        XCTAssertEqual(forecast.confidence, .patternMatched)
+        XCTAssertEqual(forecast.message, "Projected 85% by reset")
+        XCTAssertEqual(forecast.projectedPercentAtReset ?? -1, 85.25, accuracy: 0.001)
+        XCTAssertEqual(forecast.detail, "Pattern matched · 3 samples")
+    }
+
+    func testWeeklyPaceUsesPriorCyclesAsBrakeForHotEarlyProjection() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let currentReset = now.addingTimeInterval(5 * 24 * 60 * 60)
+        let firstPriorReset = currentReset.addingTimeInterval(-7 * 24 * 60 * 60)
+        let secondPriorReset = currentReset.addingTimeInterval(-14 * 24 * 60 * 60)
+
+        let samples = [
+            makeSample(hoursAgo: 2, fiveHour: 20, weekly: 30, weeklyReset: currentReset, now: now),
+            makeSample(hoursAgo: 1, fiveHour: 21, weekly: 35, weeklyReset: currentReset, now: now),
+            makeSample(hoursAgo: 0, fiveHour: 22, weekly: 40, weeklyReset: currentReset, now: now),
+            makeSample(at: firstPriorReset.addingTimeInterval(-12 * 60 * 60), fiveHour: 18, weekly: 66, weeklyReset: firstPriorReset),
+            makeSample(at: secondPriorReset.addingTimeInterval(-8 * 60 * 60), fiveHour: 17, weekly: 72, weeklyReset: secondPriorReset),
+        ]
+
+        let forecast = CodexUsageHistoryAnalytics.forecast(from: samples, series: .weekly)
+
+        XCTAssertEqual(forecast.confidence, .stable)
+        XCTAssertEqual(forecast.tone, .caution)
+        XCTAssertEqual(forecast.message, "Projected 97% by reset")
+        XCTAssertEqual(forecast.projectedPercentAtReset ?? -1, 97.4, accuracy: 0.001)
+    }
+
+    func testModelReadinessReportsMlGateProgress() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let samples = [
+            makeSample(hoursAgo: 0, fiveHour: 22, weekly: 24, weeklyReset: now.addingTimeInterval(5 * 24 * 60 * 60), now: now)
+        ]
+
+        let readiness = CodexUsageHistoryAnalytics.modelReadiness(from: samples, series: .weekly)
+
+        XCTAssertFalse(readiness.isReady)
+        XCTAssertEqual(readiness.historyDays, 0)
+        XCTAssertEqual(readiness.sampleCount, 1)
+        XCTAssertEqual(readiness.cycleCount, 1)
+        XCTAssertEqual(readiness.requiredHistoryDays, 30)
+        XCTAssertEqual(readiness.requiredSamples, 40)
+        XCTAssertEqual(readiness.requiredCycles, 4)
+    }
+
+    func testWeeklyPaceUsesMachineLearningAfterEnoughHistory() {
+        let resetAt = Date(timeIntervalSince1970: 1_800_000_000)
+        let currentStart = resetAt.addingTimeInterval(-(7 * 24 * 60 * 60))
+        let priorFinals: [Double] = [68, 72, 70, 74, 69, 73]
+        var samples = priorFinals.enumerated().flatMap { offset, finalPercent in
+            makeWeeklyCycleSamples(
+                resetAt: resetAt.addingTimeInterval(-Double(offset + 1) * 7 * 24 * 60 * 60),
+                finalPercent: finalPercent
+            )
+        }
+        samples += [
+            makeSample(at: currentStart.addingTimeInterval(36 * 60 * 60), fiveHour: 20, weekly: 24, weeklyReset: resetAt),
+            makeSample(at: currentStart.addingTimeInterval(42 * 60 * 60), fiveHour: 21, weekly: 27, weeklyReset: resetAt),
+            makeSample(at: currentStart.addingTimeInterval(48 * 60 * 60), fiveHour: 22, weekly: 30, weeklyReset: resetAt),
+        ]
+
+        let forecast = CodexUsageHistoryAnalytics.forecast(from: samples, series: .weekly)
+
+        XCTAssertEqual(forecast.confidence, .machineLearned)
+        XCTAssertTrue((forecast.projectedPercentAtReset ?? 0) < 90)
+        XCTAssertTrue((forecast.projectedPercentAtReset ?? 0) > 60)
+        XCTAssertNotNil(forecast.likelyLowerPercent)
+        XCTAssertNotNil(forecast.likelyUpperPercent)
+        XCTAssertTrue(forecast.modelReadiness?.isReady ?? false)
+    }
+
+    func testWeeklyPaceIgnoresSingleMatchingPatternCycle() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let currentReset = now.addingTimeInterval(5 * 24 * 60 * 60)
+        let priorReset = currentReset.addingTimeInterval(-7 * 24 * 60 * 60)
+
+        let samples = [
+            makeSample(hoursAgo: 2, fiveHour: 20, weekly: 20, weeklyReset: currentReset, now: now),
+            makeSample(hoursAgo: 1, fiveHour: 21, weekly: 21, weeklyReset: currentReset, now: now),
+            makeSample(hoursAgo: 0, fiveHour: 22, weekly: 22, weeklyReset: currentReset, now: now),
+            makeSample(at: now.addingTimeInterval(-7 * 24 * 60 * 60), fiveHour: 18, weekly: 24, weeklyReset: priorReset),
+            makeSample(at: priorReset.addingTimeInterval(-60 * 60), fiveHour: 19, weekly: 94, weeklyReset: priorReset),
+        ]
+
+        let forecast = CodexUsageHistoryAnalytics.forecast(from: samples, series: .weekly)
+
+        XCTAssertEqual(forecast.confidence, .stable)
+        XCTAssertEqual(forecast.message, "Projected 77% by reset")
+        XCTAssertEqual(forecast.projectedPercentAtReset ?? -1, 77, accuracy: 0.001)
+    }
+
     func testPointsCollapseMultipleSamplesFromSameDayIntoDailyPeak() {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let calendar = Calendar.current
@@ -329,6 +438,31 @@ final class CodexUsageInsightsTests: XCTestCase {
         XCTAssertEqual(second.last?.codexCreditsBalance, "11.90")
     }
 
+    func testUsageHistoryStoreIgnoresClockFutureSamples() async throws {
+        let fileManager = FileManager.default
+        let root = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let fileURL = root.appendingPathComponent("usage-history.json")
+        defer { try? fileManager.removeItem(at: root) }
+
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let futureSample = makeSample(
+            at: now.addingTimeInterval(60 * 60),
+            fiveHour: 64,
+            weekly: 64,
+            weeklyReset: now.addingTimeInterval(2 * 24 * 60 * 60)
+        )
+        try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode([futureSample])
+        try data.write(to: fileURL)
+
+        let store = CodexUsageHistoryStore(fileURL: fileURL)
+        let loaded = await store.load(now: now)
+
+        XCTAssertTrue(loaded.isEmpty)
+    }
+
     func testWeeklyForecastIgnoresSamplesMissingWeeklyWindow() {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let resetAt = now.addingTimeInterval(5 * 24 * 60 * 60)
@@ -354,6 +488,22 @@ final class CodexUsageInsightsTests: XCTestCase {
 
         XCTAssertEqual(forecast.sampleCount, 3)
         XCTAssertEqual(forecast.currentPercent, 24)
+        XCTAssertEqual(forecast.projectedPercentAtReset ?? -1, 84, accuracy: 0.001)
+        XCTAssertEqual(forecast.message, "Projected 84% by reset")
+    }
+
+    func testWeeklyForecastKeepsCurrentCycleSamplesWhenResetTimeSkewsSlightly() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let resetAt = now.addingTimeInterval(5 * 24 * 60 * 60)
+        let samples = [
+            makeSample(hoursAgo: 3, fiveHour: 20, weekly: 12, weeklyReset: resetAt.addingTimeInterval(-30), now: now),
+            makeSample(hoursAgo: 1, fiveHour: 21, weekly: 18, weeklyReset: resetAt.addingTimeInterval(20), now: now),
+            makeSample(hoursAgo: 0, fiveHour: 22, weekly: 24, weeklyReset: resetAt, now: now),
+        ]
+
+        let forecast = CodexUsageHistoryAnalytics.forecast(from: samples, series: .weekly)
+
+        XCTAssertEqual(forecast.sampleCount, 3)
         XCTAssertEqual(forecast.projectedPercentAtReset ?? -1, 84, accuracy: 0.001)
         XCTAssertEqual(forecast.message, "Projected 84% by reset")
     }
@@ -465,5 +615,25 @@ final class CodexUsageInsightsTests: XCTestCase {
             codexCreditsBalance: nil,
             sparkCreditsBalance: nil
         )
+    }
+
+    private func makeWeeklyCycleSamples(
+        resetAt: Date,
+        finalPercent: Double
+    ) -> [CodexUsageHistorySample] {
+        let cycleDuration = 7 * 24 * 60 * 60
+        let cycleStart = resetAt.addingTimeInterval(-Double(cycleDuration))
+
+        return (1...8).map { index in
+            let elapsed = Double(index) / 9
+            let date = cycleStart.addingTimeInterval(elapsed * Double(cycleDuration))
+            let weekly = min(finalPercent, finalPercent * pow(elapsed, 0.72))
+            return makeSample(
+                at: date,
+                fiveHour: 18 + Double(index),
+                weekly: weekly,
+                weeklyReset: resetAt
+            )
+        }
     }
 }

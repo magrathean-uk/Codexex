@@ -34,6 +34,8 @@ final class CodexMenuBarModel {
     private(set) var hasCompletedOnboarding = CodexAppSettings.hasCompletedOnboarding
     private(set) var previewModeEnabled = CodexAppSettings.previewModeEnabled
     private(set) var reduceMotionEnabled = false
+    private var summarySnoozeFingerprint = CodexAppSettings.summarySnoozeFingerprint
+    private var summarySnoozeExpiresAt = CodexAppSettings.summarySnoozeExpiresAt
 
     private let service: any CodexServiceClient
     private let usageHistoryStore = CodexUsageHistoryStore()
@@ -66,6 +68,10 @@ final class CodexMenuBarModel {
             previewModeEnabled: previewModeEnabled,
             hasRefreshIssue: dashboard.lastError != nil
         )
+    }
+    var isCurrentSummarySnoozed: Bool {
+        guard let popupSummary else { return false }
+        return isSummarySnoozed(popupSummary)
     }
 
     func start() async {
@@ -344,6 +350,40 @@ final class CodexMenuBarModel {
 
     func setReduceMotionEnabled(_ enabled: Bool) {
         reduceMotionEnabled = enabled
+    }
+
+    func isSummarySnoozed(_ summary: PopupSummaryPresentation) -> Bool {
+        CodexSummarySnooze.isSnoozed(
+            summary: summary,
+            storedFingerprint: summarySnoozeFingerprint,
+            expiresAt: summarySnoozeExpiresAt
+        )
+    }
+
+    func snoozeCurrentSummary() {
+        guard let popupSummary else { return }
+        snoozeSummary(popupSummary)
+    }
+
+    func snoozeSummary(_ summary: PopupSummaryPresentation) {
+        let expiry = CodexSummarySnooze.expiryDate(snapshot: snapshot) ?? Date().addingTimeInterval(60 * 60)
+        let fingerprint = CodexSummarySnooze.fingerprint(for: summary)
+        summarySnoozeFingerprint = fingerprint
+        summarySnoozeExpiresAt = expiry
+        CodexAppSettings.summarySnoozeFingerprint = fingerprint
+        CodexAppSettings.summarySnoozeExpiresAt = expiry
+    }
+
+    func openAppStoreUpdates() {
+        NSWorkspace.shared.open(CodexAppLinks.appStoreURL)
+    }
+
+    func openReleaseNotes() {
+        NSWorkspace.shared.open(CodexAppLinks.releaseNotesURL)
+    }
+
+    func openManageSubscription() {
+        NSWorkspace.shared.open(CodexAppLinks.manageSubscriptionURL)
     }
 
     func completeOnboarding() {
