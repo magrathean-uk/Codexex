@@ -294,12 +294,26 @@ enum PopupPresentation {
     private static func weeklySupporting(
         forecast: CodexUsageForecast
     ) -> (label: String, value: String, detail: String?) {
-        let currentValue = forecast.currentPercent.map { "\(Int($0.rounded()))% used" } ?? forecast.message
         return (
-            label: "Current weekly",
-            value: currentValue,
+            label: "Weekly forecast",
+            value: summaryForecastValue(forecast),
             detail: summaryForecastDetail(forecast)
         )
+    }
+
+    private static func summaryForecastValue(_ forecast: CodexUsageForecast) -> String {
+        switch forecast.confidence {
+        case .tooEarly, .learning, .estimatedFromHistory:
+            return forecast.message
+        case .patternMatched:
+            return "Pattern matched"
+        case .machineLearned:
+            return "ML tuned"
+        case .stable:
+            return "Stable"
+        case .volatile:
+            return "Volatile"
+        }
     }
 
     private static func summaryForecastDetail(_ forecast: CodexUsageForecast) -> String? {
@@ -308,19 +322,24 @@ enum PopupPresentation {
             return forecast.detail
         case .estimatedFromHistory:
             return "Based on history"
-        case .patternMatched, .machineLearned, .stable:
-            guard let projected = forecast.projectedPercentAtReset,
-                  let current = forecast.currentPercent,
-                  abs(projected - current) >= 1 else {
+        case .patternMatched, .machineLearned, .stable, .volatile:
+            guard let projected = forecast.projectedPercentAtReset else {
                 return nil
             }
-            return "\(Int(projected.rounded()))% by reset"
-        case .volatile:
-            guard let projected = forecast.projectedPercentAtReset else {
-                return "Volatile projection"
+            guard let range = rangeSummary(for: forecast) else {
+                return "\(Int(projected.rounded()))% by reset"
             }
-            return "Volatile projection · \(Int(projected.rounded()))% by reset"
+            return "\(Int(projected.rounded()))% by reset · \(range)"
         }
+    }
+
+    private static func rangeSummary(for forecast: CodexUsageForecast) -> String? {
+        guard let lower = forecast.likelyLowerPercent,
+              let upper = forecast.likelyUpperPercent,
+              upper - lower >= 2 else {
+            return nil
+        }
+        return "likely \(Int(lower.rounded()))-\(Int(upper.rounded()))%"
     }
 
 }

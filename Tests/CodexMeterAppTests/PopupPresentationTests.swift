@@ -143,6 +143,45 @@ final class PopupPresentationTests: XCTestCase {
         XCTAssertEqual(summary?.supportingLabel, "5-hour pressure")
     }
 
+    func testSummaryUsesCompactForecastInsteadOfRepeatingCurrentUsage() {
+        let summary = PopupPresentation.summary(
+            snapshot: makeSnapshot(),
+            insights: CodexUsageInsights(
+                weeklyPace: CodexUsageForecast(
+                    message: "Projected 89% by reset",
+                    tone: .caution,
+                    confidence: .volatile,
+                    currentPercent: 70,
+                    projectedPercentAtReset: 89,
+                    paceVariancePercent: -4,
+                    sampleCount: 1_281,
+                    resetAt: Date(timeIntervalSince1970: 1_800_000_000),
+                    detail: "4% under pace · 1281 samples",
+                    likelyLowerPercent: 71,
+                    likelyUpperPercent: 107
+                ),
+                fiveHourPressure: CodexUsageInsightRow(
+                    title: "5-hour pressure",
+                    message: "13% used",
+                    detail: "resets in 2h",
+                    tone: .safe
+                ),
+                recentPeaks: CodexUsageInsightRow(
+                    title: "Recent peaks",
+                    message: "5H 13% · W 70%",
+                    detail: "Last 24h / 7d",
+                    tone: .safe
+                )
+            ),
+            previewModeEnabled: false,
+            hasRefreshIssue: false
+        )
+
+        XCTAssertEqual(summary?.supportingLabel, "Weekly forecast")
+        XCTAssertEqual(summary?.supportingValue, "Volatile")
+        XCTAssertEqual(summary?.supportingDetail, "89% by reset · likely 71-107%")
+    }
+
     func testSummaryIgnoresSparkLimitsForAlerting() {
         let sparkLimit = makeLimit(id: "spark", name: "Codex Spark", bucket: .spark, fiveHour: 0, weekly: 100)
         let snapshot = CodexSnapshot(

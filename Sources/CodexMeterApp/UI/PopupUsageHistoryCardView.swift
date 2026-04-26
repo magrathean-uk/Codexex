@@ -81,14 +81,14 @@ struct UsageHistoryCardView: View {
 
                 Spacer(minLength: 8)
 
-                Text(weeklyForecast.message)
+                Text(forecastHeadline(for: weeklyForecast))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(forecastMessageColor)
                     .contentTransition(accessibilityReduceMotion ? .identity : .opacity)
                     .lineLimit(1)
             }
 
-            if showPaceConfidence, let detail = weeklyForecast.detail {
+            if showPaceConfidence, let detail = forecastDetail(for: weeklyForecast) {
                 Text(detail)
                     .font(.system(size: 11.5))
                     .foregroundStyle(CodexTheme.dim)
@@ -96,7 +96,9 @@ struct UsageHistoryCardView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            if showPaceConfidence, let rangeText = likelyRangeText(for: weeklyForecast) {
+            if showPaceConfidence,
+               historyMode == .dailyPeaks,
+               let rangeText = likelyRangeText(for: weeklyForecast) {
                 Text(rangeText)
                     .font(.system(size: 11.5))
                     .foregroundStyle(CodexTheme.dim)
@@ -143,6 +145,33 @@ struct UsageHistoryCardView: View {
         return "Likely \(Int(lower.rounded()))-\(Int(upper.rounded()))% by reset"
     }
 
+    private func forecastHeadline(for forecast: CodexUsageForecast) -> String {
+        switch forecast.confidence {
+        case .tooEarly, .learning, .estimatedFromHistory:
+            return forecast.message
+        case .patternMatched:
+            return "Pattern matched"
+        case .machineLearned:
+            return "ML tuned"
+        case .stable:
+            return "Stable forecast"
+        case .volatile:
+            return "Volatile forecast"
+        }
+    }
+
+    private func forecastDetail(for forecast: CodexUsageForecast) -> String? {
+        guard let detail = forecast.detail else { return nil }
+        let parts = detail
+            .components(separatedBy: " · ")
+            .filter { part in
+                part != forecast.confidence.label
+                    && part.hasSuffix("samples") == false
+                    && part.hasSuffix("cycles") == false
+            }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
     @ViewBuilder
     private var contentSection: some View {
         switch historyMode {
@@ -180,8 +209,10 @@ struct UsageHistoryCardView: View {
                 }
 
                 HStack(spacing: 10) {
-                    cycleChip(label: "Confidence", value: weeklyForecast.confidence.label)
-                    cycleChip(label: "Samples", value: "\(weeklyForecast.sampleCount)")
+                    if let range = likelyRangeChipValue(for: weeklyForecast) {
+                        cycleChip(label: "Range", value: range)
+                    }
+                    cycleChip(label: "Data", value: "\(weeklyForecast.sampleCount) samples")
                     if let resetAt = weeklyForecast.resetAt {
                         cycleChip(
                             label: "Reset",
@@ -191,6 +222,15 @@ struct UsageHistoryCardView: View {
                 }
             }
         }
+    }
+
+    private func likelyRangeChipValue(for forecast: CodexUsageForecast) -> String? {
+        guard let lower = forecast.likelyLowerPercent,
+              let upper = forecast.likelyUpperPercent,
+              upper - lower >= 2 else {
+            return nil
+        }
+        return "\(Int(lower.rounded()))-\(Int(upper.rounded()))%"
     }
 
     private func legendItem(label: String, value: String, color: Color) -> some View {
