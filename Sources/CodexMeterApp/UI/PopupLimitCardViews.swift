@@ -44,20 +44,8 @@ struct LimitCardView: View {
                     }
                 }
 
-                if let fiveHour = limit.fiveHourWindow ?? limit.primary {
-                    windowRow(
-                        title: fiveHour.windowDurationMinutes == 300 ? "5H" : fiveHour.windowText,
-                        window: fiveHour
-                    )
-                }
-
-                if let weekly = limit.weeklyWindow,
-                   weekly != limit.fiveHourWindow
-                {
-                    windowRow(
-                        title: weekly.windowDurationMinutes == 10_080 ? "Weekly" : weekly.windowText,
-                        window: weekly
-                    )
+                ForEach(visibleWindows, id: \.title) { item in
+                    windowRow(title: item.title, window: item.window)
                 }
 
                 if let credits = presentation.visibleCredits {
@@ -77,6 +65,33 @@ struct LimitCardView: View {
             }
         }
         .transition(accessibilityReduceMotion ? .identity : .opacity.combined(with: .scale(scale: 0.985)))
+    }
+
+    private var visibleWindows: [(title: String, window: CodexQuotaWindow)] {
+        let candidates: [(String, CodexQuotaWindow?)] = [
+            ("5H", limit.fiveHourWindow ?? limit.primary),
+            ("Weekly", limit.weeklyWindow)
+        ]
+        var unique: [CodexQuotaWindow] = []
+        let rows = candidates.compactMap { title, window -> (String, CodexQuotaWindow)? in
+            guard let window, unique.contains(window) == false else { return nil }
+            unique.append(window)
+            let resolvedTitle = resolvedWindowTitle(fallback: title, window: window)
+            return (resolvedTitle, window)
+        }
+
+        let activeRows = rows.filter { $0.1.clampedUsedPercent >= 0.5 }
+        return activeRows.isEmpty ? rows.prefix(1).map { $0 } : activeRows
+    }
+
+    private func resolvedWindowTitle(fallback: String, window: CodexQuotaWindow) -> String {
+        if fallback == "5H", window.windowDurationMinutes != 300 {
+            return window.windowText
+        }
+        if fallback == "Weekly", window.windowDurationMinutes != 10_080 {
+            return window.windowText
+        }
+        return fallback
     }
 
     private func windowRow(title: String, window: CodexQuotaWindow) -> some View {
