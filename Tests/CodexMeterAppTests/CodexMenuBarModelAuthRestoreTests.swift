@@ -41,6 +41,17 @@ final class CodexMenuBarModelAuthRestoreTests: XCTestCase {
         XCTAssertTrue(model.isCurrentSummarySnoozed)
     }
 
+    func testDiagnosticsReportRedactsEmail() async {
+        let model = CodexMenuBarModel(service: SnapshotService(snapshot: makeRiskSnapshot()))
+        await model.refreshNow()
+
+        let report = model.diagnosticsReport(now: Date(timeIntervalSince1970: 1_800_000_100))
+
+        XCTAssertFalse(report.contains("user@example.com"))
+        XCTAssertTrue(report.contains("Codexex Diagnostics"))
+        XCTAssertTrue(report.contains("History samples:"))
+    }
+
     private func makeRiskSnapshot() -> CodexSnapshot {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         return CodexSnapshot(

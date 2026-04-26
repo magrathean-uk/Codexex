@@ -8,6 +8,8 @@ struct StatusBarLabel: View {
     let isRefreshing: Bool
     let hasError: Bool
     let severity: CodexQuotaSeverity?
+    let displayMode: CodexMenuBarDisplayMode
+    let insights: CodexUsageInsights?
 
     var body: some View {
         HStack(spacing: 6) {
@@ -34,8 +36,10 @@ struct StatusBarLabel: View {
         snapshot: CodexSnapshot?,
         isRefreshing: Bool,
         hasError: Bool,
+        displayMode: CodexMenuBarDisplayMode,
         showFiveHour: Bool,
-        showWeekly: Bool
+        showWeekly: Bool,
+        insights: CodexUsageInsights?
     ) -> String {
         guard let snapshot else {
             let fiveHour = showFiveHour ? (hasError ? "5H --" : "5H …") : nil
@@ -47,11 +51,15 @@ struct StatusBarLabel: View {
         let fiveHour = codexLimit?.fiveHourWindow
         let weekly = codexLimit?.weeklyWindow
 
+        if displayMode == .pace, let title = paceTitle(insights: insights, weekly: weekly) {
+            return title
+        }
+
         var pieces: [String] = []
 
         if showFiveHour {
             if let codex = fiveHour {
-                pieces.append("5H \(codex.usedPercentText)")
+                pieces.append("5H \(percentText(for: codex, displayMode: displayMode))")
             } else {
                 pieces.append("5H --")
             }
@@ -59,7 +67,7 @@ struct StatusBarLabel: View {
 
         if showWeekly {
             if let codexWeek = weekly {
-                pieces.append("W \(codexWeek.usedPercentText)")
+                pieces.append("W \(percentText(for: codexWeek, displayMode: displayMode))")
             } else {
                 pieces.append("W --")
             }
@@ -71,6 +79,7 @@ struct StatusBarLabel: View {
     static func menuBarImage(
         isRefreshing: Bool,
         hasError: Bool,
+        isStale: Bool,
         severity: CodexQuotaSeverity?
     ) -> NSImage? {
         if isRefreshing {
@@ -78,6 +87,11 @@ struct StatusBarLabel: View {
         }
         if hasError {
             let image = NSImage(systemSymbolName: "exclamationmark.triangle.fill", accessibilityDescription: nil)
+            image?.isTemplate = true
+            return image
+        }
+        if isStale {
+            let image = NSImage(systemSymbolName: "clock.badge.exclamationmark", accessibilityDescription: nil)
             image?.isTemplate = true
             return image
         }
@@ -98,9 +112,38 @@ struct StatusBarLabel: View {
             snapshot: snapshot,
             isRefreshing: isRefreshing,
             hasError: hasError,
+            displayMode: displayMode,
             showFiveHour: true,
-            showWeekly: true
+            showWeekly: true,
+            insights: insights
         )
+    }
+
+    private static func percentText(
+        for window: CodexQuotaWindow,
+        displayMode: CodexMenuBarDisplayMode
+    ) -> String {
+        switch displayMode {
+        case .used, .pace:
+            return window.usedPercentText
+        case .remaining:
+            return window.remainingPercentText
+        }
+    }
+
+    private static func paceTitle(
+        insights: CodexUsageInsights?,
+        weekly: CodexQuotaWindow?
+    ) -> String? {
+        guard let forecast = insights?.weeklyPace else { return nil }
+        if let current = forecast.currentPercent,
+           let projected = forecast.projectedPercentAtReset {
+            return "W \(Int(current.rounded()))%->\(Int(projected.rounded()))%"
+        }
+        if let weekly {
+            return "W \(weekly.usedPercentText) \(forecast.confidence.label)"
+        }
+        return forecast.confidence.label
     }
 
     private static func dotColor(for severity: CodexQuotaSeverity) -> Color {

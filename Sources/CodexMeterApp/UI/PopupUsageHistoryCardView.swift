@@ -8,6 +8,7 @@ struct UsageHistoryCardView: View {
     let showsChart: Bool
     let historyMode: PopupHistoryMode
     let showPaceConfidence: Bool
+    let resetDisplayStyle: CodexResetDisplayStyle
     let onHistoryModeChange: (PopupHistoryMode) -> Void
 
     private let fiveHourPoints: [CodexUsageHistoryPoint]
@@ -22,12 +23,14 @@ struct UsageHistoryCardView: View {
         showsChart: Bool,
         historyMode: PopupHistoryMode,
         showPaceConfidence: Bool,
+        resetDisplayStyle: CodexResetDisplayStyle,
         onHistoryModeChange: @escaping (PopupHistoryMode) -> Void
     ) {
         self.samples = samples
         self.showsChart = showsChart
         self.historyMode = historyMode
         self.showPaceConfidence = showPaceConfidence
+        self.resetDisplayStyle = resetDisplayStyle
         self.onHistoryModeChange = onHistoryModeChange
         self.fiveHourPoints = CodexUsageHistoryAnalytics.points(from: samples, series: .fiveHour)
         self.weeklyPoints = CodexUsageHistoryAnalytics.points(from: samples, series: .weekly)
@@ -288,7 +291,7 @@ struct UsageHistoryCardView: View {
     }
 
     private func resetChipValue(for resetAt: Date) -> String {
-        let text = CodexFormatting.relativeResetText(now: .init(), resetAt: resetAt)
+        let text = resetDisplayStyle.resetText(now: .init(), resetAt: resetAt)
         let prefix = "resets "
         if text.hasPrefix(prefix) {
             return String(text.dropFirst(prefix.count))

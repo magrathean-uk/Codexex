@@ -16,6 +16,52 @@ enum PopupHistoryMode: String, CaseIterable {
     }
 }
 
+enum CodexMenuBarDisplayMode: String, CaseIterable {
+    case used
+    case remaining
+    case pace
+
+    var title: String {
+        switch self {
+        case .used:
+            return "Used"
+        case .remaining:
+            return "Left"
+        case .pace:
+            return "Pace"
+        }
+    }
+}
+
+enum CodexResetDisplayStyle: String, CaseIterable {
+    case relative
+    case absolute
+
+    var title: String {
+        switch self {
+        case .relative:
+            return "Relative"
+        case .absolute:
+            return "Clock"
+        }
+    }
+
+    func resetText(now: Date, resetAt: Date?) -> String {
+        switch self {
+        case .relative:
+            return CodexFormatting.relativeResetText(now: now, resetAt: resetAt)
+        case .absolute:
+            guard let resetAt else { return "Reset unknown" }
+            let formatter = DateFormatter()
+            formatter.locale = Locale.autoupdatingCurrent
+            formatter.timeZone = .current
+            formatter.dateStyle = Calendar.autoupdatingCurrent.isDate(resetAt, inSameDayAs: now) ? .none : .short
+            formatter.timeStyle = .short
+            return "resets \(formatter.string(from: resetAt))"
+        }
+    }
+}
+
 enum CodexAppSettings {
     private enum Key {
         static let hasCompletedOnboarding = "codexex.hasCompletedOnboarding"
@@ -29,6 +75,8 @@ enum CodexAppSettings {
         static let showSparkEnabled = "codexex.showSparkEnabled"
         static let showFiveHourInMenubar = "codexex.showFiveHourInMenubar"
         static let showWeeklyInMenubar = "codexex.showWeeklyInMenubar"
+        static let menuBarDisplayMode = "codexex.menuBarDisplayMode"
+        static let resetDisplayStyle = "codexex.resetDisplayStyle"
         static let defaultHistoryMode = "codexex.defaultHistoryMode"
         static let showPaceConfidence = "codexex.showPaceConfidence"
         static let hideIdleSecondaryLimits = "codexex.hideIdleSecondaryLimits"
@@ -167,6 +215,32 @@ enum CodexAppSettings {
         }
         set {
             UserDefaults.standard.set(newValue, forKey: Key.showWeeklyInMenubar)
+        }
+    }
+
+    static var menuBarDisplayMode: CodexMenuBarDisplayMode {
+        get {
+            guard let rawValue = UserDefaults.standard.string(forKey: Key.menuBarDisplayMode),
+                  let mode = CodexMenuBarDisplayMode(rawValue: rawValue) else {
+                return .used
+            }
+            return mode
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: Key.menuBarDisplayMode)
+        }
+    }
+
+    static var resetDisplayStyle: CodexResetDisplayStyle {
+        get {
+            guard let rawValue = UserDefaults.standard.string(forKey: Key.resetDisplayStyle),
+                  let style = CodexResetDisplayStyle(rawValue: rawValue) else {
+                return .relative
+            }
+            return style
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: Key.resetDisplayStyle)
         }
     }
 
