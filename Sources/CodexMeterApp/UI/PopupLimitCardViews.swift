@@ -5,6 +5,7 @@ import SwiftUI
 struct LimitCardView: View {
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
     let presentation: PopupLimitPresentation
+    let resetDisplayStyle: CodexResetDisplayStyle
 
     private var limit: CodexLimit { presentation.limit }
     private var cardStyle: GlassSurfaceStyle {
@@ -112,7 +113,7 @@ struct LimitCardView: View {
                             : .numericText(value: window.clampedUsedPercent)
                     )
 
-                Text(CodexFormatting.relativeResetText(now: .init(), resetAt: window.resetsAt))
+                Text(resetDisplayStyle.resetText(now: .init(), resetAt: window.resetsAt))
                     .font(.system(size: 12))
                     .foregroundStyle(CodexTheme.dim)
             }
@@ -121,7 +122,7 @@ struct LimitCardView: View {
                 progress: window.clampedUsedPercent / 100,
                 bucket: limit.bucket,
                 label: "\(title) usage",
-                value: "\(window.usedPercentText), \(CodexFormatting.relativeResetText(now: .init(), resetAt: window.resetsAt))"
+                value: "\(window.usedPercentText), \(resetDisplayStyle.resetText(now: .init(), resetAt: window.resetsAt))"
             )
         }
     }

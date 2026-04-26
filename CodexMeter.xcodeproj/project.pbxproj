@@ -53,6 +53,7 @@
 		B197AD5E0AF396598F59B2AC /* CodexMenuBarModelAuthRestoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5995BBB6A6A916972A573E87 /* CodexMenuBarModelAuthRestoreTests.swift */; };
 		B2E6AF2E9FEF66375E81002D /* SettingsBehaviorCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E94F48CFE7F5990105B8F6D9 /* SettingsBehaviorCardView.swift */; };
 		B421A2A4926ED0971E359253 /* TestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E634F7A460DDEFBA77A8D6C2 /* TestSupport.swift */; };
+		BBE13929F9BB653DEE20AB8B /* StatusBarLabelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B50B52D38EBDD1E7DEC2CFFE /* StatusBarLabelTests.swift */; };
 		BC8B438281A72BF4B14E15BC /* SettingsPopupCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D596007917A46C19EBD5349 /* SettingsPopupCardView.swift */; };
 		C12091F1FC2EF1E4C5A57DBC /* SettingsAccountCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1FDAFB849CE5DF61B0DFC7E /* SettingsAccountCardView.swift */; };
 		C12CD61D80218EB9FA4D0A22 /* SettingsPreferencesCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8C076A9585FA44E239EAE67 /* SettingsPreferencesCardView.swift */; };
@@ -213,6 +214,7 @@
 		A6006DA1C920A31C12C2BB4E /* CodexMeterApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CodexMeterApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AE6B26C897C050086555E22C /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		B1861D53A1F57EB01F26800B /* CodexServiceContractsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexServiceContractsTests.swift; sourceTree = "<group>"; };
+		B50B52D38EBDD1E7DEC2CFFE /* StatusBarLabelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarLabelTests.swift; sourceTree = "<group>"; };
 		B56802AB05B67B2A4F883DA3 /* CodexSnapshotParsingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexSnapshotParsingTests.swift; sourceTree = "<group>"; };
 		B735A3B02D954FDEAE629D2C /* CodexexXPCService.xpc */ = {isa = PBXFileReference; explicitFileType = "wrapper.xpc-service"; includeInIndex = 0; path = CodexexXPCService.xpc; sourceTree = BUILT_PRODUCTS_DIR; };
 		C15019DEB1216ABB27FF4B76 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
@@ -313,6 +315,7 @@
 				288B30A983334DB695B1EA43 /* CodexSummarySnoozeTests.swift */,
 				ED32CC566DD1E354396E4024 /* CodexUsageInsightsTests.swift */,
 				45ECD99179170D7137CE6A6B /* PopupPresentationTests.swift */,
+				B50B52D38EBDD1E7DEC2CFFE /* StatusBarLabelTests.swift */,
 			);
 			name = CodexMeterAppTests;
 			path = Tests/CodexMeterAppTests;
@@ -756,6 +759,7 @@
 				ACD2515368196DC9D4DD8111 /* CodexSummarySnoozeTests.swift in Sources */,
 				99ABB6DAC94055696EE03C1D /* CodexUsageInsightsTests.swift in Sources */,
 				E906DEEB74DBB7C138F0283E /* PopupPresentationTests.swift in Sources */,
+				BBE13929F9BB653DEE20AB8B /* StatusBarLabelTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

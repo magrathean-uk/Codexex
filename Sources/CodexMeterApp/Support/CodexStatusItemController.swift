@@ -209,6 +209,10 @@ final class CodexStatusItemController: NSObject {
         _ = model.hideIdleSecondaryLimits
         _ = model.showFiveHourInMenubar
         _ = model.showWeeklyInMenubar
+        _ = model.menuBarDisplayMode
+        _ = model.resetDisplayStyle
+        _ = model.diagnosticsStatusMessage
+        _ = model.shouldDimStatusItem
         _ = model.usageHistory
     }
 
@@ -228,15 +232,19 @@ final class CodexStatusItemController: NSObject {
             snapshot: model.snapshot,
             isRefreshing: model.isRefreshing,
             hasError: hasError,
+            displayMode: model.menuBarDisplayMode,
             showFiveHour: model.showFiveHourInMenubar,
-            showWeekly: model.showWeeklyInMenubar
+            showWeekly: model.showWeeklyInMenubar,
+            insights: model.usageInsights
         )
         button?.image = StatusBarLabel.menuBarImage(
             isRefreshing: model.isRefreshing,
             hasError: hasError,
+            isStale: model.isDataStale,
             severity: hasError || model.isRefreshing ? nil : model.popupSummary?.severity
         )
         button?.imagePosition = .imageLeading
+        button?.alphaValue = model.shouldDimStatusItem ? 0.55 : 1
     }
 }
 #endif

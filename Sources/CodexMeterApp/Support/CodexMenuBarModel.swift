@@ -31,6 +31,9 @@ final class CodexMenuBarModel {
     private(set) var hideIdleSecondaryLimits = CodexAppSettings.hideIdleSecondaryLimits
     private(set) var showFiveHourInMenubar = CodexAppSettings.showFiveHourInMenubar
     private(set) var showWeeklyInMenubar = CodexAppSettings.showWeeklyInMenubar
+    private(set) var menuBarDisplayMode = CodexAppSettings.menuBarDisplayMode
+    private(set) var resetDisplayStyle = CodexAppSettings.resetDisplayStyle
+    private(set) var diagnosticsStatusMessage: String?
     private(set) var hasCompletedOnboarding = CodexAppSettings.hasCompletedOnboarding
     private(set) var previewModeEnabled = CodexAppSettings.previewModeEnabled
     private(set) var reduceMotionEnabled = false
@@ -61,6 +64,16 @@ final class CodexMenuBarModel {
     var hasResolvedAuthState: Bool { authSession.hasResolvedState }
     var usageHistory: [CodexUsageHistorySample] { dashboard.usageHistory }
     var usageInsights: CodexUsageInsights? { dashboard.usageInsights }
+    var shouldDimStatusItem: Bool { lastError != nil || isDataStale }
+    var isDataStale: Bool {
+        guard previewModeEnabled == false,
+              isRefreshing == false,
+              let lastUpdatedAt else {
+            return false
+        }
+        let staleSeconds = max(Double(refreshIntervalSeconds * 2 + 60), 15 * 60)
+        return Date().timeIntervalSince(lastUpdatedAt) > staleSeconds
+    }
     var popupSummary: PopupSummaryPresentation? {
         PopupPresentation.summary(
             snapshot: snapshot,
@@ -348,6 +361,23 @@ final class CodexMenuBarModel {
         CodexAppSettings.showWeeklyInMenubar = enabled
     }
 
+    func setMenuBarDisplayMode(_ mode: CodexMenuBarDisplayMode) {
+        menuBarDisplayMode = mode
+        CodexAppSettings.menuBarDisplayMode = mode
+    }
+
+    func setResetDisplayStyle(_ style: CodexResetDisplayStyle) {
+        resetDisplayStyle = style
+        CodexAppSettings.resetDisplayStyle = style
+    }
+
+    func copyDiagnosticsReport() {
+        let report = diagnosticsReport(now: Date())
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(report, forType: .string)
+        diagnosticsStatusMessage = "Copied safe diagnostics."
+    }
+
     func setReduceMotionEnabled(_ enabled: Bool) {
         reduceMotionEnabled = enabled
     }
@@ -477,6 +507,61 @@ final class CodexMenuBarModel {
         } else {
             withAnimation(animation, updates)
         }
+    }
+
+    func diagnosticsReport(now: Date) -> String {
+        let formatter = ISO8601DateFormatter()
+        let limits = snapshot?.limits.map { limit in
+            let windows = [
+                limit.fiveHourWindow.map { "5H \($0.usedPercentText) reset=\(formatter.string(from: $0.resetsAt ?? .distantPast))" },
+                limit.weeklyWindow.map { "W \($0.usedPercentText) reset=\(formatter.string(from: $0.resetsAt ?? .distantPast))" }
+            ]
+            .compactMap { $0 }
+            .joined(separator: ", ")
+            return "- \(limit.displayName): \(windows.isEmpty ? "no windows" : windows)"
+        } ?? ["- no snapshot"]
+
+        let forecast = usageInsights?.weeklyPace
+        let readiness = forecast?.modelReadiness
+        let rangeText: String
+        if let lower = forecast?.likelyLowerPercent, let upper = forecast?.likelyUpperPercent {
+            rangeText = "\(Int(lower.rounded()))-\(Int(upper.rounded()))%"
+        } else {
+            rangeText = "none"
+        }
+
+        let lines = [
+            "Codexex Diagnostics",
+            "Version: \(Bundle.main.codexexVersionString)",
+            "Generated: \(formatter.string(from: now))",
+            "Preview: \(previewModeEnabled)",
+            "Signed in: \(isSignedIn)",
+            "Refreshing: \(isRefreshing)",
+            "Stale: \(isDataStale)",
+            "Auto refresh: \(autoRefreshEnabled) / \(refreshIntervalSeconds)s",
+            "Menu mode: \(menuBarDisplayMode.rawValue)",
+            "Reset style: \(resetDisplayStyle.rawValue)",
+            "History samples: \(usageHistory.count)",
+            "Last updated: \(lastUpdatedAt.map { formatter.string(from: $0) } ?? "none")",
+            "Last error: \(redactedDiagnosticText(lastError ?? "none"))",
+            "Weekly forecast: \(forecast?.confidence.label ?? "none") current=\(percentText(forecast?.currentPercent)) projected=\(percentText(forecast?.projectedPercentAtReset)) range=\(rangeText)",
+            "ML readiness: days \(readiness?.historyDays ?? 0)/\(readiness?.requiredHistoryDays ?? 0), samples \(readiness?.sampleCount ?? 0)/\(readiness?.requiredSamples ?? 0), cycles \(readiness?.cycleCount ?? 0)/\(readiness?.requiredCycles ?? 0)",
+            "Limits:"
+        ] + limits
+
+        return lines.joined(separator: "\n")
+    }
+
+    private func percentText(_ value: Double?) -> String {
+        guard let value else { return "none" }
+        return "\(Int(value.rounded()))%"
+    }
+
+    private func redactedDiagnosticText(_ text: String) -> String {
+        text.replacing(
+            /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/.ignoresCase(),
+            with: "<email>"
+        )
     }
 }
 

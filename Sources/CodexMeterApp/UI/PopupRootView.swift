@@ -64,6 +64,7 @@ struct PopupRootView: View {
                         showsChart: model.showHistoryChartEnabled,
                         historyMode: model.defaultHistoryMode,
                         showPaceConfidence: model.showPaceConfidence,
+                        resetDisplayStyle: model.resetDisplayStyle,
                         onHistoryModeChange: { model.setDefaultHistoryMode($0) }
                     )
                 }
@@ -164,7 +165,7 @@ struct PopupRootView: View {
         case .compact:
             CompactLimitCardView(presentation: presentation)
         case .hero, .standard:
-            LimitCardView(presentation: presentation)
+            LimitCardView(presentation: presentation, resetDisplayStyle: model.resetDisplayStyle)
         }
     }
 

@@ -322,12 +322,35 @@ struct SettingsRootView: View {
             title: "Menu bar meters",
             footer: "What stays visible in the menu bar at all times."
         ) {
+            SettingsListRow(title: "Mode", detail: "Show usage, remaining quota, or weekly pace.") {
+                CodexSegmentedControl(selection: Binding(
+                    get: { model.menuBarDisplayMode },
+                    set: { model.setMenuBarDisplayMode($0) }
+                ), segments: [
+                    ("Used", .used),
+                    ("Left", .remaining),
+                    ("Pace", .pace)
+                ])
+                .frame(width: 174, height: GlassTokens.pillHeight)
+            }
+
             SettingsListRow(title: "5-hour window") {
                 CodexSwitch(isOn: Binding(get: { model.showFiveHourInMenubar }, set: { model.setShowFiveHourInMenubar($0) }))
             }
 
-            SettingsListRow(title: "Weekly window", isLast: true) {
+            SettingsListRow(title: "Weekly window") {
                 CodexSwitch(isOn: Binding(get: { model.showWeeklyInMenubar }, set: { model.setShowWeeklyInMenubar($0) }))
+            }
+
+            SettingsListRow(title: "Reset times", detail: "Choose countdown or clock time.", isLast: true) {
+                CodexSegmentedControl(selection: Binding(
+                    get: { model.resetDisplayStyle },
+                    set: { model.setResetDisplayStyle($0) }
+                ), segments: [
+                    ("In 2h", .relative),
+                    ("Clock", .absolute)
+                ])
+                .frame(width: 132, height: GlassTokens.pillHeight)
             }
         }
     }
@@ -411,6 +434,20 @@ struct SettingsRootView: View {
                             .labelStyle(.titleAndIcon)
                     }
                     .buttonStyle(CodexGhostButtonStyle())
+                }
+            }
+
+            SettingsListGroup(
+                title: "Diagnostics",
+                footer: "Copies a redacted report. No email, device code, cookies, or tokens."
+            ) {
+                SettingsListRow(
+                    title: "Copy diagnostics",
+                    detail: model.diagnosticsStatusMessage ?? "Useful when reporting quota or refresh issues.",
+                    isLast: true
+                ) {
+                    Button("Copy") { model.copyDiagnosticsReport() }
+                        .buttonStyle(CodexGhostButtonStyle())
                 }
             }
 
