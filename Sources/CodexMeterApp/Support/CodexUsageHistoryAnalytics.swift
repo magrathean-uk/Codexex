@@ -61,6 +61,8 @@ enum CodexForecastConfidence: Equatable {
     case tooEarly
     case learning
     case estimatedFromHistory
+    case patternMatched
+    case machineLearned
     case stable
     case volatile
 
@@ -72,6 +74,10 @@ enum CodexForecastConfidence: Equatable {
             return "Learning"
         case .estimatedFromHistory:
             return "Early estimate"
+        case .patternMatched:
+            return "Pattern matched"
+        case .machineLearned:
+            return "ML tuned"
         case .stable:
             return "Stable"
         case .volatile:
@@ -107,6 +113,9 @@ struct CodexUsageForecast: Equatable {
     let sampleCount: Int
     let resetAt: Date?
     let detail: String?
+    let likelyLowerPercent: Double?
+    let likelyUpperPercent: Double?
+    let modelReadiness: CodexForecastModelReadiness?
 
     init(
         message: String,
@@ -117,7 +126,10 @@ struct CodexUsageForecast: Equatable {
         paceVariancePercent: Double?,
         sampleCount: Int = 0,
         resetAt: Date? = nil,
-        detail: String? = nil
+        detail: String? = nil,
+        likelyLowerPercent: Double? = nil,
+        likelyUpperPercent: Double? = nil,
+        modelReadiness: CodexForecastModelReadiness? = nil
     ) {
         self.message = message
         self.tone = tone
@@ -128,10 +140,34 @@ struct CodexUsageForecast: Equatable {
         self.sampleCount = sampleCount
         self.resetAt = resetAt
         self.detail = detail
+        self.likelyLowerPercent = likelyLowerPercent
+        self.likelyUpperPercent = likelyUpperPercent
+        self.modelReadiness = modelReadiness
+    }
+}
+
+struct CodexForecastModelReadiness: Equatable {
+    let historyDays: Int
+    let sampleCount: Int
+    let cycleCount: Int
+    let requiredHistoryDays: Int
+    let requiredSamples: Int
+    let requiredCycles: Int
+
+    var isReady: Bool {
+        historyDays >= requiredHistoryDays
+            && sampleCount >= requiredSamples
+            && cycleCount >= requiredCycles
     }
 }
 
 enum CodexUsageHistoryAnalytics {
+    private static let resetSkewTolerance: TimeInterval = 5 * 60
+    private static let mlRequiredHistoryDays = 30
+    private static let mlRequiredSamples = 40
+    private static let mlRequiredWeeklyCycles = 4
+    private static let mlRequiredFiveHourCycles = 20
+
     private struct Observation {
         let date: Date
         let usedPercent: Double
@@ -141,6 +177,22 @@ enum CodexUsageHistoryAnalytics {
 
     private struct HistoricalProjection {
         let projectedPercent: Double
+        let cycleCount: Int
+    }
+
+    private struct PatternProjection {
+        let projectedPercent: Double
+    }
+
+    private struct ForecastRange {
+        let lowerPercent: Double
+        let upperPercent: Double
+    }
+
+    private struct MachineLearnedProjection {
+        let projectedPercent: Double
+        let range: ForecastRange
+        let trainingSampleCount: Int
         let cycleCount: Int
     }
 
@@ -207,6 +259,7 @@ enum CodexUsageHistoryAnalytics {
         from samples: [CodexUsageHistorySample],
         series: CodexUsageHistorySeries
     ) -> CodexUsageForecast {
+        let modelReadiness = self.modelReadiness(from: samples, series: series)
         let observations = currentCycleObservations(from: samples, series: series)
         guard let latest = observations.last else {
             return CodexUsageForecast(
@@ -218,7 +271,8 @@ enum CodexUsageHistoryAnalytics {
                 paceVariancePercent: nil,
                 sampleCount: 0,
                 resetAt: nil,
-                detail: nil
+                detail: nil,
+                modelReadiness: modelReadiness
             )
         }
 
@@ -232,7 +286,8 @@ enum CodexUsageHistoryAnalytics {
                 paceVariancePercent: nil,
                 sampleCount: observations.count,
                 resetAt: nil,
-                detail: nil
+                detail: nil,
+                modelReadiness: modelReadiness
             )
         }
 
@@ -246,7 +301,8 @@ enum CodexUsageHistoryAnalytics {
                 paceVariancePercent: nil,
                 sampleCount: observations.count,
                 resetAt: resetAt,
-                detail: nil
+                detail: nil,
+                modelReadiness: modelReadiness
             )
         }
 
@@ -277,7 +333,10 @@ enum CodexUsageHistoryAnalytics {
                     paceVariancePercent: nil,
                     sampleCount: observations.count,
                     resetAt: resetAt,
-                    detail: "From \(historicalProjection.cycleCount) prior \(cycleWord)"
+                    detail: "From \(historicalProjection.cycleCount) prior \(cycleWord)",
+                    likelyLowerPercent: projectedPercentAtReset,
+                    likelyUpperPercent: projectedPercentAtReset,
+                    modelReadiness: modelReadiness
                 )
             }
 
@@ -299,18 +358,74 @@ enum CodexUsageHistoryAnalytics {
                     sampleCount: observations.count,
                     elapsedFraction: elapsedFraction,
                     cycleDuration: cycleDuration
-                )
+                ),
+                modelReadiness: modelReadiness
             )
         }
 
-        let projectedPercentAtReset = max(currentPercent, currentPercent / max(elapsedFraction, 0.05))
-        let expectedPercentNow = (elapsedFraction * 100).clamped(to: 0 ... 100)
-        let variance = currentPercent - expectedPercentNow
-        let confidence: CodexForecastConfidence = isVolatile(
+        let rawPaceProjectedPercentAtReset = max(currentPercent, currentPercent / max(elapsedFraction, 0.05))
+        let historicalProjection = historicalProjection(
+            from: samples,
+            series: series,
+            excludingResetAt: resetAt
+        )
+        let isVolatile = isVolatile(
             observations: observations,
             cycleStart: cycleStart,
             cycleDuration: cycleDuration
-        ) ? .volatile : .stable
+        )
+        let paceProjectedPercentAtReset = temperedPaceProjection(
+            rawProjection: rawPaceProjectedPercentAtReset,
+            currentPercent: currentPercent,
+            elapsedFraction: elapsedFraction,
+            historicalProjection: historicalProjection,
+            isVolatile: isVolatile
+        )
+        let patternProjection = matchingPatternProjection(
+            from: samples,
+            series: series,
+            latest: latest,
+            currentResetAt: resetAt,
+            currentPercent: currentPercent
+        )
+        var projectedPercentAtReset = patternAdjustedProjection(
+            paceProjection: paceProjectedPercentAtReset,
+            patternProjection: patternProjection?.projectedPercent,
+            currentPercent: currentPercent
+        )
+        let mlProjection = machineLearnedProjection(
+            from: samples,
+            series: series,
+            latest: latest,
+            currentResetAt: resetAt,
+            currentPercent: currentPercent,
+            elapsedFraction: elapsedFraction,
+            rawPaceProjection: rawPaceProjectedPercentAtReset,
+            modelReadiness: modelReadiness
+        )
+        if let mlProjection {
+            projectedPercentAtReset = max(
+                currentPercent,
+                (mlProjection.projectedPercent * 0.7) + (projectedPercentAtReset * 0.3)
+            )
+        }
+        let expectedPercentNow = (elapsedFraction * 100).clamped(to: 0 ... 100)
+        let variance = currentPercent - expectedPercentNow
+        let confidence: CodexForecastConfidence
+        if isVolatile {
+            confidence = .volatile
+        } else if mlProjection != nil {
+            confidence = .machineLearned
+        } else if projectedPercentAtReset > paceProjectedPercentAtReset + 1 {
+            confidence = .patternMatched
+        } else {
+            confidence = .stable
+        }
+        let range = mlProjection?.range ?? forecastRange(
+            projection: projectedPercentAtReset,
+            currentPercent: currentPercent,
+            confidence: confidence
+        )
 
         return CodexUsageForecast(
             message: "Projected \(Int(projectedPercentAtReset.rounded()))% by reset",
@@ -321,11 +436,40 @@ enum CodexUsageHistoryAnalytics {
             paceVariancePercent: variance,
             sampleCount: observations.count,
             resetAt: resetAt,
-            detail: paceDetail(
+            detail: forecastDetail(
                 variance: variance,
                 sampleCount: observations.count,
-                confidence: confidence
-            )
+                confidence: confidence,
+                mlProjection: mlProjection
+            ),
+            likelyLowerPercent: range.lowerPercent,
+            likelyUpperPercent: range.upperPercent,
+            modelReadiness: modelReadiness
+        )
+    }
+
+    static func modelReadiness(
+        from samples: [CodexUsageHistorySample],
+        series: CodexUsageHistorySeries
+    ) -> CodexForecastModelReadiness {
+        let observations = resolvedObservations(from: samples, series: series)
+        let dates = observations.map(\.date)
+        let historyDays: Int
+        if let first = dates.min(), let last = dates.max() {
+            historyDays = max(0, Int((last.timeIntervalSince(first) / 86_400).rounded(.down)))
+        } else {
+            historyDays = 0
+        }
+
+        let cycleCount = Set(observations.compactMap(\.resetsAt)).count
+        let requiredCycles = series == .weekly ? mlRequiredWeeklyCycles : mlRequiredFiveHourCycles
+        return CodexForecastModelReadiness(
+            historyDays: historyDays,
+            sampleCount: observations.count,
+            cycleCount: cycleCount,
+            requiredHistoryDays: mlRequiredHistoryDays,
+            requiredSamples: mlRequiredSamples,
+            requiredCycles: requiredCycles
         )
     }
 
@@ -376,14 +520,23 @@ enum CodexUsageHistoryAnalytics {
         guard let latestReset = observations.compactMap(\.resetsAt).last else {
             return []
         }
-        return observations.filter { $0.resetsAt == latestReset }
+        return observations.filter { resetTimesMatch($0.resetsAt, latestReset) }
     }
 
-    private static func paceDetail(
+    private static func forecastDetail(
         variance: Double,
         sampleCount: Int,
-        confidence: CodexForecastConfidence
+        confidence: CodexForecastConfidence,
+        mlProjection: MachineLearnedProjection? = nil
     ) -> String {
+        if let mlProjection {
+            return "ML tuned · \(mlProjection.trainingSampleCount) samples · \(mlProjection.cycleCount) cycles"
+        }
+
+        if confidence == .patternMatched {
+            return "Pattern matched · \(sampleCount) samples"
+        }
+
         let roundedVariance = Int(variance.rounded())
         let paceText: String
         if roundedVariance > 0 {
@@ -436,7 +589,7 @@ enum CodexUsageHistoryAnalytics {
         let priorCyclePeaks = Dictionary(
             grouping: observations.compactMap { observation -> (Date, Double)? in
                 guard let resetAt = observation.resetsAt else { return nil }
-                guard resetAt != currentResetAt else { return nil }
+                guard resetTimesMatch(resetAt, currentResetAt) == false else { return nil }
                 return (resetAt, observation.usedPercent)
             },
             by: \.0
@@ -453,6 +606,287 @@ enum CodexUsageHistoryAnalytics {
             projectedPercent: median(priorCyclePeaks),
             cycleCount: priorCyclePeaks.count
         )
+    }
+
+    private static func temperedPaceProjection(
+        rawProjection: Double,
+        currentPercent: Double,
+        elapsedFraction: Double,
+        historicalProjection: HistoricalProjection?,
+        isVolatile: Bool
+    ) -> Double {
+        var projection = rawProjection
+
+        if let historicalProjection,
+           historicalProjection.projectedPercent < rawProjection {
+            let historicalFloor = max(currentPercent, historicalProjection.projectedPercent.clamped(to: 0 ... 100))
+            let paceWeight = (elapsedFraction * 1.4).clamped(to: 0.35 ... 0.75)
+            projection = (rawProjection * paceWeight) + (historicalFloor * (1 - paceWeight))
+        } else if isVolatile {
+            projection = currentPercent + ((rawProjection - currentPercent) * 0.85)
+        }
+
+        return max(currentPercent, projection)
+    }
+
+    private static func patternAdjustedProjection(
+        paceProjection: Double,
+        patternProjection: Double?,
+        currentPercent: Double
+    ) -> Double {
+        guard let patternProjection,
+              patternProjection > paceProjection else {
+            return max(currentPercent, paceProjection)
+        }
+
+        let weightedPatternProjection = paceProjection + ((patternProjection - paceProjection) * 0.75)
+        return max(currentPercent, weightedPatternProjection)
+    }
+
+    private static func forecastRange(
+        projection: Double,
+        currentPercent: Double,
+        confidence: CodexForecastConfidence
+    ) -> ForecastRange {
+        let margin = switch confidence {
+        case .machineLearned:
+            7.0
+        case .patternMatched:
+            9.0
+        case .volatile:
+            18.0
+        case .stable:
+            8.0
+        case .estimatedFromHistory:
+            12.0
+        case .tooEarly, .learning:
+            0.0
+        }
+
+        return ForecastRange(
+            lowerPercent: max(currentPercent, projection - margin).clamped(to: 0 ... 140),
+            upperPercent: max(currentPercent, projection + margin).clamped(to: 0 ... 140)
+        )
+    }
+
+    private static func machineLearnedProjection(
+        from samples: [CodexUsageHistorySample],
+        series: CodexUsageHistorySeries,
+        latest: Observation,
+        currentResetAt: Date,
+        currentPercent: Double,
+        elapsedFraction: Double,
+        rawPaceProjection: Double,
+        modelReadiness: CodexForecastModelReadiness
+    ) -> MachineLearnedProjection? {
+        guard series == .weekly, modelReadiness.isReady else { return nil }
+        guard let windowDurationMinutes = latest.windowDurationMinutes else { return nil }
+
+        let observations = resolvedObservations(from: samples, series: series)
+            .filter { observation in
+                observation.resetsAt != nil
+                    && resetTimesMatch(observation.resetsAt, currentResetAt) == false
+                    && observation.windowDurationMinutes == windowDurationMinutes
+            }
+        let grouped = Dictionary(grouping: observations, by: \.resetsAt)
+        var trainingRows: [[Double]] = []
+        var trainingTargets: [Double] = []
+        var cycleCount = 0
+
+        for (resetAt, cycleObservations) in grouped {
+            guard let resetAt, cycleObservations.count >= 3 else { continue }
+            let targetPercent = cycleObservations
+                .map { $0.usedPercent.clamped(to: 0 ... 100) }
+                .max() ?? 0
+            guard targetPercent > 0 else { continue }
+
+            let cycleDuration = TimeInterval(windowDurationMinutes * 60)
+            let cycleStart = resetAt.addingTimeInterval(-cycleDuration)
+            cycleCount += 1
+
+            for observation in cycleObservations {
+                let elapsed = (observation.date.timeIntervalSince(cycleStart) / cycleDuration).clamped(to: 0 ... 1)
+                guard elapsed >= 0.06, elapsed <= 0.96 else { continue }
+                let used = observation.usedPercent.clamped(to: 0 ... 100)
+                let naiveProjection = max(used, used / max(elapsed, 0.05)).clamped(to: 0 ... 140)
+                trainingRows.append(regressionFeatures(
+                    currentPercent: used,
+                    elapsedFraction: elapsed,
+                    rawPaceProjection: naiveProjection
+                ))
+                trainingTargets.append(targetPercent / 100)
+            }
+        }
+
+        guard cycleCount >= mlRequiredWeeklyCycles,
+              trainingRows.count >= mlRequiredSamples,
+              let weights = ridgeRegressionWeights(rows: trainingRows, targets: trainingTargets) else {
+            return nil
+        }
+
+        let features = regressionFeatures(
+            currentPercent: currentPercent,
+            elapsedFraction: elapsedFraction,
+            rawPaceProjection: rawPaceProjection.clamped(to: 0 ... 140)
+        )
+        let predicted = dot(weights, features) * 100
+        let residuals = zip(trainingRows, trainingTargets).map { row, target in
+            (dot(weights, row) - target) * 100
+        }
+        let rmse = sqrt(residuals.map { $0 * $0 }.reduce(0, +) / Double(max(residuals.count, 1)))
+        guard rmse.isFinite, rmse <= 18 else { return nil }
+
+        let projectedPercent = predicted.clamped(to: currentPercent ... 120)
+        let margin = max(6, min(18, rmse * 1.4))
+        return MachineLearnedProjection(
+            projectedPercent: projectedPercent,
+            range: ForecastRange(
+                lowerPercent: max(currentPercent, projectedPercent - margin).clamped(to: 0 ... 140),
+                upperPercent: max(currentPercent, projectedPercent + margin).clamped(to: 0 ... 140)
+            ),
+            trainingSampleCount: trainingRows.count,
+            cycleCount: cycleCount
+        )
+    }
+
+    private static func regressionFeatures(
+        currentPercent: Double,
+        elapsedFraction: Double,
+        rawPaceProjection: Double
+    ) -> [Double] {
+        [
+            1,
+            currentPercent.clamped(to: 0 ... 100) / 100,
+            elapsedFraction.clamped(to: 0 ... 1),
+            rawPaceProjection.clamped(to: 0 ... 140) / 100
+        ]
+    }
+
+    private static func ridgeRegressionWeights(rows: [[Double]], targets: [Double]) -> [Double]? {
+        guard let featureCount = rows.first?.count,
+              rows.allSatisfy({ $0.count == featureCount }),
+              rows.count == targets.count else {
+            return nil
+        }
+
+        let lambda = 0.08
+        var matrix = Array(
+            repeating: Array(repeating: 0.0, count: featureCount),
+            count: featureCount
+        )
+        var vector = Array(repeating: 0.0, count: featureCount)
+
+        for (row, target) in zip(rows, targets) {
+            for i in 0..<featureCount {
+                vector[i] += row[i] * target
+                for j in 0..<featureCount {
+                    matrix[i][j] += row[i] * row[j]
+                }
+            }
+        }
+
+        for index in 0..<featureCount {
+            matrix[index][index] += lambda
+        }
+
+        return solveLinearSystem(matrix: matrix, vector: vector)
+    }
+
+    private static func solveLinearSystem(matrix: [[Double]], vector: [Double]) -> [Double]? {
+        let count = vector.count
+        guard matrix.count == count,
+              matrix.allSatisfy({ $0.count == count }) else {
+            return nil
+        }
+
+        var augmented = matrix.enumerated().map { index, row in
+            row + [vector[index]]
+        }
+
+        for pivotIndex in 0..<count {
+            var bestRow = pivotIndex
+            for rowIndex in pivotIndex..<count where abs(augmented[rowIndex][pivotIndex]) > abs(augmented[bestRow][pivotIndex]) {
+                bestRow = rowIndex
+            }
+            guard abs(augmented[bestRow][pivotIndex]) > 0.000_001 else { return nil }
+            if bestRow != pivotIndex {
+                augmented.swapAt(bestRow, pivotIndex)
+            }
+
+            let pivot = augmented[pivotIndex][pivotIndex]
+            for columnIndex in pivotIndex...count {
+                augmented[pivotIndex][columnIndex] /= pivot
+            }
+
+            for rowIndex in 0..<count where rowIndex != pivotIndex {
+                let factor = augmented[rowIndex][pivotIndex]
+                guard factor != 0 else { continue }
+                for columnIndex in pivotIndex...count {
+                    augmented[rowIndex][columnIndex] -= factor * augmented[pivotIndex][columnIndex]
+                }
+            }
+        }
+
+        return augmented.map { $0[count] }
+    }
+
+    private static func dot(_ lhs: [Double], _ rhs: [Double]) -> Double {
+        zip(lhs, rhs).map(*).reduce(0, +)
+    }
+
+    private static func matchingPatternProjection(
+        from samples: [CodexUsageHistorySample],
+        series: CodexUsageHistorySeries,
+        latest: Observation,
+        currentResetAt: Date,
+        currentPercent: Double
+    ) -> PatternProjection? {
+        guard series == .weekly else { return nil }
+        guard let windowDurationMinutes = latest.windowDurationMinutes else { return nil }
+
+        let calendar = Calendar.autoupdatingCurrent
+        let latestComponents = calendar.dateComponents([.weekday, .hour], from: latest.date)
+        guard let latestWeekday = latestComponents.weekday,
+              let latestHour = latestComponents.hour else {
+            return nil
+        }
+
+        let observations = resolvedObservations(from: samples, series: series)
+            .filter { observation in
+                observation.resetsAt != nil
+                    && resetTimesMatch(observation.resetsAt, currentResetAt) == false
+                    && observation.windowDurationMinutes == windowDurationMinutes
+            }
+
+        let priorCyclePeaks = Dictionary(grouping: observations, by: \.resetsAt)
+            .compactMap { _, cycleObservations -> Double? in
+                let hasMatchingTime = cycleObservations.contains { observation in
+                    let components = calendar.dateComponents([.weekday, .hour], from: observation.date)
+                    guard components.weekday == latestWeekday,
+                          let hour = components.hour else {
+                        return false
+                    }
+                    return hourDistance(hour, latestHour) <= 2
+                }
+                guard hasMatchingTime else { return nil }
+                return cycleObservations.map(\.usedPercent).max()
+            }
+
+        guard priorCyclePeaks.count >= 2 else { return nil }
+
+        return PatternProjection(
+            projectedPercent: max(currentPercent, median(priorCyclePeaks).clamped(to: 0 ... 100))
+        )
+    }
+
+    private static func hourDistance(_ lhs: Int, _ rhs: Int) -> Int {
+        let rawDistance = abs(lhs - rhs)
+        return min(rawDistance, 24 - rawDistance)
+    }
+
+    private static func resetTimesMatch(_ lhs: Date?, _ rhs: Date) -> Bool {
+        guard let lhs else { return false }
+        return abs(lhs.timeIntervalSince(rhs)) <= resetSkewTolerance
     }
 
     private static func isVolatile(

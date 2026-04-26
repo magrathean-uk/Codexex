@@ -9,6 +9,8 @@ final class CodexAppSettingsTests: XCTestCase {
         UserDefaults.standard.removeObject(forKey: "codexex.defaultHistoryMode")
         UserDefaults.standard.removeObject(forKey: "codexex.showPaceConfidence")
         UserDefaults.standard.removeObject(forKey: "codexex.hideIdleSecondaryLimits")
+        UserDefaults.standard.removeObject(forKey: "codexex.summarySnoozeFingerprint")
+        UserDefaults.standard.removeObject(forKey: "codexex.summarySnoozeExpiresAt")
     }
 
     func testNewPopupSettingsDefaultOn() {
@@ -31,5 +33,20 @@ final class CodexAppSettingsTests: XCTestCase {
         XCTAssertEqual(CodexAppSettings.defaultHistoryMode, .thisCycle)
         XCTAssertFalse(CodexAppSettings.showPaceConfidence)
         XCTAssertTrue(CodexAppSettings.hideIdleSecondaryLimits)
+    }
+
+    func testSummarySnoozeSettingsPersistAndClear() {
+        let expiresAt = Date(timeIntervalSince1970: 1_800_000_000)
+
+        CodexAppSettings.summarySnoozeFingerprint = "watch|weekly|91"
+        CodexAppSettings.summarySnoozeExpiresAt = expiresAt
+
+        XCTAssertEqual(CodexAppSettings.summarySnoozeFingerprint, "watch|weekly|91")
+        XCTAssertEqual(CodexAppSettings.summarySnoozeExpiresAt, expiresAt)
+
+        CodexAppSettings.clearSummarySnooze()
+
+        XCTAssertNil(CodexAppSettings.summarySnoozeFingerprint)
+        XCTAssertNil(CodexAppSettings.summarySnoozeExpiresAt)
     }
 }

@@ -47,7 +47,8 @@ struct CodexUsageHistoryWindow: Codable, Sendable, Equatable {
 
 actor CodexUsageHistoryStore {
     private let fileURL: URL
-    private let retention: TimeInterval = 30 * 24 * 60 * 60
+    private let retention: TimeInterval = 180 * 24 * 60 * 60
+    private let futureTolerance: TimeInterval = 5 * 60
 
     init(fileManager: FileManager = .default, fileURL: URL? = nil) {
         if let fileURL {
@@ -126,8 +127,9 @@ actor CodexUsageHistoryStore {
 
     private func trim(_ samples: [CodexUsageHistorySample], now: Date) -> [CodexUsageHistorySample] {
         let cutoff = now.addingTimeInterval(-self.retention)
+        let futureCutoff = now.addingTimeInterval(self.futureTolerance)
         return samples
-            .filter { $0.capturedAt >= cutoff }
+            .filter { $0.capturedAt >= cutoff && $0.capturedAt <= futureCutoff }
             .sorted { $0.capturedAt < $1.capturedAt }
     }
 }

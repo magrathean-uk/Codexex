@@ -35,6 +35,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         sharedSettingsWindowController.onVisibilityChange = { visible in
             sharedStatusItemController?.setSettingsVisible(visible)
         }
+        DispatchQueue.main.async {
+            self.bindSettingsMenuItem()
+        }
 
         if sharedModel.hasCompletedOnboarding == false {
             sharedOnboardingWindowController.showWelcomeWindow()
@@ -60,6 +63,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         return .terminateNow
+    }
+
+    @objc private func openSettingsFromAppMenu() {
+        sharedSettingsWindowController.showSettingsWindow()
+    }
+
+    private func bindSettingsMenuItem() {
+        guard let appMenu = NSApp.mainMenu?.items.first?.submenu else { return }
+        guard let settingsItem = appMenu.items.first(where: { $0.title.hasPrefix("Settings") }) else { return }
+        settingsItem.target = self
+        settingsItem.action = #selector(openSettingsFromAppMenu)
     }
 }
 
@@ -97,6 +111,14 @@ struct CodexMeterMenuBarApp: App {
         }
         .defaultSize(width: GlassTokens.settingsWidth, height: GlassTokens.settingsHeight)
         .windowResizability(.automatic)
+        .commands {
+            CommandGroup(replacing: .appSettings) {
+                Button("Settings…") {
+                    sharedSettingsWindowController.showSettingsWindow()
+                }
+                .keyboardShortcut(",", modifiers: .command)
+            }
+        }
     }
 }
 

@@ -1,4 +1,4 @@
-https://github.com/bolyki01/Codexex
+https://github.com/magrathean-uk/Codexex
 
 # Codexex Improvement Plan
 
