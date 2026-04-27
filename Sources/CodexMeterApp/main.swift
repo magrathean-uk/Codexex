@@ -96,8 +96,10 @@ private func startSentryIfConfigured() {
         options.debug = false
         options.enableSwizzling = false
         options.sendDefaultPii = false
-        options.tracesSampleRate = 0
-        options.profilesSampleRate = 0
+        options.tracesSampleRate = 0.1
+        options.configureProfiling = { profiling in
+            profiling.sessionSampleRate = 0.01
+        }
     }
     #endif
 }
