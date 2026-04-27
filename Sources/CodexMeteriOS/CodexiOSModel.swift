@@ -76,6 +76,7 @@ final class CodexiOSModel {
 
     func checkSignIn() {
         guard let flowID else { return }
+        guard isSigningIn == false else { return }
         isSigningIn = true
         errorMessage = nil
 
@@ -97,6 +98,12 @@ final class CodexiOSModel {
                 statusMessage = error.localizedDescription
             }
         }
+    }
+
+    func checkSignInAfterReturn() {
+        guard flowID != nil else { return }
+        statusMessage = "Checking sign-in."
+        checkSignIn()
     }
 
     func copyCode() {

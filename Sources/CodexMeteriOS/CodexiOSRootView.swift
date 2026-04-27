@@ -2,6 +2,12 @@ import SwiftUI
 import CodexMeterCore
 
 struct CodexiOSRootView: View {
+    @Environment(\.scenePhase) private var scenePhase
+    @AppStorage(CodexiOSSettingsKeys.autoCheckSignInOnReturn) private var autoCheckSignInOnReturn = true
+    @AppStorage(CodexiOSSettingsKeys.refreshWhenActive) private var refreshWhenActive = true
+    @AppStorage(CodexiOSSettingsKeys.showSpark) private var showSpark = true
+    @AppStorage(CodexiOSSettingsKeys.showHistory) private var showHistory = true
+    @AppStorage(CodexiOSSettingsKeys.resetDisplayStyle) private var resetDisplayStyle = CodexiOSResetDisplayStyle.countdown.rawValue
     @Bindable var model: CodexiOSModel
 
     var body: some View {
@@ -18,6 +24,13 @@ struct CodexiOSRootView: View {
             .background(CodexiOSTheme.background.ignoresSafeArea())
             .navigationTitle("Codexex")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    NavigationLink {
+                        CodexiOSSettingsView(model: model)
+                    } label: {
+                        Label("Settings", systemImage: "gearshape.fill")
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         Task { await model.refresh() }
@@ -36,13 +49,24 @@ struct CodexiOSRootView: View {
         .task {
             await model.start()
         }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
+            if autoCheckSignInOnReturn, model.flowID != nil {
+                model.checkSignInAfterReturn()
+            } else if refreshWhenActive, model.isSignedIn {
+                Task { await model.refresh() }
+            }
+        }
     }
 
     private var narrowLayout: some View {
         VStack(alignment: .leading, spacing: 16) {
             statusCard
             mainQuotaCards
-            historyCard
+            if showHistory {
+                historyCard
+            }
+            footerBar
         }
         .frame(maxWidth: 760, alignment: .topLeading)
     }
@@ -51,7 +75,10 @@ struct CodexiOSRootView: View {
         HStack(alignment: .top, spacing: 18) {
             VStack(alignment: .leading, spacing: 16) {
                 statusCard
-                historyCard
+                if showHistory {
+                    historyCard
+                }
+                footerBar
             }
             .frame(minWidth: 340, maxWidth: 430, alignment: .topLeading)
 
@@ -135,7 +162,7 @@ struct CodexiOSRootView: View {
         VStack(alignment: .leading, spacing: 16) {
             if let snapshot = model.snapshot {
                 ForEach(snapshot.limits) { limit in
-                    if shouldShow(limit) {
+                    if shouldShow(limit), showSpark || limit.bucket != .spark {
                         quotaCard(limit)
                     }
                 }
@@ -191,13 +218,47 @@ struct CodexiOSRootView: View {
                 Text("\(window.usedPercentText) used")
                     .font(.headline.monospacedDigit())
             }
-            Text(CodexFormatting.relativeResetText(now: .init(), resetAt: window.resetsAt))
+            Text(resetText(for: window))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             ProgressView(value: window.clampedUsedPercent / 100)
                 .tint(tint)
                 .scaleEffect(x: 1, y: 1.6, anchor: .center)
+        }
+    }
+
+    private func resetText(for window: CodexQuotaWindow) -> String {
+        guard CodexiOSResetDisplayStyle(rawValue: resetDisplayStyle) == .clock,
+              let resetsAt = window.resetsAt else {
+            return CodexFormatting.relativeResetText(now: .init(), resetAt: window.resetsAt)
+        }
+        return "resets at \(resetsAt.formatted(date: .omitted, time: .shortened))"
+    }
+
+    private var footerBar: some View {
+        HStack {
+            NavigationLink {
+                CodexiOSSettingsView(model: model)
+            } label: {
+                Label("Settings", systemImage: "gearshape.fill")
+                    .font(.headline)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(CodexiOSTheme.inset, in: Capsule())
+                    .overlay {
+                        Capsule().strokeBorder(.white.opacity(0.12), lineWidth: 1)
+                    }
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+
+            if let updated = model.lastUpdatedAt {
+                Text("Updated \(updated.formatted(date: .omitted, time: .shortened))")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 
