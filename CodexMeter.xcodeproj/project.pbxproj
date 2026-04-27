@@ -30,6 +30,7 @@
 		3345862044A399E80C2EAFC9 /* CodexMenuBarModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB02F9086358A6968D76E1F /* CodexMenuBarModel.swift */; };
 		36D12549C8CAB472B2F8813D /* CodexiOSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 410E8DD13157EB9F9DA4D77D /* CodexiOSService.swift */; };
 		3E4271A0C7BEE3807FDACFC4 /* GlassTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76C70A444F90564AD40EA87B /* GlassTokens.swift */; };
+		41836F12DE50487C4B96DD9E /* CodexChatGPTAuthParsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = F33BB53B6CA6F1CD3C0A9498 /* CodexChatGPTAuthParsing.swift */; };
 		468FBC25524EC0A57F88215D /* TestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E634F7A460DDEFBA77A8D6C2 /* TestSupport.swift */; };
 		49CA232E5B819EC369F25345 /* CodexAppServerProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59BF4687D491CA6035EC1E43 /* CodexAppServerProbe.swift */; };
 		4B1A1E766C201D31CDE00E6E /* StatusBarLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3134479F012B906A7D8DD00F /* StatusBarLabel.swift */; };
@@ -84,7 +85,9 @@
 		EEF3FBB667330AC39D0617F6 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00DEADCC4A6A1910F07EC9CC /* main.swift */; };
 		EF24F34CDE2523FA8E311794 /* CodexAppServerProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59BF4687D491CA6035EC1E43 /* CodexAppServerProbe.swift */; };
 		F06B50BF36A35008D884B1FE /* CodexSummarySnooze.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2BFEE1CA9B1960DAE83434B /* CodexSummarySnooze.swift */; };
+		F21B4C1F8C5378293119ADAB /* CodexChatGPTAuthParsingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A58E44E82E08336BA8201819 /* CodexChatGPTAuthParsingTests.swift */; };
 		F2BAD453253C24E27116E93A /* CodexUsageHistoryAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = A52CF560D83450EF83AB67DA /* CodexUsageHistoryAnalytics.swift */; };
+		F474E814E2D82839CEFAFD11 /* CodexChatGPTAuthParsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = F33BB53B6CA6F1CD3C0A9498 /* CodexChatGPTAuthParsing.swift */; };
 		F4F8F81DA23501208CF9F8AF /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = 4D1403DF88E1AD84A18E26EB /* Sentry */; };
 		F55AFF29F54237991EFDB250 /* SettingsRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0EFEAE8F340B06D8800306 /* SettingsRootView.swift */; };
 		F6A7ADCC4643141531C0DC88 /* CodexRateLimitPayloadMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F296DCDAEEC79A9BB221618 /* CodexRateLimitPayloadMapper.swift */; };
@@ -251,6 +254,7 @@
 		9E5F053505E884FBD559ACCC /* CodexAppLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexAppLinks.swift; sourceTree = "<group>"; };
 		A0F373CE46619902781235BE /* CodexPreviewData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexPreviewData.swift; sourceTree = "<group>"; };
 		A52CF560D83450EF83AB67DA /* CodexUsageHistoryAnalytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexUsageHistoryAnalytics.swift; sourceTree = "<group>"; };
+		A58E44E82E08336BA8201819 /* CodexChatGPTAuthParsingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexChatGPTAuthParsingTests.swift; sourceTree = "<group>"; };
 		A6006DA1C920A31C12C2BB4E /* CodexMeterApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CodexMeterApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A729D4E01BB7C27D032909ED /* CodexexiOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexexiOSApp.swift; sourceTree = "<group>"; };
 		AE6B26C897C050086555E22C /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
@@ -278,6 +282,7 @@
 		EE114164113759D2DF5B3823 /* CodexStatusItemController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexStatusItemController.swift; sourceTree = "<group>"; };
 		EE190C5B99912EAC0B0887CB /* SettingsAboutCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsAboutCard.swift; sourceTree = "<group>"; };
 		F2912FA060561F4B750A662B /* CodexLaunchAtLoginManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexLaunchAtLoginManager.swift; sourceTree = "<group>"; };
+		F33BB53B6CA6F1CD3C0A9498 /* CodexChatGPTAuthParsing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexChatGPTAuthParsing.swift; sourceTree = "<group>"; };
 		F7A0915351DD97681A213FCB /* SettingsForecastCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsForecastCardView.swift; sourceTree = "<group>"; };
 		FE2909B5F3DAB30B7BDCACD5 /* GlassCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassCard.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -346,6 +351,7 @@
 			children = (
 				59BF4687D491CA6035EC1E43 /* CodexAppServerProbe.swift */,
 				55540A16D4495A09BD25A98F /* CodexBinaryLocator.swift */,
+				F33BB53B6CA6F1CD3C0A9498 /* CodexChatGPTAuthParsing.swift */,
 				28C8C0A190E2CBBFBD0F5242 /* CodexFormatting.swift */,
 				0F5C3585137CA0195CDC7B3A /* CodexModels.swift */,
 				4F296DCDAEEC79A9BB221618 /* CodexRateLimitPayloadMapper.swift */,
@@ -423,6 +429,7 @@
 			isa = PBXGroup;
 			children = (
 				6295BEFAAD3C4835D1687CFA /* CodexBinaryLocatorTests.swift */,
+				A58E44E82E08336BA8201819 /* CodexChatGPTAuthParsingTests.swift */,
 				CFA0B71CFFD2820EA439D76C /* CodexFormattingTests.swift */,
 				3B0FE703A7C9226E39929552 /* CodexRateLimitPayloadMapperTests.swift */,
 				B1861D53A1F57EB01F26800B /* CodexServiceContractsTests.swift */,
@@ -903,6 +910,7 @@
 			files = (
 				EF24F34CDE2523FA8E311794 /* CodexAppServerProbe.swift in Sources */,
 				FD4188EA9253F1B034BD599E /* CodexBinaryLocator.swift in Sources */,
+				F474E814E2D82839CEFAFD11 /* CodexChatGPTAuthParsing.swift in Sources */,
 				CFD2828F9157EDDA0FBA989E /* CodexFormatting.swift in Sources */,
 				DD00D5CE6070434B1263329A /* CodexModels.swift in Sources */,
 				F6A7ADCC4643141531C0DC88 /* CodexRateLimitPayloadMapper.swift in Sources */,
@@ -927,6 +935,7 @@
 			files = (
 				49CA232E5B819EC369F25345 /* CodexAppServerProbe.swift in Sources */,
 				EBF0DF77D84EB224744F6567 /* CodexBinaryLocator.swift in Sources */,
+				41836F12DE50487C4B96DD9E /* CodexChatGPTAuthParsing.swift in Sources */,
 				091F0761036C0B660CAF4F4F /* CodexFormatting.swift in Sources */,
 				7449C60C9161BC32E0F0F068 /* CodexModels.swift in Sources */,
 				831CF45C2BBFB9E33426D4F7 /* CodexRateLimitPayloadMapper.swift in Sources */,
@@ -940,6 +949,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9A4D02C4FBEBAF3542616A75 /* CodexBinaryLocatorTests.swift in Sources */,
+				F21B4C1F8C5378293119ADAB /* CodexChatGPTAuthParsingTests.swift in Sources */,
 				0D5147B0A0D575B227E2C660 /* CodexFormattingTests.swift in Sources */,
 				9B84CC609C813BD6753FD295 /* CodexRateLimitPayloadMapperTests.swift in Sources */,
 				589F77FEADA1044E87EFEAC6 /* CodexServiceContractsTests.swift in Sources */,
