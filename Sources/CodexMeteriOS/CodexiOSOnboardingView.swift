@@ -39,11 +39,6 @@ struct CodexiOSOnboardingView: View {
         }
         .preferredColorScheme(.dark)
         .animation(.spring(response: 0.45, dampingFraction: 0.9), value: step)
-        .onChange(of: model.isSignedIn) { _, isSignedIn in
-            if isSignedIn, model.previewModeEnabled == false {
-                model.completeOnboarding()
-            }
-        }
     }
 
     private var header: some View {
@@ -130,7 +125,7 @@ struct CodexiOSOnboardingView: View {
                     FlowLayout(spacing: 10) {
                         if model.deviceCode == nil {
                             Button(model.isSigningIn ? "Starting" : "Sign In") {
-                                model.beginSignIn()
+                                Task { await model.beginSignIn() }
                             }
                             .buttonStyle(.borderedProminent)
                             .disabled(model.isSigningIn)
@@ -139,7 +134,7 @@ struct CodexiOSOnboardingView: View {
                                 .buttonStyle(.borderedProminent)
                             Button("Copy Code") { model.copyCode() }
                                 .buttonStyle(.bordered)
-                            Button("Check Status") { model.checkSignIn() }
+                            Button("Check Status") { Task { await model.checkSignIn() } }
                                 .buttonStyle(.bordered)
                                 .disabled(model.isSigningIn)
                         }

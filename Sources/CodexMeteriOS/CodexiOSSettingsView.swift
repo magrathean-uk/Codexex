@@ -55,7 +55,7 @@ struct CodexiOSSettingsView: View {
                     Text("Preview")
                         .foregroundStyle(.secondary)
                 }
-            } else if model.flowID != nil {
+            } else if model.hasPendingSignIn {
                 LabeledContent("Status") {
                     Text("Waiting")
                         .foregroundStyle(.secondary)
@@ -75,12 +75,12 @@ struct CodexiOSSettingsView: View {
             Toggle("Preview mode", isOn: previewModeBinding)
 
             if model.previewModeEnabled == false {
-                if model.flowID != nil {
+                if model.hasPendingSignIn {
                     Button("Open Safari") {
                         model.openSignInPage()
                     }
                     Button("Check Now") {
-                        model.checkSignIn()
+                        Task { await model.checkSignIn() }
                     }
                     .disabled(model.isSigningIn)
                 } else if model.isSignedIn {
@@ -88,11 +88,11 @@ struct CodexiOSSettingsView: View {
                         Task { await model.refresh() }
                     }
                     Button("Sign Out", role: .destructive) {
-                        model.signOut()
+                        Task { await model.signOut() }
                     }
                 } else {
                     Button("Sign In") {
-                        model.beginSignIn()
+                        Task { await model.beginSignIn() }
                     }
                     .disabled(model.isSigningIn)
                 }
@@ -164,7 +164,7 @@ struct CodexiOSSettingsView: View {
         if model.previewModeEnabled {
             return "Preview mode uses sample quota data and pauses live reads."
         }
-        if model.flowID != nil {
+        if model.hasPendingSignIn {
             return "Safari approval is waiting. Come back here and Codexex can check again."
         }
         if model.isSignedIn {

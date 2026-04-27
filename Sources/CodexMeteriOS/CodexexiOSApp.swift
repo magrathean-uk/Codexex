@@ -6,11 +6,7 @@ struct CodexexiOSApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if model.hasCompletedOnboarding {
-                CodexiOSRootView(model: model)
-            } else {
-                CodexiOSOnboardingView(model: model)
-            }
+            CodexiOSShellView(model: model)
         }
     }
 }
