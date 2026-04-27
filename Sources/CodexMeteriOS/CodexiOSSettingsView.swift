@@ -6,6 +6,7 @@ enum CodexiOSSettingsKeys {
     static let showSpark = "ios.showSpark"
     static let showHistory = "ios.showHistory"
     static let resetDisplayStyle = "ios.resetDisplayStyle"
+    static let refreshIntervalSeconds = "ios.refreshIntervalSeconds"
 }
 
 enum CodexiOSResetDisplayStyle: String, CaseIterable, Identifiable {
@@ -30,6 +31,7 @@ struct CodexiOSSettingsView: View {
     @AppStorage(CodexiOSSettingsKeys.showSpark) private var showSpark = true
     @AppStorage(CodexiOSSettingsKeys.showHistory) private var showHistory = true
     @AppStorage(CodexiOSSettingsKeys.resetDisplayStyle) private var resetDisplayStyle = CodexiOSResetDisplayStyle.countdown.rawValue
+    @AppStorage(CodexiOSSettingsKeys.refreshIntervalSeconds) private var refreshIntervalSeconds = 300
     @Bindable var model: CodexiOSModel
 
     var body: some View {
@@ -148,6 +150,23 @@ struct CodexiOSSettingsView: View {
                     Toggle("", isOn: $refreshWhenActive)
                         .labelsHidden()
                 }
+
+                Divider().overlay(.white.opacity(0.08))
+
+                settingsRow(
+                    title: "Update interval",
+                    detail: "Same default as Mac: every 5 minutes."
+                ) {
+                    Picker("Update interval", selection: refreshIntervalBinding) {
+                        Text("5 min").tag(300)
+                        Text("10 min").tag(600)
+                        Text("1 hour").tag(3600)
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.segmented)
+                    .frame(maxWidth: 250)
+                    .disabled(refreshWhenActive == false)
+                }
             }
         }
     }
@@ -173,6 +192,13 @@ struct CodexiOSSettingsView: View {
             return "Signed in. Quota reads stay local to this device."
         }
         return "Sign in with ChatGPT to read Codex quota on this device."
+    }
+
+    private var refreshIntervalBinding: Binding<Int> {
+        Binding(
+            get: { max(refreshIntervalSeconds, 300) },
+            set: { refreshIntervalSeconds = max($0, 300) }
+        )
     }
 
     private func cardHeader(_ title: String, systemImage: String) -> some View {
