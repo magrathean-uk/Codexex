@@ -87,7 +87,7 @@ actor CodexiOSService {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         let data = try await data(for: request)
-        let response = try JSONDecoder().decode(UserCodeResponse.self, from: data)
+        let response = try JSONDecoder().decode(CodexDeviceUserCodeResponse.self, from: data)
         let stored = StoredDeviceCode(
             verificationURL: issuer.appending(path: "codex/device"),
             userCode: response.userCode,
@@ -112,7 +112,7 @@ actor CodexiOSService {
 
         do {
             let data = try await data(for: request, pendingStatuses: [403, 404])
-            let approved = try JSONDecoder().decode(DeviceCodeApprovedResponse.self, from: data)
+            let approved = try JSONDecoder().decode(CodexDeviceApprovedResponse.self, from: data)
             let tokens = try await exchange(approved: approved)
             try keychain.save(tokens)
             return .signedIn
@@ -128,7 +128,7 @@ actor CodexiOSService {
         try keychain.clear()
     }
 
-    private func exchange(approved: DeviceCodeApprovedResponse) async throws -> CodexiOSTokens {
+    private func exchange(approved: CodexDeviceApprovedResponse) async throws -> CodexiOSTokens {
         let url = issuer.appending(path: "oauth/token")
         var components = URLComponents()
         components.queryItems = [
@@ -145,7 +145,7 @@ actor CodexiOSService {
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
 
         let data = try await data(for: request)
-        let response = try JSONDecoder().decode(TokenExchangeResponse.self, from: data)
+        let response = try JSONDecoder().decode(CodexTokenExchangeResponse.self, from: data)
         return CodexiOSTokens(response: response)
     }
 
@@ -164,7 +164,7 @@ actor CodexiOSService {
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
 
         let data = try await data(for: request)
-        let response = try JSONDecoder().decode(TokenExchangeResponse.self, from: data)
+        let response = try JSONDecoder().decode(CodexTokenExchangeResponse.self, from: data)
         return CodexiOSTokens(response: response, fallbackRefreshToken: tokens.refreshToken)
     }
 
@@ -195,32 +195,16 @@ struct CodexiOSTokens: Codable, Equatable {
         Date() >= expiresAt.addingTimeInterval(-120)
     }
 
-    fileprivate init(response: TokenExchangeResponse, fallbackRefreshToken: String? = nil, now: Date = Date()) {
+    fileprivate init(response: CodexTokenExchangeResponse, fallbackRefreshToken: String? = nil, now: Date = Date()) {
         idToken = response.idToken
         accessToken = response.accessToken
         refreshToken = response.refreshToken ?? fallbackRefreshToken ?? ""
         createdAt = now
         expiresAt = now.addingTimeInterval(TimeInterval(response.expiresIn ?? 3600))
-        let claims = Self.jwtClaims(response.idToken)
-        email = claims?["email"] as? String
-        accountID = claims?["https://api.openai.com/auth"] as? String
-            ?? claims?["chatgpt_account_id"] as? String
-            ?? claims?["account_id"] as? String
-        planType = claims?["chatgpt_plan_type"] as? String
-    }
-
-    private static func jwtClaims(_ token: String) -> [String: Any]? {
-        let parts = token.split(separator: ".")
-        guard parts.count >= 2 else { return nil }
-        var base64 = String(parts[1]).replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
-        while base64.count % 4 != 0 {
-            base64.append("=")
-        }
-        guard let data = Data(base64Encoded: base64),
-              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            return nil
-        }
-        return object
+        let claims = CodexChatGPTAuthParsing.claims(fromJWT: response.idToken)
+        email = claims.email
+        accountID = claims.accountID
+        planType = claims.planType
     }
 }
 
@@ -276,18 +260,6 @@ private struct UserCodeRequest: Encodable {
     }
 }
 
-private struct UserCodeResponse: Decodable {
-    let deviceAuthID: String
-    let userCode: String
-    let interval: Int
-
-    enum CodingKeys: String, CodingKey {
-        case deviceAuthID = "device_auth_id"
-        case userCode = "user_code"
-        case interval
-    }
-}
-
 private struct TokenPollRequest: Encodable {
     let deviceAuthID: String
     let userCode: String
@@ -295,30 +267,6 @@ private struct TokenPollRequest: Encodable {
     enum CodingKeys: String, CodingKey {
         case deviceAuthID = "device_auth_id"
         case userCode = "user_code"
-    }
-}
-
-private struct DeviceCodeApprovedResponse: Decodable {
-    let authorizationCode: String
-    let codeVerifier: String
-
-    enum CodingKeys: String, CodingKey {
-        case authorizationCode = "authorization_code"
-        case codeVerifier = "code_verifier"
-    }
-}
-
-private struct TokenExchangeResponse: Decodable {
-    let idToken: String
-    let accessToken: String
-    let refreshToken: String?
-    let expiresIn: Int?
-
-    enum CodingKeys: String, CodingKey {
-        case idToken = "id_token"
-        case accessToken = "access_token"
-        case refreshToken = "refresh_token"
-        case expiresIn = "expires_in"
     }
 }
 
