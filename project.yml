@@ -4,6 +4,7 @@ options:
   bundleIdPrefix: com.magrathean
   deploymentTarget:
     macOS: 26.0
+    iOS: 26.0
 
 settings:
   base:
@@ -23,6 +24,19 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.magrathean.CodexexApp.CodexMeterCore
+        GENERATE_INFOPLIST_FILE: YES
+        SKIP_INSTALL: YES
+
+  CodexMeterCoreiOS:
+    type: framework
+    platform: iOS
+    sources:
+      - path: Sources/CodexMeterCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.magrathean.CodexexApp.iOS.CodexMeterCore
+        PRODUCT_NAME: CodexMeterCore
+        PRODUCT_MODULE_NAME: CodexMeterCore
         GENERATE_INFOPLIST_FILE: YES
         SKIP_INSTALL: YES
 
@@ -73,6 +87,30 @@ targets:
           - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/codexex-helper
         script: |
           "$PROJECT_DIR/Scripts/embed-codexex-helper.sh"
+
+  CodexMeteriOS:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources/CodexMeteriOS
+      - path: Sources/CodexMeterApp/Assets.xcassets
+    dependencies:
+      - target: CodexMeterCoreiOS
+    settings:
+      base:
+        PRODUCT_NAME: Codexex
+        PRODUCT_BUNDLE_IDENTIFIER: com.magrathean.CodexexApp.iOS
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Codexex
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
 
   CodexexXPCService:
     type: xpc-service
@@ -154,6 +192,12 @@ schemes:
         - CodexMeterCoreTests
         - CodexMeterAppTests
       gatherCoverageData: true
+
+  CodexMeteriOS:
+    build:
+      targets:
+        CodexMeteriOS: all
+        CodexMeterCoreiOS: all
 
 packages:
   Sentry:
