@@ -14,8 +14,17 @@ enum CodexiOSError: LocalizedError {
             return "Not signed in. Sign in with ChatGPT to read your Codex quota."
         case .badResponse(let message):
             return message
-        case .requestFailed(let status, let body):
-            return "OpenAI returned \(status). \(body)"
+        case .requestFailed(let status, _):
+            switch status {
+            case 401, 403:
+                return "Sign-in expired. Sign in again."
+            case 429:
+                return "OpenAI is rate-limiting requests. Try again soon."
+            case 500 ..< 600:
+                return "OpenAI is having trouble right now. Try again soon."
+            default:
+                return "OpenAI returned \(status). Try again."
+            }
         }
     }
 }
@@ -31,7 +40,7 @@ enum CodexiOSPollResult: Equatable {
     case signedIn
 }
 
-actor CodexiOSService {
+actor CodexiOSService: CodexiOSServiceProtocol {
     private let session: URLSession
     private let keychain: CodexiOSTokenStore
     private let issuer = URL(string: "https://auth.openai.com")!
@@ -124,7 +133,7 @@ actor CodexiOSService {
         }
     }
 
-    func signOut() throws {
+    func signOut() async throws {
         try keychain.clear()
     }
 

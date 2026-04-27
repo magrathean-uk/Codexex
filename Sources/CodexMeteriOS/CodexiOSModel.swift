@@ -3,11 +3,32 @@ import Observation
 import UIKit
 import CodexMeterCore
 
+enum CodexiOSLiveAccountState: Equatable {
+    case signedOut
+    case pendingSignIn
+    case signedIn
+}
+
+protocol CodexiOSServiceProtocol: Sendable {
+    func fetchSnapshot() async throws -> CodexServiceSnapshotResponse
+    func beginSignIn() async throws -> CodexiOSDeviceAuthStart
+    func pollSignIn(flowID: String) async throws -> CodexiOSPollResult
+    func signOut() async throws
+}
+
+typealias CodexiOSOpenURLAction = @MainActor @Sendable (URL) async -> Void
+typealias CodexiOSCopyTextAction = @MainActor @Sendable (String) -> Void
+
 @MainActor
 @Observable
 final class CodexiOSModel {
-    var hasCompletedOnboarding = UserDefaults.standard.bool(forKey: CodexiOSSettingsKeys.hasCompletedOnboarding)
-    var previewModeEnabled = UserDefaults.standard.bool(forKey: CodexiOSSettingsKeys.previewModeEnabled)
+    private let service: any CodexiOSServiceProtocol
+    private let defaults: UserDefaults
+    private let openURLAction: CodexiOSOpenURLAction
+    private let copyTextAction: CodexiOSCopyTextAction
+
+    var hasCompletedOnboarding: Bool
+    var previewModeEnabled: Bool
     var snapshot: CodexSnapshot?
     var isRefreshing = false
     var isSigningIn = false
@@ -17,11 +38,33 @@ final class CodexiOSModel {
     var verificationURL: URL?
     var flowID: String?
     var lastUpdatedAt: Date?
+    private(set) var liveAccountState: CodexiOSLiveAccountState
 
-    private let service = CodexiOSService()
+    init(
+        service: any CodexiOSServiceProtocol = CodexiOSService(),
+        defaults: UserDefaults = .standard,
+        openURLAction: @escaping CodexiOSOpenURLAction = { url in
+            await UIApplication.shared.open(url)
+        },
+        copyTextAction: @escaping CodexiOSCopyTextAction = { text in
+            UIPasteboard.general.string = text
+        }
+    ) {
+        self.service = service
+        self.defaults = defaults
+        self.openURLAction = openURLAction
+        self.copyTextAction = copyTextAction
+        hasCompletedOnboarding = defaults.bool(forKey: CodexiOSSettingsKeys.hasCompletedOnboarding)
+        previewModeEnabled = defaults.bool(forKey: CodexiOSSettingsKeys.previewModeEnabled)
+        liveAccountState = .signedOut
+    }
 
     var isSignedIn: Bool {
-        snapshot != nil || statusMessage == "Signed in."
+        liveAccountState == .signedIn
+    }
+
+    var hasPendingSignIn: Bool {
+        liveAccountState == .pendingSignIn && flowID != nil
     }
 
     func start() async {
@@ -42,136 +85,128 @@ final class CodexiOSModel {
         defer { isRefreshing = false }
 
         do {
-            let response = try await service.fetchSnapshot()
-            if let snapshot = response.snapshot {
-                self.snapshot = snapshot
-                lastUpdatedAt = snapshot.capturedAt
-                errorMessage = nil
-                statusMessage = "Signed in."
-                deviceCode = nil
-                verificationURL = nil
-                flowID = nil
-                completeOnboarding()
-            } else {
-                snapshot = nil
-                errorMessage = response.errorMessage
-                statusMessage = response.errorMessage ?? "No quota data yet."
-            }
+            applySnapshotResponse(try await service.fetchSnapshot())
         } catch {
-            errorMessage = error.localizedDescription
-            statusMessage = error.localizedDescription
+            applyError(message(for: error))
         }
     }
 
-    func beginSignIn() {
+    func beginSignIn() async {
         guard isSigningIn == false else { return }
         isSigningIn = true
         errorMessage = nil
         statusMessage = "Starting ChatGPT sign-in."
+        defer { isSigningIn = false }
 
-        Task {
-            defer { isSigningIn = false }
-            do {
-                let auth = try await service.beginSignIn()
-                deviceCode = auth.userCode
-                verificationURL = auth.verificationURL
-                flowID = auth.flowID
-                statusMessage = "Open Safari, approve sign-in, then check status."
-                await UIApplication.shared.open(auth.verificationURL)
-            } catch {
-                errorMessage = error.localizedDescription
-                statusMessage = error.localizedDescription
-            }
+        do {
+            let auth = try await service.beginSignIn()
+            deviceCode = auth.userCode
+            verificationURL = auth.verificationURL
+            flowID = auth.flowID
+            liveAccountState = .pendingSignIn
+            statusMessage = "Open Safari, approve sign-in, then come back."
+            await openURLAction(auth.verificationURL)
+        } catch {
+            clearPendingSignIn()
+            liveAccountState = .signedOut
+            applyError(message(for: error))
         }
     }
 
-    func checkSignIn() {
+    func checkSignIn() async {
         guard let flowID else { return }
         guard isSigningIn == false else { return }
         isSigningIn = true
         errorMessage = nil
+        defer { isSigningIn = false }
 
-        Task {
-            defer { isSigningIn = false }
-            do {
-                switch try await service.pollSignIn(flowID: flowID) {
-                case .pending(let message):
-                    statusMessage = message
-                case .signedIn:
-                    statusMessage = "Signed in."
-                    deviceCode = nil
-                    verificationURL = nil
-                    self.flowID = nil
-                    completeOnboarding()
-                    await refresh()
-                }
-            } catch {
-                errorMessage = error.localizedDescription
-                statusMessage = error.localizedDescription
+        do {
+            switch try await service.pollSignIn(flowID: flowID) {
+            case .pending(let message):
+                liveAccountState = .pendingSignIn
+                statusMessage = message
+            case .signedIn:
+                liveAccountState = .signedIn
+                statusMessage = "Signed in."
+                clearPendingSignIn()
+                completeOnboarding()
+                await refresh()
             }
+        } catch {
+            liveAccountState = .pendingSignIn
+            applyError(message(for: error))
         }
     }
 
-    func checkSignInAfterReturn() {
-        guard flowID != nil else { return }
+    func checkSignInAfterReturn() async {
+        guard hasPendingSignIn else { return }
         statusMessage = "Checking sign-in."
-        checkSignIn()
+        await checkSignIn()
+    }
+
+    func handleSceneDidBecomeActive(
+        autoCheckSignInOnReturn: Bool,
+        refreshWhenActive: Bool
+    ) async {
+        guard previewModeEnabled == false else { return }
+        if autoCheckSignInOnReturn, hasPendingSignIn {
+            await checkSignInAfterReturn()
+        } else if refreshWhenActive, isSignedIn {
+            await refresh()
+        }
     }
 
     func copyCode() {
         guard let deviceCode else { return }
-        UIPasteboard.general.string = deviceCode
+        copyTextAction(deviceCode)
         statusMessage = "Code copied. Paste it in Safari."
     }
 
     func openSignInPage() {
         guard let verificationURL else { return }
         Task {
-            await UIApplication.shared.open(verificationURL)
+            await openURLAction(verificationURL)
         }
     }
 
-    func signOut() {
-        Task {
-            do {
-                try await service.signOut()
-                snapshot = nil
-                lastUpdatedAt = nil
-                errorMessage = nil
-                deviceCode = nil
-                verificationURL = nil
-                flowID = nil
-                statusMessage = "Signed out."
-            } catch {
-                errorMessage = error.localizedDescription
-            }
+    func signOut() async {
+        do {
+            try await service.signOut()
+            snapshot = nil
+            lastUpdatedAt = nil
+            errorMessage = nil
+            clearPendingSignIn()
+            liveAccountState = .signedOut
+            statusMessage = "Signed out."
+        } catch {
+            applyError(message(for: error))
         }
     }
 
     func completeOnboarding() {
         guard hasCompletedOnboarding == false else { return }
         hasCompletedOnboarding = true
-        UserDefaults.standard.set(true, forKey: CodexiOSSettingsKeys.hasCompletedOnboarding)
+        defaults.set(true, forKey: CodexiOSSettingsKeys.hasCompletedOnboarding)
     }
 
     func enablePreviewMode() {
         previewModeEnabled = true
-        UserDefaults.standard.set(true, forKey: CodexiOSSettingsKeys.previewModeEnabled)
+        defaults.set(true, forKey: CodexiOSSettingsKeys.previewModeEnabled)
         completeOnboarding()
         applyPreviewSnapshot()
         statusMessage = "Preview mode is active."
         errorMessage = nil
-        deviceCode = nil
-        verificationURL = nil
-        flowID = nil
+        clearPendingSignIn()
+        liveAccountState = .signedOut
     }
 
     func disablePreviewMode() {
         guard previewModeEnabled else { return }
         previewModeEnabled = false
-        UserDefaults.standard.set(false, forKey: CodexiOSSettingsKeys.previewModeEnabled)
+        defaults.set(false, forKey: CodexiOSSettingsKeys.previewModeEnabled)
         snapshot = nil
         lastUpdatedAt = nil
+        liveAccountState = .signedOut
         statusMessage = "Preview mode off."
         Task { await refresh() }
     }
@@ -180,5 +215,50 @@ final class CodexiOSModel {
         let preview = CodexiOSPreviewData.snapshot()
         snapshot = preview
         lastUpdatedAt = preview.capturedAt
+        errorMessage = nil
+        statusMessage = "Preview mode is active."
+        liveAccountState = .signedOut
+    }
+
+    private func applySnapshotResponse(_ response: CodexServiceSnapshotResponse) {
+        if let snapshot = response.snapshot {
+            self.snapshot = snapshot
+            lastUpdatedAt = snapshot.capturedAt
+            errorMessage = nil
+            statusMessage = "Signed in."
+            clearPendingSignIn()
+            liveAccountState = .signedIn
+            completeOnboarding()
+            return
+        }
+
+        snapshot = nil
+        lastUpdatedAt = nil
+        errorMessage = response.errorMessage
+        statusMessage = response.errorMessage ?? "No quota data yet."
+
+        if hasPendingSignIn, response.authMode == nil {
+            liveAccountState = .pendingSignIn
+        } else {
+            liveAccountState = response.authMode == .chatGPT ? .signedIn : .signedOut
+        }
+    }
+
+    private func applyError(_ message: String) {
+        errorMessage = message
+        statusMessage = message
+    }
+
+    private func clearPendingSignIn() {
+        deviceCode = nil
+        verificationURL = nil
+        flowID = nil
+    }
+
+    private func message(for error: Error) -> String {
+        if let localized = error as? LocalizedError, let description = localized.errorDescription {
+            return description
+        }
+        return error.localizedDescription
     }
 }

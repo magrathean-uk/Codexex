@@ -2,13 +2,9 @@ import SwiftUI
 import CodexMeterCore
 
 struct CodexiOSRootView: View {
-    @Environment(\.scenePhase) private var scenePhase
-    @AppStorage(CodexiOSSettingsKeys.autoCheckSignInOnReturn) private var autoCheckSignInOnReturn = true
-    @AppStorage(CodexiOSSettingsKeys.refreshWhenActive) private var refreshWhenActive = true
     @AppStorage(CodexiOSSettingsKeys.showSpark) private var showSpark = true
     @AppStorage(CodexiOSSettingsKeys.showHistory) private var showHistory = true
     @AppStorage(CodexiOSSettingsKeys.resetDisplayStyle) private var resetDisplayStyle = CodexiOSResetDisplayStyle.countdown.rawValue
-    @AppStorage(CodexiOSSettingsKeys.refreshIntervalSeconds) private var refreshIntervalSeconds = 300
     @Bindable var model: CodexiOSModel
 
     var body: some View {
@@ -47,20 +43,6 @@ struct CodexiOSRootView: View {
             }
         }
         .preferredColorScheme(.dark)
-        .task {
-            await model.start()
-        }
-        .task(id: refreshTaskID) {
-            await runAutoRefreshLoop()
-        }
-        .onChange(of: scenePhase) { _, newPhase in
-            guard newPhase == .active else { return }
-            if autoCheckSignInOnReturn, model.flowID != nil {
-                model.checkSignInAfterReturn()
-            } else if refreshWhenActive, model.isSignedIn {
-                Task { await model.refresh() }
-            }
-        }
     }
 
     private var narrowLayout: some View {
@@ -94,28 +76,13 @@ struct CodexiOSRootView: View {
     }
 
     private var shouldShowStatusCard: Bool {
-        model.snapshot == nil || model.flowID != nil || model.errorMessage != nil
-    }
-
-    private var refreshTaskID: String {
-        "\(refreshWhenActive)-\(max(refreshIntervalSeconds, 300))"
-    }
-
-    private func runAutoRefreshLoop() async {
-        guard refreshWhenActive else { return }
-        while Task.isCancelled == false {
-            try? await Task.sleep(for: .seconds(Double(max(refreshIntervalSeconds, 300))))
-            guard Task.isCancelled == false else { return }
-            if scenePhase == .active, model.isSignedIn {
-                await model.refresh()
-            }
-        }
+        model.snapshot == nil || model.hasPendingSignIn || model.errorMessage != nil
     }
 
     private var statusCard: some View {
         iOSCard {
             VStack(alignment: .leading, spacing: 14) {
-                Text("Account")
+                Text(statusCardTitle)
                     .font(.headline)
 
                 Text(model.statusMessage)
@@ -152,18 +119,25 @@ struct CodexiOSRootView: View {
 
     @ViewBuilder
     private var authButtons: some View {
-        if model.deviceCode != nil {
+        if model.hasPendingSignIn {
             FlowLayout(spacing: 10) {
                 Button("Open Safari") { model.openSignInPage() }
                     .buttonStyle(.borderedProminent)
                 Button("Copy Code") { model.copyCode() }
                     .buttonStyle(.bordered)
-                Button("Check Status") { model.checkSignIn() }
+                Button("Check Status") { Task { await model.checkSignIn() } }
                     .buttonStyle(.bordered)
             }
-        } else if model.snapshot == nil {
+        } else if model.isSignedIn {
+            FlowLayout(spacing: 10) {
+                Button("Refresh quota") { Task { await model.refresh() } }
+                    .buttonStyle(.borderedProminent)
+                Button("Sign out") { Task { await model.signOut() } }
+                    .buttonStyle(.bordered)
+            }
+        } else {
             Button {
-                model.beginSignIn()
+                Task { await model.beginSignIn() }
             } label: {
                 if model.isSigningIn {
                     Label("Starting sign-in", systemImage: "hourglass")
@@ -173,13 +147,6 @@ struct CodexiOSRootView: View {
             }
             .buttonStyle(.borderedProminent)
             .disabled(model.isSigningIn)
-        } else {
-            FlowLayout(spacing: 10) {
-                Button("Refresh quota") { Task { await model.refresh() } }
-                    .buttonStyle(.borderedProminent)
-                Button("Sign out") { model.signOut() }
-                    .buttonStyle(.bordered)
-            }
         }
     }
 
@@ -314,6 +281,16 @@ struct CodexiOSRootView: View {
 
     private func tint(for bucket: CodexLimitBucket) -> Color {
         bucket == .spark ? .pink : .cyan
+    }
+
+    private var statusCardTitle: String {
+        if model.hasPendingSignIn {
+            return "Finish sign-in"
+        }
+        if model.errorMessage != nil {
+            return "Needs attention"
+        }
+        return "Sign in"
     }
 
     private func iOSCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {

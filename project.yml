@@ -62,7 +62,7 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: Codexex
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
-        INFOPLIST_KEY_SENTRY_DSN: ""
+        INFOPLIST_KEY_SENTRY_DSN: "https://1031cc43019235bb364666e515493646@o4511264196788224.ingest.de.sentry.io/4511291411595344"
     preBuildScripts:
       - name: Build Codexex Helper
         inputFiles:
@@ -180,6 +180,21 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.magrathean.CodexexApp.CodexMeterAppTests
         GENERATE_INFOPLIST_FILE: YES
 
+  CodexMeteriOSTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests/CodexMeteriOSTests
+    dependencies:
+      - target: CodexMeteriOS
+      - target: CodexMeterCoreiOS
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.magrathean.CodexexApp.CodexMeteriOSTests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Codexex.app/Codexex"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+
 schemes:
   CodexMeterApp:
     build:
@@ -198,6 +213,10 @@ schemes:
       targets:
         CodexMeteriOS: all
         CodexMeterCoreiOS: all
+    test:
+      targets:
+        - CodexMeteriOSTests
+      gatherCoverageData: true
 
 packages:
   Sentry:
