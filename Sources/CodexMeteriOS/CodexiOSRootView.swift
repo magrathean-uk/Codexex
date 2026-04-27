@@ -72,7 +72,6 @@ struct CodexiOSRootView: View {
             if showHistory {
                 historyCard
             }
-            footerBar
         }
         .frame(maxWidth: 760, alignment: .topLeading)
     }
@@ -86,7 +85,6 @@ struct CodexiOSRootView: View {
                 if showHistory {
                     historyCard
                 }
-                footerBar
             }
             .frame(minWidth: 340, maxWidth: 430, alignment: .topLeading)
 
@@ -261,32 +259,6 @@ struct CodexiOSRootView: View {
             return CodexFormatting.relativeResetText(now: .init(), resetAt: window.resetsAt)
         }
         return "resets at \(resetsAt.formatted(date: .omitted, time: .shortened))"
-    }
-
-    private var footerBar: some View {
-        HStack {
-            NavigationLink {
-                CodexiOSSettingsView(model: model)
-            } label: {
-                Label("Settings", systemImage: "gearshape.fill")
-                    .font(.headline)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(CodexiOSTheme.inset, in: Capsule())
-                    .overlay {
-                        Capsule().strokeBorder(.white.opacity(0.12), lineWidth: 1)
-                    }
-            }
-            .buttonStyle(.plain)
-
-            Spacer()
-
-            if let updated = model.lastUpdatedAt {
-                Text("Updated \(updated.formatted(date: .omitted, time: .shortened))")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
-            }
-        }
     }
 
     private var historyCard: some View {
