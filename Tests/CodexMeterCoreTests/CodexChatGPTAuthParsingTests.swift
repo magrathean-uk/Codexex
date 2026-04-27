@@ -35,9 +35,10 @@ final class CodexChatGPTAuthParsingTests: XCTestCase {
     }
 
     func testTokenExchangeAcceptsStringExpiresInAndNestedChatGPTClaims() throws {
+        let idToken = try Self.jwt(email: "user@example.com", accountID: "account-123", planType: "pro")
         let data = """
         {
-          "id_token": "\(Self.jwt(email: "user@example.com", accountID: "account-123", planType: "pro"))",
+          "id_token": "\(idToken)",
           "access_token": "access-token-123",
           "refresh_token": "refresh-token-123",
           "expires_in": "3600"
@@ -53,7 +54,7 @@ final class CodexChatGPTAuthParsingTests: XCTestCase {
         XCTAssertEqual(claims.planType, "pro")
     }
 
-    private static func jwt(email: String, accountID: String, planType: String) -> String {
+    private static func jwt(email: String, accountID: String, planType: String) throws -> String {
         let payload: [String: Any] = [
             "email": email,
             "https://api.openai.com/auth": [
@@ -61,7 +62,7 @@ final class CodexChatGPTAuthParsingTests: XCTestCase {
                 "chatgpt_plan_type": planType
             ]
         ]
-        let payloadData = try! JSONSerialization.data(withJSONObject: payload)
+        let payloadData = try JSONSerialization.data(withJSONObject: payload)
         return "header.\(payloadData.base64URLEncodedString()).signature"
     }
 }
