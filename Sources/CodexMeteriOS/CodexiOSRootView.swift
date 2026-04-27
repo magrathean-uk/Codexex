@@ -8,6 +8,7 @@ struct CodexiOSRootView: View {
     @AppStorage(CodexiOSSettingsKeys.showSpark) private var showSpark = true
     @AppStorage(CodexiOSSettingsKeys.showHistory) private var showHistory = true
     @AppStorage(CodexiOSSettingsKeys.resetDisplayStyle) private var resetDisplayStyle = CodexiOSResetDisplayStyle.countdown.rawValue
+    @AppStorage(CodexiOSSettingsKeys.refreshIntervalSeconds) private var refreshIntervalSeconds = 300
     @Bindable var model: CodexiOSModel
 
     var body: some View {
@@ -49,6 +50,9 @@ struct CodexiOSRootView: View {
         .task {
             await model.start()
         }
+        .task(id: refreshTaskID) {
+            await runAutoRefreshLoop()
+        }
         .onChange(of: scenePhase) { _, newPhase in
             guard newPhase == .active else { return }
             if autoCheckSignInOnReturn, model.flowID != nil {
@@ -61,7 +65,9 @@ struct CodexiOSRootView: View {
 
     private var narrowLayout: some View {
         VStack(alignment: .leading, spacing: 16) {
-            statusCard
+            if shouldShowStatusCard {
+                statusCard
+            }
             mainQuotaCards
             if showHistory {
                 historyCard
@@ -74,7 +80,9 @@ struct CodexiOSRootView: View {
     private var wideLayout: some View {
         HStack(alignment: .top, spacing: 18) {
             VStack(alignment: .leading, spacing: 16) {
-                statusCard
+                if shouldShowStatusCard {
+                    statusCard
+                }
                 if showHistory {
                     historyCard
                 }
@@ -84,6 +92,25 @@ struct CodexiOSRootView: View {
 
             mainQuotaCards
                 .frame(minWidth: 340, maxWidth: 520, alignment: .topLeading)
+        }
+    }
+
+    private var shouldShowStatusCard: Bool {
+        model.snapshot == nil || model.flowID != nil || model.errorMessage != nil
+    }
+
+    private var refreshTaskID: String {
+        "\(refreshWhenActive)-\(max(refreshIntervalSeconds, 300))"
+    }
+
+    private func runAutoRefreshLoop() async {
+        guard refreshWhenActive else { return }
+        while Task.isCancelled == false {
+            try? await Task.sleep(for: .seconds(Double(max(refreshIntervalSeconds, 300))))
+            guard Task.isCancelled == false else { return }
+            if scenePhase == .active, model.isSignedIn {
+                await model.refresh()
+            }
         }
     }
 
