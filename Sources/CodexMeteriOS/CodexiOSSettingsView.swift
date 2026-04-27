@@ -57,22 +57,17 @@ struct CodexiOSSettingsView: View {
 
     private var previewCard: some View {
         settingsCard {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 0) {
                 cardHeader("Preview", systemImage: "sparkles")
+                    .padding(.bottom, 10)
 
-                Text(model.previewModeEnabled ? "Sample quota is active." : "Use local sample data to test the UI without signing in.")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Button(model.previewModeEnabled ? "Leave Preview Mode" : "Use Preview Mode") {
-                    if model.previewModeEnabled {
-                        model.disablePreviewMode()
-                    } else {
-                        model.enablePreviewMode()
-                    }
+                settingsRow(
+                    title: "Preview mode",
+                    detail: model.previewModeEnabled ? "Sample quota is active." : "Use local sample data to test the UI without signing in."
+                ) {
+                    Toggle("", isOn: previewModeBinding)
+                        .labelsHidden()
                 }
-                .buttonStyle(CodexiOSPreviewButtonStyle(isProminent: model.previewModeEnabled == false))
             }
         }
     }
@@ -232,6 +227,19 @@ struct CodexiOSSettingsView: View {
         )
     }
 
+    private var previewModeBinding: Binding<Bool> {
+        Binding(
+            get: { model.previewModeEnabled },
+            set: { isEnabled in
+                if isEnabled {
+                    model.enablePreviewMode()
+                } else {
+                    model.disablePreviewMode()
+                }
+            }
+        )
+    }
+
     private func cardHeader(_ title: String, systemImage: String) -> some View {
         HStack(spacing: 10) {
             Image(systemName: systemImage)
@@ -283,29 +291,5 @@ struct CodexiOSSettingsView: View {
                     .strokeBorder(.white.opacity(0.12), lineWidth: 1)
             }
             .shadow(color: .black.opacity(0.28), radius: 22, y: 12)
-    }
-}
-
-private struct CodexiOSPreviewButtonStyle: ButtonStyle {
-    let isProminent: Bool
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.headline.weight(.semibold))
-            .foregroundStyle(isProminent ? .white : .primary)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .background(background(isPressed: configuration.isPressed), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(.white.opacity(isProminent ? 0 : 0.12), lineWidth: 1)
-            }
-    }
-
-    private func background(isPressed: Bool) -> Color {
-        if isProminent {
-            return Color.cyan.opacity(isPressed ? 0.72 : 1)
-        }
-        return Color.white.opacity(isPressed ? 0.05 : 0.09)
     }
 }

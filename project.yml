@@ -100,7 +100,7 @@ targets:
       base:
         PRODUCT_NAME: Codexex
         PRODUCT_BUNDLE_IDENTIFIER: com.magrathean.CodexexApp.iOS
-        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        ASSETCATALOG_COMPILER_APPICON_NAME: iOSAppIcon
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Codexex
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
