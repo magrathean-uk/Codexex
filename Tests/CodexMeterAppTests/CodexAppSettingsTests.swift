@@ -57,4 +57,28 @@ final class CodexAppSettingsTests: XCTestCase {
         XCTAssertNil(CodexAppSettings.summarySnoozeFingerprint)
         XCTAssertNil(CodexAppSettings.summarySnoozeExpiresAt)
     }
+
+    func testResetLocalDataClearsSettingsAndApplicationSupport() throws {
+        let suiteName = "CodexAppSettingsTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        defaults.set(true, forKey: "codexex.previewModeEnabled")
+        defaults.set("pace", forKey: "codexex.menuBarDisplayMode")
+
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("CodexexResetTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try Data("history".utf8).write(to: directory.appendingPathComponent("usage-history.json"))
+
+        CodexAppResetter.resetLocalData(
+            defaults: defaults,
+            applicationSupportURL: directory,
+            bundleIdentifier: nil
+        )
+
+        XCTAssertNil(defaults.object(forKey: "codexex.previewModeEnabled"))
+        XCTAssertNil(defaults.object(forKey: "codexex.menuBarDisplayMode"))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
+    }
 }

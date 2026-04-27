@@ -115,6 +115,19 @@ final class CodexiOSModelTests: XCTestCase {
         XCTAssertFalse(model.statusMessage.contains("access_token"))
     }
 
+    func testResetLocalDataClearsIOSSettings() {
+        let defaults = makeDefaults()
+        defaults.set(true, forKey: CodexiOSSettingsKeys.hasCompletedOnboarding)
+        defaults.set(true, forKey: CodexiOSSettingsKeys.previewModeEnabled)
+        defaults.set(600, forKey: CodexiOSSettingsKeys.refreshIntervalSeconds)
+
+        CodexiOSAppResetter.resetLocalData(defaults: defaults, clearTokens: {})
+
+        XCTAssertNil(defaults.object(forKey: CodexiOSSettingsKeys.hasCompletedOnboarding))
+        XCTAssertNil(defaults.object(forKey: CodexiOSSettingsKeys.previewModeEnabled))
+        XCTAssertNil(defaults.object(forKey: CodexiOSSettingsKeys.refreshIntervalSeconds))
+    }
+
     private func makeDefaults() -> UserDefaults {
         let suiteName = "CodexiOSModelTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!

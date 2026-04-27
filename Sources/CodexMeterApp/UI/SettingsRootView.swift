@@ -60,6 +60,7 @@ struct SettingsRootView: View {
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
     @Bindable var model: CodexMenuBarModel
     @State private var selection: SettingsSection = .general
+    @State private var isShowingResetConfirmation = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -91,6 +92,14 @@ struct SettingsRootView: View {
         }
         .onChange(of: accessibilityReduceMotion) { _, newValue in
             model.setReduceMotionEnabled(newValue)
+        }
+        .alert("Reset Codexex?", isPresented: $isShowingResetConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Reset App", role: .destructive) {
+                CodexAppResetter.resetAndQuit()
+            }
+        } message: {
+            Text("This deletes sign-in, settings, preview state, history, and helper data. Codexex will quit after reset.")
         }
     }
 
@@ -448,6 +457,16 @@ struct SettingsRootView: View {
                 ) {
                     Button("Copy") { model.copyDiagnosticsReport() }
                         .buttonStyle(CodexGhostButtonStyle())
+                }
+            }
+
+            SettingsListGroup(
+                title: "Reset",
+                footer: "Deletes sign-in, settings, preview state, history, and helper data. Codexex quits when done."
+            ) {
+                SettingsListRow(title: "Reset app", detail: "Return Codexex to first launch.", isLast: true) {
+                    Button("Reset") { isShowingResetConfirmation = true }
+                        .buttonStyle(CodexDestructiveButtonStyle())
                 }
             }
 

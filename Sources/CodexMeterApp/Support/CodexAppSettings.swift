@@ -82,6 +82,27 @@ enum CodexAppSettings {
         static let hideIdleSecondaryLimits = "codexex.hideIdleSecondaryLimits"
         static let summarySnoozeFingerprint = "codexex.summarySnoozeFingerprint"
         static let summarySnoozeExpiresAt = "codexex.summarySnoozeExpiresAt"
+
+        static let all = [
+            hasCompletedOnboarding,
+            previewModeEnabled,
+            autoRefreshEnabled,
+            refreshIntervalSeconds,
+            launchAtLoginEnabled,
+            showHistoryEnabled,
+            showHistoryChartEnabled,
+            showInsightsEnabled,
+            showSparkEnabled,
+            showFiveHourInMenubar,
+            showWeeklyInMenubar,
+            menuBarDisplayMode,
+            resetDisplayStyle,
+            defaultHistoryMode,
+            showPaceConfidence,
+            hideIdleSecondaryLimits,
+            summarySnoozeFingerprint,
+            summarySnoozeExpiresAt
+        ]
     }
 
     static let refreshIntervals: [Int] = [300, 600, 3600]
@@ -306,6 +327,12 @@ enum CodexAppSettings {
     static func clearSummarySnooze() {
         summarySnoozeFingerprint = nil
         summarySnoozeExpiresAt = nil
+    }
+
+    static func removeAll(defaults: UserDefaults = .standard) {
+        for key in Key.all {
+            defaults.removeObject(forKey: key)
+        }
     }
 }
 #endif
