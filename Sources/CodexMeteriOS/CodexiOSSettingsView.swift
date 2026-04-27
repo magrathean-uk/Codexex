@@ -9,6 +9,17 @@ enum CodexiOSSettingsKeys {
     static let refreshIntervalSeconds = "ios.refreshIntervalSeconds"
     static let hasCompletedOnboarding = "ios.hasCompletedOnboarding"
     static let previewModeEnabled = "ios.previewModeEnabled"
+
+    static let all = [
+        autoCheckSignInOnReturn,
+        refreshWhenActive,
+        showSpark,
+        showHistory,
+        resetDisplayStyle,
+        refreshIntervalSeconds,
+        hasCompletedOnboarding,
+        previewModeEnabled
+    ]
 }
 
 enum CodexiOSResetDisplayStyle: String, CaseIterable, Identifiable {
@@ -35,6 +46,7 @@ struct CodexiOSSettingsView: View {
     @AppStorage(CodexiOSSettingsKeys.resetDisplayStyle) private var resetDisplayStyle = CodexiOSResetDisplayStyle.countdown.rawValue
     @AppStorage(CodexiOSSettingsKeys.refreshIntervalSeconds) private var refreshIntervalSeconds = 300
     @Bindable var model: CodexiOSModel
+    @State private var isShowingResetConfirmation = false
 
     var body: some View {
         Form {
@@ -42,10 +54,23 @@ struct CodexiOSSettingsView: View {
             displaySection
             refreshSection
             privacySection
+            resetSection
         }
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
         .preferredColorScheme(.dark)
+        .confirmationDialog(
+            "Reset Codexex?",
+            isPresented: $isShowingResetConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Reset App", role: .destructive) {
+                CodexiOSAppResetter.resetAndClose()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This deletes sign-in, settings, preview state, and local data. Codexex will close after reset.")
+        }
     }
 
     private var accountSection: some View {
@@ -157,6 +182,16 @@ struct CodexiOSSettingsView: View {
             Text("Privacy")
         } footer: {
             Text("No server, no Mac bridge, and no browser cookie scraping.")
+        }
+    }
+
+    private var resetSection: some View {
+        Section {
+            Button("Reset App", role: .destructive) {
+                isShowingResetConfirmation = true
+            }
+        } footer: {
+            Text("Deletes sign-in, settings, preview state, and local data. The app closes when done.")
         }
     }
 

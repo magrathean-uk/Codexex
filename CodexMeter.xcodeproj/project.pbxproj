@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0350F768560D8A4EB52D2596 /* PopupSummaryCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D15D66529D9E2B5CCB5D169 /* PopupSummaryCardView.swift */; };
+		087306CE7BFE6CE626E4441A /* CodexAppResetter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D4643340C8B906668F199F8 /* CodexAppResetter.swift */; };
 		091F0761036C0B660CAF4F4F /* CodexFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28C8C0A190E2CBBFBD0F5242 /* CodexFormatting.swift */; };
 		0B4C80DD15E0974A1C293062 /* OnboardingRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39EDD9819BF6B9A3204E3F0F /* OnboardingRootView.swift */; };
 		0D1EDC1B9A047BE21A729FEA /* PopupPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7DC9461D5A89DDD41915EB /* PopupPresentation.swift */; };
@@ -99,6 +100,7 @@
 		F55AFF29F54237991EFDB250 /* SettingsRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0EFEAE8F340B06D8800306 /* SettingsRootView.swift */; };
 		F6A7ADCC4643141531C0DC88 /* CodexRateLimitPayloadMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F296DCDAEEC79A9BB221618 /* CodexRateLimitPayloadMapper.swift */; };
 		F8ED4E0F636294445478971B /* CodexSnapshotParsingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B56802AB05B67B2A4F883DA3 /* CodexSnapshotParsingTests.swift */; };
+		F9130A4420C79C4986DAE766 /* CodexiOSAppResetter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F71A43B620EED6061EFF23C8 /* CodexiOSAppResetter.swift */; };
 		F9E83DD2E157817570A0D05C /* CodexMeterCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6869618B2897346A3AB60D26 /* CodexMeterCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		FC55C31870893D02641000D1 /* CodexXPCClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE6B79C4A71C89D19D67F4A /* CodexXPCClient.swift */; };
 		FD4188EA9253F1B034BD599E /* CodexBinaryLocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55540A16D4495A09BD25A98F /* CodexBinaryLocator.swift */; };
@@ -287,6 +289,7 @@
 		7DA33B4078836DE67FB6AA58 /* CodexSnapshotParityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexSnapshotParityTests.swift; sourceTree = "<group>"; };
 		8E944DBB615061BEA8E462D9 /* PopupLimitCardViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupLimitCardViews.swift; sourceTree = "<group>"; };
 		9AADE08E274111411DA1BFE4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		9D4643340C8B906668F199F8 /* CodexAppResetter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexAppResetter.swift; sourceTree = "<group>"; };
 		9E5F053505E884FBD559ACCC /* CodexAppLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexAppLinks.swift; sourceTree = "<group>"; };
 		A0F373CE46619902781235BE /* CodexPreviewData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexPreviewData.swift; sourceTree = "<group>"; };
 		A52CF560D83450EF83AB67DA /* CodexUsageHistoryAnalytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexUsageHistoryAnalytics.swift; sourceTree = "<group>"; };
@@ -321,6 +324,7 @@
 		EE190C5B99912EAC0B0887CB /* SettingsAboutCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsAboutCard.swift; sourceTree = "<group>"; };
 		F2912FA060561F4B750A662B /* CodexLaunchAtLoginManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexLaunchAtLoginManager.swift; sourceTree = "<group>"; };
 		F33BB53B6CA6F1CD3C0A9498 /* CodexChatGPTAuthParsing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexChatGPTAuthParsing.swift; sourceTree = "<group>"; };
+		F71A43B620EED6061EFF23C8 /* CodexiOSAppResetter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexiOSAppResetter.swift; sourceTree = "<group>"; };
 		F7A0915351DD97681A213FCB /* SettingsForecastCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsForecastCardView.swift; sourceTree = "<group>"; };
 		FE2909B5F3DAB30B7BDCACD5 /* GlassCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassCard.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -454,6 +458,7 @@
 			isa = PBXGroup;
 			children = (
 				A729D4E01BB7C27D032909ED /* CodexexiOSApp.swift */,
+				F71A43B620EED6061EFF23C8 /* CodexiOSAppResetter.swift */,
 				BDAD19C107E25B335856C22D /* CodexiOSModel.swift */,
 				09D48D6D0C2F5DFF9E8CD72F /* CodexiOSOnboardingView.swift */,
 				C90DDACEC2B0EE3ABE747387 /* CodexiOSPreviewData.swift */,
@@ -522,6 +527,7 @@
 			children = (
 				05CCE50FE148626A7EEABCA7 /* Bundle+CodexVersion.swift */,
 				9E5F053505E884FBD559ACCC /* CodexAppLinks.swift */,
+				9D4643340C8B906668F199F8 /* CodexAppResetter.swift */,
 				3341C9D3222116EB47334518 /* CodexAppSettings.swift */,
 				D24D957C6CAB61789A1C7AD1 /* CodexAuthSession.swift */,
 				305AAF2B86E0F73329DCBC56 /* CodexDashboardState.swift */,
@@ -927,6 +933,7 @@
 			files = (
 				11FB5E69156BB0A8CB8C7ABA /* Bundle+CodexVersion.swift in Sources */,
 				17640F87C09FECBB553D5520 /* CodexAppLinks.swift in Sources */,
+				087306CE7BFE6CE626E4441A /* CodexAppResetter.swift in Sources */,
 				60FDC5DB302DDBA630D4C40C /* CodexAppSettings.swift in Sources */,
 				193EC7AFFB032DFA821500B6 /* CodexAuthSession.swift in Sources */,
 				0D82E69093B19642898C2603 /* CodexDashboardState.swift in Sources */,
@@ -993,6 +1000,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1DE8CA42D34331DA5D73EB2D /* CodexexiOSApp.swift in Sources */,
+				F9130A4420C79C4986DAE766 /* CodexiOSAppResetter.swift in Sources */,
 				ECE1E26B378C4F8589E8B65B /* CodexiOSModel.swift in Sources */,
 				ADB34CDE2C32FD957D47CB0F /* CodexiOSOnboardingView.swift in Sources */,
 				4392D10B273B2137A532FB34 /* CodexiOSPreviewData.swift in Sources */,
