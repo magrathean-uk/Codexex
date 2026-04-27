@@ -7,6 +7,8 @@ enum CodexiOSSettingsKeys {
     static let showHistory = "ios.showHistory"
     static let resetDisplayStyle = "ios.resetDisplayStyle"
     static let refreshIntervalSeconds = "ios.refreshIntervalSeconds"
+    static let hasCompletedOnboarding = "ios.hasCompletedOnboarding"
+    static let previewModeEnabled = "ios.previewModeEnabled"
 }
 
 enum CodexiOSResetDisplayStyle: String, CaseIterable, Identifiable {
@@ -38,6 +40,7 @@ struct CodexiOSSettingsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 accountCard
+                previewCard
                 displayCard
                 refreshCard
                 privacyCard
@@ -52,6 +55,28 @@ struct CodexiOSSettingsView: View {
         .preferredColorScheme(.dark)
     }
 
+    private var previewCard: some View {
+        settingsCard {
+            VStack(alignment: .leading, spacing: 14) {
+                cardHeader("Preview", systemImage: "sparkles")
+
+                Text(model.previewModeEnabled ? "Sample quota is active." : "Use local sample data to test the UI without signing in.")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button(model.previewModeEnabled ? "Leave Preview Mode" : "Use Preview Mode") {
+                    if model.previewModeEnabled {
+                        model.disablePreviewMode()
+                    } else {
+                        model.enablePreviewMode()
+                    }
+                }
+                .buttonStyle(CodexiOSPreviewButtonStyle(isProminent: model.previewModeEnabled == false))
+            }
+        }
+    }
+
     private var accountCard: some View {
         settingsCard {
             VStack(alignment: .leading, spacing: 14) {
@@ -63,7 +88,10 @@ struct CodexiOSSettingsView: View {
                     .fixedSize(horizontal: false, vertical: true)
 
                 FlowLayout(spacing: 10) {
-                    if model.flowID != nil {
+                    if model.previewModeEnabled {
+                        Button("Leave Preview") { model.disablePreviewMode() }
+                            .buttonStyle(.bordered)
+                    } else if model.flowID != nil {
                         Button("Open Safari") { model.openSignInPage() }
                             .buttonStyle(.borderedProminent)
                         Button("Check Now") { model.checkSignIn() }
@@ -185,6 +213,9 @@ struct CodexiOSSettingsView: View {
     }
 
     private var accountText: String {
+        if model.previewModeEnabled {
+            return "Preview mode is active. Live quota is paused."
+        }
         if model.flowID != nil {
             return "Safari approval is pending. Come back here and Codexex will check automatically."
         }
@@ -252,5 +283,29 @@ struct CodexiOSSettingsView: View {
                     .strokeBorder(.white.opacity(0.12), lineWidth: 1)
             }
             .shadow(color: .black.opacity(0.28), radius: 22, y: 12)
+    }
+}
+
+private struct CodexiOSPreviewButtonStyle: ButtonStyle {
+    let isProminent: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.headline.weight(.semibold))
+            .foregroundStyle(isProminent ? .white : .primary)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(background(isPressed: configuration.isPressed), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(.white.opacity(isProminent ? 0 : 0.12), lineWidth: 1)
+            }
+    }
+
+    private func background(isPressed: Bool) -> Color {
+        if isProminent {
+            return Color.cyan.opacity(isPressed ? 0.72 : 1)
+        }
+        return Color.white.opacity(isPressed ? 0.05 : 0.09)
     }
 }

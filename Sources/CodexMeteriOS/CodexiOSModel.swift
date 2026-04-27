@@ -6,6 +6,8 @@ import CodexMeterCore
 @MainActor
 @Observable
 final class CodexiOSModel {
+    var hasCompletedOnboarding = UserDefaults.standard.bool(forKey: CodexiOSSettingsKeys.hasCompletedOnboarding)
+    var previewModeEnabled = UserDefaults.standard.bool(forKey: CodexiOSSettingsKeys.previewModeEnabled)
     var snapshot: CodexSnapshot?
     var isRefreshing = false
     var isSigningIn = false
@@ -23,11 +25,19 @@ final class CodexiOSModel {
     }
 
     func start() async {
+        if previewModeEnabled {
+            applyPreviewSnapshot()
+            return
+        }
         await refresh()
     }
 
     func refresh() async {
         guard isRefreshing == false else { return }
+        guard previewModeEnabled == false else {
+            applyPreviewSnapshot()
+            return
+        }
         isRefreshing = true
         defer { isRefreshing = false }
 
@@ -41,6 +51,7 @@ final class CodexiOSModel {
                 deviceCode = nil
                 verificationURL = nil
                 flowID = nil
+                completeOnboarding()
             } else {
                 snapshot = nil
                 errorMessage = response.errorMessage
@@ -91,6 +102,7 @@ final class CodexiOSModel {
                     deviceCode = nil
                     verificationURL = nil
                     self.flowID = nil
+                    completeOnboarding()
                     await refresh()
                 }
             } catch {
@@ -134,5 +146,39 @@ final class CodexiOSModel {
                 errorMessage = error.localizedDescription
             }
         }
+    }
+
+    func completeOnboarding() {
+        guard hasCompletedOnboarding == false else { return }
+        hasCompletedOnboarding = true
+        UserDefaults.standard.set(true, forKey: CodexiOSSettingsKeys.hasCompletedOnboarding)
+    }
+
+    func enablePreviewMode() {
+        previewModeEnabled = true
+        UserDefaults.standard.set(true, forKey: CodexiOSSettingsKeys.previewModeEnabled)
+        completeOnboarding()
+        applyPreviewSnapshot()
+        statusMessage = "Preview mode is active."
+        errorMessage = nil
+        deviceCode = nil
+        verificationURL = nil
+        flowID = nil
+    }
+
+    func disablePreviewMode() {
+        guard previewModeEnabled else { return }
+        previewModeEnabled = false
+        UserDefaults.standard.set(false, forKey: CodexiOSSettingsKeys.previewModeEnabled)
+        snapshot = nil
+        lastUpdatedAt = nil
+        statusMessage = "Preview mode off."
+        Task { await refresh() }
+    }
+
+    private func applyPreviewSnapshot() {
+        let preview = CodexiOSPreviewData.snapshot()
+        snapshot = preview
+        lastUpdatedAt = preview.capturedAt
     }
 }
