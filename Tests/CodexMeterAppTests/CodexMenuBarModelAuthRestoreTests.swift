@@ -89,15 +89,15 @@ private struct FailingService: CodexServiceClient {
     }
 
     func beginChatGPTSignIn() async throws -> CodexDeviceAuthStart {
-        fatalError("unused")
+        throw UnusedTestServiceCallError()
     }
 
     func completeChatGPTSignIn(flowID: String) async throws -> CodexDeviceAuthPollResult {
-        fatalError("unused")
+        throw UnusedTestServiceCallError()
     }
 
     func signOut() async throws {
-        fatalError("unused")
+        throw UnusedTestServiceCallError()
     }
 }
 
@@ -109,14 +109,16 @@ private struct SnapshotService: CodexServiceClient {
     }
 
     func beginChatGPTSignIn() async throws -> CodexDeviceAuthStart {
-        fatalError("unused")
+        throw UnusedTestServiceCallError()
     }
 
     func completeChatGPTSignIn(flowID: String) async throws -> CodexDeviceAuthPollResult {
-        fatalError("unused")
+        throw UnusedTestServiceCallError()
     }
 
     func signOut() async throws {
-        fatalError("unused")
+        throw UnusedTestServiceCallError()
     }
 }
+
+private struct UnusedTestServiceCallError: Error {}

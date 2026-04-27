@@ -1388,6 +1388,7 @@
 					"@executable_path/../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.magrathean.CodexexApp;
+				PRODUCT_MODULE_NAME = CodexMeterApp;
 				PRODUCT_NAME = Codexex;
 				SDKROOT = macosx;
 			};
@@ -1406,7 +1407,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.magrathean.CodexexApp.CodexMeterAppTests;
 				SDKROOT = macosx;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CodexMeterApp.app/Contents/MacOS/CodexMeterApp";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Codexex.app/Contents/MacOS/Codexex";
 			};
 			name = Debug;
 		};
@@ -1444,6 +1445,7 @@
 					"@executable_path/../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.magrathean.CodexexApp;
+				PRODUCT_MODULE_NAME = CodexMeterApp;
 				PRODUCT_NAME = Codexex;
 				SDKROOT = macosx;
 			};
@@ -1547,7 +1549,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.magrathean.CodexexApp.CodexMeterAppTests;
 				SDKROOT = macosx;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CodexMeterApp.app/Contents/MacOS/CodexMeterApp";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Codexex.app/Contents/MacOS/Codexex";
 			};
 			name = Release;
 		};
