@@ -1,15 +1,18 @@
 import Foundation
+import CodexMeterCore
 
 final class CodexHelperProcess {
     private let sendLock = NSLock()
     private let stateLock = NSLock()
     private let maxResponseBytes = 1_048_576
+    private let responseTimeout: TimeInterval = 15
     private var process: Process?
     private var stdinHandle: FileHandle?
     private var stdoutHandle: FileHandle?
+    private var stderrHandle: FileHandle?
 
     deinit {
-        shutdown()
+        _ = shutdown(captureStderr: false)
     }
 
     func send(_ line: String) throws -> String {
@@ -22,44 +25,30 @@ final class CodexHelperProcess {
         do {
             try handles.stdin.write(contentsOf: Data((line + "\n").utf8))
         } catch {
-            shutdown()
+            _ = shutdown(captureStderr: false)
             throw error
         }
 
-        var buffer = Data()
-        while true {
-            let chunk: Data
-            do {
-                guard let data = try handles.stdout.read(upToCount: 1), data.isEmpty == false else {
-                    shutdown()
-                    throw helperError("Helper process closed unexpectedly.", code: 2)
-                }
-                chunk = data
-            } catch {
-                shutdown()
-                throw error
-            }
-
-            if chunk.first == 0x0A { break }
-            buffer.append(chunk)
-
-            if buffer.count > maxResponseBytes {
-                shutdown()
-                throw helperError("Helper response exceeded the maximum line size.", code: 3)
-            }
+        do {
+            return try CodexHelperLineReader.readLine(
+                from: handles.stdout,
+                timeout: responseTimeout,
+                maxBytes: maxResponseBytes
+            )
+        } catch {
+            let stderr = shutdown(captureStderr: true)
+            throw helperError(stderr.map { "\(error.localizedDescription) \($0)" } ?? error.localizedDescription, code: 2)
         }
-
-        return String(decoding: buffer, as: UTF8.self)
     }
 
     func reset() {
-        shutdown()
+        _ = shutdown(captureStderr: false)
     }
 
     private func ensureStarted() throws {
         if isRunning { return }
 
-        shutdown()
+        _ = shutdown(captureStderr: false)
 
         let helperURL = try locateHelperURL()
 
@@ -68,9 +57,10 @@ final class CodexHelperProcess {
 
         let stdin = Pipe()
         let stdout = Pipe()
+        let stderr = Pipe()
         process.standardInput = stdin
         process.standardOutput = stdout
-        process.standardError = Pipe()
+        process.standardError = stderr
 
         try process.run()
 
@@ -78,6 +68,7 @@ final class CodexHelperProcess {
         self.process = process
         stdinHandle = stdin.fileHandleForWriting
         stdoutHandle = stdout.fileHandleForReading
+        stderrHandle = stderr.fileHandleForReading
         stateLock.unlock()
     }
 
@@ -96,14 +87,17 @@ final class CodexHelperProcess {
         return (stdinHandle, stdoutHandle)
     }
 
-    private func shutdown() {
+    @discardableResult
+    private func shutdown(captureStderr: Bool) -> String? {
         stateLock.lock()
         let process = self.process
         let stdinHandle = self.stdinHandle
         let stdoutHandle = self.stdoutHandle
+        let stderrHandle = self.stderrHandle
         self.process = nil
         self.stdinHandle = nil
         self.stdoutHandle = nil
+        self.stderrHandle = nil
         stateLock.unlock()
 
         stdinHandle?.closeFile()
@@ -111,6 +105,13 @@ final class CodexHelperProcess {
         if let process, process.isRunning {
             process.terminate()
         }
+        guard captureStderr, let stderrHandle else {
+            stderrHandle?.closeFile()
+            return nil
+        }
+        let data = stderrHandle.readDataToEndOfFile()
+        stderrHandle.closeFile()
+        return String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
     }
 
     private func helperError(_ message: String, code: Int) -> NSError {
@@ -137,17 +138,19 @@ final class CodexHelperProcess {
                 executableURL
                     .deletingLastPathComponent()
                     .deletingLastPathComponent()
-                    .appending(path: "Helpers/codexex-helper")
-            )
-            candidates.append(
-                executableURL
-                    .deletingLastPathComponent()
-                    .deletingLastPathComponent()
                     .deletingLastPathComponent()
                     .deletingLastPathComponent()
                     .deletingLastPathComponent()
                     .appending(path: "Helpers/codexex-helper")
             )
+            if ProcessInfo.processInfo.environment["CODEXEX_ENABLE_XPC_BUNDLE_HELPER"] == "1" {
+                candidates.append(
+                    executableURL
+                        .deletingLastPathComponent()
+                        .deletingLastPathComponent()
+                        .appending(path: "Helpers/codexex-helper")
+                )
+            }
         }
 
         let bundleURL = Bundle.main.bundleURL
@@ -157,14 +160,13 @@ final class CodexHelperProcess {
                 .deletingLastPathComponent()
                 .appending(path: "Helpers/codexex-helper")
         )
-        candidates.append(
-            bundleURL
-                .deletingLastPathComponent()
-                .deletingLastPathComponent()
-                .deletingLastPathComponent()
-                .appending(path: "Helpers/codexex-helper")
-        )
 
         return Array(NSOrderedSet(array: candidates)) as? [URL] ?? candidates
+    }
+}
+
+private extension String {
+    var nilIfEmpty: String? {
+        isEmpty ? nil : self
     }
 }

@@ -16,46 +16,53 @@ final class CodexAppSettingsTests: XCTestCase {
     }
 
     func testNewPopupSettingsDefaultOn() {
-        XCTAssertTrue(CodexAppSettings.showSparkEnabled)
-        XCTAssertTrue(CodexAppSettings.showHistoryChartEnabled)
-        XCTAssertEqual(CodexAppSettings.defaultHistoryMode, .dailyPeaks)
-        XCTAssertTrue(CodexAppSettings.showPaceConfidence)
-        XCTAssertFalse(CodexAppSettings.hideIdleSecondaryLimits)
-        XCTAssertEqual(CodexAppSettings.menuBarDisplayMode, .used)
-        XCTAssertEqual(CodexAppSettings.resetDisplayStyle, .relative)
+        let store = CodexAppSettingsStore(defaults: makeDefaults())
+        let snapshot = store.snapshot()
+
+        XCTAssertTrue(snapshot.showSparkEnabled)
+        XCTAssertTrue(snapshot.showHistoryChartEnabled)
+        XCTAssertEqual(snapshot.defaultHistoryMode, .dailyPeaks)
+        XCTAssertTrue(snapshot.showPaceConfidence)
+        XCTAssertFalse(snapshot.hideIdleSecondaryLimits)
+        XCTAssertEqual(snapshot.menuBarDisplayMode, .used)
+        XCTAssertEqual(snapshot.resetDisplayStyle, .relative)
     }
 
     func testNewPopupSettingsPersist() {
-        CodexAppSettings.showSparkEnabled = false
-        CodexAppSettings.showHistoryChartEnabled = false
-        CodexAppSettings.defaultHistoryMode = .thisCycle
-        CodexAppSettings.showPaceConfidence = false
-        CodexAppSettings.hideIdleSecondaryLimits = true
-        CodexAppSettings.menuBarDisplayMode = .pace
-        CodexAppSettings.resetDisplayStyle = .absolute
+        let store = CodexAppSettingsStore(defaults: makeDefaults())
 
-        XCTAssertFalse(CodexAppSettings.showSparkEnabled)
-        XCTAssertFalse(CodexAppSettings.showHistoryChartEnabled)
-        XCTAssertEqual(CodexAppSettings.defaultHistoryMode, .thisCycle)
-        XCTAssertFalse(CodexAppSettings.showPaceConfidence)
-        XCTAssertTrue(CodexAppSettings.hideIdleSecondaryLimits)
-        XCTAssertEqual(CodexAppSettings.menuBarDisplayMode, .pace)
-        XCTAssertEqual(CodexAppSettings.resetDisplayStyle, .absolute)
+        store.setShowSparkEnabled(false)
+        store.setShowHistoryChartEnabled(false)
+        store.setDefaultHistoryMode(.thisCycle)
+        store.setShowPaceConfidence(false)
+        store.setHideIdleSecondaryLimits(true)
+        store.setMenuBarDisplayMode(.pace)
+        store.setResetDisplayStyle(.absolute)
+
+        let snapshot = store.snapshot()
+        XCTAssertFalse(snapshot.showSparkEnabled)
+        XCTAssertFalse(snapshot.showHistoryChartEnabled)
+        XCTAssertEqual(snapshot.defaultHistoryMode, .thisCycle)
+        XCTAssertFalse(snapshot.showPaceConfidence)
+        XCTAssertTrue(snapshot.hideIdleSecondaryLimits)
+        XCTAssertEqual(snapshot.menuBarDisplayMode, .pace)
+        XCTAssertEqual(snapshot.resetDisplayStyle, .absolute)
     }
 
     func testSummarySnoozeSettingsPersistAndClear() {
+        let store = CodexAppSettingsStore(defaults: makeDefaults())
         let expiresAt = Date(timeIntervalSince1970: 1_800_000_000)
 
-        CodexAppSettings.summarySnoozeFingerprint = "watch|weekly|91"
-        CodexAppSettings.summarySnoozeExpiresAt = expiresAt
+        store.setSummarySnoozeFingerprint("watch|weekly|91")
+        store.setSummarySnoozeExpiresAt(expiresAt)
 
-        XCTAssertEqual(CodexAppSettings.summarySnoozeFingerprint, "watch|weekly|91")
-        XCTAssertEqual(CodexAppSettings.summarySnoozeExpiresAt, expiresAt)
+        XCTAssertEqual(store.summarySnoozeFingerprint, "watch|weekly|91")
+        XCTAssertEqual(store.summarySnoozeExpiresAt, expiresAt)
 
-        CodexAppSettings.clearSummarySnooze()
+        store.clearSummarySnooze()
 
-        XCTAssertNil(CodexAppSettings.summarySnoozeFingerprint)
-        XCTAssertNil(CodexAppSettings.summarySnoozeExpiresAt)
+        XCTAssertNil(store.summarySnoozeFingerprint)
+        XCTAssertNil(store.summarySnoozeExpiresAt)
     }
 
     func testResetLocalDataClearsSettingsAndApplicationSupport() throws {
@@ -80,5 +87,12 @@ final class CodexAppSettingsTests: XCTestCase {
         XCTAssertNil(defaults.object(forKey: "codexex.previewModeEnabled"))
         XCTAssertNil(defaults.object(forKey: "codexex.menuBarDisplayMode"))
         XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
+    }
+
+    private func makeDefaults() -> UserDefaults {
+        let suiteName = "CodexAppSettingsTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        return defaults
     }
 }

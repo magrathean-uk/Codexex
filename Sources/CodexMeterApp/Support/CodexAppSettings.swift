@@ -49,21 +49,19 @@ enum CodexResetDisplayStyle: String, CaseIterable {
     func resetText(now: Date, resetAt: Date?) -> String {
         switch self {
         case .relative:
-            return CodexFormatting.relativeResetText(now: now, resetAt: resetAt)
+            return CodexQuotaPresentationRules.resetText(style: .relative, now: now, resetAt: resetAt)
         case .absolute:
-            guard let resetAt else { return "Reset unknown" }
-            let formatter = DateFormatter()
-            formatter.locale = Locale.autoupdatingCurrent
-            formatter.timeZone = .current
-            formatter.dateStyle = Calendar.autoupdatingCurrent.isDate(resetAt, inSameDayAs: now) ? .none : .short
-            formatter.timeStyle = .short
-            return "resets \(formatter.string(from: resetAt))"
+            return CodexQuotaPresentationRules.resetText(
+                style: .absolute(prefix: "resets"),
+                now: now,
+                resetAt: resetAt
+            )
         }
     }
 }
 
 enum CodexAppSettings {
-    private enum Key {
+    fileprivate enum Key {
         static let hasCompletedOnboarding = "codexex.hasCompletedOnboarding"
         static let previewModeEnabled = "codexex.previewModeEnabled"
         static let autoRefreshEnabled = "codexex.autoRefreshEnabled"
@@ -331,6 +329,248 @@ enum CodexAppSettings {
 
     static func removeAll(defaults: UserDefaults = .standard) {
         for key in Key.all {
+            defaults.removeObject(forKey: key)
+        }
+    }
+}
+
+struct CodexAppSettingsSnapshot: Equatable {
+    let hasCompletedOnboarding: Bool
+    let previewModeEnabled: Bool
+    let autoRefreshEnabled: Bool
+    let refreshIntervalSeconds: Int
+    let launchAtLoginEnabled: Bool
+    let showHistoryEnabled: Bool
+    let showHistoryChartEnabled: Bool
+    let showInsightsEnabled: Bool
+    let showSparkEnabled: Bool
+    let showFiveHourInMenubar: Bool
+    let showWeeklyInMenubar: Bool
+    let menuBarDisplayMode: CodexMenuBarDisplayMode
+    let resetDisplayStyle: CodexResetDisplayStyle
+    let defaultHistoryMode: PopupHistoryMode
+    let showPaceConfidence: Bool
+    let hideIdleSecondaryLimits: Bool
+    let summarySnoozeFingerprint: String?
+    let summarySnoozeExpiresAt: Date?
+}
+
+struct CodexAppSettingsStore {
+    private let defaults: UserDefaults
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+    }
+
+    func snapshot() -> CodexAppSettingsSnapshot {
+        CodexAppSettingsSnapshot(
+            hasCompletedOnboarding: hasCompletedOnboarding,
+            previewModeEnabled: previewModeEnabled,
+            autoRefreshEnabled: autoRefreshEnabled,
+            refreshIntervalSeconds: refreshIntervalSeconds,
+            launchAtLoginEnabled: launchAtLoginEnabled,
+            showHistoryEnabled: showHistoryEnabled,
+            showHistoryChartEnabled: showHistoryChartEnabled,
+            showInsightsEnabled: showInsightsEnabled,
+            showSparkEnabled: showSparkEnabled,
+            showFiveHourInMenubar: showFiveHourInMenubar,
+            showWeeklyInMenubar: showWeeklyInMenubar,
+            menuBarDisplayMode: menuBarDisplayMode,
+            resetDisplayStyle: resetDisplayStyle,
+            defaultHistoryMode: defaultHistoryMode,
+            showPaceConfidence: showPaceConfidence,
+            hideIdleSecondaryLimits: hideIdleSecondaryLimits,
+            summarySnoozeFingerprint: summarySnoozeFingerprint,
+            summarySnoozeExpiresAt: summarySnoozeExpiresAt
+        )
+    }
+
+    var hasCompletedOnboarding: Bool {
+        defaults.bool(forKey: CodexAppSettings.Key.hasCompletedOnboarding)
+    }
+
+    var previewModeEnabled: Bool {
+        bool(forKey: CodexAppSettings.Key.previewModeEnabled, defaultValue: false)
+    }
+
+    var autoRefreshEnabled: Bool {
+        bool(forKey: CodexAppSettings.Key.autoRefreshEnabled, defaultValue: true)
+    }
+
+    var refreshIntervalSeconds: Int {
+        max(defaults.object(forKey: CodexAppSettings.Key.refreshIntervalSeconds) as? Int ?? 300, 300)
+    }
+
+    var launchAtLoginEnabled: Bool {
+        bool(forKey: CodexAppSettings.Key.launchAtLoginEnabled, defaultValue: false)
+    }
+
+    var showHistoryEnabled: Bool {
+        bool(forKey: CodexAppSettings.Key.showHistoryEnabled, defaultValue: true)
+    }
+
+    var showHistoryChartEnabled: Bool {
+        bool(forKey: CodexAppSettings.Key.showHistoryChartEnabled, defaultValue: true)
+    }
+
+    var showInsightsEnabled: Bool {
+        bool(forKey: CodexAppSettings.Key.showInsightsEnabled, defaultValue: true)
+    }
+
+    var showSparkEnabled: Bool {
+        bool(forKey: CodexAppSettings.Key.showSparkEnabled, defaultValue: true)
+    }
+
+    var showFiveHourInMenubar: Bool {
+        bool(forKey: CodexAppSettings.Key.showFiveHourInMenubar, defaultValue: true)
+    }
+
+    var showWeeklyInMenubar: Bool {
+        bool(forKey: CodexAppSettings.Key.showWeeklyInMenubar, defaultValue: true)
+    }
+
+    var menuBarDisplayMode: CodexMenuBarDisplayMode {
+        enumValue(
+            forKey: CodexAppSettings.Key.menuBarDisplayMode,
+            defaultValue: CodexMenuBarDisplayMode.used
+        )
+    }
+
+    var resetDisplayStyle: CodexResetDisplayStyle {
+        enumValue(
+            forKey: CodexAppSettings.Key.resetDisplayStyle,
+            defaultValue: CodexResetDisplayStyle.relative
+        )
+    }
+
+    var defaultHistoryMode: PopupHistoryMode {
+        enumValue(
+            forKey: CodexAppSettings.Key.defaultHistoryMode,
+            defaultValue: PopupHistoryMode.dailyPeaks
+        )
+    }
+
+    var showPaceConfidence: Bool {
+        bool(forKey: CodexAppSettings.Key.showPaceConfidence, defaultValue: true)
+    }
+
+    var hideIdleSecondaryLimits: Bool {
+        bool(forKey: CodexAppSettings.Key.hideIdleSecondaryLimits, defaultValue: false)
+    }
+
+    var summarySnoozeFingerprint: String? {
+        defaults.string(forKey: CodexAppSettings.Key.summarySnoozeFingerprint)
+    }
+
+    var summarySnoozeExpiresAt: Date? {
+        defaults.object(forKey: CodexAppSettings.Key.summarySnoozeExpiresAt) as? Date
+    }
+
+    func setHasCompletedOnboarding(_ value: Bool) {
+        defaults.set(value, forKey: CodexAppSettings.Key.hasCompletedOnboarding)
+    }
+
+    func setPreviewModeEnabled(_ value: Bool) {
+        defaults.set(value, forKey: CodexAppSettings.Key.previewModeEnabled)
+    }
+
+    func setAutoRefreshEnabled(_ value: Bool) {
+        defaults.set(value, forKey: CodexAppSettings.Key.autoRefreshEnabled)
+    }
+
+    func setRefreshIntervalSeconds(_ value: Int) {
+        defaults.set(max(value, 300), forKey: CodexAppSettings.Key.refreshIntervalSeconds)
+    }
+
+    func setLaunchAtLoginEnabled(_ value: Bool) {
+        defaults.set(value, forKey: CodexAppSettings.Key.launchAtLoginEnabled)
+    }
+
+    func setShowHistoryEnabled(_ value: Bool) {
+        defaults.set(value, forKey: CodexAppSettings.Key.showHistoryEnabled)
+    }
+
+    func setShowHistoryChartEnabled(_ value: Bool) {
+        defaults.set(value, forKey: CodexAppSettings.Key.showHistoryChartEnabled)
+    }
+
+    func setShowInsightsEnabled(_ value: Bool) {
+        defaults.set(value, forKey: CodexAppSettings.Key.showInsightsEnabled)
+    }
+
+    func setShowSparkEnabled(_ value: Bool) {
+        defaults.set(value, forKey: CodexAppSettings.Key.showSparkEnabled)
+    }
+
+    func setShowFiveHourInMenubar(_ value: Bool) {
+        defaults.set(value, forKey: CodexAppSettings.Key.showFiveHourInMenubar)
+    }
+
+    func setShowWeeklyInMenubar(_ value: Bool) {
+        defaults.set(value, forKey: CodexAppSettings.Key.showWeeklyInMenubar)
+    }
+
+    func setMenuBarDisplayMode(_ value: CodexMenuBarDisplayMode) {
+        defaults.set(value.rawValue, forKey: CodexAppSettings.Key.menuBarDisplayMode)
+    }
+
+    func setResetDisplayStyle(_ value: CodexResetDisplayStyle) {
+        defaults.set(value.rawValue, forKey: CodexAppSettings.Key.resetDisplayStyle)
+    }
+
+    func setDefaultHistoryMode(_ value: PopupHistoryMode) {
+        defaults.set(value.rawValue, forKey: CodexAppSettings.Key.defaultHistoryMode)
+    }
+
+    func setShowPaceConfidence(_ value: Bool) {
+        defaults.set(value, forKey: CodexAppSettings.Key.showPaceConfidence)
+    }
+
+    func setHideIdleSecondaryLimits(_ value: Bool) {
+        defaults.set(value, forKey: CodexAppSettings.Key.hideIdleSecondaryLimits)
+    }
+
+    func setSummarySnoozeFingerprint(_ value: String?) {
+        setOptional(value, forKey: CodexAppSettings.Key.summarySnoozeFingerprint)
+    }
+
+    func setSummarySnoozeExpiresAt(_ value: Date?) {
+        setOptional(value, forKey: CodexAppSettings.Key.summarySnoozeExpiresAt)
+    }
+
+    func clearSummarySnooze() {
+        setSummarySnoozeFingerprint(nil)
+        setSummarySnoozeExpiresAt(nil)
+    }
+
+    func removeAll() {
+        for key in CodexAppSettings.Key.all {
+            defaults.removeObject(forKey: key)
+        }
+    }
+
+    private func bool(forKey key: String, defaultValue: Bool) -> Bool {
+        if defaults.object(forKey: key) == nil {
+            return defaultValue
+        }
+        return defaults.bool(forKey: key)
+    }
+
+    private func enumValue<Value: RawRepresentable>(
+        forKey key: String,
+        defaultValue: Value
+    ) -> Value where Value.RawValue == String {
+        guard let rawValue = defaults.string(forKey: key),
+              let value = Value(rawValue: rawValue) else {
+            return defaultValue
+        }
+        return value
+    }
+
+    private func setOptional(_ value: Any?, forKey key: String) {
+        if let value {
+            defaults.set(value, forKey: key)
+        } else {
             defaults.removeObject(forKey: key)
         }
     }

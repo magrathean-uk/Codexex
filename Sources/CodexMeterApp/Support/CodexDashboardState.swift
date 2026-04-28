@@ -14,12 +14,25 @@ struct CodexDashboardState {
         refreshInsights(now: now)
     }
 
+    mutating func setHistory(_ state: CodexHistoryRepositoryState) {
+        usageHistory = state.samples
+        usageInsights = state.insights
+    }
+
     mutating func applySnapshot(_ snapshot: CodexSnapshot, history: [CodexUsageHistorySample]) {
         self.snapshot = snapshot
         lastUpdatedAt = snapshot.capturedAt
         lastError = nil
         usageHistory = history
         refreshInsights(now: snapshot.capturedAt)
+    }
+
+    mutating func applySnapshot(_ snapshot: CodexSnapshot, historyState: CodexHistoryRepositoryState) {
+        self.snapshot = snapshot
+        lastUpdatedAt = snapshot.capturedAt
+        lastError = nil
+        usageHistory = historyState.samples
+        usageInsights = historyState.insights
     }
 
     mutating func clearSnapshot(keepHistory: Bool = true, now: Date = Date()) {

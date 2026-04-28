@@ -95,6 +95,14 @@ public enum CodexHelperResponseType: String, Codable, Sendable, Equatable {
     case error
 }
 
+public enum CodexHelperWireResponse: Sendable, Equatable {
+    case snapshot(CodexServiceSnapshotResponse)
+    case deviceAuthStarted(CodexDeviceAuthStart)
+    case deviceAuthPending(CodexDeviceAuthPollResult)
+    case signedIn(CodexDeviceAuthPollResult)
+    case signedOut
+}
+
 public enum CodexHelperWireError: LocalizedError, Sendable, Equatable {
     case helper(message: String)
     case unexpectedResponse(expected: String, actual: String)
@@ -185,34 +193,53 @@ public struct CodexHelperResponseEnvelope: Codable, Sendable, Equatable {
     }
 
     public func decodedSnapshotResponse() throws -> CodexServiceSnapshotResponse {
-        try requireResponse(.snapshot)
-        guard let payloadJSON else {
-            throw CodexHelperWireError.missingPayload("snapshot")
+        guard case .snapshot(let response) = try typedResponse() else {
+            throw CodexHelperWireError.unexpectedResponse(expected: CodexHelperResponseType.snapshot.rawValue, actual: type.rawValue)
         }
-        return try Self.decoder.decode(CodexServiceSnapshotResponse.self, from: Data(payloadJSON.utf8))
+        return response
     }
 
     public func decodedDeviceAuthStart() throws -> CodexDeviceAuthStart {
-        try requireResponse(.deviceAuthStarted)
-        guard let flowID else { throw CodexHelperWireError.missingField("flowId") }
-        guard let verificationURL else { throw CodexHelperWireError.missingField("verificationUri") }
-        guard let userCode else { throw CodexHelperWireError.missingField("userCode") }
-        return CodexDeviceAuthStart(flowID: flowID, verificationURL: verificationURL, userCode: userCode)
+        guard case .deviceAuthStarted(let auth) = try typedResponse() else {
+            throw CodexHelperWireError.unexpectedResponse(expected: CodexHelperResponseType.deviceAuthStarted.rawValue, actual: type.rawValue)
+        }
+        return auth
     }
 
     public func decodedDeviceAuthPollResult() throws -> CodexDeviceAuthPollResult {
-        switch type {
-        case .signedIn:
-            return CodexDeviceAuthPollResult(status: .signedIn, message: message)
-        case .deviceAuthPending:
-            return CodexDeviceAuthPollResult(status: .pending, message: message)
-        case .error:
-            throw CodexHelperWireError.helper(message: message ?? "Helper returned an unknown error.")
-        default:
+        switch try typedResponse() {
+        case .signedIn(let result), .deviceAuthPending(let result):
+            return result
+        case .snapshot, .deviceAuthStarted, .signedOut:
             throw CodexHelperWireError.unexpectedResponse(
                 expected: "\(CodexHelperResponseType.deviceAuthPending.rawValue) or \(CodexHelperResponseType.signedIn.rawValue)",
                 actual: type.rawValue
             )
+        }
+    }
+
+    public func typedResponse() throws -> CodexHelperWireResponse {
+        switch type {
+        case .snapshot:
+            guard let payloadJSON else {
+                throw CodexHelperWireError.missingPayload("snapshot")
+            }
+            return .snapshot(try Self.decoder.decode(CodexServiceSnapshotResponse.self, from: Data(payloadJSON.utf8)))
+        case .deviceAuthStarted:
+            guard let flowID else { throw CodexHelperWireError.missingField("flowId") }
+            guard let verificationURL else { throw CodexHelperWireError.missingField("verificationUri") }
+            guard let userCode else { throw CodexHelperWireError.missingField("userCode") }
+            return .deviceAuthStarted(
+                CodexDeviceAuthStart(flowID: flowID, verificationURL: verificationURL, userCode: userCode)
+            )
+        case .signedIn:
+            return .signedIn(CodexDeviceAuthPollResult(status: .signedIn, message: message))
+        case .deviceAuthPending:
+            return .deviceAuthPending(CodexDeviceAuthPollResult(status: .pending, message: message))
+        case .signedOut:
+            return .signedOut
+        case .error:
+            throw CodexHelperWireError.helper(message: message ?? "Helper returned an unknown error.")
         }
     }
 

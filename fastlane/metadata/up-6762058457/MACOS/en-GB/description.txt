@@ -2,4 +2,4 @@ Codexex is a native macOS menu bar utility for tracking Codex usage at a glance.
 
 It shows 5-hour and weekly usage, reset times, a 30-day history chart, a weekly pace marker, and forecast details so you can see whether you are on track or likely to go over the plan.
 
-Codexex supports ChatGPT OAuth sign-in, Preview Mode for App Review and offline testing, and a compact helper-based release flow that keeps the app fast and self-contained.
+Codexex supports ChatGPT sign-in, Preview Mode for App Review and offline testing, and a compact helper-based release flow that keeps the app fast and self-contained.

@@ -19,7 +19,7 @@ Codexex stores the following locally on your Mac:
 
 ## Authentication
 
-If you sign in with ChatGPT, Codexex uses the supported sign-in flow to request access for your account. Account state stays on your device.
+If you use ChatGPT sign-in, Codexex uses the supported sign-in flow to request access for your account. Account state stays on your device.
 
 ## Network access
 

@@ -139,12 +139,14 @@ struct PopupRootView: View {
     }
 
     private var secondaryLimitPresentations: [PopupLimitPresentation] {
-        guard model.showSparkEnabled else { return [] }
-        let presentations = orderedLimitPresentations.filter { $0.limit.bucket == .spark }
-        if model.hideIdleSecondaryLimits {
-            return presentations.filter { PopupPresentation.isIdle($0.limit) == false }
+        orderedLimitPresentations.filter { presentation in
+            guard presentation.limit.bucket == .spark else { return false }
+            return CodexQuotaPresentationRules.shouldShow(
+                presentation.limit,
+                showSpark: model.showSparkEnabled,
+                hideIdleSecondaryLimits: model.hideIdleSecondaryLimits
+            )
         }
-        return presentations
     }
 
     private var activeSecondaryLimitPresentations: [PopupLimitPresentation] {

@@ -22,7 +22,7 @@ public enum CodexRateLimitPayloadMapper {
         executablePath: String,
         account: CodexAccount
     ) -> CodexSnapshot {
-        var limits: [CodexLimit] = [
+        var limits: [CodexRawQuotaLimit] = [
             makeLimit(
                 id: "codex",
                 name: nil,
@@ -44,7 +44,7 @@ public enum CodexRateLimitPayloadMapper {
             )
         })
 
-        return CodexSnapshot(
+        return CodexQuotaSnapshotBuilder.snapshot(
             capturedAt: capturedAt,
             executablePath: executablePath,
             account: CodexAccount(
@@ -52,9 +52,7 @@ public enum CodexRateLimitPayloadMapper {
                 email: account.email,
                 planType: account.planType ?? payload.planType?.uppercased()
             ),
-            limits: limits.filter { limit in
-                limit.primary != nil || limit.secondary != nil || limit.credits != nil
-            }
+            rawLimits: limits
         )
     }
 
@@ -65,11 +63,10 @@ public enum CodexRateLimitPayloadMapper {
         credits: CreditsPayload?,
         planType: String?,
         capturedAt: Date
-    ) -> CodexLimit {
-        CodexLimit(
+    ) -> CodexRawQuotaLimit {
+        CodexRawQuotaLimit(
             id: id,
             rawLimitName: name,
-            bucket: CodexLimitBucket.infer(limitId: id, limitName: name),
             primary: window(from: details?.primaryWindow, capturedAt: capturedAt),
             secondary: window(from: details?.secondaryWindow, capturedAt: capturedAt),
             credits: credits.map {
@@ -85,7 +82,7 @@ public enum CodexRateLimitPayloadMapper {
     private static func window(
         from payload: WindowPayload?,
         capturedAt: Date
-    ) -> CodexQuotaWindow? {
+    ) -> CodexRawQuotaWindow? {
         guard let payload else { return nil }
         let resetAt = payload.resetAt.map(Date.init(timeIntervalSince1970:))
             ?? payload.resetAfterSeconds.map { capturedAt.addingTimeInterval(TimeInterval($0)) }
@@ -94,7 +91,7 @@ public enum CodexRateLimitPayloadMapper {
             return Int(ceil(Double(seconds) / 60.0))
         }
 
-        return CodexQuotaWindow(
+        return CodexRawQuotaWindow(
             usedPercent: payload.usedPercent,
             windowDurationMinutes: durationMinutes,
             resetsAt: resetAt

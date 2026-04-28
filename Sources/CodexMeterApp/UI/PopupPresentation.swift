@@ -7,6 +7,17 @@ enum PopupLimitCardStyle: Equatable {
     case hero
     case standard
     case compact
+
+    init(_ style: CodexQuotaPresentationStyle) {
+        switch style {
+        case .hero:
+            self = .hero
+        case .standard:
+            self = .standard
+        case .compact:
+            self = .compact
+        }
+    }
 }
 
 struct PopupLimitPresentation: Equatable, Identifiable {
@@ -222,73 +233,20 @@ enum PopupPresentation {
     }
 
     static func orderedLimits(_ limits: [CodexLimit]) -> [CodexLimit] {
-        limits.sorted { lhs, rhs in
-            let leftRank = sortRank(for: lhs)
-            let rightRank = sortRank(for: rhs)
-            if leftRank != rightRank {
-                return leftRank < rightRank
-            }
-            return lhs.displayName.localizedCaseInsensitiveCompare(rhs.displayName) == .orderedAscending
-        }
+        CodexQuotaPresentationRules.orderedLimits(limits)
     }
 
     static func presentation(for limit: CodexLimit) -> PopupLimitPresentation {
-        let visibleCredits = visibleCredits(for: limit.credits)
+        let decision = CodexQuotaPresentationRules.presentation(for: limit)
         return PopupLimitPresentation(
             limit: limit,
-            style: style(for: limit, visibleCredits: visibleCredits),
-            visibleCredits: visibleCredits
+            style: PopupLimitCardStyle(decision.style),
+            visibleCredits: decision.visibleCredits
         )
     }
 
-    private static func sortRank(for limit: CodexLimit) -> Int {
-        switch limit.bucket {
-        case .codex:
-            return 0
-        case .other:
-            return 1
-        case .spark:
-            return 2
-        }
-    }
-
     static func isIdle(_ limit: CodexLimit) -> Bool {
-        [limit.fiveHourWindow, limit.weeklyWindow]
-            .compactMap { $0?.clampedUsedPercent }
-            .allSatisfy { $0 < 0.5 }
-    }
-
-    private static func style(
-        for limit: CodexLimit,
-        visibleCredits: CodexCredits?
-    ) -> PopupLimitCardStyle {
-        if limit.bucket == .spark, isIdle(limit), visibleCredits == nil {
-            return .compact
-        }
-        if limit.bucket == .codex {
-            return .hero
-        }
-        return .standard
-    }
-
-    private static func visibleCredits(for credits: CodexCredits?) -> CodexCredits? {
-        guard let credits else { return nil }
-        guard credits.unlimited == false else { return nil }
-
-        let text = credits.displayText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard text.isEmpty == false else { return nil }
-        guard text.caseInsensitiveCompare("None") != .orderedSame else { return nil }
-
-        if let numericValue = normalizedNumber(from: text), numericValue == 0 {
-            return nil
-        }
-
-        return credits
-    }
-
-    private static func normalizedNumber(from text: String) -> Double? {
-        let cleaned = text.replacingOccurrences(of: ",", with: "")
-        return Double(cleaned)
+        CodexQuotaPresentationRules.isIdle(limit)
     }
 
     private static func weeklySupporting(

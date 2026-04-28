@@ -131,30 +131,6 @@ targets:
           - $(inherited)
           - "@executable_path/../Frameworks"
           - "@executable_path/../../../../Frameworks"
-    preBuildScripts:
-      - name: Build Codexex Helper
-        inputFiles:
-          - $(PROJECT_DIR)/Helper/CodexexHelper/Cargo.toml
-          - $(PROJECT_DIR)/Helper/CodexexHelper/Cargo.lock
-          - $(PROJECT_DIR)/Helper/CodexexHelper/src/auth.rs
-          - $(PROJECT_DIR)/Helper/CodexexHelper/src/lib.rs
-          - $(PROJECT_DIR)/Helper/CodexexHelper/src/main.rs
-          - $(PROJECT_DIR)/Helper/CodexexHelper/src/protocol.rs
-          - $(PROJECT_DIR)/Helper/CodexexHelper/src/quota.rs
-          - $(PROJECT_DIR)/Helper/CodexexHelper/src/state.rs
-        outputFiles:
-          - $(DERIVED_FILE_DIR)/codexex-helper/codexex-helper
-        script: |
-          "$PROJECT_DIR/Scripts/build-codexex-helper.sh"
-    postBuildScripts:
-      - name: Embed Codexex Helper
-        inputFiles:
-          - $(DERIVED_FILE_DIR)/codexex-helper/codexex-helper
-          - $(PROJECT_DIR)/AppStore/CodexexHelper.entitlements
-        outputFiles:
-          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/codexex-helper
-        script: |
-          "$PROJECT_DIR/Scripts/embed-codexex-helper.sh"
 
   CodexMeterCoreTests:
     type: bundle.unit-test
