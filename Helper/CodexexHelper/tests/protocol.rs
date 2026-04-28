@@ -18,6 +18,29 @@ use wiremock::matchers::{header, method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 #[test]
+fn golden_wire_examples_stay_stable() {
+    let request = HelperRequestEnvelope::new(
+        HelperRequest::FetchSnapshot,
+        Some("request-fetch".to_string()),
+    );
+    assert_eq!(
+        serde_json::to_string(&request).unwrap(),
+        r#"{"protocolVersion":1,"requestId":"request-fetch","method":"fetchSnapshot"}"#
+    );
+
+    let response = HelperResponseEnvelope::from_response(
+        Some("request-pending".to_string()),
+        HelperResponse::DeviceAuthPending {
+            message: "still waiting".to_string(),
+        },
+    );
+    assert_eq!(
+        serde_json::to_string(&response).unwrap(),
+        r#"{"protocolVersion":1,"requestId":"request-pending","type":"deviceAuthPending","message":"still waiting"}"#
+    );
+}
+
+#[test]
 fn request_round_trips() {
     let request = HelperRequestEnvelope::new(
         HelperRequest::PollDeviceAuth {

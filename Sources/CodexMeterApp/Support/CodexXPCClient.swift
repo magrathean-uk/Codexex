@@ -64,10 +64,10 @@ final class CodexXPCClient: CodexServiceClient, @unchecked Sendable {
             let invalidate: () -> Void = { [weak self] in
                 self?.invalidateConnection()
             }
-            guard let service = self.connection?.remoteObjectProxyWithErrorHandler { error in
+            guard let service = self.connection?.remoteObjectProxyWithErrorHandler({ error in
                 CodexLog.helper.error("xpc cancel failed message=\(error.localizedDescription, privacy: .public)")
                 invalidate()
-            } as? CodexXPCServiceProtocol else {
+            }) as? CodexXPCServiceProtocol else {
                 invalidate()
                 return
             }

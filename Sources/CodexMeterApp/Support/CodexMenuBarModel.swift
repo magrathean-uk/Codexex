@@ -41,13 +41,39 @@ final class CodexMenuBarModel {
     private var summarySnoozeExpiresAt = CodexAppSettings.summarySnoozeExpiresAt
 
     private let service: any CodexServiceClient
-    private let usageHistoryStore = CodexUsageHistoryStore()
+    private let settingsStore: CodexAppSettingsStore
+    private let historyRepository: CodexHistoryRepository
+    private let refreshCoordinator = CodexRefreshCoordinator()
     private let lifecycle = Lifecycle()
     private var didStart = false
-    private var stateGeneration = 0
 
-    init(service: any CodexServiceClient = CodexXPCClient()) {
+    init(
+        service: any CodexServiceClient = CodexXPCClient(),
+        settingsStore: CodexAppSettingsStore = CodexAppSettingsStore(),
+        historyRepository: CodexHistoryRepository = CodexHistoryRepository()
+    ) {
         self.service = service
+        self.settingsStore = settingsStore
+        self.historyRepository = historyRepository
+        let settings = settingsStore.snapshot()
+        autoRefreshEnabled = settings.autoRefreshEnabled
+        refreshIntervalSeconds = settings.refreshIntervalSeconds
+        launchAtLoginEnabled = settings.launchAtLoginEnabled
+        showHistoryEnabled = settings.showHistoryEnabled
+        showHistoryChartEnabled = settings.showHistoryChartEnabled
+        showInsightsEnabled = settings.showInsightsEnabled
+        showSparkEnabled = settings.showSparkEnabled
+        defaultHistoryMode = settings.defaultHistoryMode
+        showPaceConfidence = settings.showPaceConfidence
+        hideIdleSecondaryLimits = settings.hideIdleSecondaryLimits
+        showFiveHourInMenubar = settings.showFiveHourInMenubar
+        showWeeklyInMenubar = settings.showWeeklyInMenubar
+        menuBarDisplayMode = settings.menuBarDisplayMode
+        resetDisplayStyle = settings.resetDisplayStyle
+        hasCompletedOnboarding = settings.hasCompletedOnboarding
+        previewModeEnabled = settings.previewModeEnabled
+        summarySnoozeFingerprint = settings.summarySnoozeFingerprint
+        summarySnoozeExpiresAt = settings.summarySnoozeExpiresAt
         launchAtLoginEnabled = CodexLaunchAtLoginManager.syncStoredState()
     }
 
@@ -98,7 +124,7 @@ final class CodexMenuBarModel {
             authSession.apply(.previewEnabled)
             dashboard.applyPreview(now: Date())
         } else {
-            let history = await usageHistoryStore.load()
+            let history = await historyRepository.load(snapshot: nil)
             dashboard.setHistory(history)
             await refreshNow()
         }
@@ -137,7 +163,7 @@ final class CodexMenuBarModel {
             return
         }
 
-        let generation = stateGeneration
+        let generation = refreshCoordinator.token()
         CodexLog.refresh.log("refresh start generation=\(generation, privacy: .public)")
         animateStateChange(.easeInOut(duration: 0.16)) {
             dashboard.isRefreshing = true
@@ -146,14 +172,14 @@ final class CodexMenuBarModel {
 
         do {
             let response = try await service.fetchSnapshotResponse()
-            guard generation == stateGeneration else { return }
+            guard refreshCoordinator.isCurrent(generation) else { return }
 
             if let result = response.snapshot {
                 CodexLog.refresh.log("refresh success snapshot")
-                let updatedHistory = await usageHistoryStore.append(snapshot: result)
-                guard generation == stateGeneration else { return }
+                let updatedHistory = await historyRepository.append(snapshot: result)
+                guard refreshCoordinator.isCurrent(generation) else { return }
                 animateStateChange(.easeInOut(duration: 0.18)) {
-                    dashboard.applySnapshot(result, history: updatedHistory)
+                    dashboard.applySnapshot(result, historyState: updatedHistory)
                     authSession.apply(.signedIn)
                 }
             } else {
@@ -166,7 +192,7 @@ final class CodexMenuBarModel {
             }
         } catch {
             CodexLog.refresh.error("refresh failed message=\(error.localizedDescription, privacy: .public)")
-            guard generation == stateGeneration else { return }
+            guard refreshCoordinator.isCurrent(generation) else { return }
             animateStateChange(.easeInOut(duration: 0.18)) {
                 dashboard.setError(error.localizedDescription)
             }
@@ -187,7 +213,7 @@ final class CodexMenuBarModel {
         completeOnboarding()
 
         invalidateRefreshResults(cancelHelper: true)
-        let generation = stateGeneration
+        let generation = refreshCoordinator.token()
         authSession.apply(.beginRequested)
         dashboard.setError(nil)
 
@@ -196,7 +222,7 @@ final class CodexMenuBarModel {
 
             do {
                 let auth = try await service.beginChatGPTSignIn()
-                guard self.stateGeneration == generation else { return }
+                guard self.refreshCoordinator.isCurrent(generation) else { return }
 
                 let context = CodexDeviceCodeContext(
                     flowID: auth.flowID,
@@ -208,20 +234,12 @@ final class CodexMenuBarModel {
                 self.authSession.apply(.beginSucceeded(context))
                 CodexLog.auth.log("device code ready flow=\(auth.flowID, privacy: .private(mask: .hash))")
             } catch {
-                guard self.stateGeneration == generation else { return }
+                guard self.refreshCoordinator.isCurrent(generation) else { return }
 
-                let retryNotBefore: Date?
-                let message: String
-                if error.localizedDescription.contains("429") {
-                    retryNotBefore = Date().addingTimeInterval(10)
-                    message = "OpenAI is rate-limiting sign-in right now. Wait 10 seconds and try again."
-                } else {
-                    retryNotBefore = nil
-                    message = error.localizedDescription
-                }
+                let outcome = CodexAuthFlow.beginFailure(error)
                 self.dashboard.setError(nil)
                 self.authSession.apply(
-                    .beginFailed(message: message, retryNotBefore: retryNotBefore)
+                    .beginFailed(message: outcome.message, retryNotBefore: outcome.retryNotBefore)
                 )
                 CodexLog.auth.error(
                     "begin sign-in failed message=\(error.localizedDescription, privacy: .public)"
@@ -243,7 +261,7 @@ final class CodexMenuBarModel {
     func checkPendingChatGPTSignIn() {
         guard let authFlowID else { return }
         CodexLog.auth.log("poll pending sign-in flow=\(authFlowID, privacy: .private(mask: .hash))")
-        let generation = stateGeneration
+        let generation = refreshCoordinator.token()
         authSession.apply(.pollingRequested)
         dashboard.setError(nil)
 
@@ -262,18 +280,18 @@ final class CodexMenuBarModel {
                 } onTimeout: { [service] in
                     service.cancelPendingOperations()
                 }
-                guard self.stateGeneration == generation else { return }
+                guard self.refreshCoordinator.isCurrent(generation) else { return }
 
                 self.authSession.apply(.signedIn)
                 self.dashboard.setError(nil)
                 CodexLog.auth.log("sign-in complete; refreshing snapshot")
                 await self.refreshNow()
             } catch is PendingSignInStillWaiting {
-                guard self.stateGeneration == generation else { return }
+                guard self.refreshCoordinator.isCurrent(generation) else { return }
                 self.authSession.apply(.pollingPending("Sign-in approval still pending."))
                 CodexLog.auth.log("device auth approval still pending")
             } catch {
-                guard self.stateGeneration == generation else { return }
+                guard self.refreshCoordinator.isCurrent(generation) else { return }
                 self.authSession.apply(.pollingFailed(error.localizedDescription))
                 CodexLog.auth.error(
                     "poll sign-in failed message=\(error.localizedDescription, privacy: .public)"
@@ -308,67 +326,67 @@ final class CodexMenuBarModel {
 
     func setAutoRefreshEnabled(_ enabled: Bool) {
         autoRefreshEnabled = enabled
-        CodexAppSettings.autoRefreshEnabled = enabled
+        settingsStore.setAutoRefreshEnabled(enabled)
     }
 
     func setRefreshIntervalSeconds(_ seconds: Int) {
         refreshIntervalSeconds = seconds
-        CodexAppSettings.refreshIntervalSeconds = seconds
+        settingsStore.setRefreshIntervalSeconds(seconds)
     }
 
     func setShowHistoryEnabled(_ enabled: Bool) {
         showHistoryEnabled = enabled
-        CodexAppSettings.showHistoryEnabled = enabled
+        settingsStore.setShowHistoryEnabled(enabled)
     }
 
     func setShowInsightsEnabled(_ enabled: Bool) {
         showInsightsEnabled = enabled
-        CodexAppSettings.showInsightsEnabled = enabled
+        settingsStore.setShowInsightsEnabled(enabled)
     }
 
     func setShowHistoryChartEnabled(_ enabled: Bool) {
         showHistoryChartEnabled = enabled
-        CodexAppSettings.showHistoryChartEnabled = enabled
+        settingsStore.setShowHistoryChartEnabled(enabled)
     }
 
     func setShowSparkEnabled(_ enabled: Bool) {
         showSparkEnabled = enabled
-        CodexAppSettings.showSparkEnabled = enabled
+        settingsStore.setShowSparkEnabled(enabled)
     }
 
     func setDefaultHistoryMode(_ mode: PopupHistoryMode) {
         defaultHistoryMode = mode
-        CodexAppSettings.defaultHistoryMode = mode
+        settingsStore.setDefaultHistoryMode(mode)
     }
 
     func setShowPaceConfidence(_ enabled: Bool) {
         showPaceConfidence = enabled
-        CodexAppSettings.showPaceConfidence = enabled
+        settingsStore.setShowPaceConfidence(enabled)
     }
 
     func setHideIdleSecondaryLimits(_ enabled: Bool) {
         hideIdleSecondaryLimits = enabled
-        CodexAppSettings.hideIdleSecondaryLimits = enabled
+        settingsStore.setHideIdleSecondaryLimits(enabled)
     }
 
     func setShowFiveHourInMenubar(_ enabled: Bool) {
         showFiveHourInMenubar = enabled
-        CodexAppSettings.showFiveHourInMenubar = enabled
+        settingsStore.setShowFiveHourInMenubar(enabled)
     }
 
     func setShowWeeklyInMenubar(_ enabled: Bool) {
         showWeeklyInMenubar = enabled
-        CodexAppSettings.showWeeklyInMenubar = enabled
+        settingsStore.setShowWeeklyInMenubar(enabled)
     }
 
     func setMenuBarDisplayMode(_ mode: CodexMenuBarDisplayMode) {
         menuBarDisplayMode = mode
-        CodexAppSettings.menuBarDisplayMode = mode
+        settingsStore.setMenuBarDisplayMode(mode)
     }
 
     func setResetDisplayStyle(_ style: CodexResetDisplayStyle) {
         resetDisplayStyle = style
-        CodexAppSettings.resetDisplayStyle = style
+        settingsStore.setResetDisplayStyle(style)
     }
 
     func copyDiagnosticsReport() {
@@ -400,8 +418,8 @@ final class CodexMenuBarModel {
         let fingerprint = CodexSummarySnooze.fingerprint(for: summary)
         summarySnoozeFingerprint = fingerprint
         summarySnoozeExpiresAt = expiry
-        CodexAppSettings.summarySnoozeFingerprint = fingerprint
-        CodexAppSettings.summarySnoozeExpiresAt = expiry
+        settingsStore.setSummarySnoozeFingerprint(fingerprint)
+        settingsStore.setSummarySnoozeExpiresAt(expiry)
     }
 
     func openAppStoreUpdates() {
@@ -419,14 +437,14 @@ final class CodexMenuBarModel {
     func completeOnboarding() {
         CodexLog.ui.log("complete onboarding")
         hasCompletedOnboarding = true
-        CodexAppSettings.hasCompletedOnboarding = true
+        settingsStore.setHasCompletedOnboarding(true)
     }
 
     func enablePreviewMode() {
         CodexLog.ui.log("enable preview mode")
         completeOnboarding()
         invalidateRefreshResults(cancelHelper: true)
-        CodexAppSettings.previewModeEnabled = true
+        settingsStore.setPreviewModeEnabled(true)
         previewModeEnabled = true
         authSession.apply(.previewEnabled)
         dashboard.applyPreview(now: Date())
@@ -436,7 +454,7 @@ final class CodexMenuBarModel {
         guard previewModeEnabled else { return }
         CodexLog.ui.log("disable preview mode")
         invalidateRefreshResults(cancelHelper: true)
-        CodexAppSettings.previewModeEnabled = false
+        settingsStore.setPreviewModeEnabled(false)
         previewModeEnabled = false
         authSession.apply(.previewDisabled)
         dashboard.clearSnapshot(keepHistory: false)
@@ -479,7 +497,10 @@ final class CodexMenuBarModel {
         dashboard.lastUpdatedAt = nil
         dashboard.setError(response.errorMessage)
 
-        if hasPendingDeviceCode, response.authMode == nil {
+        if CodexAuthFlow.shouldPreservePendingDeviceCode(
+            response: response,
+            hasPendingDeviceCode: hasPendingDeviceCode
+        ) {
             return
         }
 
@@ -487,14 +508,15 @@ final class CodexMenuBarModel {
         case .chatGPT:
             authSession.apply(.signedIn)
         case nil:
-            authSession.apply(.signedOut(response.errorMessage ?? "Not signed in. Use the button below."))
+            authSession.apply(.signedOut(CodexAuthFlow.signedOutMessage(for: response)))
         }
     }
 
     private func invalidateRefreshResults(cancelHelper: Bool) {
-        stateGeneration += 1
-        if cancelHelper {
-            service.cancelPendingOperations()
+        refreshCoordinator.invalidate {
+            if cancelHelper {
+                service.cancelPendingOperations()
+            }
         }
     }
 

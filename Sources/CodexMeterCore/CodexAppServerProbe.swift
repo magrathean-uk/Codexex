@@ -294,12 +294,11 @@ enum _SnapshotReducer {
             buckets = []
         }
 
-        let limits = buckets.compactMap { payload -> CodexLimit? in
+        let rawLimits = buckets.map { payload -> CodexRawQuotaLimit in
             let limitId = payload.limitId ?? payload.limitName ?? "unknown"
-            let bucket = CodexLimitBucket.infer(limitId: limitId, limitName: payload.limitName)
 
             let primary = payload.primary.map {
-                CodexQuotaWindow(
+                CodexRawQuotaWindow(
                     usedPercent: $0.usedPercent ?? 0,
                     windowDurationMinutes: $0.windowDurationMins,
                     resetsAt: $0.resetsAt.map(Date.init(timeIntervalSince1970:))
@@ -307,7 +306,7 @@ enum _SnapshotReducer {
             }
 
             let secondary = payload.secondary.map {
-                CodexQuotaWindow(
+                CodexRawQuotaWindow(
                     usedPercent: $0.usedPercent ?? 0,
                     windowDurationMinutes: $0.windowDurationMins,
                     resetsAt: $0.resetsAt.map(Date.init(timeIntervalSince1970:))
@@ -322,25 +321,15 @@ enum _SnapshotReducer {
                 )
             }
 
-            if primary == nil, secondary == nil, credits == nil {
-                return nil
-            }
-
-            return CodexLimit(
+            return CodexRawQuotaLimit(
                 id: limitId,
                 rawLimitName: payload.limitName,
-                bucket: bucket,
                 primary: primary,
                 secondary: secondary,
                 credits: credits
             )
         }
-
-        guard limits.isEmpty == false else {
-            throw CodexProbeError.missingRateLimits
-        }
-
-        return CodexSnapshot(
+        let snapshot = CodexQuotaSnapshotBuilder.snapshot(
             capturedAt: now,
             executablePath: executablePath,
             account: CodexAccount(
@@ -348,8 +337,14 @@ enum _SnapshotReducer {
                 email: accountPayload.email,
                 planType: accountPayload.planType
             ),
-            limits: limits
+            rawLimits: rawLimits
         )
+
+        guard snapshot.limits.isEmpty == false else {
+            throw CodexProbeError.missingRateLimits
+        }
+
+        return snapshot
     }
 }
 

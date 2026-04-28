@@ -438,6 +438,26 @@ final class CodexUsageInsightsTests: XCTestCase {
         XCTAssertEqual(second.last?.codexCreditsBalance, "11.90")
     }
 
+    func testHistoryRepositoryReturnsSavedSamplesAndInsights() async throws {
+        let fileManager = FileManager.default
+        let root = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let fileURL = root.appendingPathComponent("usage-history.json")
+        defer { try? fileManager.removeItem(at: root) }
+
+        let store = CodexUsageHistoryStore(fileURL: fileURL)
+        let repository = CodexHistoryRepository(store: store)
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let snapshot = makeSnapshot(now: now)
+
+        let appended = await repository.append(snapshot: snapshot, now: now)
+        let loaded = await repository.load(snapshot: snapshot, now: now)
+
+        XCTAssertEqual(appended.samples.count, 1)
+        XCTAssertEqual(loaded.samples.count, 1)
+        XCTAssertEqual(loaded.forecastSamples.map(\.capturedAt), loaded.samples.map(\.capturedAt))
+        XCTAssertEqual(loaded.insights?.fiveHourPressure.message, "42% used")
+    }
+
     func testUsageHistoryStoreIgnoresClockFutureSamples() async throws {
         let fileManager = FileManager.default
         let root = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)

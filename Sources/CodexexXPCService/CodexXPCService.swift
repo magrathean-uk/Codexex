@@ -19,11 +19,15 @@ final class CodexXPCServiceDelegate: NSObject, NSXPCListenerDelegate {
 }
 
 final class CodexXPCService: NSObject, CodexXPCServiceProtocol {
-    private let helper = CodexHelperProcess()
+    private let helper: any CodexHelperSession
+
+    init(helper: any CodexHelperSession = CodexHelperProcessSession()) {
+        self.helper = helper
+    }
 
     func fetchSnapshot(reply: @escaping (Data?, String?) -> Void) {
         do {
-            let envelope = try send(CodexHelperRequest(method: .fetchSnapshot))
+            let envelope = try helper.send(CodexHelperRequest(method: .fetchSnapshot))
             let response = try envelope.decodedSnapshotResponse()
             reply(try JSONEncoder().encode(response), nil)
         } catch {
@@ -33,7 +37,7 @@ final class CodexXPCService: NSObject, CodexXPCServiceProtocol {
 
     func beginChatGPTSignIn(reply: @escaping (Data?, String?) -> Void) {
         do {
-            let envelope = try send(CodexHelperRequest(method: .beginDeviceAuth))
+            let envelope = try helper.send(CodexHelperRequest(method: .beginDeviceAuth))
             let auth = try envelope.decodedDeviceAuthStart()
             reply(try JSONEncoder().encode(auth), nil)
         } catch {
@@ -43,7 +47,7 @@ final class CodexXPCService: NSObject, CodexXPCServiceProtocol {
 
     func completeChatGPTSignIn(flowID: String, reply: @escaping (Data?, String?) -> Void) {
         do {
-            let envelope = try send(CodexHelperRequest(method: .pollDeviceAuth, flowID: flowID))
+            let envelope = try helper.send(CodexHelperRequest(method: .pollDeviceAuth, flowID: flowID))
             let result = try envelope.decodedDeviceAuthPollResult()
             reply(try JSONEncoder().encode(result), nil)
         } catch {
@@ -53,7 +57,7 @@ final class CodexXPCService: NSObject, CodexXPCServiceProtocol {
 
     func signOut(reply: @escaping (String?) -> Void) {
         do {
-            let envelope = try send(CodexHelperRequest(method: .signOut))
+            let envelope = try helper.send(CodexHelperRequest(method: .signOut))
             try envelope.requireResponse(.signedOut)
             reply(nil)
         } catch {
@@ -64,19 +68,5 @@ final class CodexXPCService: NSObject, CodexXPCServiceProtocol {
     func cancelPendingOperations(reply: @escaping () -> Void) {
         helper.reset()
         reply()
-    }
-
-    private func send(_ request: CodexHelperRequest) throws -> CodexHelperResponseEnvelope {
-        let data = try JSONEncoder().encode(request)
-        let line = String(decoding: data, as: UTF8.self)
-        let response = try helper.send(line)
-        do {
-            return try JSONDecoder()
-                .decode(CodexHelperResponseEnvelope.self, from: Data(response.utf8))
-                .validated(against: request)
-        } catch {
-            helper.reset()
-            throw error
-        }
     }
 }

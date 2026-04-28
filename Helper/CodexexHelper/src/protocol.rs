@@ -47,7 +47,7 @@ pub struct HelperRequestEnvelope {
     #[serde(rename = "requestId")]
     pub request_id: Option<String>,
     pub method: String,
-    #[serde(rename = "flow_id", alias = "flowId", default)]
+    #[serde(rename = "flow_id", alias = "flowId", default, skip_serializing_if = "Option::is_none")]
     pub flow_id: Option<String>,
 }
 

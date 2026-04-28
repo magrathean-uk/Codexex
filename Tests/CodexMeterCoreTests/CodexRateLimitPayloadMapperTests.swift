@@ -2,6 +2,50 @@ import XCTest
 @testable import CodexMeterCore
 
 final class CodexRateLimitPayloadMapperTests: XCTestCase {
+    func testQuotaSnapshotBuilderDropsEmptyLimitsAndSortsBuckets() throws {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let snapshot = CodexQuotaSnapshotBuilder.snapshot(
+            capturedAt: now,
+            executablePath: "/Helper/codexex-helper",
+            account: CodexAccount(authType: "chatGPT", email: "user@example.com", planType: "PRO"),
+            rawLimits: [
+                CodexRawQuotaLimit(
+                    id: "spark-week",
+                    rawLimitName: "Codex Spark",
+                    primary: CodexRawQuotaWindow(
+                        usedPercent: 66,
+                        windowDurationMinutes: 10_080,
+                        resetsAt: now.addingTimeInterval(60)
+                    ),
+                    secondary: nil,
+                    credits: nil
+                ),
+                CodexRawQuotaLimit(
+                    id: "empty",
+                    rawLimitName: "Empty",
+                    primary: nil,
+                    secondary: nil,
+                    credits: nil
+                ),
+                CodexRawQuotaLimit(
+                    id: "codex-5h",
+                    rawLimitName: "Codex",
+                    primary: CodexRawQuotaWindow(
+                        usedPercent: 12,
+                        windowDurationMinutes: 300,
+                        resetsAt: now.addingTimeInterval(120)
+                    ),
+                    secondary: nil,
+                    credits: CodexCredits(hasCredits: true, unlimited: false, balance: "8.40")
+                )
+            ]
+        )
+
+        XCTAssertEqual(snapshot.limits.map(\.id), ["codex-5h", "spark-week"])
+        XCTAssertEqual(snapshot.codexLimit?.credits?.balance, "8.40")
+        XCTAssertEqual(snapshot.sparkLimit?.weeklyWindow?.usedPercentText, "66%")
+    }
+
     func testMapsWhamUsagePayloadIntoSnapshot() throws {
         let data = Data(
             """

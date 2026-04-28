@@ -153,8 +153,8 @@ struct CodexiOSRootView: View {
     private var mainQuotaCards: some View {
         VStack(alignment: .leading, spacing: 16) {
             if let snapshot = model.snapshot {
-                ForEach(snapshot.limits) { limit in
-                    if shouldShow(limit), showSpark || limit.bucket != .spark {
+                ForEach(CodexQuotaPresentationRules.orderedLimits(snapshot.limits)) { limit in
+                    if shouldShow(limit) {
                         quotaCard(limit)
                     }
                 }
@@ -165,9 +165,11 @@ struct CodexiOSRootView: View {
     }
 
     private func shouldShow(_ limit: CodexLimit) -> Bool {
-        if limit.bucket != .spark { return true }
-        let values = [limit.fiveHourWindow, limit.weeklyWindow].compactMap(\.?.clampedUsedPercent)
-        return values.contains { $0 >= 0.5 }
+        CodexQuotaPresentationRules.shouldShow(
+            limit,
+            showSpark: showSpark,
+            hideIdleSecondaryLimits: true
+        )
     }
 
     private func quotaCard(_ limit: CodexLimit) -> some View {
@@ -191,7 +193,7 @@ struct CodexiOSRootView: View {
                 if let weekly = limit.weeklyWindow, weekly != limit.fiveHourWindow {
                     quotaRow(title: "Weekly", window: weekly, tint: tint(for: limit.bucket))
                 }
-                if let credits = limit.credits {
+                if let credits = CodexQuotaPresentationRules.visibleCredits(limit.credits) {
                     Text("Credits: \(credits.displayText)")
                         .font(.callout.weight(.semibold))
                         .foregroundStyle(.secondary)
@@ -223,9 +225,13 @@ struct CodexiOSRootView: View {
     private func resetText(for window: CodexQuotaWindow) -> String {
         guard CodexiOSResetDisplayStyle(rawValue: resetDisplayStyle) == .clock,
               let resetsAt = window.resetsAt else {
-            return CodexFormatting.relativeResetText(now: .init(), resetAt: window.resetsAt)
+            return CodexQuotaPresentationRules.resetText(style: .relative, now: .init(), resetAt: window.resetsAt)
         }
-        return "resets at \(resetsAt.formatted(date: .omitted, time: .shortened))"
+        return CodexQuotaPresentationRules.resetText(
+            style: .absolute(prefix: "resets at"),
+            now: .init(),
+            resetAt: resetsAt
+        )
     }
 
     private var historyCard: some View {

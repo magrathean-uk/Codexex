@@ -5,7 +5,7 @@
 - `Sources/CodexMeterCore/` owns quota models, formatting, binary lookup, and service contracts.
 - `Sources/CodexMeterApp/Support/` owns auth state, usage history, launch-at-login, XPC client, and menu bar model.
 - `Sources/CodexMeterApp/UI/` and `Windows/` own popup, settings, onboarding, and status item presentation.
-- `Helper/CodexexHelper/` is the Rust helper for ChatGPT device-code auth and quota reads.
+- `Helper/CodexexHelper/` is the Rust helper for ChatGPT sign-in, implemented as an OAuth device-code flow, and quota reads.
 - `Sources/CodexexXPCService/` is the sandbox-safe bridge that launches the helper inside the app bundle.
 
 ## Build loop
@@ -27,6 +27,8 @@ Regenerate the Xcode project after `project.yml` changes:
 ```bash
 xcodegen generate
 ```
+
+`Package.swift` is a local development and package-test adapter. Keep Xcode target wiring in `project.yml`.
 
 Build or test the app target:
 
@@ -88,5 +90,5 @@ Direct `codex app-server` capture is excluded from normal shipping builds unless
 
 - Keep the app menu-bar-only and sandbox-safe.
 - Use official Codex interfaces only.
-- Do not add alternate login flows, browser scraping, or token extraction.
+- Do not add alternate sign-in flows, browser scraping, or token extraction.
 - Update `project.yml` when target wiring changes; update helper scripts when helper packaging changes.

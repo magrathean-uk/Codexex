@@ -2,6 +2,31 @@ import XCTest
 @testable import CodexMeterCore
 
 final class CodexServiceContractsTests: XCTestCase {
+    func testTypedWireResponseValidatesPayloadShape() throws {
+        let data = Data(#"{"protocolVersion":1,"requestId":"request-1","type":"deviceAuthPending","message":"still waiting"}"#.utf8)
+        let request = CodexHelperRequest(method: .pollDeviceAuth, flowID: "flow-1", requestID: "request-1")
+
+        let typed = try JSONDecoder()
+            .decode(CodexHelperResponseEnvelope.self, from: data)
+            .validated(against: request)
+            .typedResponse()
+
+        XCTAssertEqual(
+            typed,
+            .deviceAuthPending(CodexDeviceAuthPollResult(status: .pending, message: "still waiting"))
+        )
+    }
+
+    func testTypedWireResponseRejectsMissingDeviceAuthFields() throws {
+        let data = Data(#"{"protocolVersion":1,"requestId":"request-1","type":"deviceAuthStarted","flowId":"flow-1","userCode":"ABCD"}"#.utf8)
+        let request = CodexHelperRequest(method: .beginDeviceAuth, requestID: "request-1")
+        let envelope = try JSONDecoder().decode(CodexHelperResponseEnvelope.self, from: data).validated(against: request)
+
+        XCTAssertThrowsError(try envelope.typedResponse()) { error in
+            XCTAssertEqual(error as? CodexHelperWireError, .missingField("verificationUri"))
+        }
+    }
+
     func testPollDeviceAuthRequestEncodesVersionAndLegacyFlowKey() throws {
         let request = CodexHelperRequest(method: .pollDeviceAuth, flowID: "flow-123", requestID: "request-123")
 
