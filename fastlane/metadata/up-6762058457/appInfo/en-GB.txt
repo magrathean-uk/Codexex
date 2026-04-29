@@ -1,3 +1,0 @@
-"name" = "Codexex";
-"subtitle" = "Codex usage, history, and sign-in";
-"privacyPolicyUrl" = "https://github.com/magrathean-uk/Codexex/blob/main/PRIVACY.md";

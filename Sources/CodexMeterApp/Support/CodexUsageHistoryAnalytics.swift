@@ -57,6 +57,22 @@ struct CodexUsageHistoryPoint: Identifiable, Equatable {
     let windowDurationMinutes: Int?
 }
 
+struct CodexMonthlyUsageHistory: Equatable {
+    let peakPercent: Double
+    let averageDailyPeakPercent: Double
+    let dayCount: Int
+    let sampleCount: Int
+
+    var headline: String {
+        "Peak \(Int(peakPercent.rounded()))%"
+    }
+
+    var detail: String {
+        let dayWord = dayCount == 1 ? "day" : "days"
+        return "30d avg \(Int(averageDailyPeakPercent.rounded()))% · \(dayCount) \(dayWord)"
+    }
+}
+
 enum CodexForecastConfidence: Equatable {
     case tooEarly
     case learning
@@ -215,6 +231,42 @@ enum CodexUsageHistoryAnalytics {
         )
     }
 
+    static func monthlyHistory(
+        from samples: [CodexUsageHistorySample],
+        series: CodexUsageHistorySeries,
+        now: Date = Date()
+    ) -> CodexMonthlyUsageHistory? {
+        let cutoff = now.addingTimeInterval(-(30 * 24 * 60 * 60))
+        let observations = resolvedObservations(from: samples, series: series)
+            .filter { $0.date >= cutoff && $0.date <= now }
+
+        guard observations.isEmpty == false else { return nil }
+
+        let calendar = Calendar.autoupdatingCurrent
+        let dailyPeaks = Dictionary(grouping: observations) { observation in
+            calendar.startOfDay(for: observation.date)
+        }
+        .values
+        .compactMap { dayObservations in
+            dayObservations
+                .map { $0.usedPercent.clamped(to: 0 ... 100) }
+                .max()
+        }
+
+        guard dailyPeaks.isEmpty == false,
+              let peak = dailyPeaks.max() else {
+            return nil
+        }
+
+        let average = dailyPeaks.reduce(0, +) / Double(dailyPeaks.count)
+        return CodexMonthlyUsageHistory(
+            peakPercent: peak,
+            averageDailyPeakPercent: average,
+            dayCount: dailyPeaks.count,
+            sampleCount: observations.count
+        )
+    }
+
     static func points(
         from samples: [CodexUsageHistorySample],
         series: CodexUsageHistorySeries,
@@ -311,13 +363,30 @@ enum CodexUsageHistoryAnalytics {
         let elapsedSeconds = latest.date.timeIntervalSince(cycleStart)
         let elapsedFraction = (elapsedSeconds / cycleDuration).clamped(to: 0 ... 1)
         let currentPercent = latest.usedPercent.clamped(to: 0 ... 100)
+        let expectedPercentNow = (elapsedFraction * 100).clamped(to: 0 ... 100)
+        let variance = currentPercent - expectedPercentNow
+        let rawPaceProjectedPercentAtReset = max(currentPercent, currentPercent / max(elapsedFraction, 0.05))
+        let historicalProjection = historicalProjection(
+            from: samples,
+            series: series,
+            excludingResetAt: resetAt
+        )
 
         guard observations.count >= 3, elapsedFraction >= 0.12 else {
-            if let historicalProjection = historicalProjection(
-                from: samples,
-                series: series,
-                excludingResetAt: resetAt
+            if let hotStartForecast = earlyHotStartForecast(
+                observations: observations,
+                currentPercent: currentPercent,
+                elapsedFraction: elapsedFraction,
+                rawPaceProjection: rawPaceProjectedPercentAtReset,
+                historicalProjection: historicalProjection,
+                variance: variance,
+                resetAt: resetAt,
+                modelReadiness: modelReadiness
             ) {
+                return hotStartForecast
+            }
+
+            if let historicalProjection {
                 let projectedPercentAtReset = max(
                     currentPercent,
                     historicalProjection.projectedPercent.clamped(to: 0 ... 100)
@@ -363,12 +432,6 @@ enum CodexUsageHistoryAnalytics {
             )
         }
 
-        let rawPaceProjectedPercentAtReset = max(currentPercent, currentPercent / max(elapsedFraction, 0.05))
-        let historicalProjection = historicalProjection(
-            from: samples,
-            series: series,
-            excludingResetAt: resetAt
-        )
         let isVolatile = isVolatile(
             observations: observations,
             cycleStart: cycleStart,
@@ -409,8 +472,6 @@ enum CodexUsageHistoryAnalytics {
                 (mlProjection.projectedPercent * 0.7) + (projectedPercentAtReset * 0.3)
             )
         }
-        let expectedPercentNow = (elapsedFraction * 100).clamped(to: 0 ... 100)
-        let variance = currentPercent - expectedPercentNow
         let confidence: CodexForecastConfidence
         if isVolatile {
             confidence = .volatile
@@ -441,6 +502,66 @@ enum CodexUsageHistoryAnalytics {
                 sampleCount: observations.count,
                 confidence: confidence,
                 mlProjection: mlProjection
+            ),
+            likelyLowerPercent: range.lowerPercent,
+            likelyUpperPercent: range.upperPercent,
+            modelReadiness: modelReadiness
+        )
+    }
+
+    private static func earlyHotStartForecast(
+        observations: [Observation],
+        currentPercent: Double,
+        elapsedFraction: Double,
+        rawPaceProjection: Double,
+        historicalProjection: HistoricalProjection?,
+        variance: Double,
+        resetAt: Date,
+        modelReadiness: CodexForecastModelReadiness
+    ) -> CodexUsageForecast? {
+        let minimumCoverage = 0.04
+        let minimumCurrentPercent = 12.0
+        let minimumVariance = 8.0
+
+        guard observations.count >= 3,
+              elapsedFraction >= minimumCoverage,
+              currentPercent >= minimumCurrentPercent,
+              variance >= minimumVariance else {
+            return nil
+        }
+
+        let projectedPercentAtReset = temperedPaceProjection(
+            rawProjection: rawPaceProjection,
+            currentPercent: currentPercent,
+            elapsedFraction: elapsedFraction,
+            historicalProjection: historicalProjection,
+            isVolatile: false
+        )
+
+        guard tone(for: projectedPercentAtReset) != .safe else {
+            return nil
+        }
+
+        let confidence = CodexForecastConfidence.volatile
+        let range = forecastRange(
+            projection: projectedPercentAtReset,
+            currentPercent: currentPercent,
+            confidence: confidence
+        )
+
+        return CodexUsageForecast(
+            message: "Projected \(Int(projectedPercentAtReset.rounded()))% by reset",
+            tone: tone(for: projectedPercentAtReset),
+            confidence: confidence,
+            currentPercent: currentPercent,
+            projectedPercentAtReset: projectedPercentAtReset,
+            paceVariancePercent: variance,
+            sampleCount: observations.count,
+            resetAt: resetAt,
+            detail: forecastDetail(
+                variance: variance,
+                sampleCount: observations.count,
+                confidence: confidence
             ),
             likelyLowerPercent: range.lowerPercent,
             likelyUpperPercent: range.upperPercent,

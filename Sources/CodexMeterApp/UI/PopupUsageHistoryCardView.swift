@@ -17,6 +17,7 @@ struct UsageHistoryCardView: View {
     private let currentCycleWeeklyPoints: [CodexUsageHistoryPoint]
     private let fiveHourForecast: CodexUsageForecast
     private let weeklyForecast: CodexUsageForecast
+    private let monthlyHistory: CodexMonthlyUsageHistory?
 
     init(
         samples: [CodexUsageHistorySample],
@@ -38,6 +39,7 @@ struct UsageHistoryCardView: View {
         self.currentCycleWeeklyPoints = CodexUsageHistoryAnalytics.currentCyclePoints(from: samples, series: .weekly)
         self.fiveHourForecast = CodexUsageHistoryAnalytics.forecast(from: samples, series: .fiveHour)
         self.weeklyForecast = CodexUsageHistoryAnalytics.forecast(from: samples, series: .weekly)
+        self.monthlyHistory = CodexUsageHistoryAnalytics.monthlyHistory(from: samples, series: .weekly)
     }
 
     var body: some View {
@@ -64,10 +66,11 @@ struct UsageHistoryCardView: View {
             )) {
                 Text("Peaks").tag(PopupHistoryMode.dailyPeaks)
                 Text("Cycle").tag(PopupHistoryMode.thisCycle)
+                Text("Month").tag(PopupHistoryMode.monthly)
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            .frame(width: 148)
+            .frame(width: 198)
         }
     }
 
@@ -124,6 +127,7 @@ struct UsageHistoryCardView: View {
                 .font(.caption2.monospacedDigit())
                 .foregroundStyle(CodexTheme.dim)
             }
+
         }
     }
 
@@ -221,6 +225,26 @@ struct UsageHistoryCardView: View {
                             label: "Reset",
                             value: resetChipValue(for: resetAt)
                         )
+                    }
+                }
+            }
+        case .monthly:
+            VStack(alignment: .leading, spacing: 10) {
+                if showsChart {
+                    MiniUsageHistoryGraph(
+                        fiveHourPoints: [],
+                        weeklyPoints: weeklyPoints,
+                        weeklyColor: weeklySeriesColor
+                    )
+                }
+
+                HStack(spacing: 10) {
+                    if let monthlyHistory {
+                        cycleChip(label: "Peak", value: "\(Int(monthlyHistory.peakPercent.rounded()))%")
+                        cycleChip(label: "Average", value: "\(Int(monthlyHistory.averageDailyPeakPercent.rounded()))%")
+                        cycleChip(label: "Data", value: "\(monthlyHistory.dayCount) days")
+                    } else {
+                        cycleChip(label: "Data", value: "No samples")
                     }
                 }
             }

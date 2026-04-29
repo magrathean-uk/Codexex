@@ -12,7 +12,7 @@ Codexex is a macOS menu bar app for viewing Codex quota state, reset windows, hi
 
 - Menu bar first. No dock-facing main window.
 - SwiftUI app content with a small AppKit shell for status item behavior.
-- `5H` and weekly quota views, reset times, local history, and forecast.
+- `5H`, weekly, and 30-day history views, reset times, local history, and forecast.
 - ChatGPT sign-in plus Preview Mode for offline review.
 - Sandboxed app with a bundled helper and XPC bridge.
 

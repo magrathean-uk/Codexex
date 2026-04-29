@@ -1,6 +1,6 @@
 # Privacy Policy for Codexex
 
-Last updated: April 11, 2026
+Last updated: April 29, 2026
 
 Codexex is a menu bar app for viewing Codex usage.
 
@@ -13,7 +13,7 @@ Codexex does not collect analytics, advertising identifiers, or tracking data.
 Codexex stores the following locally on your Mac:
 
 - account state
-- usage history
+- usage history, including local 5-hour, weekly, and 30-day history views
 - preview mode settings
 - onboarding and window preferences
 

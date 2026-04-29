@@ -108,16 +108,6 @@ struct SettingsRootView: View {
             HStack(spacing: 6) {
                 Color.clear.frame(width: 70)
 
-                Button {
-                    selection = .popup
-                } label: {
-                    Label("Popup", systemImage: "chevron.left")
-                        .labelStyle(.titleAndIcon)
-                        .font(.system(size: 13, weight: .medium))
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(CodexTheme.muted)
-
                 Spacer()
             }
             .padding(.horizontal, 12)
@@ -383,9 +373,10 @@ struct SettingsRootView: View {
                     set: { model.setDefaultHistoryMode($0) }
                 ), segments: [
                     ("Peaks", .dailyPeaks),
-                    ("Cycle", .thisCycle)
+                    ("Cycle", .thisCycle),
+                    ("Month", .monthly)
                 ])
-                .frame(width: 128, height: GlassTokens.pillHeight)
+                .frame(width: 190, height: GlassTokens.pillHeight)
             }
         }
     }

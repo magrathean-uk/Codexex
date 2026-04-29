@@ -1,1 +1,0 @@
-Codexex 2.0 adds bundled helper sign-in, improved startup recovery, daily peak history, a sharper weekly forecast, and a split menu bar/settings UI.

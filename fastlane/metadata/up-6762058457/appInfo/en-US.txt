@@ -1,0 +1,3 @@
+"name" = "Codexex";
+"subtitle" = "Codex usage at a glance";
+"privacyPolicyUrl" = "https://magrathean.uk/apps/codexex/privacy/";
