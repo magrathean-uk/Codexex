@@ -5,6 +5,7 @@ import CodexMeterCore
 enum PopupHistoryMode: String, CaseIterable {
     case dailyPeaks
     case thisCycle
+    case monthly
 
     var title: String {
         switch self {
@@ -12,6 +13,8 @@ enum PopupHistoryMode: String, CaseIterable {
             return "Daily peaks"
         case .thisCycle:
             return "This cycle"
+        case .monthly:
+            return "Monthly"
         }
     }
 }

@@ -177,6 +177,29 @@ final class CodexUsageInsightsTests: XCTestCase {
         XCTAssertEqual(forecast.detail, "From 2 prior cycles")
     }
 
+    func testWeeklyPaceFlagsHotStartBeforeMinimumCoverage() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let currentReset = now.addingTimeInterval((6 * 24 * 60 * 60) + (10 * 60 * 60))
+        let priorResetA = currentReset.addingTimeInterval(-(7 * 24 * 60 * 60))
+        let priorResetB = currentReset.addingTimeInterval(-(14 * 24 * 60 * 60))
+
+        let samples = [
+            makeSample(hoursAgo: 2, fiveHour: 5, weekly: 22, weeklyReset: currentReset, now: now),
+            makeSample(hoursAgo: 1, fiveHour: 6, weekly: 23, weeklyReset: currentReset, now: now),
+            makeSample(hoursAgo: 0, fiveHour: 7, weekly: 24, weeklyReset: currentReset, now: now),
+            makeSample(at: priorResetA.addingTimeInterval(-60 * 60), fiveHour: 18, weekly: 24, weeklyReset: priorResetA),
+            makeSample(at: priorResetB.addingTimeInterval(-60 * 60), fiveHour: 19, weekly: 24, weeklyReset: priorResetB),
+        ]
+
+        let forecast = CodexUsageHistoryAnalytics.forecast(from: samples, series: .weekly)
+
+        XCTAssertEqual(forecast.tone, .danger)
+        XCTAssertEqual(forecast.confidence, .volatile)
+        XCTAssertEqual(forecast.projectedPercentAtReset ?? -1, 116.4, accuracy: 0.001)
+        XCTAssertEqual(forecast.paceVariancePercent ?? -1, 15.666_666, accuracy: 0.001)
+        XCTAssertEqual(forecast.detail, "Volatile · 16% over pace · 3 samples")
+    }
+
     func testWeeklyPaceMarksVolatileProjectionWhenProjectionSwings() {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let cycleDuration = 7 * 24 * 60 * 60
@@ -340,6 +363,29 @@ final class CodexUsageInsightsTests: XCTestCase {
         XCTAssertEqual(points.count, 2)
         XCTAssertEqual(points.last?.usedPercent, 61)
         XCTAssertEqual(points.last?.windowDurationMinutes, 300)
+    }
+
+    func testMonthlyHistoryUsesLastThirtyDailyWeeklyPeaks() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let samples = [
+            makeSample(at: now.addingTimeInterval(-(31 * 24 * 60 * 60)), fiveHour: 20, weekly: 99),
+            makeSample(at: now.addingTimeInterval(-(2 * 60 * 60)), fiveHour: 24, weekly: 32),
+            makeSample(at: now.addingTimeInterval(-(60 * 60)), fiveHour: 25, weekly: 40),
+            makeSample(at: now.addingTimeInterval(-(24 * 60 * 60)), fiveHour: 26, weekly: 70),
+        ]
+
+        let history = CodexUsageHistoryAnalytics.monthlyHistory(
+            from: samples,
+            series: .weekly,
+            now: now
+        )
+
+        XCTAssertEqual(history?.peakPercent ?? -1, 70, accuracy: 0.001)
+        XCTAssertEqual(history?.averageDailyPeakPercent ?? -1, 55, accuracy: 0.001)
+        XCTAssertEqual(history?.dayCount, 2)
+        XCTAssertEqual(history?.sampleCount, 3)
+        XCTAssertEqual(history?.headline, "Peak 70%")
+        XCTAssertEqual(history?.detail, "30d avg 55% · 2 days")
     }
 
     func testRecentPeaksUse24HourAnd7DayWindows() {

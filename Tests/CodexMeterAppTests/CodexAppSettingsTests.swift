@@ -33,7 +33,7 @@ final class CodexAppSettingsTests: XCTestCase {
 
         store.setShowSparkEnabled(false)
         store.setShowHistoryChartEnabled(false)
-        store.setDefaultHistoryMode(.thisCycle)
+        store.setDefaultHistoryMode(.monthly)
         store.setShowPaceConfidence(false)
         store.setHideIdleSecondaryLimits(true)
         store.setMenuBarDisplayMode(.pace)
@@ -42,7 +42,7 @@ final class CodexAppSettingsTests: XCTestCase {
         let snapshot = store.snapshot()
         XCTAssertFalse(snapshot.showSparkEnabled)
         XCTAssertFalse(snapshot.showHistoryChartEnabled)
-        XCTAssertEqual(snapshot.defaultHistoryMode, .thisCycle)
+        XCTAssertEqual(snapshot.defaultHistoryMode, .monthly)
         XCTAssertFalse(snapshot.showPaceConfidence)
         XCTAssertTrue(snapshot.hideIdleSecondaryLimits)
         XCTAssertEqual(snapshot.menuBarDisplayMode, .pace)

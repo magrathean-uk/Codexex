@@ -1,7 +1,7 @@
 ---
 version: alpha
 name: Codexex
-description: Compact macOS menu bar design with soft glass cards, mono quota figures, and cool blue or violet bucket accents.
+description: Compact macOS menu bar design with soft glass cards, mono quota figures, and cool blue or violet usage accents.
 colors:
   background: "#F5F7FB"
   background-alt: "#EDEFF5"
@@ -91,13 +91,13 @@ components:
 Codexex should feel like a polished macOS utility, not a full dashboard. It is compact, calm, and glass-forward, with precise numeric emphasis and restrained color coding.
 
 ## Colors
-The base is pale neutral glass with dark text. Daily quota views lean blue, weekly views can lean violet, and supportive cyan can appear in secondary highlights. Positive state should read green without taking over the interface.
+The base is pale neutral glass with dark text. Daily quota views lean blue, weekly and monthly history views can lean violet, and supportive cyan can appear in secondary highlights. Positive state should read green without taking over the interface.
 
 ## Typography
 Use clean San Francisco hierarchy for labels and headings. Quota values, resets, and forecast numbers should use monospaced digits to reinforce precision.
 
 ## Layout
-The popup and settings views are narrow, card-based, and vertically stacked. Information density is moderate, with small but readable spacing and strong alignment.
+The popup and settings views are narrow, card-based, and vertically stacked. Peaks, Cycle, and Month history modes share the same compact space without turning into a full analytics surface.
 
 ## Elevation & Depth
 Depth comes from translucent white cards, subtle borders, and very soft shadows. Insets are quieter than primary cards and should feel slightly recessed.
@@ -106,7 +106,7 @@ Depth comes from translucent white cards, subtle borders, and very soft shadows.
 Large rounded glass cards are the default container shape. Small inset chips and stat rows use tighter radii, while capsules are reserved for compact indicators.
 
 ## Components
-Main surfaces are glass cards. Forecast rows and usage summaries often use inset cards. Buttons are straightforward and compact, while quota markers should stay short and readable.
+Main surfaces are glass cards. Forecast rows and usage summaries often use inset cards. Segmented history controls stay compact, while quota markers should stay short and readable.
 
 ## Do's and Don'ts
 - Do keep numeric information visually precise.
