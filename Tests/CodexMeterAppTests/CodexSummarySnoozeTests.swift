@@ -38,7 +38,7 @@ final class CodexSummarySnoozeTests: XCTestCase {
         ))
     }
 
-    func testExpiryUsesNearestCodexReset() {
+    func testExpiryUsesTwentyFourHours() {
         let now = Date(timeIntervalSince1970: 1_700_000_000)
         let fiveHourReset = now.addingTimeInterval(90 * 60)
         let weeklyReset = now.addingTimeInterval(3 * 24 * 60 * 60)
@@ -57,7 +57,7 @@ final class CodexSummarySnoozeTests: XCTestCase {
             ]
         )
 
-        XCTAssertEqual(CodexSummarySnooze.expiryDate(snapshot: snapshot, now: now), fiveHourReset)
+        XCTAssertEqual(CodexSummarySnooze.expiryDate(snapshot: snapshot, now: now), now.addingTimeInterval(24 * 60 * 60))
     }
 
     private func makeSummary(projected: String) -> PopupSummaryPresentation {

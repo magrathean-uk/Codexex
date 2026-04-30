@@ -30,6 +30,16 @@ final class PopupPresentationTests: XCTestCase {
         XCTAssertEqual(presentation.style, .standard)
     }
 
+    func testSparkShowsInactiveFiveHourBesideWeekly() {
+        let rows = PopupPresentation.visibleWindowRows(
+            for: makeLimit(id: "spark", name: "Codex Spark", bucket: .spark, fiveHour: 0, weekly: 13),
+            includeInactive: true
+        )
+
+        XCTAssertEqual(rows.map(\.title), ["5H", "Weekly"])
+        XCTAssertEqual(rows.map { Int($0.window.usedPercent) }, [0, 13])
+    }
+
     func testZeroAndUnlimitedCreditsStayHidden() {
         let zeroCredits = PopupPresentation.presentation(
             for: makeLimit(

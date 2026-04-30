@@ -26,12 +26,7 @@ enum CodexSummarySnooze {
     }
 
     static func expiryDate(snapshot: CodexSnapshot?, now: Date = Date()) -> Date? {
-        snapshot?.limits
-            .filter { $0.bucket == .codex }
-            .flatMap { [$0.fiveHourWindow?.resetsAt, $0.weeklyWindow?.resetsAt] }
-            .compactMap { $0 }
-            .filter { $0 > now }
-            .min()
+        now.addingTimeInterval(24 * 60 * 60)
     }
 }
 #endif

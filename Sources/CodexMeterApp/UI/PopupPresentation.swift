@@ -245,8 +245,38 @@ enum PopupPresentation {
         )
     }
 
+    static func visibleWindowRows(
+        for limit: CodexLimit,
+        includeInactive: Bool = false
+    ) -> [(title: String, window: CodexQuotaWindow)] {
+        let candidates: [(String, CodexQuotaWindow?)] = [
+            ("5H", limit.primary),
+            ("Weekly", limit.secondary)
+        ]
+        var unique: [CodexQuotaWindow] = []
+        let rows = candidates.compactMap { title, window -> (String, CodexQuotaWindow)? in
+            guard let window, unique.contains(window) == false else { return nil }
+            unique.append(window)
+            return (resolvedWindowTitle(fallback: title, window: window), window)
+        }
+
+        guard includeInactive == false else { return rows }
+        let activeRows = rows.filter { $0.1.clampedUsedPercent >= 0.5 }
+        return activeRows.isEmpty ? rows.prefix(1).map { $0 } : activeRows
+    }
+
     static func isIdle(_ limit: CodexLimit) -> Bool {
         CodexQuotaPresentationRules.isIdle(limit)
+    }
+
+    private static func resolvedWindowTitle(fallback: String, window: CodexQuotaWindow) -> String {
+        if fallback == "5H", window.windowDurationMinutes != 300 {
+            return window.windowText
+        }
+        if fallback == "Weekly", window.windowDurationMinutes != 10_080 {
+            return window.windowText
+        }
+        return fallback
     }
 
     private static func weeklySupporting(

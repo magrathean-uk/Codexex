@@ -44,7 +44,7 @@ struct PopupSummaryCardView: View {
                     }
 
                     if canSnooze, let onSnooze {
-                        Button("Snooze", action: onSnooze)
+                        Button("Snooze 24 hours", action: onSnooze)
                             .buttonStyle(CodexGhostButtonStyle())
                     }
                 }
