@@ -3,6 +3,9 @@ import SwiftUI
 
 enum GlassTokens {
     static let popupWidth: CGFloat = 360
+    static let popupMaxHeight: CGFloat = 720
+    static let popupMinimumUsableHeight: CGFloat = 420
+    static let popupScreenMargin: CGFloat = 72
     static let settingsWidth: CGFloat = 820
     static let settingsHeight: CGFloat = 540
 

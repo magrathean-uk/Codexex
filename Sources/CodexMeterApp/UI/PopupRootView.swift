@@ -35,6 +35,32 @@ struct PopupRootView: View {
                 .frame(width: 18, height: 12)
                 .offset(y: -7)
 
+            ScrollView(.vertical) {
+                content
+                    .padding(GlassTokens.pagePadding)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+            }
+            .scrollIndicators(.hidden)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        }
+        .background(CodexTheme.window, in: RoundedRectangle(cornerRadius: GlassTokens.popupRadius, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: GlassTokens.popupRadius, style: .continuous)
+                .strokeBorder(CodexTheme.hairline, lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(0.42), radius: 34, y: 22)
+        .preferredColorScheme(.dark)
+        .frame(width: GlassTokens.popupWidth)
+        .onAppear {
+            model.setReduceMotionEnabled(accessibilityReduceMotion)
+        }
+        .onChange(of: accessibilityReduceMotion) { _, newValue in
+            model.setReduceMotionEnabled(newValue)
+        }
+    }
+
+    private var content: some View {
             VStack(alignment: .leading, spacing: GlassTokens.contentSpacing) {
                 if shouldShowStatusCard {
                     PopupStatusCardView(model: model)
@@ -79,24 +105,6 @@ struct PopupRootView: View {
                     footer
                 }
             }
-            .padding(GlassTokens.pagePadding)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .background(CodexTheme.window, in: RoundedRectangle(cornerRadius: GlassTokens.popupRadius, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: GlassTokens.popupRadius, style: .continuous)
-                .strokeBorder(CodexTheme.hairline, lineWidth: 1)
-        }
-        .shadow(color: .black.opacity(0.42), radius: 34, y: 22)
-        .preferredColorScheme(.dark)
-        .frame(width: GlassTokens.popupWidth)
-        .onAppear {
-            model.setReduceMotionEnabled(accessibilityReduceMotion)
-        }
-        .onChange(of: accessibilityReduceMotion) { _, newValue in
-            model.setReduceMotionEnabled(newValue)
-        }
     }
 
     private var footer: some View {
