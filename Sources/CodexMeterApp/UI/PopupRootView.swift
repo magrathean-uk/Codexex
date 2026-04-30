@@ -35,15 +35,15 @@ struct PopupRootView: View {
                 .frame(width: 18, height: 12)
                 .offset(y: -7)
 
-            ScrollView(.vertical) {
-                content
-                    .padding(GlassTokens.pagePadding)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
+            ViewThatFits(in: .vertical) {
+                popupContent
+
+                ScrollView(.vertical) {
+                    popupContent
+                }
+                .scrollIndicators(.hidden)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
-            .scrollIndicators(.hidden)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .background(CodexTheme.window, in: RoundedRectangle(cornerRadius: GlassTokens.popupRadius, style: .continuous))
         .overlay {
@@ -59,6 +59,13 @@ struct PopupRootView: View {
         .onChange(of: accessibilityReduceMotion) { _, newValue in
             model.setReduceMotionEnabled(newValue)
         }
+    }
+
+    private var popupContent: some View {
+        content
+            .padding(GlassTokens.pagePadding)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
     private var content: some View {
