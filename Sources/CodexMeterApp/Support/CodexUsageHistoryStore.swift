@@ -47,7 +47,7 @@ struct CodexUsageHistoryWindow: Codable, Sendable, Equatable {
 
 actor CodexUsageHistoryStore {
     private let fileURL: URL
-    private let retention: TimeInterval = 180 * 24 * 60 * 60
+    private let retention: TimeInterval = 90 * 24 * 60 * 60
     private let futureTolerance: TimeInterval = 5 * 60
 
     init(fileManager: FileManager = .default, fileURL: URL? = nil) {

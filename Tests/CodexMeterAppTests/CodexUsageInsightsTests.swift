@@ -529,6 +529,29 @@ final class CodexUsageInsightsTests: XCTestCase {
         XCTAssertTrue(loaded.isEmpty)
     }
 
+    func testUsageHistoryStoreKeepsAtMostNinetyDays() async throws {
+        let fileManager = FileManager.default
+        let root = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let fileURL = root.appendingPathComponent("usage-history.json")
+        defer { try? fileManager.removeItem(at: root) }
+
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let samples = [
+            makeSample(hoursAgo: 91 * 24, fiveHour: 64, weekly: 64, now: now),
+            makeSample(hoursAgo: 89 * 24, fiveHour: 42, weekly: 42, now: now)
+        ]
+        try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        try encoder.encode(samples).write(to: fileURL)
+
+        let store = CodexUsageHistoryStore(fileURL: fileURL)
+        let loaded = await store.load(now: now)
+
+        XCTAssertEqual(loaded.count, 1)
+        XCTAssertEqual(loaded.first?.weekly?.usedPercent, 42)
+    }
+
     func testWeeklyForecastIgnoresSamplesMissingWeeklyWindow() {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let resetAt = now.addingTimeInterval(5 * 24 * 60 * 60)
