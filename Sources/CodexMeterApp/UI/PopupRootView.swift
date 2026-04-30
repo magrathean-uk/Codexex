@@ -42,6 +42,7 @@ struct PopupRootView: View {
                     .frame(maxWidth: .infinity, alignment: .topLeading)
             }
             .scrollIndicators(.hidden)
+            .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .background(CodexTheme.window, in: RoundedRectangle(cornerRadius: GlassTokens.popupRadius, style: .continuous))
