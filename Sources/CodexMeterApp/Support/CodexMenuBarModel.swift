@@ -10,9 +10,11 @@ import CodexMeterCore
 final class CodexMenuBarModel {
     private final class Lifecycle {
         var refreshLoopTask: Task<Void, Never>?
+        var deviceAuthPollTask: Task<Void, Never>?
 
         deinit {
             refreshLoopTask?.cancel()
+            deviceAuthPollTask?.cancel()
         }
     }
 
@@ -43,6 +45,7 @@ final class CodexMenuBarModel {
     private let service: any CodexServiceClient
     private let settingsStore: CodexAppSettingsStore
     private let historyRepository: CodexHistoryRepository
+    private let deviceAuthPollingConfiguration: CodexDeviceAuthPollingConfiguration
     private let refreshCoordinator = CodexRefreshCoordinator()
     private let lifecycle = Lifecycle()
     private var didStart = false
@@ -50,11 +53,13 @@ final class CodexMenuBarModel {
     init(
         service: any CodexServiceClient = CodexXPCClient(),
         settingsStore: CodexAppSettingsStore = CodexAppSettingsStore(),
-        historyRepository: CodexHistoryRepository = CodexHistoryRepository()
+        historyRepository: CodexHistoryRepository = CodexHistoryRepository(),
+        deviceAuthPollingConfiguration: CodexDeviceAuthPollingConfiguration = .production
     ) {
         self.service = service
         self.settingsStore = settingsStore
         self.historyRepository = historyRepository
+        self.deviceAuthPollingConfiguration = deviceAuthPollingConfiguration
         let settings = settingsStore.snapshot()
         autoRefreshEnabled = settings.autoRefreshEnabled
         refreshIntervalSeconds = settings.refreshIntervalSeconds
@@ -233,6 +238,7 @@ final class CodexMenuBarModel {
                 self.dashboard.setError(nil)
                 self.authSession.apply(.beginSucceeded(context))
                 CodexLog.auth.log("device code ready flow=\(auth.flowID, privacy: .private(mask: .hash))")
+                self.startDeviceAuthPolling(flowID: auth.flowID, generation: generation, pollImmediately: false)
             } catch {
                 guard self.refreshCoordinator.isCurrent(generation) else { return }
 
@@ -262,42 +268,7 @@ final class CodexMenuBarModel {
         guard let authFlowID else { return }
         CodexLog.auth.log("poll pending sign-in flow=\(authFlowID, privacy: .private(mask: .hash))")
         let generation = refreshCoordinator.token()
-        authSession.apply(.pollingRequested)
-        dashboard.setError(nil)
-
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-
-            do {
-                try await withHelperTimeout(.seconds(15)) {
-                    let result = try await self.service.completeChatGPTSignIn(flowID: authFlowID)
-                    switch result.status {
-                    case .signedIn:
-                        return
-                    case .pending:
-                        throw PendingSignInStillWaiting()
-                    }
-                } onTimeout: { [service] in
-                    service.cancelPendingOperations()
-                }
-                guard self.refreshCoordinator.isCurrent(generation) else { return }
-
-                self.authSession.apply(.signedIn)
-                self.dashboard.setError(nil)
-                CodexLog.auth.log("sign-in complete; refreshing snapshot")
-                await self.refreshNow()
-            } catch is PendingSignInStillWaiting {
-                guard self.refreshCoordinator.isCurrent(generation) else { return }
-                self.authSession.apply(.pollingPending("Sign-in approval still pending."))
-                CodexLog.auth.log("device auth approval still pending")
-            } catch {
-                guard self.refreshCoordinator.isCurrent(generation) else { return }
-                self.authSession.apply(.pollingFailed(error.localizedDescription))
-                CodexLog.auth.error(
-                    "poll sign-in failed message=\(error.localizedDescription, privacy: .public)"
-                )
-            }
-        }
+        startDeviceAuthPolling(flowID: authFlowID, generation: generation, pollImmediately: true)
     }
 
     func openAuthVerificationPage() {
@@ -513,10 +484,104 @@ final class CodexMenuBarModel {
     }
 
     private func invalidateRefreshResults(cancelHelper: Bool) {
+        lifecycle.deviceAuthPollTask?.cancel()
+        lifecycle.deviceAuthPollTask = nil
         refreshCoordinator.invalidate {
             if cancelHelper {
                 service.cancelPendingOperations()
             }
+        }
+    }
+
+    private func startDeviceAuthPolling(flowID: String, generation: Int, pollImmediately: Bool) {
+        lifecycle.deviceAuthPollTask?.cancel()
+        lifecycle.deviceAuthPollTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            let expiresAt = Date().addingTimeInterval(deviceAuthPollingConfiguration.timeoutSeconds)
+            var shouldPollImmediately = pollImmediately
+
+            while Task.isCancelled == false {
+                if shouldPollImmediately {
+                    shouldPollImmediately = false
+                } else {
+                    do {
+                        try await Task.sleep(for: .seconds(deviceAuthPollingConfiguration.intervalSeconds))
+                    } catch {
+                        break
+                    }
+                }
+
+                guard Task.isCancelled == false else { break }
+                guard Date() < expiresAt else {
+                    guard self.authFlowID == flowID, self.refreshCoordinator.isCurrent(generation) else { return }
+                    self.authSession.apply(.pollingPending("Sign-in timed out. Check status or start again."))
+                    CodexLog.auth.log("device auth polling timed out")
+                    return
+                }
+
+                let outcome = await self.pollPendingChatGPTSignInOnce(flowID: flowID, generation: generation)
+                switch outcome {
+                case .signedIn:
+                    return
+                case .pending:
+                    continue
+                case .stale:
+                    return
+                }
+            }
+        }
+    }
+
+    private enum DeviceAuthPollOutcome {
+        case signedIn
+        case pending
+        case stale
+    }
+
+    private func pollPendingChatGPTSignInOnce(flowID: String, generation: Int) async -> DeviceAuthPollOutcome {
+        guard authFlowID == flowID, refreshCoordinator.isCurrent(generation) else { return .stale }
+
+        authSession.apply(.pollingRequested)
+        dashboard.setError(nil)
+
+        do {
+            try await withHelperTimeout(.seconds(deviceAuthPollingConfiguration.requestTimeoutSeconds)) {
+                let result = try await self.service.completeChatGPTSignIn(flowID: flowID)
+                switch result.status {
+                case .signedIn:
+                    return
+                case .pending:
+                    throw PendingSignInStillWaiting()
+                }
+            } onTimeout: { [service] in
+                service.cancelPendingOperations()
+            }
+            guard authFlowID == flowID, refreshCoordinator.isCurrent(generation) else { return .stale }
+
+            lifecycle.deviceAuthPollTask = nil
+            authSession.apply(.signedIn)
+            dashboard.setError(nil)
+            CodexLog.auth.log("sign-in complete; refreshing snapshot")
+            await refreshNow()
+            return .signedIn
+        } catch is PendingSignInStillWaiting {
+            guard authFlowID == flowID, refreshCoordinator.isCurrent(generation) else { return .stale }
+            authSession.apply(.pollingPending("Waiting for Safari approval."))
+            CodexLog.auth.log("device auth approval still pending")
+            return .pending
+        } catch is HelperOperationTimedOut {
+            guard authFlowID == flowID, refreshCoordinator.isCurrent(generation) else { return .stale }
+            authSession.apply(.pollingPending("Still checking sign-in."))
+            CodexLog.auth.log("device auth poll timed out")
+            return .pending
+        } catch {
+            guard authFlowID == flowID, refreshCoordinator.isCurrent(generation) else { return .stale }
+            authSession.apply(.pollingFailed(error.localizedDescription))
+            CodexLog.auth.error(
+                "poll sign-in failed message=\(error.localizedDescription, privacy: .public)"
+            )
+            return .stale
         }
     }
 
@@ -588,6 +653,19 @@ final class CodexMenuBarModel {
 }
 
 private struct PendingSignInStillWaiting: Error {}
+private struct HelperOperationTimedOut: Error {}
+
+struct CodexDeviceAuthPollingConfiguration: Sendable, Equatable {
+    let intervalSeconds: Double
+    let timeoutSeconds: Double
+    let requestTimeoutSeconds: Double
+
+    static let production = CodexDeviceAuthPollingConfiguration(
+        intervalSeconds: 3,
+        timeoutSeconds: 10 * 60,
+        requestTimeoutSeconds: 15
+    )
+}
 
 private func withHelperTimeout<T: Sendable>(
     _ timeout: Duration,
@@ -600,17 +678,17 @@ private func withHelperTimeout<T: Sendable>(
         }
         group.addTask {
             try await Task.sleep(for: timeout)
-            throw PendingSignInStillWaiting()
+            throw HelperOperationTimedOut()
         }
 
         do {
             let value = try await group.next()!
             group.cancelAll()
             return value
-        } catch is PendingSignInStillWaiting {
+        } catch is HelperOperationTimedOut {
             group.cancelAll()
             await onTimeout()
-            throw PendingSignInStillWaiting()
+            throw HelperOperationTimedOut()
         } catch {
             group.cancelAll()
             throw error

@@ -218,11 +218,13 @@ final class CodexStatusItemController: NSObject {
 
     private func updatePopoverSize() {
         guard let hostingController else { return }
+        let maxHeight = CodexPopoverSizing.maxHeight(for: statusItem.button?.window?.screen)
         hostingController.view.layoutSubtreeIfNeeded()
         let fittingSize = hostingController.sizeThatFits(
-            in: NSSize(width: GlassTokens.popupWidth, height: .greatestFiniteMagnitude)
+            in: NSSize(width: GlassTokens.popupWidth, height: maxHeight)
         )
-        popover.contentSize = NSSize(width: GlassTokens.popupWidth, height: ceil(fittingSize.height))
+        let height = CodexPopoverSizing.height(fittingHeight: fittingSize.height, maxHeight: maxHeight)
+        popover.contentSize = NSSize(width: GlassTokens.popupWidth, height: height)
     }
 
     private func updateTitle() {
@@ -245,6 +247,21 @@ final class CodexStatusItemController: NSObject {
         )
         button?.imagePosition = .imageLeading
         button?.alphaValue = model.shouldDimStatusItem ? 0.55 : 1
+    }
+}
+
+enum CodexPopoverSizing {
+    static func maxHeight(for screen: NSScreen?) -> CGFloat {
+        let visibleHeight = (screen ?? NSScreen.main)?.visibleFrame.height ?? GlassTokens.popupMaxHeight
+        let screenSafeHeight = visibleHeight - GlassTokens.popupScreenMargin
+        return max(
+            GlassTokens.popupMinimumUsableHeight,
+            min(GlassTokens.popupMaxHeight, screenSafeHeight)
+        )
+    }
+
+    static func height(fittingHeight: CGFloat, maxHeight: CGFloat) -> CGFloat {
+        min(ceil(fittingHeight), maxHeight)
     }
 }
 #endif
