@@ -44,7 +44,7 @@ struct UsageHistoryCardView: View {
 
     var body: some View {
         GlassCard(style: .secondary) {
-            VStack(alignment: .leading, spacing: 13) {
+            VStack(alignment: .leading, spacing: 10) {
                 header
                 forecastSummary
                 contentSection
@@ -98,7 +98,7 @@ struct UsageHistoryCardView: View {
                 Text(detail)
                     .font(.system(size: 11.5))
                     .foregroundStyle(CodexTheme.dim)
-                    .lineLimit(2)
+                    .lineLimit(1)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -183,7 +183,7 @@ struct UsageHistoryCardView: View {
     private var contentSection: some View {
         switch historyMode {
         case .dailyPeaks:
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 8) {
                 if showsChart {
                     MiniUsageHistoryGraph(
                         fiveHourPoints: fiveHourPoints,
@@ -206,7 +206,7 @@ struct UsageHistoryCardView: View {
                 }
             }
         case .thisCycle:
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 8) {
                 if showsChart {
                     MiniUsageHistoryGraph(
                         fiveHourPoints: currentCycleFiveHourPoints,
@@ -229,7 +229,7 @@ struct UsageHistoryCardView: View {
                 }
             }
         case .monthly:
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 8) {
                 if showsChart {
                     MiniUsageHistoryGraph(
                         fiveHourPoints: [],
@@ -334,7 +334,7 @@ private struct MiniUsageHistoryGraph: View {
             drawFiveHourBars(in: &context, size: size)
             drawWeeklyLine(in: &context, size: size)
         }
-        .frame(height: 42)
+        .frame(height: 34)
         .allowsHitTesting(false)
     }
 

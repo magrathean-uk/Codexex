@@ -1,20 +1,21 @@
 #if os(macOS)
+import AppKit
 import SwiftUI
 
 enum CodexTheme {
-    static let desktopTop = Color(red: 0.02, green: 0.04, blue: 0.08)
-    static let desktopBottom = Color(red: 0.02, green: 0.08, blue: 0.12)
-    static let window = Color(red: 0.02, green: 0.04, blue: 0.08)
-    static let titlebar = Color(red: 0.03, green: 0.06, blue: 0.13)
-    static let sidebar = Color(red: 0.02, green: 0.05, blue: 0.10)
-    static let surface = Color(red: 0.03, green: 0.06, blue: 0.13)
-    static let surfaceRaised = Color(red: 0.04, green: 0.08, blue: 0.15)
-    static let control = Color(red: 0.06, green: 0.10, blue: 0.18)
-    static let hairline = Color(red: 0.37, green: 0.67, blue: 1.00).opacity(0.12)
-    static let hairlineStrong = Color(red: 0.37, green: 0.67, blue: 1.00).opacity(0.20)
-    static let text = Color.white.opacity(0.94)
-    static let muted = Color.white.opacity(0.62)
-    static let dim = Color.white.opacity(0.42)
+    static let desktopTop = adaptive(light: ns(0xF4F8FF), dark: ns(0x060914))
+    static let desktopBottom = adaptive(light: ns(0xEAF2FF), dark: ns(0x05141F))
+    static let window = adaptive(light: ns(0xF4F8FF), dark: ns(0x060914))
+    static let titlebar = adaptive(light: ns(0xF8FBFF), dark: ns(0x081021))
+    static let sidebar = adaptive(light: ns(0xEDF4FF), dark: ns(0x050D1A))
+    static let surface = adaptive(light: ns(0xFFFFFF).withAlphaComponent(0.78), dark: ns(0x081021).withAlphaComponent(0.88))
+    static let surfaceRaised = adaptive(light: ns(0xF8FBFF), dark: ns(0x0A1426))
+    static let control = adaptive(light: ns(0xE4ECF8), dark: ns(0x0F1A2E))
+    static let hairline = adaptive(light: ns(0x1C46D6).withAlphaComponent(0.12), dark: ns(0x5FAAFF).withAlphaComponent(0.12))
+    static let hairlineStrong = adaptive(light: ns(0x1C46D6).withAlphaComponent(0.18), dark: ns(0x5FAAFF).withAlphaComponent(0.20))
+    static let text = adaptive(light: ns(0x101727).withAlphaComponent(0.94), dark: ns(0xFFFFFF).withAlphaComponent(0.94))
+    static let muted = adaptive(light: ns(0x101727).withAlphaComponent(0.62), dark: ns(0xFFFFFF).withAlphaComponent(0.62))
+    static let dim = adaptive(light: ns(0x101727).withAlphaComponent(0.44), dark: ns(0xFFFFFF).withAlphaComponent(0.42))
     static let accent = Color(red: 0.10, green: 0.15, blue: 1.00)
     static let accent2 = Color(red: 0.13, green: 0.84, blue: 0.91)
     static let spark = Color(red: 0.42, green: 0.85, blue: 1.00)
@@ -28,6 +29,22 @@ enum CodexTheme {
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
+
+    private static func ns(_ hex: UInt32) -> NSColor {
+        NSColor(
+            red: CGFloat((hex >> 16) & 0xFF) / 255,
+            green: CGFloat((hex >> 8) & 0xFF) / 255,
+            blue: CGFloat(hex & 0xFF) / 255,
+            alpha: 1
+        )
+    }
+
+    private static func adaptive(light: NSColor, dark: NSColor) -> Color {
+        Color(nsColor: NSColor(name: nil) { appearance in
+            let match = appearance.bestMatch(from: [.aqua, .darkAqua])
+            return match == .darkAqua ? dark : light
+        })
+    }
 }
 
 enum GlassSurfaceStyle {

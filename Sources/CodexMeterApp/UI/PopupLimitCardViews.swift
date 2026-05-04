@@ -12,11 +12,9 @@ struct LimitCardView: View {
         presentation.style == .hero ? .primary : .secondary
     }
     private var headlineFont: Font {
-        presentation.style == .hero
-            ? .system(size: 28, weight: .semibold, design: .default).monospacedDigit()
-            : .system(size: 23, weight: .semibold, design: .default).monospacedDigit()
+        .system(size: 28, weight: .semibold, design: .default).monospacedDigit()
     }
-    private var contentSpacing: CGFloat { 14 }
+    private var contentSpacing: CGFloat { 12 }
     private var headlineWindow: CodexQuotaWindow? {
         let windows = [limit.fiveHourWindow, limit.weeklyWindow].compactMap { $0 }
         return windows.max { lhs, rhs in

@@ -35,15 +35,7 @@ struct PopupRootView: View {
                 .frame(width: 18, height: 12)
                 .offset(y: -7)
 
-            ViewThatFits(in: .vertical) {
-                popupContent
-
-                ScrollView(.vertical) {
-                    popupContent
-                }
-                .scrollIndicators(.hidden)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            }
+            popupContent
         }
         .background(CodexTheme.window, in: RoundedRectangle(cornerRadius: GlassTokens.popupRadius, style: .continuous))
         .overlay {
@@ -51,7 +43,7 @@ struct PopupRootView: View {
                 .strokeBorder(CodexTheme.hairline, lineWidth: 1)
         }
         .shadow(color: .black.opacity(0.42), radius: 34, y: 22)
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(model.appearanceMode.colorScheme)
         .frame(width: GlassTokens.popupWidth)
         .onAppear {
             model.setReduceMotionEnabled(accessibilityReduceMotion)
@@ -62,13 +54,27 @@ struct PopupRootView: View {
     }
 
     private var popupContent: some View {
-        content
+        VStack(alignment: .leading, spacing: GlassTokens.contentSpacing) {
+            ViewThatFits(in: .vertical) {
+                mainContent
+
+                ScrollView(.vertical) {
+                    mainContent
+                }
+                .scrollIndicators(.hidden)
+                .frame(maxWidth: .infinity, maxHeight: GlassTokens.popupMaxHeight - 58, alignment: .top)
+            }
+
+            if displayMode == .live {
+                footer
+            }
+        }
             .padding(GlassTokens.pagePadding)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
-    private var content: some View {
+    private var mainContent: some View {
             VStack(alignment: .leading, spacing: GlassTokens.contentSpacing) {
                 if shouldShowStatusCard {
                     PopupStatusCardView(model: model)
@@ -107,10 +113,6 @@ struct PopupRootView: View {
                     ForEach(compactSecondaryLimitPresentations) { presentation in
                         limitCard(for: presentation)
                     }
-                }
-
-                if displayMode == .live {
-                    footer
                 }
             }
     }
