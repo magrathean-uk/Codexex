@@ -82,7 +82,7 @@ struct CodexiOSOnboardingView: View {
                         Text("Try Preview Mode")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(CodexiOSOnboardingPrimaryButtonStyle())
+                    .buttonStyle(CodexiOSPrimaryButtonStyle())
 
                     Button {
                         withAnimation { step = .login }
@@ -90,7 +90,7 @@ struct CodexiOSOnboardingView: View {
                         Text("Continue to Login")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(CodexiOSOnboardingSecondaryButtonStyle())
+                    .buttonStyle(CodexiOSSecondaryButtonStyle())
                 }
             }
         }
@@ -127,15 +127,15 @@ struct CodexiOSOnboardingView: View {
                             Button(model.isSigningIn ? "Starting" : "Sign In") {
                                 Task { await model.beginSignIn() }
                             }
-                            .buttonStyle(.borderedProminent)
+                            .buttonStyle(CodexiOSPrimaryButtonStyle())
                             .disabled(model.isSigningIn)
                         } else {
                             Button("Open Safari") { model.openSignInPage() }
-                                .buttonStyle(.borderedProminent)
+                                .buttonStyle(CodexiOSPrimaryButtonStyle())
                             Button("Copy Code") { model.copyCode() }
-                                .buttonStyle(.bordered)
+                                .buttonStyle(CodexiOSSecondaryButtonStyle())
                             Button("Check Status") { Task { await model.checkSignIn() } }
-                                .buttonStyle(.bordered)
+                                .buttonStyle(CodexiOSSecondaryButtonStyle())
                                 .disabled(model.isSigningIn)
                         }
                     }
@@ -147,7 +147,7 @@ struct CodexiOSOnboardingView: View {
             } label: {
                 Label("Back", systemImage: "chevron.left")
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(CodexiOSSecondaryButtonStyle())
         }
     }
 
@@ -156,10 +156,10 @@ struct CodexiOSOnboardingView: View {
             HStack(alignment: .top, spacing: 16) {
                 ZStack {
                     Circle()
-                        .fill(.cyan.opacity(0.18))
+                        .fill(CodexiOSTheme.primary.opacity(0.18))
                     Image(systemName: "gauge.with.dots.needle.bottom.50percent")
                         .font(.system(size: 32, weight: .bold))
-                        .foregroundStyle(.cyan)
+                        .foregroundStyle(CodexiOSTheme.secondary)
                 }
                 .frame(width: 68, height: 68)
 
@@ -187,7 +187,7 @@ struct CodexiOSOnboardingView: View {
 
     private func progressDot(active: Bool) -> some View {
         Capsule()
-            .fill(active ? .cyan : .white.opacity(0.16))
+            .fill(active ? CodexiOSTheme.secondary : .white.opacity(0.16))
             .frame(width: active ? 28 : 10, height: 10)
     }
 
@@ -195,58 +195,31 @@ struct CodexiOSOnboardingView: View {
         content()
             .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.white.opacity(0.09), in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+            .background(CodexiOSTheme.card, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 28, style: .continuous)
-                    .strokeBorder(.white.opacity(0.12), lineWidth: 1)
+                    .strokeBorder(CodexiOSTheme.border, lineWidth: 1)
             }
-            .shadow(color: .black.opacity(0.30), radius: 24, y: 14)
+            .modifier(CodexiOSOnboardingGlassModifier())
     }
 }
 
 struct CodexiOSOnboardingBackground: View {
     var body: some View {
-        ZStack {
-            CodexiOSTheme.background
-            GeometryReader { proxy in
-                Circle()
-                    .fill(.cyan.opacity(0.12))
-                    .frame(width: proxy.size.width * 0.90, height: proxy.size.width * 0.90)
-                    .blur(radius: 48)
-                    .offset(x: -proxy.size.width * 0.34, y: -proxy.size.height * 0.14)
+        CodexiOSTheme.background
+    }
+}
 
-                Circle()
-                    .fill(.orange.opacity(0.08))
-                    .frame(width: proxy.size.width * 0.78, height: proxy.size.width * 0.78)
-                    .blur(radius: 52)
-                    .offset(x: proxy.size.width * 0.40, y: proxy.size.height * 0.42)
-            }
+private struct CodexiOSOnboardingGlassModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content
+                .glassEffect(.regular.tint(CodexiOSTheme.card), in: .rect(cornerRadius: 28))
+                .shadow(color: .black.opacity(0.30), radius: 24, y: 14)
+        } else {
+            content
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+                .shadow(color: .black.opacity(0.30), radius: 24, y: 14)
         }
-    }
-}
-
-struct CodexiOSOnboardingPrimaryButtonStyle: ButtonStyle {
-    @Environment(\.isEnabled) private var isEnabled
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.headline.weight(.semibold))
-            .foregroundStyle(.white)
-            .padding(.vertical, 15)
-            .background((isEnabled ? Color.cyan : Color.cyan.opacity(0.45)).opacity(configuration.isPressed ? 0.75 : 1), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-    }
-}
-
-struct CodexiOSOnboardingSecondaryButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.headline.weight(.semibold))
-            .foregroundStyle(.primary)
-            .padding(.vertical, 15)
-            .background(.white.opacity(configuration.isPressed ? 0.05 : 0.09), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(.white.opacity(0.12), lineWidth: 1)
-            }
     }
 }

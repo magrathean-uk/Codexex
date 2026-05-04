@@ -10,13 +10,13 @@ struct CodexiOSRootView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                ViewThatFits(in: .horizontal) {
-                    wideLayout
-                    narrowLayout
+                if #available(iOS 26.0, *) {
+                    GlassEffectContainer(spacing: 16) {
+                        responsiveLayout
+                    }
+                } else {
+                    responsiveLayout
                 }
-                .padding(.horizontal, 18)
-                .padding(.vertical, 20)
-                .frame(maxWidth: .infinity, alignment: .topLeading)
             }
             .background(CodexiOSTheme.background.ignoresSafeArea())
             .navigationTitle("Codexex")
@@ -117,23 +117,33 @@ struct CodexiOSRootView: View {
         }
     }
 
+    private var responsiveLayout: some View {
+        ViewThatFits(in: .horizontal) {
+            wideLayout
+            narrowLayout
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 20)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+    }
+
     @ViewBuilder
     private var authButtons: some View {
         if model.hasPendingSignIn {
             FlowLayout(spacing: 10) {
                 Button("Open Safari") { model.openSignInPage() }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(CodexiOSPrimaryButtonStyle())
                 Button("Copy Code") { model.copyCode() }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(CodexiOSSecondaryButtonStyle())
                 Button("Check Status") { Task { await model.checkSignIn() } }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(CodexiOSSecondaryButtonStyle())
             }
         } else if model.isSignedIn {
             FlowLayout(spacing: 10) {
                 Button("Refresh quota") { Task { await model.refresh() } }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(CodexiOSPrimaryButtonStyle())
                 Button("Sign out") { Task { await model.signOut() } }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(CodexiOSSecondaryButtonStyle())
             }
         } else {
             Button {
@@ -145,7 +155,7 @@ struct CodexiOSRootView: View {
                     Label("Sign in with ChatGPT", systemImage: "person.crop.circle.badge.checkmark")
                 }
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(CodexiOSPrimaryButtonStyle())
             .disabled(model.isSigningIn)
         }
     }
@@ -268,7 +278,7 @@ struct CodexiOSRootView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Image(systemName: "lock.shield")
                     .font(.largeTitle)
-                    .foregroundStyle(.cyan)
+                    .foregroundStyle(CodexiOSTheme.secondary)
                 Text("Private by default")
                     .font(.title2.weight(.bold))
                 Text("No server, no Mac bridge, no browser cookies. Sign in happens on-device and tokens stay in Keychain.")
@@ -286,7 +296,7 @@ struct CodexiOSRootView: View {
     }
 
     private func tint(for bucket: CodexLimitBucket) -> Color {
-        bucket == .spark ? .pink : .cyan
+        bucket == .spark ? CodexiOSTheme.tertiary : CodexiOSTheme.secondary
     }
 
     private var statusCardTitle: String {
@@ -301,29 +311,120 @@ struct CodexiOSRootView: View {
 
     private func iOSCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         content()
-            .padding(18)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(CodexiOSTheme.card, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .strokeBorder(.white.opacity(0.12), lineWidth: 1)
-            }
-            .shadow(color: .black.opacity(0.28), radius: 22, y: 12)
+            .codexiOSGlassCard()
     }
 }
 
 enum CodexiOSTheme {
+    static let primary = Color(red: 0.10, green: 0.15, blue: 1.00)
+    static let secondary = Color(red: 0.13, green: 0.84, blue: 0.91)
+    static let tertiary = Color(red: 0.42, green: 0.85, blue: 1.00)
+    static let page = Color(red: 0.02, green: 0.04, blue: 0.08)
+    static let surface = Color(red: 0.03, green: 0.06, blue: 0.13)
+    static let surfaceStrong = Color(red: 0.04, green: 0.08, blue: 0.15)
+    static let border = Color(red: 0.37, green: 0.67, blue: 1.00).opacity(0.20)
     static let background = LinearGradient(
         colors: [
-            Color(red: 0.03, green: 0.05, blue: 0.08),
-            Color(red: 0.07, green: 0.10, blue: 0.15),
-            Color(red: 0.02, green: 0.08, blue: 0.09)
+            page,
+            surface,
+            Color(red: 0.02, green: 0.08, blue: 0.12)
         ],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
-    static let card = Color(red: 0.10, green: 0.12, blue: 0.18).opacity(0.92)
-    static let inset = Color.white.opacity(0.06)
+    static let card = surface.opacity(0.88)
+    static let inset = Color.white.opacity(0.07)
+    static let primaryGradient = LinearGradient(
+        colors: [primary, secondary, tertiary],
+        startPoint: .leading,
+        endPoint: .trailing
+    )
+}
+
+private struct CodexiOSGlassCardModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 26, style: .continuous)
+
+        if #available(iOS 26.0, *) {
+            content
+                .padding(18)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(CodexiOSTheme.card, in: shape)
+                .glassEffect(.regular.tint(CodexiOSTheme.card), in: .rect(cornerRadius: 26))
+                .overlay {
+                    shape.strokeBorder(CodexiOSTheme.border, lineWidth: 1)
+                }
+                .shadow(color: .black.opacity(0.28), radius: 22, y: 12)
+        } else {
+            content
+                .padding(18)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(.ultraThinMaterial, in: shape)
+                .background(CodexiOSTheme.card, in: shape)
+                .overlay {
+                    shape.strokeBorder(CodexiOSTheme.border, lineWidth: 1)
+                }
+                .shadow(color: .black.opacity(0.28), radius: 22, y: 12)
+        }
+    }
+}
+
+private extension View {
+    func codexiOSGlassCard() -> some View {
+        modifier(CodexiOSGlassCardModifier())
+    }
+}
+
+struct CodexiOSPrimaryButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        if #available(iOS 26.0, *) {
+            configuration.label
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 11)
+                .glassEffect(
+                    .regular.tint(CodexiOSTheme.primary.opacity(isEnabled ? 0.50 : 0.24)).interactive(),
+                    in: .rect(cornerRadius: 18)
+                )
+                .opacity(configuration.isPressed ? 0.78 : 1)
+        } else {
+            configuration.label
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 11)
+                .background(
+                    CodexiOSTheme.primaryGradient.opacity(isEnabled ? (configuration.isPressed ? 0.72 : 1) : 0.45),
+                    in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+                )
+        }
+    }
+}
+
+struct CodexiOSSecondaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        if #available(iOS 26.0, *) {
+            configuration.label
+                .font(.headline.weight(.semibold))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 11)
+                .glassEffect(.regular.tint(CodexiOSTheme.surfaceStrong.opacity(0.72)).interactive(), in: .rect(cornerRadius: 18))
+                .opacity(configuration.isPressed ? 0.78 : 1)
+        } else {
+            configuration.label
+                .font(.headline.weight(.semibold))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 11)
+                .background(CodexiOSTheme.inset.opacity(configuration.isPressed ? 0.70 : 1), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .strokeBorder(CodexiOSTheme.border, lineWidth: 1)
+                }
+        }
+    }
 }
 
 struct FlowLayout: Layout {

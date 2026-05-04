@@ -56,6 +56,9 @@ struct CodexiOSSettingsView: View {
             privacySection
             resetSection
         }
+        .scrollContentBackground(.hidden)
+        .background(CodexiOSTheme.background.ignoresSafeArea())
+        .tint(CodexiOSTheme.secondary)
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
         .preferredColorScheme(.dark)
