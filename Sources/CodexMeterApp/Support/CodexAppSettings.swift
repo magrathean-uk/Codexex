@@ -1,5 +1,6 @@
 #if os(macOS)
 import Foundation
+import SwiftUI
 import CodexMeterCore
 
 enum PopupHistoryMode: String, CaseIterable {
@@ -63,6 +64,34 @@ enum CodexResetDisplayStyle: String, CaseIterable {
     }
 }
 
+enum CodexAppearanceMode: String, CaseIterable {
+    case system
+    case light
+    case dark
+
+    var title: String {
+        switch self {
+        case .system:
+            return "System"
+        case .light:
+            return "Light"
+        case .dark:
+            return "Dark"
+        }
+    }
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system:
+            return nil
+        case .light:
+            return .light
+        case .dark:
+            return .dark
+        }
+    }
+}
+
 enum CodexAppSettings {
     fileprivate enum Key {
         static let hasCompletedOnboarding = "codexex.hasCompletedOnboarding"
@@ -78,6 +107,7 @@ enum CodexAppSettings {
         static let showWeeklyInMenubar = "codexex.showWeeklyInMenubar"
         static let menuBarDisplayMode = "codexex.menuBarDisplayMode"
         static let resetDisplayStyle = "codexex.resetDisplayStyle"
+        static let appearanceMode = "codexex.appearanceMode"
         static let defaultHistoryMode = "codexex.defaultHistoryMode"
         static let showPaceConfidence = "codexex.showPaceConfidence"
         static let hideIdleSecondaryLimits = "codexex.hideIdleSecondaryLimits"
@@ -98,6 +128,7 @@ enum CodexAppSettings {
             showWeeklyInMenubar,
             menuBarDisplayMode,
             resetDisplayStyle,
+            appearanceMode,
             defaultHistoryMode,
             showPaceConfidence,
             hideIdleSecondaryLimits,
@@ -266,6 +297,19 @@ enum CodexAppSettings {
         }
     }
 
+    static var appearanceMode: CodexAppearanceMode {
+        get {
+            guard let rawValue = UserDefaults.standard.string(forKey: Key.appearanceMode),
+                  let mode = CodexAppearanceMode(rawValue: rawValue) else {
+                return .system
+            }
+            return mode
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: Key.appearanceMode)
+        }
+    }
+
     static var defaultHistoryMode: PopupHistoryMode {
         get {
             guard let rawValue = UserDefaults.standard.string(forKey: Key.defaultHistoryMode),
@@ -351,6 +395,7 @@ struct CodexAppSettingsSnapshot: Equatable {
     let showWeeklyInMenubar: Bool
     let menuBarDisplayMode: CodexMenuBarDisplayMode
     let resetDisplayStyle: CodexResetDisplayStyle
+    let appearanceMode: CodexAppearanceMode
     let defaultHistoryMode: PopupHistoryMode
     let showPaceConfidence: Bool
     let hideIdleSecondaryLimits: Bool
@@ -380,6 +425,7 @@ struct CodexAppSettingsStore {
             showWeeklyInMenubar: showWeeklyInMenubar,
             menuBarDisplayMode: menuBarDisplayMode,
             resetDisplayStyle: resetDisplayStyle,
+            appearanceMode: appearanceMode,
             defaultHistoryMode: defaultHistoryMode,
             showPaceConfidence: showPaceConfidence,
             hideIdleSecondaryLimits: hideIdleSecondaryLimits,
@@ -443,6 +489,13 @@ struct CodexAppSettingsStore {
         enumValue(
             forKey: CodexAppSettings.Key.resetDisplayStyle,
             defaultValue: CodexResetDisplayStyle.relative
+        )
+    }
+
+    var appearanceMode: CodexAppearanceMode {
+        enumValue(
+            forKey: CodexAppSettings.Key.appearanceMode,
+            defaultValue: CodexAppearanceMode.system
         )
     }
 
@@ -519,6 +572,10 @@ struct CodexAppSettingsStore {
 
     func setResetDisplayStyle(_ value: CodexResetDisplayStyle) {
         defaults.set(value.rawValue, forKey: CodexAppSettings.Key.resetDisplayStyle)
+    }
+
+    func setAppearanceMode(_ value: CodexAppearanceMode) {
+        defaults.set(value.rawValue, forKey: CodexAppSettings.Key.appearanceMode)
     }
 
     func setDefaultHistoryMode(_ value: PopupHistoryMode) {

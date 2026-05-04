@@ -86,7 +86,7 @@ struct SettingsRootView: View {
         .frame(minWidth: 760, minHeight: 540)
         .background(CodexTheme.window)
         .foregroundStyle(CodexTheme.text)
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(model.appearanceMode.colorScheme)
         .onAppear {
             model.setReduceMotionEnabled(accessibilityReduceMotion)
         }
@@ -293,6 +293,8 @@ struct SettingsRootView: View {
                     .disabled(model.isRefreshing)
                 }
             }
+
+            appearanceSection
         }
     }
 
@@ -312,6 +314,25 @@ struct SettingsRootView: View {
             SettingsListRow(title: "History chart", detail: "Bars and trend line inside usage history.", isLast: true) {
                 CodexSwitch(isOn: Binding(get: { model.showHistoryChartEnabled }, set: { model.setShowHistoryChartEnabled($0) }))
                     .disabled(model.showHistoryEnabled == false)
+            }
+        }
+    }
+
+    private var appearanceSection: some View {
+        SettingsListGroup(
+            title: "Theme",
+            footer: "System follows macOS. Light and Dark force Codexex only."
+        ) {
+            SettingsListRow(title: "Appearance", isLast: true) {
+                CodexSegmentedControl(selection: Binding(
+                    get: { model.appearanceMode },
+                    set: { model.setAppearanceMode($0) }
+                ), segments: [
+                    ("System", .system),
+                    ("Light", .light),
+                    ("Dark", .dark)
+                ])
+                .frame(width: 198, height: GlassTokens.pillHeight)
             }
         }
     }

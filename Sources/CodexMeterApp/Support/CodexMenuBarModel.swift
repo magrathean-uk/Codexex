@@ -35,6 +35,7 @@ final class CodexMenuBarModel {
     private(set) var showWeeklyInMenubar = CodexAppSettings.showWeeklyInMenubar
     private(set) var menuBarDisplayMode = CodexAppSettings.menuBarDisplayMode
     private(set) var resetDisplayStyle = CodexAppSettings.resetDisplayStyle
+    private(set) var appearanceMode = CodexAppSettings.appearanceMode
     private(set) var diagnosticsStatusMessage: String?
     private(set) var hasCompletedOnboarding = CodexAppSettings.hasCompletedOnboarding
     private(set) var previewModeEnabled = CodexAppSettings.previewModeEnabled
@@ -75,6 +76,7 @@ final class CodexMenuBarModel {
         showWeeklyInMenubar = settings.showWeeklyInMenubar
         menuBarDisplayMode = settings.menuBarDisplayMode
         resetDisplayStyle = settings.resetDisplayStyle
+        appearanceMode = settings.appearanceMode
         hasCompletedOnboarding = settings.hasCompletedOnboarding
         previewModeEnabled = settings.previewModeEnabled
         summarySnoozeFingerprint = settings.summarySnoozeFingerprint
@@ -358,6 +360,11 @@ final class CodexMenuBarModel {
     func setResetDisplayStyle(_ style: CodexResetDisplayStyle) {
         resetDisplayStyle = style
         settingsStore.setResetDisplayStyle(style)
+    }
+
+    func setAppearanceMode(_ mode: CodexAppearanceMode) {
+        appearanceMode = mode
+        settingsStore.setAppearanceMode(mode)
     }
 
     func copyDiagnosticsReport() {

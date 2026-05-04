@@ -9,11 +9,11 @@ enum GlassTokens {
     static let settingsWidth: CGFloat = 820
     static let settingsHeight: CGFloat = 540
 
-    static let pagePadding: CGFloat = 12
-    static let cardPadding: CGFloat = 16
+    static let pagePadding: CGFloat = 10
+    static let cardPadding: CGFloat = 14
     static let insetPadding: CGFloat = 12
-    static let contentSpacing: CGFloat = 10
-    static let sectionSpacing: CGFloat = 10
+    static let contentSpacing: CGFloat = 8
+    static let sectionSpacing: CGFloat = 8
 
     static let cardRadius: CGFloat = 14
     static let popupRadius: CGFloat = 20

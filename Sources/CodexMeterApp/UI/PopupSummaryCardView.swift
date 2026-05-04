@@ -20,17 +20,10 @@ struct PopupSummaryCardView: View {
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(summaryColor)
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(summary.message)
-                            .font(.system(size: 12.5))
-                            .foregroundStyle(CodexTheme.muted)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        Text(summary.detailLine)
-                            .font(.system(size: 11.5, weight: .medium))
-                            .foregroundStyle(CodexTheme.dim)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+                    Text(summary.message)
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(CodexTheme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Spacer(minLength: 0)
@@ -44,7 +37,7 @@ struct PopupSummaryCardView: View {
                     }
 
                     if canSnooze, let onSnooze {
-                        Button("Snooze 24 hours", action: onSnooze)
+                        Button("Snooze", action: onSnooze)
                             .buttonStyle(CodexGhostButtonStyle())
                     }
                 }

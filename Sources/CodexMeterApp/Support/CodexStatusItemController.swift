@@ -13,6 +13,7 @@ final class CodexStatusItemController: NSObject {
     private var hostingController: NSHostingController<PopupRootView>?
     private var globalEventMonitor: Any?
     private var localEventMonitor: Any?
+    private var resignActiveObserver: NSObjectProtocol?
     private var settingsVisible = false
 
     init(model: CodexMenuBarModel, openSettings: @escaping () -> Void) {
@@ -23,6 +24,7 @@ final class CodexStatusItemController: NSObject {
         configureStatusItem()
         configurePopover()
         configureMenu()
+        observeAppActivation()
         observeModel()
         updateTitle()
     }
@@ -158,6 +160,19 @@ final class CodexStatusItemController: NSObject {
         }
     }
 
+    private func observeAppActivation() {
+        resignActiveObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didResignActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                guard self?.settingsVisible == false else { return }
+                self?.closePopoverFromMonitor()
+            }
+        }
+    }
+
     private func shouldClosePopover(for event: NSEvent) -> Bool {
         guard popover.isShown else { return false }
 
@@ -211,6 +226,7 @@ final class CodexStatusItemController: NSObject {
         _ = model.showWeeklyInMenubar
         _ = model.menuBarDisplayMode
         _ = model.resetDisplayStyle
+        _ = model.appearanceMode
         _ = model.diagnosticsStatusMessage
         _ = model.shouldDimStatusItem
         _ = model.usageHistory
