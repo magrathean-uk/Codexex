@@ -1,0 +1,8 @@
+Codexex 3.0 brings the quota dashboard to iPhone and iPad:
+
+- Codex and Spark cards with reset timing.
+- Adaptive System, Light, and Dark appearance.
+- Flexible layouts for iPhone, iPad, floating windows, and landscape.
+- Peaks, Cycle, and Month history with weekly pace forecasting.
+- 24-hour snooze for usage warnings.
+- Preview Mode for App Review and offline testing.

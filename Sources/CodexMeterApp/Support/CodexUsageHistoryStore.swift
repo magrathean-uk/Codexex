@@ -1,4 +1,3 @@
-#if os(macOS)
 import Foundation
 import CodexMeterCore
 
@@ -149,4 +148,3 @@ private extension JSONEncoder {
         return encoder
     }
 }
-#endif

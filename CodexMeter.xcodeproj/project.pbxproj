@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		01E0115879B26A5A8BB7AD2D /* CodexSummarySnooze.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2BFEE1CA9B1960DAE83434B /* CodexSummarySnooze.swift */; };
 		030D210C70E01A036F0B550A /* CodexHelperLineReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = D698FB4C9A50CA554B0550C8 /* CodexHelperLineReader.swift */; };
 		0350F768560D8A4EB52D2596 /* PopupSummaryCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D15D66529D9E2B5CCB5D169 /* PopupSummaryCardView.swift */; };
 		05F26FC7CCC52F85B67FBA8A /* CodexHelperLineReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = D698FB4C9A50CA554B0550C8 /* CodexHelperLineReader.swift */; };
@@ -29,9 +30,11 @@
 		1DE8CA42D34331DA5D73EB2D /* CodexexiOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A729D4E01BB7C27D032909ED /* CodexexiOSApp.swift */; };
 		1F716FB31CC97F437C153AD1 /* SettingsForecastCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7A0915351DD97681A213FCB /* SettingsForecastCardView.swift */; };
 		2036B60D86528A7C1F7A8DD4 /* PopupLimitCardViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E944DBB615061BEA8E462D9 /* PopupLimitCardViews.swift */; };
+		229EC58ECE3CFCD8DF564C91 /* CodexUsageHistoryAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = A52CF560D83450EF83AB67DA /* CodexUsageHistoryAnalytics.swift */; };
 		22F81F822F338DDEE87B7455 /* CodexLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B61AAE1DA3B39D0AD2CB203 /* CodexLog.swift */; };
 		2464986D9560A0BD07E6C0F2 /* CodexDeviceAuthCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2532C9697CC6730FC45790DE /* CodexDeviceAuthCoordinator.swift */; };
 		2612BDEDDA88004D9176D78D /* GlassCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE2909B5F3DAB30B7BDCACD5 /* GlassCard.swift */; };
+		27A9B3C611933865DF8185D5 /* PopupPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7DC9461D5A89DDD41915EB /* PopupPresentation.swift */; };
 		2DD7F4B32FDD59E6D23C78E7 /* CodexMeterCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6869618B2897346A3AB60D26 /* CodexMeterCore.framework */; };
 		3345862044A399E80C2EAFC9 /* CodexMenuBarModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB02F9086358A6968D76E1F /* CodexMenuBarModel.swift */; };
 		3485B4D8947D184E1E4785A1 /* CodexQuotaSnapshotBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2763F8999C44DE7A51CB688F /* CodexQuotaSnapshotBuilder.swift */; };
@@ -50,6 +53,7 @@
 		60BAB253D539CB5D5B3EAC1F /* CodexPopoverSizingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE5366DEE91A1A176EEB2337 /* CodexPopoverSizingTests.swift */; };
 		60FDC5DB302DDBA630D4C40C /* CodexAppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3341C9D3222116EB47334518 /* CodexAppSettings.swift */; };
 		6256AA0A194ABF81E19D313A /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = AE6B26C897C050086555E22C /* AppIcon.icon */; };
+		63E99B528A8DBD3AC0D72413 /* CodexUsageHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3209217BB7F873DF4FF8D1AF /* CodexUsageHistoryStore.swift */; };
 		644B39D01815A567068D9F3D /* SettingsFormRows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E75A58577491FB73E1AC4BF /* SettingsFormRows.swift */; };
 		647FBBC6090D48536D9B232D /* SettingsAboutCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE190C5B99912EAC0B0887CB /* SettingsAboutCard.swift */; };
 		667546F85A7A45C96A8F0FC4 /* CodexServiceContracts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276FBBA17CA2600B367DBC25 /* CodexServiceContracts.swift */; };
@@ -994,6 +998,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				01E0115879B26A5A8BB7AD2D /* CodexSummarySnooze.swift in Sources */,
+				229EC58ECE3CFCD8DF564C91 /* CodexUsageHistoryAnalytics.swift in Sources */,
+				63E99B528A8DBD3AC0D72413 /* CodexUsageHistoryStore.swift in Sources */,
 				1DE8CA42D34331DA5D73EB2D /* CodexexiOSApp.swift in Sources */,
 				F9130A4420C79C4986DAE766 /* CodexiOSAppResetter.swift in Sources */,
 				ECE1E26B378C4F8589E8B65B /* CodexiOSModel.swift in Sources */,
@@ -1003,6 +1010,7 @@
 				36D12549C8CAB472B2F8813D /* CodexiOSService.swift in Sources */,
 				C1E2FA3C5A90C0CA6AC14439 /* CodexiOSSettingsView.swift in Sources */,
 				E89A3AEC81CD97A517303EA6 /* CodexiOSShellView.swift in Sources */,
+				27A9B3C611933865DF8185D5 /* PopupPresentation.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1155,9 +1163,16 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsMultipleScenes = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = (
 					UIInterfaceOrientationPortrait,
+					UIInterfaceOrientationLandscapeLeft,
+					UIInterfaceOrientationLandscapeRight,
+				);
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = (
+					UIInterfaceOrientationPortrait,
+					UIInterfaceOrientationPortraitUpsideDown,
 					UIInterfaceOrientationLandscapeLeft,
 					UIInterfaceOrientationLandscapeRight,
 				);
@@ -1165,7 +1180,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.magrathean.CodexexApp.iOS;
+				PRODUCT_BUNDLE_IDENTIFIER = com.magrathean.CodexexApp;
 				PRODUCT_NAME = Codexex;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1198,9 +1213,16 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsMultipleScenes = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = (
 					UIInterfaceOrientationPortrait,
+					UIInterfaceOrientationLandscapeLeft,
+					UIInterfaceOrientationLandscapeRight,
+				);
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = (
+					UIInterfaceOrientationPortrait,
+					UIInterfaceOrientationPortraitUpsideDown,
 					UIInterfaceOrientationLandscapeLeft,
 					UIInterfaceOrientationLandscapeRight,
 				);
@@ -1208,7 +1230,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.magrathean.CodexexApp.iOS;
+				PRODUCT_BUNDLE_IDENTIFIER = com.magrathean.CodexexApp;
 				PRODUCT_NAME = Codexex;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";

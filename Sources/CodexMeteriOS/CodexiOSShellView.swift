@@ -5,16 +5,27 @@ struct CodexiOSShellView: View {
     @AppStorage(CodexiOSSettingsKeys.autoCheckSignInOnReturn) private var autoCheckSignInOnReturn = true
     @AppStorage(CodexiOSSettingsKeys.refreshWhenActive) private var refreshWhenActive = true
     @AppStorage(CodexiOSSettingsKeys.refreshIntervalSeconds) private var refreshIntervalSeconds = 300
+    @AppStorage(CodexiOSSettingsKeys.appearanceMode) private var appearanceMode = CodexiOSAppearanceMode.system.rawValue
+    @AppStorage(CodexiOSSettingsKeys.hasCompletedOnboarding) private var storedHasCompletedOnboarding = false
     @Bindable var model: CodexiOSModel
 
     var body: some View {
         Group {
-            if model.hasCompletedOnboarding {
+            if hasCompletedOnboarding {
                 CodexiOSRootView(model: model)
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .move(edge: .trailing)).combined(with: .scale(scale: 0.98)),
+                        removal: .opacity.combined(with: .move(edge: .leading)).combined(with: .scale(scale: 1.02))
+                    ))
             } else {
                 CodexiOSOnboardingView(model: model)
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .move(edge: .leading)).combined(with: .scale(scale: 0.98)),
+                        removal: .opacity.combined(with: .move(edge: .leading)).combined(with: .scale(scale: 0.98))
+                    ))
             }
         }
+        .animation(.spring(response: 0.5, dampingFraction: 0.86), value: hasCompletedOnboarding)
         .task {
             await model.start()
         }
@@ -30,6 +41,11 @@ struct CodexiOSShellView: View {
                 )
             }
         }
+        .preferredColorScheme(CodexiOSAppearanceMode(rawValue: appearanceMode)?.colorScheme)
+    }
+
+    private var hasCompletedOnboarding: Bool {
+        model.hasCompletedOnboarding || storedHasCompletedOnboarding
     }
 
     private var refreshTaskID: String {

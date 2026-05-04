@@ -26,10 +26,12 @@ final class CodexiOSModel {
     private let defaults: UserDefaults
     private let openURLAction: CodexiOSOpenURLAction
     private let copyTextAction: CodexiOSCopyTextAction
+    private let historyStore: CodexUsageHistoryStore
 
     var hasCompletedOnboarding: Bool
     var previewModeEnabled: Bool
     var snapshot: CodexSnapshot?
+    var usageHistory: [CodexUsageHistorySample] = []
     var isRefreshing = false
     var isSigningIn = false
     var statusMessage = "Sign in with ChatGPT to read Codex usage on this device."
@@ -43,6 +45,7 @@ final class CodexiOSModel {
     init(
         service: any CodexiOSServiceProtocol = CodexiOSService(),
         defaults: UserDefaults = .standard,
+        historyStore: CodexUsageHistoryStore = CodexUsageHistoryStore(),
         openURLAction: @escaping CodexiOSOpenURLAction = { url in
             await UIApplication.shared.open(url)
         },
@@ -54,6 +57,7 @@ final class CodexiOSModel {
         self.defaults = defaults
         self.openURLAction = openURLAction
         self.copyTextAction = copyTextAction
+        self.historyStore = historyStore
         hasCompletedOnboarding = defaults.bool(forKey: CodexiOSSettingsKeys.hasCompletedOnboarding)
         previewModeEnabled = defaults.bool(forKey: CodexiOSSettingsKeys.previewModeEnabled)
         liveAccountState = .signedOut
@@ -68,6 +72,7 @@ final class CodexiOSModel {
     }
 
     func start() async {
+        usageHistory = await historyStore.load()
         if previewModeEnabled {
             applyPreviewSnapshot()
             return
@@ -104,8 +109,7 @@ final class CodexiOSModel {
             verificationURL = auth.verificationURL
             flowID = auth.flowID
             liveAccountState = .pendingSignIn
-            statusMessage = "Open Safari, approve sign-in, then come back."
-            await openURLAction(auth.verificationURL)
+            statusMessage = "Code ready. Open Safari, enter code, then come back."
         } catch {
             clearPendingSignIn()
             liveAccountState = .signedOut
@@ -162,11 +166,9 @@ final class CodexiOSModel {
         statusMessage = "Code copied. Paste it in Safari."
     }
 
-    func openSignInPage() {
+    func openSignInPage() async {
         guard let verificationURL else { return }
-        Task {
-            await openURLAction(verificationURL)
-        }
+        await openURLAction(verificationURL)
     }
 
     func signOut() async {
@@ -215,6 +217,7 @@ final class CodexiOSModel {
         let preview = CodexiOSPreviewData.snapshot()
         snapshot = preview
         lastUpdatedAt = preview.capturedAt
+        usageHistory = CodexiOSPreviewData.history(now: preview.capturedAt)
         errorMessage = nil
         statusMessage = "Preview mode is active."
         liveAccountState = .signedOut
@@ -229,6 +232,9 @@ final class CodexiOSModel {
             clearPendingSignIn()
             liveAccountState = .signedIn
             completeOnboarding()
+            Task {
+                self.usageHistory = await self.historyStore.append(snapshot: snapshot)
+            }
             return
         }
 
@@ -242,6 +248,19 @@ final class CodexiOSModel {
         } else {
             liveAccountState = response.authMode == .chatGPT ? .signedIn : .signedOut
         }
+    }
+
+    func snoozeSummary(_ summary: PopupSummaryPresentation) {
+        defaults.set(CodexSummarySnooze.fingerprint(for: summary), forKey: CodexiOSSettingsKeys.summarySnoozeFingerprint)
+        defaults.set(CodexSummarySnooze.expiryDate(snapshot: snapshot), forKey: CodexiOSSettingsKeys.summarySnoozeExpiresAt)
+    }
+
+    func isSummarySnoozed(_ summary: PopupSummaryPresentation) -> Bool {
+        CodexSummarySnooze.isSnoozed(
+            summary: summary,
+            storedFingerprint: defaults.string(forKey: CodexiOSSettingsKeys.summarySnoozeFingerprint),
+            expiresAt: defaults.object(forKey: CodexiOSSettingsKeys.summarySnoozeExpiresAt) as? Date
+        )
     }
 
     private func applyError(_ message: String) {

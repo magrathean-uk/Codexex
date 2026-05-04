@@ -9,6 +9,11 @@ enum CodexiOSSettingsKeys {
     static let refreshIntervalSeconds = "ios.refreshIntervalSeconds"
     static let hasCompletedOnboarding = "ios.hasCompletedOnboarding"
     static let previewModeEnabled = "ios.previewModeEnabled"
+    static let appearanceMode = "ios.appearanceMode"
+    static let defaultHistoryMode = "ios.defaultHistoryMode"
+    static let showPaceConfidence = "ios.showPaceConfidence"
+    static let summarySnoozeFingerprint = "ios.summarySnoozeFingerprint"
+    static let summarySnoozeExpiresAt = "ios.summarySnoozeExpiresAt"
 
     static let all = [
         autoCheckSignInOnReturn,
@@ -18,24 +23,80 @@ enum CodexiOSSettingsKeys {
         resetDisplayStyle,
         refreshIntervalSeconds,
         hasCompletedOnboarding,
-        previewModeEnabled
+        previewModeEnabled,
+        appearanceMode,
+        defaultHistoryMode,
+        showPaceConfidence,
+        summarySnoozeFingerprint,
+        summarySnoozeExpiresAt
     ]
 }
 
 enum CodexiOSResetDisplayStyle: String, CaseIterable, Identifiable {
-    case countdown
-    case clock
+    case relative
+    case absolute
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .countdown:
+        case .relative:
             return "Countdown"
-        case .clock:
+        case .absolute:
             return "Clock"
         }
     }
+
+}
+
+enum CodexiOSAppearanceMode: String, CaseIterable, Identifiable {
+    case system
+    case light
+    case dark
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .system:
+            return "System"
+        case .light:
+            return "Light"
+        case .dark:
+            return "Dark"
+        }
+    }
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system:
+            return nil
+        case .light:
+            return .light
+        case .dark:
+            return .dark
+        }
+    }
+}
+
+enum CodexiOSHistoryMode: String, CaseIterable, Identifiable {
+    case dailyPeaks
+    case thisCycle
+    case monthly
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .dailyPeaks:
+            return "Peaks"
+        case .thisCycle:
+            return "Cycle"
+        case .monthly:
+            return "Month"
+        }
+    }
+
 }
 
 struct CodexiOSSettingsView: View {
@@ -43,7 +104,10 @@ struct CodexiOSSettingsView: View {
     @AppStorage(CodexiOSSettingsKeys.refreshWhenActive) private var refreshWhenActive = true
     @AppStorage(CodexiOSSettingsKeys.showSpark) private var showSpark = true
     @AppStorage(CodexiOSSettingsKeys.showHistory) private var showHistory = true
-    @AppStorage(CodexiOSSettingsKeys.resetDisplayStyle) private var resetDisplayStyle = CodexiOSResetDisplayStyle.countdown.rawValue
+    @AppStorage(CodexiOSSettingsKeys.resetDisplayStyle) private var resetDisplayStyle = CodexiOSResetDisplayStyle.relative.rawValue
+    @AppStorage(CodexiOSSettingsKeys.appearanceMode) private var appearanceMode = CodexiOSAppearanceMode.system.rawValue
+    @AppStorage(CodexiOSSettingsKeys.defaultHistoryMode) private var defaultHistoryMode = CodexiOSHistoryMode.dailyPeaks.rawValue
+    @AppStorage(CodexiOSSettingsKeys.showPaceConfidence) private var showPaceConfidence = true
     @AppStorage(CodexiOSSettingsKeys.refreshIntervalSeconds) private var refreshIntervalSeconds = 300
     @Bindable var model: CodexiOSModel
     @State private var isShowingResetConfirmation = false
@@ -61,7 +125,7 @@ struct CodexiOSSettingsView: View {
         .tint(CodexiOSTheme.secondary)
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(CodexiOSAppearanceMode(rawValue: appearanceMode)?.colorScheme)
         .confirmationDialog(
             "Reset Codexex?",
             isPresented: $isShowingResetConfirmation,
@@ -105,7 +169,7 @@ struct CodexiOSSettingsView: View {
             if model.previewModeEnabled == false {
                 if model.hasPendingSignIn {
                     Button("Open Safari") {
-                        model.openSignInPage()
+                        Task { await model.openSignInPage() }
                     }
                     Button("Check Now") {
                         Task { await model.checkSignIn() }
@@ -142,6 +206,20 @@ struct CodexiOSSettingsView: View {
                     Text(style.title).tag(style.rawValue)
                 }
             }
+
+            Picker("Appearance", selection: $appearanceMode) {
+                ForEach(CodexiOSAppearanceMode.allCases) { mode in
+                    Text(mode.title).tag(mode.rawValue)
+                }
+            }
+
+            Picker("History", selection: $defaultHistoryMode) {
+                ForEach(CodexiOSHistoryMode.allCases) { mode in
+                    Text(mode.title).tag(mode.rawValue)
+                }
+            }
+
+            Toggle("Show Pace Details", isOn: $showPaceConfidence)
         } header: {
             Text("Display")
         } footer: {

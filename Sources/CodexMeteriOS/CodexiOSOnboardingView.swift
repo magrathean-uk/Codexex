@@ -3,6 +3,7 @@ import SwiftUI
 struct CodexiOSOnboardingView: View {
     @Bindable var model: CodexiOSModel
     @State private var step: Step = .welcome
+    @State private var hasAppeared = false
 
     private enum Step: Int {
         case welcome
@@ -37,8 +38,12 @@ struct CodexiOSOnboardingView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
         .animation(.spring(response: 0.45, dampingFraction: 0.9), value: step)
+        .onAppear {
+            withAnimation(.spring(response: 0.7, dampingFraction: 0.82)) {
+                hasAppeared = true
+            }
+        }
     }
 
     private var header: some View {
@@ -77,12 +82,15 @@ struct CodexiOSOnboardingView: View {
                         .fixedSize(horizontal: false, vertical: true)
 
                     Button {
-                        model.enablePreviewMode()
+                        withAnimation(.spring(response: 0.5, dampingFraction: 0.86)) {
+                            model.enablePreviewMode()
+                        }
                     } label: {
                         Text("Try Preview Mode")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(CodexiOSPrimaryButtonStyle())
+                    .contentShape(Rectangle())
 
                     Button {
                         withAnimation { step = .login }
@@ -91,6 +99,7 @@ struct CodexiOSOnboardingView: View {
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(CodexiOSSecondaryButtonStyle())
+                    .contentShape(Rectangle())
                 }
             }
         }
@@ -130,7 +139,7 @@ struct CodexiOSOnboardingView: View {
                             .buttonStyle(CodexiOSPrimaryButtonStyle())
                             .disabled(model.isSigningIn)
                         } else {
-                            Button("Open Safari") { model.openSignInPage() }
+                            Button("Open Safari") { Task { await model.openSignInPage() } }
                                 .buttonStyle(CodexiOSPrimaryButtonStyle())
                             Button("Copy Code") { model.copyCode() }
                                 .buttonStyle(CodexiOSSecondaryButtonStyle())
@@ -162,6 +171,9 @@ struct CodexiOSOnboardingView: View {
                         .foregroundStyle(CodexiOSTheme.secondary)
                 }
                 .frame(width: 68, height: 68)
+                .scaleEffect(hasAppeared ? 1 : 0.84)
+                .rotationEffect(.degrees(hasAppeared ? 0 : -8))
+                .animation(.spring(response: 0.65, dampingFraction: 0.72).delay(0.08), value: hasAppeared)
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Quota, readable")
@@ -173,6 +185,9 @@ struct CodexiOSOnboardingView: View {
                 }
             }
         }
+        .opacity(hasAppeared ? 1 : 0)
+        .offset(y: hasAppeared ? 0 : 12)
+        .animation(.easeOut(duration: 0.45), value: hasAppeared)
     }
 
     private var loginMessage: String {

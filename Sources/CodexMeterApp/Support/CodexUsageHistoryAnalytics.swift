@@ -1,4 +1,3 @@
-#if os(macOS)
 import Foundation
 import SwiftUI
 import CodexMeterCore
@@ -1157,4 +1156,3 @@ private extension Double {
         min(max(self, range.lowerBound), range.upperBound)
     }
 }
-#endif
