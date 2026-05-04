@@ -24,6 +24,9 @@ final class CodexiOSModelTests: XCTestCase {
 
         XCTAssertNotNil(model.snapshot)
         XCTAssertFalse(model.isSignedIn)
+        XCTAssertTrue(model.hasCompletedOnboarding)
+        XCTAssertTrue(defaults.bool(forKey: CodexiOSSettingsKeys.hasCompletedOnboarding))
+        XCTAssertTrue(defaults.bool(forKey: CodexiOSSettingsKeys.previewModeEnabled))
         XCTAssertEqual(fetchCount, 0)
     }
 
@@ -54,7 +57,11 @@ final class CodexiOSModelTests: XCTestCase {
         let openedURLs = await recorder.urls()
         XCTAssertTrue(model.hasPendingSignIn)
         XCTAssertEqual(model.deviceCode, "ABCD-1234")
-        XCTAssertEqual(openedURLs, [url])
+        XCTAssertEqual(openedURLs, [])
+
+        await model.openSignInPage()
+        let openedSignInURLs = await recorder.urls()
+        XCTAssertEqual(openedSignInURLs, [url])
 
         await model.handleSceneDidBecomeActive(
             autoCheckSignInOnReturn: true,

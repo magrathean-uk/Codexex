@@ -1,4 +1,3 @@
-#if os(macOS)
 import Foundation
 import CodexMeterCore
 
@@ -29,4 +28,3 @@ enum CodexSummarySnooze {
         now.addingTimeInterval(24 * 60 * 60)
     }
 }
-#endif

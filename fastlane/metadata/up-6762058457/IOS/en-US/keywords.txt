@@ -1,0 +1,1 @@
+codex,quota,usage,chatgpt,oauth,history,forecast,preview,ipad,iphone

@@ -95,21 +95,32 @@ targets:
     sources:
       - path: Sources/CodexMeteriOS
       - path: Sources/CodexMeterApp/Assets.xcassets
+      - path: Sources/CodexMeterApp/Support/CodexSummarySnooze.swift
+      - path: Sources/CodexMeterApp/Support/CodexUsageHistoryAnalytics.swift
+      - path: Sources/CodexMeterApp/Support/CodexUsageHistoryStore.swift
+      - path: Sources/CodexMeterApp/UI/PopupPresentation.swift
     dependencies:
       - target: CodexMeterCoreiOS
     settings:
       base:
         PRODUCT_NAME: Codexex
-        PRODUCT_BUNDLE_IDENTIFIER: com.magrathean.CodexexApp.iOS
+        PRODUCT_BUNDLE_IDENTIFIER: com.magrathean.CodexexApp
+        TARGETED_DEVICE_FAMILY: "1,2"
         ASSETCATALOG_COMPILER_APPICON_NAME: iOSAppIcon
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Codexex
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UIApplicationSupportsMultipleScenes: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
 

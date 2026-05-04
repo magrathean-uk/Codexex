@@ -18,3 +18,4 @@ Rules:
 - Keep helper auth and quota work in `Helper/CodexexHelper/`; keep sandbox bridge work in `Sources/CodexexXPCService/`.
 - Do not add browser scraping, private APIs, cookie theft, or alternate auth flows.
 - Keep release text in `fastlane/metadata/` and privacy text in `PRIVACY.md`; do not grow extra review-note markdown.
+- For Figma-driven UI work: use SwiftUI only, use project tokens/components, do not paste Tailwind styles, fetch Figma context and a screenshot before implementation, and reuse provided Figma assets when present.
