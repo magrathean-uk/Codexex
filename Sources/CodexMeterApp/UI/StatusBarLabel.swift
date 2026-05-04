@@ -14,8 +14,7 @@ struct StatusBarLabel: View {
     var body: some View {
         HStack(spacing: 6) {
             Text(labelText)
-                .font(.system(size: 12, weight: .medium, design: .rounded))
-                .monospacedDigit()
+                .font(.system(size: 12, weight: .medium))
 
             if isRefreshing {
                 ProgressView()

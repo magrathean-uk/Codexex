@@ -12,7 +12,7 @@ struct LimitCardView: View {
         presentation.style == .hero ? .primary : .secondary
     }
     private var headlineFont: Font {
-        .system(size: 28, weight: .semibold, design: .default).monospacedDigit()
+        .system(size: 28, weight: .semibold)
     }
     private var contentSpacing: CGFloat { 12 }
     private var headlineWindow: CodexQuotaWindow? {
@@ -56,7 +56,7 @@ struct LimitCardView: View {
                         Spacer()
 
                         Text(credits.displayText)
-                            .font(.caption.monospacedDigit().weight(.semibold))
+                            .font(.caption.weight(.semibold))
                             .foregroundStyle(credits.isNegativeBalance ? Color.red : .secondary)
                     }
                     .padding(.top, 2)
@@ -83,7 +83,7 @@ struct LimitCardView: View {
                 Spacer()
 
                 Text(window.usedPercentText)
-                    .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(CodexTheme.text)
                     .contentTransition(
                         accessibilityReduceMotion

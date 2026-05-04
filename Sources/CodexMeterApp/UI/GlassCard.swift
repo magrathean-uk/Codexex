@@ -4,11 +4,11 @@ import SwiftUI
 
 enum CodexTheme {
     static let desktopTop = adaptive(light: ns(0xF4F8FF), dark: ns(0x060914))
-    static let desktopBottom = adaptive(light: ns(0xEAF2FF), dark: ns(0x05141F))
+    static let desktopBottom = adaptive(light: ns(0xF4F8FF), dark: ns(0x05141F))
     static let window = adaptive(light: ns(0xF4F8FF), dark: ns(0x060914))
     static let titlebar = adaptive(light: ns(0xF8FBFF), dark: ns(0x081021))
     static let sidebar = adaptive(light: ns(0xEDF4FF), dark: ns(0x050D1A))
-    static let surface = adaptive(light: ns(0xFFFFFF).withAlphaComponent(0.78), dark: ns(0x081021).withAlphaComponent(0.88))
+    static let surface = adaptive(light: ns(0xFFFFFF).withAlphaComponent(0.96), dark: ns(0x081021).withAlphaComponent(0.88))
     static let surfaceRaised = adaptive(light: ns(0xF8FBFF), dark: ns(0x0A1426))
     static let control = adaptive(light: ns(0xE4ECF8), dark: ns(0x0F1A2E))
     static let hairline = adaptive(light: ns(0x1C46D6).withAlphaComponent(0.12), dark: ns(0x5FAAFF).withAlphaComponent(0.12))
@@ -23,6 +23,8 @@ enum CodexTheme {
     static let amber = Color(red: 1.00, green: 0.65, blue: 0.08)
     static let danger = Color(red: 1.00, green: 0.27, blue: 0.32)
     static let success = Color(red: 0.35, green: 0.82, blue: 0.44)
+    static let shadow = adaptive(light: ns(0x5C6F93).withAlphaComponent(0.16), dark: ns(0x000000).withAlphaComponent(0.32))
+    static let popupShadow = adaptive(light: ns(0x5C6F93).withAlphaComponent(0.24), dark: ns(0x000000).withAlphaComponent(0.42))
 
     static let desktopGradient = LinearGradient(
         colors: [desktopTop, desktopBottom],
@@ -126,8 +128,7 @@ struct GlassCard<Content: View>: View {
                 .padding(style.padding)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(style.fill, in: shape)
-                .glassEffect(style.glass, in: .rect(cornerRadius: style.radius))
-                .shadow(color: .black.opacity(0.32), radius: 18, y: 10)
+                .shadow(color: CodexTheme.shadow, radius: 14, y: 8)
                 .overlay {
                     shape.strokeBorder(style.border, lineWidth: 1)
                 }
