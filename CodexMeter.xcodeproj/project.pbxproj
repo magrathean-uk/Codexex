@@ -49,6 +49,7 @@
 		4DBB1B07B795DDAEED280F65 /* CodexMeterCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6869618B2897346A3AB60D26 /* CodexMeterCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		589F77FEADA1044E87EFEAC6 /* CodexServiceContractsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1861D53A1F57EB01F26800B /* CodexServiceContractsTests.swift */; };
 		5D66AAF61CB0544A6778A318 /* CodexAuthFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 663EB7F700A461322CFB2123 /* CodexAuthFlow.swift */; };
+		60668C2C9AFF17B52B25AF43 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B4B18F174DC46CE37BD5F200 /* LaunchScreen.storyboard */; };
 		6092EF48D5067D3AEA443F7A /* PopupStatusCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5BFA2D05C17A74BBBB6DF3E /* PopupStatusCardView.swift */; };
 		60BAB253D539CB5D5B3EAC1F /* CodexPopoverSizingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE5366DEE91A1A176EEB2337 /* CodexPopoverSizingTests.swift */; };
 		60FDC5DB302DDBA630D4C40C /* CodexAppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3341C9D3222116EB47334518 /* CodexAppSettings.swift */; };
@@ -323,6 +324,7 @@
 		AE5366DEE91A1A176EEB2337 /* CodexPopoverSizingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexPopoverSizingTests.swift; sourceTree = "<group>"; };
 		AE6B26C897C050086555E22C /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		B1861D53A1F57EB01F26800B /* CodexServiceContractsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexServiceContractsTests.swift; sourceTree = "<group>"; };
+		B4B18F174DC46CE37BD5F200 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		B50B52D38EBDD1E7DEC2CFFE /* StatusBarLabelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarLabelTests.swift; sourceTree = "<group>"; };
 		B56802AB05B67B2A4F883DA3 /* CodexSnapshotParsingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexSnapshotParsingTests.swift; sourceTree = "<group>"; };
 		B735A3B02D954FDEAE629D2C /* CodexexXPCService.xpc */ = {isa = PBXFileReference; explicitFileType = "wrapper.xpc-service"; includeInIndex = 0; path = CodexexXPCService.xpc; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -503,6 +505,7 @@
 				410E8DD13157EB9F9DA4D77D /* CodexiOSService.swift */,
 				0E38C10501C5C72133474E3D /* CodexiOSSettingsView.swift */,
 				30FA00E5AFF9B1C21950BAC4 /* CodexiOSShellView.swift */,
+				B4B18F174DC46CE37BD5F200 /* LaunchScreen.storyboard */,
 			);
 			name = CodexMeteriOS;
 			path = Sources/CodexMeteriOS;
@@ -854,6 +857,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				922F786C08CD8970EC3C1370 /* Assets.xcassets in Resources */,
+				60668C2C9AFF17B52B25AF43 /* LaunchScreen.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1162,9 +1166,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Codexex;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsMultipleScenes = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = (
 					UIInterfaceOrientationPortrait,
 					UIInterfaceOrientationLandscapeLeft,
@@ -1212,9 +1214,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Codexex;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsMultipleScenes = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = (
 					UIInterfaceOrientationPortrait,
 					UIInterfaceOrientationLandscapeLeft,
@@ -1361,7 +1361,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 6;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = NPSQV9WYS5;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -1520,7 +1520,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 6;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = NPSQV9WYS5;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;

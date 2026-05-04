@@ -168,8 +168,25 @@ struct CodexiOSSettingsView: View {
 
             if model.previewModeEnabled == false {
                 if model.hasPendingSignIn {
+                    if let code = model.deviceCode {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Device code")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                            Text(code)
+                                .font(.system(.title2, design: .monospaced, weight: .bold))
+                                .textSelection(.enabled)
+                            Text(model.statusMessage)
+                                .font(.caption)
+                                .foregroundStyle(CodexiOSTheme.secondary)
+                        }
+                        .padding(.vertical, 6)
+                    }
                     Button("Open Safari") {
                         Task { await model.openSignInPage() }
+                    }
+                    Button("Copy Code") {
+                        model.copyCode()
                     }
                     Button("Check Now") {
                         Task { await model.checkSignIn() }
@@ -281,7 +298,7 @@ struct CodexiOSSettingsView: View {
             return "Preview mode uses sample quota data and pauses live reads."
         }
         if model.hasPendingSignIn {
-            return "Safari approval is waiting. Come back here and Codexex can check again."
+            return model.statusMessage
         }
         if model.isSignedIn {
             return "Quota reads stay local to this device."
