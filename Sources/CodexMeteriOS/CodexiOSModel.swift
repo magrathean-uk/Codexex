@@ -109,7 +109,8 @@ final class CodexiOSModel {
             verificationURL = auth.verificationURL
             flowID = auth.flowID
             liveAccountState = .pendingSignIn
-            statusMessage = "Code ready. Open Safari, enter code, then come back."
+            copyTextAction(auth.userCode)
+            statusMessage = "Device code copied. Paste it in Safari."
         } catch {
             clearPendingSignIn()
             liveAccountState = .signedOut

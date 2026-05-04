@@ -33,6 +33,7 @@ final class CodexiOSModelTests: XCTestCase {
     func testSceneReturnChecksPendingSignInAndCompletesOnboarding() async {
         let url = URL(string: "https://auth.openai.com/codex/device")!
         let recorder = URLRecorder()
+        let copyRecorder = CopyRecorder()
         let service = StubCodexiOSService(
             fetchHandler: {
                 CodexServiceSnapshotResponse(authMode: .chatGPT, snapshot: CodexiOSPreviewData.snapshot(), errorMessage: nil)
@@ -50,13 +51,18 @@ final class CodexiOSModelTests: XCTestCase {
             openURLAction: { url in
                 await recorder.record(url)
             },
-            copyTextAction: { _ in }
+            copyTextAction: { text in
+                copyRecorder.record(text)
+            }
         )
 
         await model.beginSignIn()
         let openedURLs = await recorder.urls()
+        let copiedValues = copyRecorder.values
         XCTAssertTrue(model.hasPendingSignIn)
         XCTAssertEqual(model.deviceCode, "ABCD-1234")
+        XCTAssertEqual(copiedValues, ["ABCD-1234"])
+        XCTAssertEqual(model.statusMessage, "Device code copied. Paste it in Safari.")
         XCTAssertEqual(openedURLs, [])
 
         await model.openSignInPage()
@@ -76,6 +82,35 @@ final class CodexiOSModelTests: XCTestCase {
         XCTAssertNotNil(model.snapshot)
         XCTAssertEqual(pollCount, 1)
         XCTAssertEqual(fetchCount, 1)
+    }
+
+    func testSignInAfterLeavingPreviewShowsAndCopiesDeviceCode() async {
+        let url = URL(string: "https://auth.openai.com/codex/device")!
+        let copyRecorder = CopyRecorder()
+        let defaults = makeDefaults()
+        let service = StubCodexiOSService(
+            beginHandler: {
+                CodexiOSDeviceAuthStart(flowID: "flow-2", verificationURL: url, userCode: "WXYZ-9876")
+            }
+        )
+        let model = CodexiOSModel(
+            service: service,
+            defaults: defaults,
+            openURLAction: { _ in },
+            copyTextAction: { text in
+                copyRecorder.record(text)
+            }
+        )
+
+        model.enablePreviewMode()
+        model.disablePreviewMode()
+        await model.beginSignIn()
+
+        XCTAssertFalse(model.previewModeEnabled)
+        XCTAssertTrue(model.hasPendingSignIn)
+        XCTAssertEqual(model.deviceCode, "WXYZ-9876")
+        XCTAssertEqual(copyRecorder.values, ["WXYZ-9876"])
+        XCTAssertEqual(model.statusMessage, "Device code copied. Paste it in Safari.")
     }
 
     func testRefreshUsesAuthModeInsteadOfStatusText() async {
@@ -215,5 +250,14 @@ actor URLRecorder {
 
     func urls() -> [URL] {
         values
+    }
+}
+
+@MainActor
+final class CopyRecorder {
+    private(set) var values: [String] = []
+
+    func record(_ value: String) {
+        values.append(value)
     }
 }
