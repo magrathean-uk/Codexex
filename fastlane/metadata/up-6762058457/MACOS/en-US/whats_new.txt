@@ -1,1 +1,8 @@
-Codexex 2.1 adds a Month history switch for 30-day weekly usage, sharper early-cycle risk warnings, and cleaner Settings chrome.
+Codexex 3.0 refines the menu bar experience:
+
+- Adaptive System, Light, and Dark appearance, with a new Settings control.
+- Cleaner light theme matched across popup and Settings.
+- More compact popup layout so Settings stays reachable from the menu bar.
+- 24-hour snooze for usage warnings.
+- Improved 5-hour, weekly, cycle, and month history presentation.
+- Forecast and sign-in flow fixes, including refresh after ChatGPT sign-in.

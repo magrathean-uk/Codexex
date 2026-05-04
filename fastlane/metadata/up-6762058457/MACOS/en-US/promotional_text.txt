@@ -1,1 +1,1 @@
-Track Codex usage in the menu bar with 5-hour, weekly, and monthly history plus ChatGPT sign-in or Preview Mode.
+Track Codex usage in the menu bar with adaptive themes, compact history, forecasting, and ChatGPT sign-in.
