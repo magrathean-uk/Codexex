@@ -70,7 +70,7 @@ Keep review-facing copy in those files. Do not recreate `FEATURES.md`, `APP_REVI
 1. Launch the app.
 2. Use `Preview Mode` or start ChatGPT sign-in from Settings.
 3. Confirm the popup shows quota cards, reset timing, Peaks/Cycle/Month history, and forecast state.
-4. Confirm the settings window can sign out, change refresh cadence, and toggle menu bar labels.
+4. Confirm the settings window can sign out, change refresh cadence, switch System/Light/Dark appearance, and toggle menu bar labels.
 
 ## Scripted release smoke
 
