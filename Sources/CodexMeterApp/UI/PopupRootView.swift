@@ -42,7 +42,7 @@ struct PopupRootView: View {
             RoundedRectangle(cornerRadius: GlassTokens.popupRadius, style: .continuous)
                 .strokeBorder(CodexTheme.hairline, lineWidth: 1)
         }
-        .shadow(color: .black.opacity(0.42), radius: 34, y: 22)
+        .shadow(color: CodexTheme.popupShadow, radius: 28, y: 18)
         .preferredColorScheme(model.appearanceMode.colorScheme)
         .frame(width: GlassTokens.popupWidth)
         .onAppear {
@@ -131,7 +131,7 @@ struct PopupRootView: View {
 
             if let lastUpdatedAt = presentedLastUpdatedAt {
                 Text(updatedText(for: lastUpdatedAt))
-                    .font(.system(size: 11.5).monospacedDigit())
+                    .font(.system(size: 11.5))
                     .foregroundStyle(CodexTheme.dim)
                     .contentTransition(accessibilityReduceMotion ? .identity : .numericText())
             }

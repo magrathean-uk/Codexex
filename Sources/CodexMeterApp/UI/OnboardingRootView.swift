@@ -73,7 +73,7 @@ struct OnboardingRootView: View {
                     .font(.headline)
 
                 Text(code)
-                    .font(.system(.title2, design: .monospaced, weight: .bold))
+                    .font(.system(.title2, weight: .bold))
                     .textSelection(.enabled)
 
                 HStack(spacing: 10) {

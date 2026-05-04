@@ -124,7 +124,7 @@ struct UsageHistoryCardView: View {
                     Spacer()
                     Text("By reset \(Int(projected.rounded()))%")
                 }
-                .font(.caption2.monospacedDigit())
+                .font(.caption2)
                 .foregroundStyle(CodexTheme.dim)
             }
 
@@ -272,7 +272,7 @@ struct UsageHistoryCardView: View {
                 .lineLimit(1)
 
             Text(value)
-                .font(.system(size: 11.5, weight: .semibold).monospacedDigit())
+                .font(.system(size: 11.5, weight: .semibold))
                 .foregroundStyle(CodexTheme.text)
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
@@ -298,7 +298,7 @@ struct UsageHistoryCardView: View {
                 .allowsTightening(true)
 
             Text(value)
-                .font(.caption.monospacedDigit().weight(.semibold))
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(CodexTheme.text)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)

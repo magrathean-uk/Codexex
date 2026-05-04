@@ -109,7 +109,7 @@ struct PopupStatusCardView: View {
 
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text(code)
-                    .font(.system(.title3, design: .monospaced, weight: .semibold))
+                    .font(.system(.title3, weight: .semibold))
                     .textSelection(.enabled)
 
                 Spacer(minLength: 0)

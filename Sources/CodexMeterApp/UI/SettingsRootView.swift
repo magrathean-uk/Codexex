@@ -422,7 +422,7 @@ struct SettingsRootView: View {
                     Spacer()
 
                     Text(Bundle.main.codexexVersionString)
-                        .font(.system(size: 11.5).monospacedDigit())
+                        .font(.system(size: 11.5))
                         .foregroundStyle(CodexTheme.dim)
                 }
                 .padding(.horizontal, 14)
@@ -522,7 +522,7 @@ struct SettingsRootView: View {
                         HStack(spacing: 12) {
                             Text(code)
                                 .textSelection(.enabled)
-                                .font(.system(size: 18, weight: .semibold, design: .monospaced))
+                                .font(.system(size: 18, weight: .semibold))
                                 .foregroundStyle(CodexTheme.text)
 
                             Spacer()

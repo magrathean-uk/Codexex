@@ -65,7 +65,7 @@ struct SettingsAccountCardView: View {
 
             Text(code)
                 .textSelection(.enabled)
-                .font(.system(.title3, design: .monospaced, weight: .semibold))
+                .font(.system(.title3, weight: .semibold))
 
             HStack(spacing: 10) {
                 Button("Open Safari") {
