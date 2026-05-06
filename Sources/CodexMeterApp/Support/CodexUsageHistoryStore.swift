@@ -48,6 +48,8 @@ actor CodexUsageHistoryStore {
     private let fileURL: URL
     private let retention: TimeInterval = 90 * 24 * 60 * 60
     private let futureTolerance: TimeInterval = 5 * 60
+    private let hardSampleCap = 30_000
+    private var cachedSamples: [CodexUsageHistorySample]?
 
     init(fileManager: FileManager = .default, fileURL: URL? = nil) {
         if let fileURL {
@@ -62,11 +64,26 @@ actor CodexUsageHistoryStore {
     }
 
     func load(now: Date = Date()) async -> [CodexUsageHistorySample] {
+        if let cachedSamples {
+            let trimmed = trim(cachedSamples, now: now)
+            if trimmed != cachedSamples {
+                self.cachedSamples = trimmed
+                save(trimmed)
+            }
+            return trimmed
+        }
+
         do {
-            let data = try Data(contentsOf: self.fileURL)
-            let samples = try JSONDecoder.codexHistoryDecoder.decode([CodexUsageHistorySample].self, from: data)
-            return self.trim(samples, now: now)
+            let data = try Data(contentsOf: fileURL)
+            let decoded = try JSONDecoder.codexHistoryDecoder.decode([CodexUsageHistorySample].self, from: data)
+            let trimmed = trim(decoded, now: now)
+            cachedSamples = trimmed
+            if trimmed != decoded {
+                save(trimmed)
+            }
+            return trimmed
         } catch {
+            cachedSamples = []
             return []
         }
     }
@@ -87,14 +104,19 @@ actor CodexUsageHistoryStore {
             sparkCreditsBalance: sparkCreditsBalance
         )
 
-        if shouldSkipAppend(existing: samples.last, incoming: newSample) {
+        guard shouldSkipAppend(existing: samples.last, incoming: newSample) == false else {
             return samples
         }
 
         samples.append(newSample)
-        samples = self.trim(samples, now: now)
-        self.save(samples)
+        samples = trim(samples, now: now)
+        cachedSamples = samples
+        save(samples)
         return samples
+    }
+
+    func invalidateCacheForTests() {
+        cachedSamples = nil
     }
 
     private func shouldSkipAppend(
@@ -127,9 +149,11 @@ actor CodexUsageHistoryStore {
     private func trim(_ samples: [CodexUsageHistorySample], now: Date) -> [CodexUsageHistorySample] {
         let cutoff = now.addingTimeInterval(-self.retention)
         let futureCutoff = now.addingTimeInterval(self.futureTolerance)
-        return samples
+        let retained = samples
             .filter { $0.capturedAt >= cutoff && $0.capturedAt <= futureCutoff }
             .sorted { $0.capturedAt < $1.capturedAt }
+        guard retained.count > hardSampleCap else { return retained }
+        return Array(retained.suffix(hardSampleCap))
     }
 }
 

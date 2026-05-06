@@ -285,7 +285,7 @@ struct SettingsRootView: View {
 
                 SettingsListRow(title: "Refresh now", detail: "Pull the latest quota data.", isLast: true) {
                     Button {
-                        Task { await model.refreshNow() }
+                        Task { await model.refreshNow(manual: true) }
                     } label: {
                         Label(model.isRefreshing ? "Refreshing" : "Refresh", systemImage: "arrow.clockwise")
                     }
@@ -760,6 +760,7 @@ struct CodexPrimaryButtonStyle: ButtonStyle {
                 in: RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
             )
             .opacity(configuration.isPressed ? 0.82 : 1)
+            .modifier(CodexPressableScale(isPressed: configuration.isPressed))
     }
 }
 
@@ -778,6 +779,7 @@ struct CodexDestructiveButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
                     .strokeBorder(Color(red: 0.8, green: 0.22, blue: 0.20).opacity(0.55), lineWidth: 1)
             }
+            .modifier(CodexPressableScale(isPressed: configuration.isPressed))
     }
 }
 #endif

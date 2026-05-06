@@ -6,7 +6,7 @@ import CodexMeterCore
 enum CodexiOSError: LocalizedError {
     case notSignedIn
     case badResponse(String)
-    case requestFailed(Int, String)
+    case requestFailed(Int)
 
     var errorDescription: String? {
         switch self {
@@ -14,7 +14,7 @@ enum CodexiOSError: LocalizedError {
             return "Not signed in. Sign in with ChatGPT to read your Codex quota."
         case .badResponse(let message):
             return message
-        case .requestFailed(let status, _):
+        case .requestFailed(let status):
             switch status {
             case 401, 403:
                 return "Sign-in expired. Sign in again."
@@ -46,6 +46,7 @@ actor CodexiOSService: CodexiOSServiceProtocol {
     private let issuer = URL(string: "https://auth.openai.com")!
     private let chatGPTBaseURL = URL(string: "https://chatgpt.com/backend-api")!
     private let clientID = "app_EMoamEEZ73f0CkXaXp7hrann"
+    private var pendingAuthRegistry = CodexiOSPendingAuthRegistry()
 
     init(
         session: URLSession = .shared,
@@ -97,23 +98,26 @@ actor CodexiOSService: CodexiOSServiceProtocol {
 
         let data = try await data(for: request)
         let response = try JSONDecoder().decode(CodexDeviceUserCodeResponse.self, from: data)
-        let stored = StoredDeviceCode(
-            verificationURL: issuer.appending(path: "codex/device"),
+        let verificationURL = issuer.appending(path: "codex/device")
+        let flowID = try pendingAuthRegistry.insert(
+            verificationURL: verificationURL,
             userCode: response.userCode,
             deviceAuthID: response.deviceAuthID,
             interval: response.interval
         )
         return CodexiOSDeviceAuthStart(
-            flowID: try stored.flowID(),
-            verificationURL: stored.verificationURL,
-            userCode: stored.userCode
+            flowID: flowID,
+            verificationURL: verificationURL,
+            userCode: response.userCode
         )
     }
 
     func pollSignIn(flowID: String) async throws -> CodexiOSPollResult {
-        let stored = try StoredDeviceCode(flowID: flowID)
+        let pending = try pendingAuthRegistry.resolve(flowID)
         let url = issuer.appending(path: "api/accounts/deviceauth/token")
-        let payload = try JSONEncoder().encode(TokenPollRequest(deviceAuthID: stored.deviceAuthID, userCode: stored.userCode))
+        let payload = try JSONEncoder().encode(
+            TokenPollRequest(deviceAuthID: pending.deviceAuthID, userCode: pending.userCode)
+        )
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.httpBody = payload
@@ -124,17 +128,23 @@ actor CodexiOSService: CodexiOSServiceProtocol {
             let approved = try JSONDecoder().decode(CodexDeviceApprovedResponse.self, from: data)
             let tokens = try await exchange(approved: approved)
             try keychain.save(tokens)
+            pendingAuthRegistry.remove(flowID)
             return .signedIn
         } catch let error as CodexiOSError {
-            if case .requestFailed(let status, _) = error, status == 403 || status == 404 {
+            if case .requestFailed(let status) = error, status == 403 || status == 404 {
                 return .pending("Still waiting. Finish in Safari, then check again.")
             }
+            pendingAuthRegistry.remove(flowID)
+            throw error
+        } catch {
+            pendingAuthRegistry.remove(flowID)
             throw error
         }
     }
 
     func signOut() async throws {
         try keychain.clear()
+        pendingAuthRegistry.removeAll()
     }
 
     private func exchange(approved: CodexDeviceApprovedResponse) async throws -> CodexiOSTokens {
@@ -182,9 +192,11 @@ actor CodexiOSService: CodexiOSServiceProtocol {
         guard let http = response as? HTTPURLResponse else {
             throw CodexiOSError.badResponse("OpenAI returned an invalid response.")
         }
+        if pendingStatuses.contains(http.statusCode) {
+            throw CodexiOSError.requestFailed(http.statusCode)
+        }
         guard (200 ..< 300).contains(http.statusCode) else {
-            let body = String(data: data, encoding: .utf8) ?? ""
-            throw CodexiOSError.requestFailed(http.statusCode, String(body.prefix(180)))
+            throw CodexiOSError.requestFailed(http.statusCode)
         }
         return data
     }
@@ -276,37 +288,5 @@ private struct TokenPollRequest: Encodable {
     enum CodingKeys: String, CodingKey {
         case deviceAuthID = "device_auth_id"
         case userCode = "user_code"
-    }
-}
-
-private struct StoredDeviceCode: Codable {
-    let verificationURL: URL
-    let userCode: String
-    let deviceAuthID: String
-    let interval: Int
-
-    init(verificationURL: URL, userCode: String, deviceAuthID: String, interval: Int) {
-        self.verificationURL = verificationURL
-        self.userCode = userCode
-        self.deviceAuthID = deviceAuthID
-        self.interval = interval
-    }
-
-    init(flowID: String) throws {
-        var base64 = flowID.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
-        while base64.count % 4 != 0 {
-            base64.append("=")
-        }
-        guard let data = Data(base64Encoded: base64) else {
-            throw CodexiOSError.badResponse("Sign-in code expired. Start again.")
-        }
-        self = try JSONDecoder().decode(StoredDeviceCode.self, from: data)
-    }
-
-    func flowID() throws -> String {
-        try JSONEncoder().encode(self).base64EncodedString()
-            .replacingOccurrences(of: "+", with: "-")
-            .replacingOccurrences(of: "/", with: "_")
-            .replacingOccurrences(of: "=", with: "")
     }
 }

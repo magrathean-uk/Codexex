@@ -50,6 +50,7 @@ final class CodexMenuBarModel {
     private let refreshCoordinator = CodexRefreshCoordinator()
     private let lifecycle = Lifecycle()
     private var didStart = false
+    private var refreshBackoff = CodexRefreshBackoff()
 
     init(
         service: any CodexServiceClient = CodexXPCClient(),
@@ -133,7 +134,7 @@ final class CodexMenuBarModel {
         } else {
             let history = await historyRepository.load(snapshot: nil)
             dashboard.setHistory(history)
-            await refreshNow()
+            await refreshNow(manual: true)
         }
 
         lifecycle.refreshLoopTask = Task { [weak self] in
@@ -156,12 +157,18 @@ final class CodexMenuBarModel {
                 }
 
                 guard Task.isCancelled == false else { break }
+                guard self.refreshBackoff.allowsAutomaticRefresh() else {
+                    continue
+                }
                 await self.refreshNow()
             }
         }
     }
 
-    func refreshNow() async {
+    func refreshNow(manual: Bool = false) async {
+        if manual == false && refreshBackoff.allowsAutomaticRefresh() == false {
+            return
+        }
         guard dashboard.isRefreshing == false else { return }
         if previewModeEnabled {
             CodexLog.refresh.log("refresh preview mode")
@@ -189,6 +196,7 @@ final class CodexMenuBarModel {
                     dashboard.applySnapshot(result, historyState: updatedHistory)
                     authSession.apply(.signedIn)
                 }
+                refreshBackoff.recordSuccess()
             } else {
                 CodexLog.refresh.log(
                     "refresh no snapshot authMode=\(String(describing: response.authMode), privacy: .public)"
@@ -196,10 +204,18 @@ final class CodexMenuBarModel {
                 animateStateChange(.easeInOut(duration: 0.18)) {
                     applySnapshotResponse(response)
                 }
+                if let message = response.errorMessage {
+                    let failureClass = CodexRefreshBackoff.classify(errorMessage: message)
+                    refreshBackoff.recordFailure(failureClass)
+                } else {
+                    refreshBackoff.recordSuccess()
+                }
             }
         } catch {
             CodexLog.refresh.error("refresh failed message=\(error.localizedDescription, privacy: .public)")
             guard refreshCoordinator.isCurrent(generation) else { return }
+            let failureClass = CodexRefreshBackoff.classify(errorMessage: error.localizedDescription)
+            refreshBackoff.recordFailure(failureClass)
             animateStateChange(.easeInOut(duration: 0.18)) {
                 dashboard.setError(error.localizedDescription)
             }
@@ -284,6 +300,13 @@ final class CodexMenuBarModel {
             return
         }
         checkPendingChatGPTSignIn()
+    }
+
+    func copyAuthCode() {
+        guard let code = authDeviceCode else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(code, forType: .string)
+        authSession.apply(.pollingPending("Code copied. Paste it in Safari."))
     }
 
     func setLaunchAtLoginEnabled(_ enabled: Bool) {
@@ -439,7 +462,7 @@ final class CodexMenuBarModel {
 
         guard refreshAfterDisable else { return }
         Task { @MainActor [weak self] in
-            await self?.refreshNow()
+            await self?.refreshNow(manual: true)
         }
     }
 
@@ -570,7 +593,7 @@ final class CodexMenuBarModel {
             authSession.apply(.signedIn)
             dashboard.setError(nil)
             CodexLog.auth.log("sign-in complete; refreshing snapshot")
-            await refreshNow()
+            await refreshNow(manual: true)
             return .signedIn
         } catch is PendingSignInStillWaiting {
             guard authFlowID == flowID, refreshCoordinator.isCurrent(generation) else { return .stale }
@@ -652,10 +675,7 @@ final class CodexMenuBarModel {
     }
 
     private func redactedDiagnosticText(_ text: String) -> String {
-        text.replacing(
-            /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/.ignoresCase(),
-            with: "<email>"
-        )
+        CodexSensitiveRedactor.redacted(text)
     }
 }
 

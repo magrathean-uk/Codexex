@@ -1,5 +1,4 @@
 use anyhow::{Context, Result, bail};
-use base64::Engine;
 use chrono::Utc;
 use codex_app_server_protocol::AuthMode;
 use codex_client::build_reqwest_client_with_custom_ca;
@@ -12,17 +11,19 @@ use serde::{Deserialize, Serialize};
 use serde::de::{self, Deserializer};
 use tokio::runtime::Builder;
 
+use crate::flow_registry;
 use crate::protocol::HelperResponse;
+use crate::secure_file_permissions::harden_helper_state_permissions;
 use crate::state;
 
 const PENDING_APPROVAL_MESSAGE: &str = "Still waiting for approval. Finish in Safari, then check again.";
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
-struct StoredDeviceCode {
-    verification_url: String,
-    user_code: String,
-    device_auth_id: String,
-    interval: u64,
+pub(crate) struct StoredDeviceCode {
+    pub(crate) verification_url: String,
+    pub(crate) user_code: String,
+    pub(crate) device_auth_id: String,
+    pub(crate) interval: u64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -87,28 +88,36 @@ fn client() -> Result<reqwest::Client> {
 pub fn begin_device_auth() -> Result<HelperResponse> {
     let opts = state::server_options()?;
     let device_code = runtime()?.block_on(request_device_code(&opts))?;
+    let flow_id = flow_registry::insert(device_code.clone())?;
     Ok(HelperResponse::DeviceAuthStarted {
-        flow_id: encode_flow_id(&device_code)?,
+        flow_id,
         verification_uri: device_code.verification_url,
         user_code: device_code.user_code,
     })
 }
 
 pub fn poll_device_auth(flow_id: &str) -> Result<HelperResponse> {
-    if flow_id.trim().is_empty() {
-        bail!("flow id is empty");
+    let trimmed = flow_id.trim();
+    if trimmed.is_empty() || trimmed.len() > 96 {
+        bail!("Sign-in code expired. Start again.");
     }
 
     let opts = state::server_options()?;
-    let device_code = decode_flow_id(flow_id)?;
+    let device_code = flow_registry::get(trimmed)?;
 
-    match runtime()?.block_on(poll_for_token_once(&opts, &device_code))? {
-        PollOutcome::Pending => Ok(HelperResponse::DeviceAuthPending {
+    match runtime()?.block_on(poll_for_token_once(&opts, &device_code)) {
+        Ok(PollOutcome::Pending) => Ok(HelperResponse::DeviceAuthPending {
             message: PENDING_APPROVAL_MESSAGE.to_string(),
         }),
-        PollOutcome::Approved(code) => {
-            runtime()?.block_on(persist_approved_login(&opts, code))?;
+        Ok(PollOutcome::Approved(code)) => {
+            let persist_result = runtime()?.block_on(persist_approved_login(&opts, code));
+            flow_registry::remove(trimmed);
+            persist_result?;
             Ok(HelperResponse::SignedIn)
+        }
+        Err(error) => {
+            flow_registry::remove(trimmed);
+            Err(error)
         }
     }
 }
@@ -116,6 +125,7 @@ pub fn poll_device_auth(flow_id: &str) -> Result<HelperResponse> {
 pub fn sign_out() -> Result<HelperResponse> {
     let codex_home = state::codex_home()?;
     let _ = logout(&codex_home, AuthCredentialsStoreMode::File)?;
+    flow_registry::clear_all();
     Ok(HelperResponse::SignedOut)
 }
 
@@ -246,17 +256,6 @@ fn persist_tokens(opts: &codex_login::ServerOptions, tokens: TokenExchangeResp) 
     };
     save_auth(&opts.codex_home, &auth, AuthCredentialsStoreMode::File)
         .context("failed to persist approved ChatGPT login")?;
+    harden_helper_state_permissions(&opts.codex_home)?;
     Ok(())
-}
-
-fn encode_flow_id(device_code: &StoredDeviceCode) -> Result<String> {
-    let data = serde_json::to_vec(device_code)?;
-    Ok(base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(data))
-}
-
-fn decode_flow_id(flow_id: &str) -> Result<StoredDeviceCode> {
-    let bytes = base64::engine::general_purpose::URL_SAFE_NO_PAD
-        .decode(flow_id)
-        .context("unknown flow id")?;
-    serde_json::from_slice(&bytes).context("unknown flow id")
 }

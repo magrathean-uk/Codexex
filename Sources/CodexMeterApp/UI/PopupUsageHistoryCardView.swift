@@ -315,7 +315,7 @@ struct UsageHistoryCardView: View {
     }
 
     private func resetChipValue(for resetAt: Date) -> String {
-        let text = resetDisplayStyle.resetText(now: .init(), resetAt: resetAt)
+        let text = CodexResetTextFormatting.resetText(style: resetDisplayStyle, now: Date(), resetAt: resetAt)
         let prefix = "resets "
         if text.hasPrefix(prefix) {
             return String(text.dropFirst(prefix.count))

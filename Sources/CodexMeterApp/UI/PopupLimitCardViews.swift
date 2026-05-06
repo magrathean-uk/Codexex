@@ -74,7 +74,13 @@ struct LimitCardView: View {
     }
 
     private func windowRow(title: String, window: CodexQuotaWindow) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        let now = Date()
+        let resetText = CodexResetTextFormatting.resetText(
+            style: resetDisplayStyle,
+            now: now,
+            resetAt: window.resetsAt
+        )
+        return VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(title)
                     .font(.system(size: 12, weight: .medium))
@@ -91,7 +97,7 @@ struct LimitCardView: View {
                             : .numericText(value: window.clampedUsedPercent)
                     )
 
-                Text(resetDisplayStyle.resetText(now: .init(), resetAt: window.resetsAt))
+                Text(resetText)
                     .font(.system(size: 12))
                     .foregroundStyle(CodexTheme.dim)
             }
@@ -100,7 +106,7 @@ struct LimitCardView: View {
                 progress: window.clampedUsedPercent / 100,
                 bucket: limit.bucket,
                 label: "\(title) usage",
-                value: "\(window.usedPercentText), \(resetDisplayStyle.resetText(now: .init(), resetAt: window.resetsAt))"
+                value: "\(window.usedPercentText), \(resetText)"
             )
         }
     }

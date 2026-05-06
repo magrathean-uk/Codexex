@@ -15,6 +15,9 @@ final class CodexStatusItemController: NSObject {
     private var localEventMonitor: Any?
     private var resignActiveObserver: NSObjectProtocol?
     private var settingsVisible = false
+    private var lastStatusState: CodexStatusItemViewState?
+    private var lastSizingState: CodexPopupSizingState?
+    private var updateScheduled = false
 
     init(model: CodexMenuBarModel, openSettings: @escaping () -> Void) {
         self.model = model
@@ -48,7 +51,7 @@ final class CodexStatusItemController: NSObject {
         )
         self.hostingController = hostingController
         popover.contentViewController = hostingController
-        updatePopoverSize()
+        updatePopoverSize(force: true)
     }
 
     private func configureMenu() {
@@ -84,7 +87,7 @@ final class CodexStatusItemController: NSObject {
 
     @objc private func refreshNow() {
         Task { @MainActor in
-            await model.refreshNow()
+            await model.refreshNow(manual: true)
         }
     }
 
@@ -104,7 +107,7 @@ final class CodexStatusItemController: NSObject {
 
         if visible {
             if popover.isShown == false {
-                updatePopoverSize()
+                updatePopoverSize(force: true)
                 popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             }
             stopEventMonitor()
@@ -122,7 +125,7 @@ final class CodexStatusItemController: NSObject {
             popover.performClose(button)
             stopEventMonitor()
         } else {
-            updatePopoverSize()
+            updatePopoverSize(force: true)
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             if settingsVisible == false {
                 startEventMonitor()
@@ -197,10 +200,20 @@ final class CodexStatusItemController: NSObject {
             trackPopupModelState()
         } onChange: { [weak self] in
             Task { @MainActor in
-                self?.updateTitle()
-                self?.updatePopoverSize()
+                self?.scheduleModelUpdate()
                 self?.observeModel()
             }
+        }
+    }
+
+    private func scheduleModelUpdate() {
+        guard updateScheduled == false else { return }
+        updateScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.updateScheduled = false
+            self.updateTitle()
+            self.updatePopoverSize()
         }
     }
 
@@ -232,8 +245,14 @@ final class CodexStatusItemController: NSObject {
         _ = model.usageHistory
     }
 
-    private func updatePopoverSize() {
+    private func updatePopoverSize(force: Bool = false) {
         guard let hostingController else { return }
+        let sizingState = CodexPopupSizingState(model: model, isShown: popover.isShown)
+        if force == false {
+            guard popover.isShown || hostingController.view.window == nil else { return }
+        }
+        guard sizingState != lastSizingState else { return }
+        lastSizingState = sizingState
         let maxHeight = CodexPopoverSizing.maxHeight(for: statusItem.button?.window?.screen)
         hostingController.view.layoutSubtreeIfNeeded()
         let fittingSize = hostingController.sizeThatFits(
@@ -244,25 +263,19 @@ final class CodexStatusItemController: NSObject {
     }
 
     private func updateTitle() {
-        let hasError = model.lastError != nil
+        let state = CodexStatusItemViewState(model: model)
+        guard state != lastStatusState else { return }
+        lastStatusState = state
         let button = statusItem.button
-        button?.title = StatusBarLabel.makeTitle(
-            snapshot: model.snapshot,
-            isRefreshing: model.isRefreshing,
-            hasError: hasError,
-            displayMode: model.menuBarDisplayMode,
-            showFiveHour: model.showFiveHourInMenubar,
-            showWeekly: model.showWeeklyInMenubar,
-            insights: model.usageInsights
-        )
+        button?.title = state.title
         button?.image = StatusBarLabel.menuBarImage(
-            isRefreshing: model.isRefreshing,
-            hasError: hasError,
-            isStale: model.isDataStale,
-            severity: hasError || model.isRefreshing ? nil : model.popupSummary?.severity
+            isRefreshing: state.isRefreshing,
+            hasError: state.hasError,
+            isStale: state.isStale,
+            severity: state.severity
         )
         button?.imagePosition = .imageLeading
-        button?.alphaValue = model.shouldDimStatusItem ? 0.55 : 1
+        button?.alphaValue = state.shouldDim ? 0.55 : 1
     }
 }
 

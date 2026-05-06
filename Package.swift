@@ -10,9 +10,7 @@ let package = Package(
         .library(name: "CodexMeterCore", targets: ["CodexMeterCore"]),
         .executable(name: "CodexMeterApp", targets: ["CodexMeterApp"])
     ],
-    dependencies: [
-        .package(url: "https://github.com/getsentry/sentry-cocoa.git", exact: "8.58.0")
-    ],
+    dependencies: [],
     targets: [
         .target(
             name: "CodexMeterCore"
@@ -20,8 +18,7 @@ let package = Package(
         .executableTarget(
             name: "CodexMeterApp",
             dependencies: [
-                "CodexMeterCore",
-                .product(name: "Sentry", package: "sentry-cocoa")
+                "CodexMeterCore"
             ],
             exclude: ["AppIcon.icon"],
             resources: [
