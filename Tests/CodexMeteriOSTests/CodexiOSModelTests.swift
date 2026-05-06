@@ -140,7 +140,7 @@ final class CodexiOSModelTests: XCTestCase {
     func testRequestErrorsDoNotLeakRawResponseBody() async {
         let service = StubCodexiOSService(
             fetchHandler: {
-                throw CodexiOSError.requestFailed(500, #"{"access_token":"secret"}"#)
+                throw CodexiOSError.requestFailed(500)
             }
         )
         let model = CodexiOSModel(

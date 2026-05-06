@@ -37,7 +37,8 @@ final class CodexHelperProcess {
             )
         } catch {
             let stderr = shutdown(captureStderr: true)
-            throw helperError(stderr.map { "\(error.localizedDescription) \($0)" } ?? error.localizedDescription, code: 2)
+            let message = stderr.map { "\(error.localizedDescription) \($0)" } ?? error.localizedDescription
+            throw helperError(CodexSensitiveRedactor.redacted(message), code: 2)
         }
     }
 
@@ -143,6 +144,7 @@ final class CodexHelperProcess {
                     .deletingLastPathComponent()
                     .appending(path: "Helpers/codexex-helper")
             )
+            #if DEBUG
             if ProcessInfo.processInfo.environment["CODEXEX_ENABLE_XPC_BUNDLE_HELPER"] == "1" {
                 candidates.append(
                     executableURL
@@ -151,6 +153,7 @@ final class CodexHelperProcess {
                         .appending(path: "Helpers/codexex-helper")
                 )
             }
+            #endif
         }
 
         let bundleURL = Bundle.main.bundleURL

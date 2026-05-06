@@ -177,7 +177,11 @@ final class CodexXPCClient: CodexServiceClient, @unchecked Sendable {
     }
 
     private static func helperError(_ message: String) -> NSError {
-        NSError(domain: "CodexXPCClient", code: 1, userInfo: [NSLocalizedDescriptionKey: message])
+        NSError(
+            domain: "CodexXPCClient",
+            code: 1,
+            userInfo: [NSLocalizedDescriptionKey: CodexSensitiveRedactor.redacted(message)]
+        )
     }
 }
 

@@ -102,6 +102,7 @@ struct CodexGhostButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
                     .strokeBorder(CodexTheme.hairlineStrong, lineWidth: 1)
             }
+            .modifier(CodexPressableScale(isPressed: configuration.isPressed))
     }
 }
 #endif

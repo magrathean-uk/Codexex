@@ -210,7 +210,10 @@ struct PopupRootView: View {
     }
 
     private var presentedInsights: CodexUsageInsights? {
-        CodexUsageHistoryAnalytics.insights(
+        if displayMode == .live {
+            return model.usageInsights
+        }
+        return CodexUsageHistoryAnalytics.insights(
             snapshot: presentedSnapshot,
             samples: presentedHistory,
             now: presentedLastUpdatedAt ?? previewReferenceDate
@@ -240,7 +243,7 @@ struct PopupRootView: View {
         case .openSettings:
             onOpenSettings()
         case .refresh:
-            Task { await model.refreshNow() }
+            Task { await model.refreshNow(manual: true) }
         case .useSampleData:
             model.enablePreviewMode()
         }

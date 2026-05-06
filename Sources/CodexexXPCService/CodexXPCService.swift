@@ -11,6 +11,13 @@ import CodexMeterCore
 
 final class CodexXPCServiceDelegate: NSObject, NSXPCListenerDelegate {
     func listener(_ listener: NSXPCListener, shouldAcceptNewConnection newConnection: NSXPCConnection) -> Bool {
+        if #available(macOS 13.0, *) {
+            if CodexXPCClientIdentityRequirement.allowsDevelopmentBypass() {
+                NSLog("Codexex XPC code-signing requirement disabled for debug development.")
+            } else {
+                newConnection.setCodeSigningRequirement(CodexXPCClientIdentityRequirement.mainAppRequirement)
+            }
+        }
         newConnection.exportedInterface = NSXPCInterface(with: CodexXPCServiceProtocol.self)
         newConnection.exportedObject = CodexXPCService()
         newConnection.resume()
@@ -20,6 +27,7 @@ final class CodexXPCServiceDelegate: NSObject, NSXPCListenerDelegate {
 
 final class CodexXPCService: NSObject, CodexXPCServiceProtocol {
     private let helper: any CodexHelperSession
+    private let resetThrottle = CodexXPCResetThrottle()
 
     init(helper: any CodexHelperSession = CodexHelperProcessSession()) {
         self.helper = helper
@@ -31,7 +39,7 @@ final class CodexXPCService: NSObject, CodexXPCServiceProtocol {
             let response = try envelope.decodedSnapshotResponse()
             reply(try JSONEncoder().encode(response), nil)
         } catch {
-            reply(nil, error.localizedDescription)
+            reply(nil, CodexXPCRequestGuards.redactedError(error))
         }
     }
 
@@ -41,17 +49,18 @@ final class CodexXPCService: NSObject, CodexXPCServiceProtocol {
             let auth = try envelope.decodedDeviceAuthStart()
             reply(try JSONEncoder().encode(auth), nil)
         } catch {
-            reply(nil, error.localizedDescription)
+            reply(nil, CodexXPCRequestGuards.redactedError(error))
         }
     }
 
     func completeChatGPTSignIn(flowID: String, reply: @escaping (Data?, String?) -> Void) {
         do {
-            let envelope = try helper.send(CodexHelperRequest(method: .pollDeviceAuth, flowID: flowID))
+            let safeFlowID = try CodexXPCRequestGuards.validatedFlowID(flowID)
+            let envelope = try helper.send(CodexHelperRequest(method: .pollDeviceAuth, flowID: safeFlowID))
             let result = try envelope.decodedDeviceAuthPollResult()
             reply(try JSONEncoder().encode(result), nil)
         } catch {
-            reply(nil, error.localizedDescription)
+            reply(nil, CodexXPCRequestGuards.redactedError(error))
         }
     }
 
@@ -61,12 +70,14 @@ final class CodexXPCService: NSObject, CodexXPCServiceProtocol {
             try envelope.requireResponse(.signedOut)
             reply(nil)
         } catch {
-            reply(error.localizedDescription)
+            reply(CodexXPCRequestGuards.redactedError(error))
         }
     }
 
     func cancelPendingOperations(reply: @escaping () -> Void) {
-        helper.reset()
+        if resetThrottle.shouldReset() {
+            helper.reset()
+        }
         reply()
     }
 }

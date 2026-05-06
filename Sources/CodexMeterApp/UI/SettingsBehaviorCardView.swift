@@ -55,7 +55,7 @@ struct SettingsBehaviorCardView: View {
                 detail: "Pull the latest quota data right now."
             ) {
                 Button {
-                    Task { await model.refreshNow() }
+                    Task { await model.refreshNow(manual: true) }
                 } label: {
                     Label(model.isRefreshing ? "Refreshing" : "Refresh Now", systemImage: "arrow.clockwise")
                 }

@@ -13,7 +13,6 @@ licence is added explicitly.
 
 | Package | License | Declared in |
 |---------|---------|-------------|
-| `sentry-cocoa` (Sentry) | MIT | `Package.swift` |
 
 ### Rust helper — `Helper/CodexexHelper/Cargo.toml`
 

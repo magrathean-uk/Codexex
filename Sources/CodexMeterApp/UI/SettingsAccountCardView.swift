@@ -14,8 +14,11 @@ struct SettingsAccountCardView: View {
                     Text("Account")
                         .font(.headline)
 
-                    Text(model.accountHeadline)
-                        .font(.title3.weight(.semibold))
+                    HStack(spacing: 10) {
+                        Text(model.accountHeadline)
+                            .font(.title3.weight(.semibold))
+                        CodexStateBadge(kind: model.designStateBadgeKind)
+                    }
 
                     if let detail = model.accountDetail {
                         Text(detail)
@@ -58,48 +61,14 @@ struct SettingsAccountCardView: View {
     }
 
     private func deviceCodeCard(code: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Device code")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-            Text(code)
-                .textSelection(.enabled)
-                .font(.system(.title3, weight: .semibold))
-
-            HStack(spacing: 10) {
-                Button("Open Safari") {
-                    model.openAuthVerificationPage()
-                }
-                .buttonStyle(.borderedProminent)
-                .keyboardShortcut(.defaultAction)
-                .disabled(model.authVerificationURL == nil)
-
-                Button("Copy Code") {
-                    NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(code, forType: .string)
-                }
-                .buttonStyle(.bordered)
-
-                Button("Check Status") {
-                    model.checkPendingChatGPTSignIn()
-                }
-                .buttonStyle(.bordered)
-                .disabled(model.canCheckPendingChatGPTSignIn == false)
-
-                Button("Cancel") {
-                    model.cancelPendingChatGPTSignIn()
-                }
-                .buttonStyle(.bordered)
-            }
-            .padding(.top, 4)
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .glassEffect(
-            GlassSurfaceStyle.inset.glass,
-            in: .rect(cornerRadius: GlassSurfaceStyle.inset.radius)
+        CodexDeviceCodeCallout(
+            code: code,
+            message: model.authStatusMessage,
+            canCheck: model.canCheckPendingChatGPTSignIn,
+            openSafari: { model.openAuthVerificationPage() },
+            copyCode: { model.copyAuthCode() },
+            checkStatus: { model.checkPendingChatGPTSignIn() },
+            cancel: { model.cancelPendingChatGPTSignIn() }
         )
         .contentTransition(accessibilityReduceMotion ? .identity : .opacity)
         .transition(accessibilityReduceMotion ? .identity : .opacity)

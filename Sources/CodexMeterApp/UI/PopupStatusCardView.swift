@@ -22,15 +22,19 @@ struct PopupStatusCardView: View {
                     }
 
                     Spacer(minLength: 0)
-
-                    if model.isSigningIn {
-                        ProgressView()
-                            .controlSize(.small)
-                    }
+                    CodexStateBadge(kind: model.designStateBadgeKind)
                 }
 
                 if let code = model.authDeviceCode {
-                    deviceCodePanel(code: code)
+                    CodexDeviceCodeCallout(
+                        code: code,
+                        message: model.authStatusMessage,
+                        canCheck: model.canCheckPendingChatGPTSignIn,
+                        openSafari: { model.openAuthVerificationPage() },
+                        copyCode: { model.copyAuthCode() },
+                        checkStatus: { model.checkPendingChatGPTSignIn() },
+                        cancel: { model.cancelPendingChatGPTSignIn() }
+                    )
                 }
 
                 actionRow
@@ -42,25 +46,7 @@ struct PopupStatusCardView: View {
     @ViewBuilder
     private var actionRow: some View {
         if model.authDeviceCode != nil {
-            HStack(spacing: 8) {
-                Button("Open Safari") {
-                    model.openAuthVerificationPage()
-                }
-                .buttonStyle(.borderedProminent)
-                .keyboardShortcut(.defaultAction)
-                .disabled(model.authVerificationURL == nil)
-
-                Button("Check Status") {
-                    model.checkPendingChatGPTSignIn()
-                }
-                .buttonStyle(.bordered)
-                .disabled(model.canCheckPendingChatGPTSignIn == false)
-
-                Button("Cancel") {
-                    model.cancelPendingChatGPTSignIn()
-                }
-                .buttonStyle(.bordered)
-            }
+            EmptyView()
         } else if model.previewModeEnabled {
             HStack(spacing: 8) {
                 Button("Leave Preview") {
@@ -70,7 +56,7 @@ struct PopupStatusCardView: View {
                 .keyboardShortcut(.defaultAction)
 
                 Button("Refresh Live Quota") {
-                    Task { await model.refreshNow() }
+                    Task { await model.refreshNow(manual: true) }
                 }
                 .buttonStyle(.bordered)
                 .disabled(model.isRefreshing)
@@ -91,7 +77,7 @@ struct PopupStatusCardView: View {
             }
         } else if model.lastError != nil || model.snapshot == nil {
             Button {
-                Task { await model.refreshNow() }
+                Task { await model.refreshNow(manual: true) }
             } label: {
                 Label(model.isRefreshing ? "Refreshing" : "Refresh Now", systemImage: "arrow.clockwise")
             }
@@ -99,35 +85,6 @@ struct PopupStatusCardView: View {
             .keyboardShortcut(.defaultAction)
             .disabled(model.isRefreshing)
         }
-    }
-
-    private func deviceCodePanel(code: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Device code")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text(code)
-                    .font(.system(.title3, weight: .semibold))
-                    .textSelection(.enabled)
-
-                Spacer(minLength: 0)
-
-                Button("Copy") {
-                    NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(code, forType: .string)
-                }
-                .buttonStyle(.borderless)
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .glassEffect(
-            GlassSurfaceStyle.inset.glass,
-            in: .rect(cornerRadius: GlassSurfaceStyle.inset.radius)
-        )
     }
 }
 #endif

@@ -245,14 +245,14 @@ fn unsupported_protocol_version_returns_error_with_request_id() {
 fn poll_device_auth_does_not_succeed_for_random_flow_id() {
     let error = auth::poll_device_auth("flow-123").unwrap_err();
 
-    assert_eq!(error.to_string(), "unknown flow id");
+    assert_eq!(error.to_string(), "Sign-in code expired. Start again.");
 }
 
 #[test]
 fn poll_device_auth_does_not_succeed_for_empty_flow_id() {
     let error = auth::poll_device_auth("").unwrap_err();
 
-    assert_eq!(error.to_string(), "flow id is empty");
+    assert_eq!(error.to_string(), "Sign-in code expired. Start again.");
 }
 
 #[test]

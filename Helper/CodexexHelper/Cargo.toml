@@ -3,6 +3,9 @@ name = "codexex-helper"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+internal-env-overrides = []
+
 [dependencies]
 anyhow = "1"
 base64 = "0.22"

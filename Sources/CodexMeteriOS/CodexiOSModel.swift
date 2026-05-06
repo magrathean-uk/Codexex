@@ -157,6 +157,14 @@ final class CodexiOSModel {
         if autoCheckSignInOnReturn, hasPendingSignIn {
             await checkSignInAfterReturn()
         } else if refreshWhenActive, isSignedIn {
+            let refreshIntervalSeconds = max(
+                defaults.object(forKey: CodexiOSSettingsKeys.refreshIntervalSeconds) as? Int ?? 300,
+                300
+            )
+            if let lastUpdatedAt,
+               Date().timeIntervalSince(lastUpdatedAt) < Double(refreshIntervalSeconds) {
+                return
+            }
             await refresh()
         }
     }
