@@ -2,6 +2,8 @@
 
 Codexex is a macOS menu bar app for viewing Codex quota state, reset windows, history, and forecast without turning into a full desktop dashboard.
 
+Built by [Magrathean UK](https://magrathean.uk).
+
 ## Canonical docs
 
 - [AGENTS.md](./AGENTS.md)
@@ -44,4 +46,3 @@ xcodebuild -project CodexMeter.xcodeproj \
 
 Use [RUNBOOK.md](./RUNBOOK.md) for helper flow, XPC notes, and release hygiene.
 
-Built by [Magrathean UK](https://magrathean.uk).
