@@ -43,3 +43,5 @@ xcodebuild -project CodexMeter.xcodeproj \
 ```
 
 Use [RUNBOOK.md](./RUNBOOK.md) for helper flow, XPC notes, and release hygiene.
+
+Built by [Magrathean UK](https://magrathean.uk).
