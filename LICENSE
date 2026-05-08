@@ -1,0 +1,120 @@
+Magrathean UK Ltd. — Proprietary Software Licence (Codexex)
+
+Copyright (c) 2026 Magrathean UK Ltd. All rights reserved.
+
+1. Ownership.
+   This repository and its original source code, documentation, configuration,
+   schemas, tests, designs, build scripts, generated artefacts, and all other
+   contents (the "Software") are the proprietary property of Magrathean UK Ltd.,
+   a company registered in England and Wales (Company No. 16955343) with
+   registered office at 16 Caledonian Court West Street, Watford, England,
+   WD17 1RY ("Magrathean"). All right, title, and interest in and to the
+   Software, including all associated intellectual-property rights, are owned
+   by Magrathean and its licensors.
+
+2. No Licence Granted by Default.
+   Public availability of this repository on a hosted code-sharing platform
+   (such as GitHub) does not constitute a grant of any licence to copy, modify,
+   publish, distribute, sublicense, sell, lease, host as a service, perform,
+   display, or create derivative works from the Software. No licence, express
+   or implied, is granted under any patent, copyright, trade mark, trade
+   secret, or other intellectual-property right of Magrathean except as
+   expressly set out in a separate written agreement signed by an authorised
+   representative of Magrathean.
+
+3. Permitted Internal Use.
+   Magrathean and its directors, employees, and authorised contractors may
+   use, modify, build, test, deploy, and improve the Software for internal
+   business purposes.
+
+4. Reading and Inspection.
+   Members of the public may view this repository through the hosted-platform
+   interface for the purpose of evaluating Magrathean's products, services,
+   and engineering practices. This permission does not include the right to
+   clone, fork, redistribute, modify, or incorporate the Software (or any
+   portion of it) into any other work.
+
+5. Third-Party Components.
+   The Software incorporates third-party components governed by their own
+   licences (notably the openai/codex Rust crates under Apache-2.0, and a
+   number of MIT and dual MIT/Apache-2.0 Rust crates including reqwest,
+   tokio, serde, anyhow, chrono, base64, urlencoding, thiserror, and others).
+   Those third-party components are listed in `LICENSE.md` (and, where
+   applicable, in `NOTICE`, `THIRD_PARTY_NOTICES.md`, or in-tree licence
+   files). Nothing in this Licence limits, modifies, or supersedes the rights
+   granted directly by those third-party licences for those third-party
+   components, nor the obligations they impose on the licensee of those
+   components.
+
+6. App Store Distribution.
+   Where the Software corresponds to an application distributed through the
+   Apple App Store, the end-user terms applicable to the binary distributed
+   through that store (including Apple's Licensed Application End User Licence
+   Agreement and the in-app or web-published Terms of Service published by
+   Magrathean at https://magrathean.uk/apps/codexex/terms/) govern that end
+   use, in addition to and not in derogation of this Licence as it applies to
+   the source repository. The Privacy Policy applicable to the Codexex
+   application is published at https://magrathean.uk/apps/codexex/privacy/.
+
+7. Trade Marks.
+   "Magrathean", "Magrathean UK", and "Codexex" are trade marks or
+   unregistered trade marks of Magrathean. References in the Software to
+   third-party names, logos, or trade marks (including, without limitation,
+   OpenAI, ChatGPT, GPT, Codex, Spark, Anthropic, Claude, Apple, macOS,
+   iPadOS, iOS, and Swift) are for descriptive interoperability only. All
+   such marks remain the property of their respective owners. The Software
+   is not affiliated with, endorsed by, sponsored by, authorised by, or in
+   any way officially connected to OpenAI, Anthropic, or Apple.
+
+8. Quota Information Is Informational Only.
+   Quota readings, reset timing, history, session-burn analytics, weekly
+   pace markers, and forecast values produced by the Software are derived
+   from third-party API responses (notably from OpenAI) and from local
+   computation. They may be incomplete, delayed, inaccurate, rounded,
+   cached, or unavailable for reasons outside Magrathean's control. The
+   Software is not a billing system, an audit log, a contractual record,
+   or a substitute for any source of truth provided by the licensee's
+   account dashboard or invoices.
+
+9. Termination.
+   Any unauthorised use of the Software automatically terminates any
+   permissions granted under sections 3 and 4 of this Licence and may give
+   rise to civil and criminal liability under applicable copyright, trade
+   mark, contract, and trade-secret laws.
+
+10. No Warranty.
+    THE SOFTWARE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTY OF
+    ANY KIND, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE, INCLUDING
+    WITHOUT LIMITATION ANY IMPLIED WARRANTY OF MERCHANTABILITY, SATISFACTORY
+    QUALITY, FITNESS FOR A PARTICULAR PURPOSE, ACCURACY, COMPLETENESS, OR
+    NON-INFRINGEMENT. MAGRATHEAN DOES NOT WARRANT THAT THE SOFTWARE WILL BE
+    UNINTERRUPTED, TIMELY, SECURE, OR ERROR-FREE; THAT QUOTA OR FORECAST
+    OUTPUT WILL BE ACCURATE OR CURRENT; OR THAT THE SOFTWARE WILL REMAIN
+    COMPATIBLE WITH ANY FUTURE VERSION OF OPENAI SERVICES, CHATGPT
+    AUTHENTICATION, MACOS, IOS, OR IPADOS. NOTHING IN THIS PARAGRAPH
+    EXCLUDES OR LIMITS LIABILITY THAT CANNOT LAWFULLY BE EXCLUDED OR LIMITED.
+
+11. Limitation of Liability.
+    TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT SHALL MAGRATHEAN, ITS
+    DIRECTORS, OFFICERS, EMPLOYEES, OR CONTRACTORS BE LIABLE FOR ANY INDIRECT,
+    INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY, OR PUNITIVE DAMAGES, OR
+    FOR ANY LOSS OF PROFITS, REVENUE, DATA, BUSINESS OPPORTUNITY, GOODWILL,
+    OR ANTICIPATED SAVINGS, ARISING OUT OF OR IN CONNECTION WITH THE
+    SOFTWARE OR THIS LICENCE, WHETHER IN CONTRACT, TORT (INCLUDING
+    NEGLIGENCE), STRICT LIABILITY, OR OTHERWISE, EVEN IF ADVISED OF THE
+    POSSIBILITY OF SUCH DAMAGES. NOTHING IN THIS PARAGRAPH EXCLUDES OR
+    LIMITS LIABILITY FOR DEATH OR PERSONAL INJURY CAUSED BY NEGLIGENCE,
+    FRAUD OR FRAUDULENT MISREPRESENTATION, OR ANY OTHER LIABILITY THAT
+    CANNOT LAWFULLY BE EXCLUDED OR LIMITED.
+
+12. Governing Law and Jurisdiction.
+    This Licence and any non-contractual obligations arising out of or in
+    connection with it are governed by the laws of England and Wales. The
+    courts of England and Wales have exclusive jurisdiction to settle any
+    dispute or claim arising out of or in connection with this Licence or
+    its subject matter.
+
+13. Contact.
+    For licensing enquiries, contact: contact@magrathean.uk
+    Magrathean UK Ltd., 16 Caledonian Court West Street, Watford, England,
+    WD17 1RY.
