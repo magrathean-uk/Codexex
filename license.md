@@ -2,8 +2,12 @@
 
 ## This Project
 
-No top-level license file is present. The codebase is treated as proprietary unless a
-licence is added explicitly.
+Codexex is **proprietary software** owned by Magrathean UK Ltd.
+
+> See [`LICENSE`](./LICENSE) for the full proprietary licence text.
+> Copyright © 2026 Magrathean UK Ltd. All rights reserved.
+
+This file (`LICENSE.md`) is the **third-party notice and component inventory** for Codexex. The Apache-2.0 attribution required by the openai/codex crates and other upstream Apache-2.0 components is recorded in [`NOTICE`](./NOTICE). The Codexex source itself is governed exclusively by [`LICENSE`](./LICENSE).
 
 ---
 
