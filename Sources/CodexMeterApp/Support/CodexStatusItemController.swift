@@ -253,13 +253,44 @@ final class CodexStatusItemController: NSObject {
         }
         guard sizingState != lastSizingState else { return }
         lastSizingState = sizingState
-        let maxHeight = CodexPopoverSizing.maxHeight(for: statusItem.button?.window?.screen)
+        let anchorFrame = statusItem.button.flatMap(CodexPopoverSizing.anchorFrameOnScreen(for:))
+        let maxHeight = CodexPopoverSizing.maxHeight(
+            anchorFrame: anchorFrame,
+            screen: statusItem.button?.window?.screen
+        )
         hostingController.view.layoutSubtreeIfNeeded()
         let fittingSize = hostingController.sizeThatFits(
             in: NSSize(width: GlassTokens.popupWidth, height: maxHeight)
         )
         let height = CodexPopoverSizing.height(fittingHeight: fittingSize.height, maxHeight: maxHeight)
         popover.contentSize = NSSize(width: GlassTokens.popupWidth, height: height)
+        if popover.isShown {
+            clampPopoverToVisibleFrame(anchorFrame: anchorFrame)
+        }
+    }
+
+    private func clampPopoverToVisibleFrame(anchorFrame: CGRect?) {
+        guard let window = popover.contentViewController?.view.window else { return }
+        let screen = CodexPopoverSizing.screenContaining(anchorFrame) ?? window.screen ?? NSScreen.main
+        guard let visibleFrame = screen?.visibleFrame.insetBy(dx: 8, dy: 8) else { return }
+
+        var frame = window.frame
+        if frame.maxY > visibleFrame.maxY {
+            frame.origin.y = visibleFrame.maxY - frame.height
+        }
+        if frame.minY < visibleFrame.minY {
+            frame.origin.y = visibleFrame.minY
+        }
+        if frame.maxX > visibleFrame.maxX {
+            frame.origin.x = visibleFrame.maxX - frame.width
+        }
+        if frame.minX < visibleFrame.minX {
+            frame.origin.x = visibleFrame.minX
+        }
+
+        if frame != window.frame {
+            window.setFrame(frame, display: true)
+        }
     }
 
     private func updateTitle() {
@@ -281,16 +312,48 @@ final class CodexStatusItemController: NSObject {
 
 enum CodexPopoverSizing {
     static func maxHeight(for screen: NSScreen?) -> CGFloat {
-        let visibleHeight = (screen ?? NSScreen.main)?.visibleFrame.height ?? GlassTokens.popupMaxHeight
-        let screenSafeHeight = visibleHeight - GlassTokens.popupScreenMargin
-        return max(
-            GlassTokens.popupMinimumUsableHeight,
-            min(GlassTokens.popupMaxHeight, screenSafeHeight)
-        )
+        maxHeight(anchorFrame: nil, screen: screen)
+    }
+
+    static func maxHeight(anchorFrame: CGRect?, screen: NSScreen?) -> CGFloat {
+        let targetScreen = screenContaining(anchorFrame) ?? screen ?? NSScreen.main
+        guard let visibleFrame = targetScreen?.visibleFrame else {
+            return GlassTokens.popupMaxHeight
+        }
+
+        let screenSafeHeight = max(0, visibleFrame.height - GlassTokens.popupScreenMargin)
+        let anchoredHeight: CGFloat
+        if let anchorFrame {
+            let belowAnchor = max(0, anchorFrame.minY - visibleFrame.minY - GlassTokens.popupScreenMargin)
+            let aboveAnchor = max(0, visibleFrame.maxY - anchorFrame.maxY - GlassTokens.popupScreenMargin)
+            anchoredHeight = max(belowAnchor, aboveAnchor)
+        } else {
+            anchoredHeight = screenSafeHeight
+        }
+
+        let availableHeight = max(0, min(screenSafeHeight, anchoredHeight))
+        let preferredHeight = min(GlassTokens.popupMaxHeight, availableHeight)
+        let usableFloor = min(GlassTokens.popupMinimumUsableHeight, preferredHeight)
+        return max(usableFloor, preferredHeight)
     }
 
     static func height(fittingHeight: CGFloat, maxHeight: CGFloat) -> CGFloat {
         min(ceil(fittingHeight), maxHeight)
+    }
+
+    @MainActor
+    static func anchorFrameOnScreen(for button: NSStatusBarButton) -> CGRect? {
+        guard let window = button.window else { return nil }
+        let rectInWindow = button.convert(button.bounds, to: nil)
+        return window.convertToScreen(rectInWindow)
+    }
+
+    static func screenContaining(_ anchorFrame: CGRect?) -> NSScreen? {
+        guard let anchorFrame else { return nil }
+        let anchorCenter = CGPoint(x: anchorFrame.midX, y: anchorFrame.midY)
+        return NSScreen.screens.first { screen in
+            screen.frame.contains(anchorCenter)
+        }
     }
 }
 #endif
