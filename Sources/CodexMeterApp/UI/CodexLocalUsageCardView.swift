@@ -96,7 +96,8 @@ struct CodexLocalUsageCardView: View {
             Text(value)
                 .font(.system(size: 11.5))
                 .foregroundStyle(CodexTheme.text)
-                .lineLimit(1)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
 
             Spacer(minLength: 0)
         }

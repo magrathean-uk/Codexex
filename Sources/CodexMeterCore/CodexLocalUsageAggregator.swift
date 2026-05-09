@@ -154,7 +154,7 @@ public enum CodexLocalUsageAggregator {
                     id: "high-cache-read",
                     kind: .highCacheRead,
                     title: "High cache read",
-                    detail: "\(Int((tokens.cacheHitRate * 100).rounded()))% cached input. Good when intentional, waste when repeated reads keep looping."
+                    detail: "\(Int((tokens.cacheHitRate * 100).rounded()))% cached input. Watch repeated reads."
                 )
             )
         }
