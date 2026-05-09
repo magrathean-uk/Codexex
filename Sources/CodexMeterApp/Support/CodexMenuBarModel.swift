@@ -31,6 +31,7 @@ final class CodexMenuBarModel {
     private(set) var defaultHistoryMode = CodexAppSettings.defaultHistoryMode
     private(set) var showPaceConfidence = CodexAppSettings.showPaceConfidence
     private(set) var hideIdleSecondaryLimits = CodexAppSettings.hideIdleSecondaryLimits
+    private(set) var codexSessionsPath = CodexAppSettings.codexSessionsPath
     private(set) var showFiveHourInMenubar = CodexAppSettings.showFiveHourInMenubar
     private(set) var showWeeklyInMenubar = CodexAppSettings.showWeeklyInMenubar
     private(set) var menuBarDisplayMode = CodexAppSettings.menuBarDisplayMode
@@ -44,6 +45,7 @@ final class CodexMenuBarModel {
     private var summarySnoozeExpiresAt = CodexAppSettings.summarySnoozeExpiresAt
 
     private let service: any CodexServiceClient
+    private let localUsageProvider: any CodexLocalUsageProviding
     private let settingsStore: CodexAppSettingsStore
     private let historyRepository: CodexHistoryRepository
     private let deviceAuthPollingConfiguration: CodexDeviceAuthPollingConfiguration
@@ -54,11 +56,13 @@ final class CodexMenuBarModel {
 
     init(
         service: any CodexServiceClient = CodexXPCClient(),
+        localUsageProvider: any CodexLocalUsageProviding = CodexLocalUsageProvider(),
         settingsStore: CodexAppSettingsStore = CodexAppSettingsStore(),
         historyRepository: CodexHistoryRepository = CodexHistoryRepository(),
         deviceAuthPollingConfiguration: CodexDeviceAuthPollingConfiguration = .production
     ) {
         self.service = service
+        self.localUsageProvider = localUsageProvider
         self.settingsStore = settingsStore
         self.historyRepository = historyRepository
         self.deviceAuthPollingConfiguration = deviceAuthPollingConfiguration
@@ -73,6 +77,7 @@ final class CodexMenuBarModel {
         defaultHistoryMode = settings.defaultHistoryMode
         showPaceConfidence = settings.showPaceConfidence
         hideIdleSecondaryLimits = settings.hideIdleSecondaryLimits
+        codexSessionsPath = settings.codexSessionsPath
         showFiveHourInMenubar = settings.showFiveHourInMenubar
         showWeeklyInMenubar = settings.showWeeklyInMenubar
         menuBarDisplayMode = settings.menuBarDisplayMode
@@ -98,6 +103,7 @@ final class CodexMenuBarModel {
     var hasResolvedAuthState: Bool { authSession.hasResolvedState }
     var usageHistory: [CodexUsageHistorySample] { dashboard.usageHistory }
     var usageInsights: CodexUsageInsights? { dashboard.usageInsights }
+    var localUsageSummary: CodexLocalUsageSummary? { dashboard.localUsageSummary }
     var shouldDimStatusItem: Bool { lastError != nil || isDataStale }
     var isDataStale: Bool {
         guard previewModeEnabled == false,
@@ -185,7 +191,9 @@ final class CodexMenuBarModel {
         defer { dashboard.isRefreshing = false }
 
         do {
+            async let localSummary = localUsageProvider.fetchLocalUsageSummary()
             let response = try await service.fetchSnapshotResponse()
+            let resolvedLocalSummary = await localSummary
             guard refreshCoordinator.isCurrent(generation) else { return }
 
             if let result = response.snapshot {
@@ -194,6 +202,7 @@ final class CodexMenuBarModel {
                 guard refreshCoordinator.isCurrent(generation) else { return }
                 animateStateChange(.easeInOut(duration: 0.18)) {
                     dashboard.applySnapshot(result, historyState: updatedHistory)
+                    dashboard.applyLocalUsageSummary(resolvedLocalSummary)
                     authSession.apply(.signedIn)
                 }
                 refreshBackoff.recordSuccess()
@@ -203,6 +212,7 @@ final class CodexMenuBarModel {
                 )
                 animateStateChange(.easeInOut(duration: 0.18)) {
                     applySnapshotResponse(response)
+                    dashboard.applyLocalUsageSummary(resolvedLocalSummary)
                 }
                 if let message = response.errorMessage {
                     let failureClass = CodexRefreshBackoff.classify(errorMessage: message)
@@ -363,6 +373,31 @@ final class CodexMenuBarModel {
     func setHideIdleSecondaryLimits(_ enabled: Bool) {
         hideIdleSecondaryLimits = enabled
         settingsStore.setHideIdleSecondaryLimits(enabled)
+    }
+
+    func setCodexSessionsPath(_ path: String?) {
+        codexSessionsPath = path
+        settingsStore.setCodexSessionsPath(path)
+    }
+
+    func chooseCodexSessionsFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Use Folder"
+        panel.message = "Choose your Codex sessions folder."
+        panel.directoryURL = codexSessionsPath.map(URL.init(fileURLWithPath:))
+            ?? CodexLocalUsageDirectoryReader.defaultSessionsURL().deletingLastPathComponent()
+
+        guard panel.runModal() == .OK,
+              let url = panel.url else {
+            return
+        }
+        setCodexSessionsPath(url.path)
+        Task { @MainActor [weak self] in
+            await self?.refreshNow(manual: true)
+        }
     }
 
     func setShowFiveHourInMenubar(_ enabled: Bool) {

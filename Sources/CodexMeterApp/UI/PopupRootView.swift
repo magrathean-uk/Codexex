@@ -88,6 +88,10 @@ struct PopupRootView: View {
                     )
                 }
 
+                if let localUsageSummary = presentedLocalUsageSummary {
+                    CodexLocalUsageCardView(summary: localUsageSummary)
+                }
+
                 if presentedSnapshot != nil {
                     ForEach(primaryLimitPresentations) { presentation in
                         limitCard(for: presentation)
@@ -218,6 +222,14 @@ struct PopupRootView: View {
             samples: presentedHistory,
             now: presentedLastUpdatedAt ?? previewReferenceDate
         )
+    }
+
+    private var presentedLocalUsageSummary: CodexLocalUsageSummary? {
+        if displayMode == .settingsPreview,
+           model.localUsageSummary == nil {
+            return CodexPreviewData.localUsageSummary(now: previewReferenceDate)
+        }
+        return model.localUsageSummary
     }
 
     private var presentedSummary: PopupSummaryPresentation? {

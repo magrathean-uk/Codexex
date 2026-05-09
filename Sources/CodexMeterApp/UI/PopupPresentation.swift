@@ -265,6 +265,21 @@ enum PopupPresentation {
         return activeRows.isEmpty ? rows.prefix(1).map { $0 } : activeRows
     }
 
+    static func headlineWindow(for limit: CodexLimit) -> CodexQuotaWindow? {
+        let windows = [limit.fiveHourWindow, limit.weeklyWindow].compactMap { $0 }
+        return windows.min { lhs, rhs in
+            lhs.remainingPercent < rhs.remainingPercent
+        } ?? limit.primary ?? limit.secondary
+    }
+
+    static func quotaRemainingText(for window: CodexQuotaWindow) -> String {
+        window.remainingPercentText
+    }
+
+    static func quotaRemainingProgress(for window: CodexQuotaWindow) -> Double {
+        window.remainingPercent / 100
+    }
+
     static func isIdle(_ limit: CodexLimit) -> Bool {
         CodexQuotaPresentationRules.isIdle(limit)
     }

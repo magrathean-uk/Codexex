@@ -224,7 +224,7 @@ struct CodexiOSRootView: View {
                         .fixedSize(horizontal: false, vertical: true)
                     Spacer(minLength: 12)
                     if let headline = headlineWindow(for: limit) {
-                        Text(headline.usedPercentText)
+                        Text(headline.remainingPercentText)
                             .font(.system(size: 46, weight: .bold, design: .rounded).monospacedDigit())
                             .minimumScaleFactor(0.7)
                     }
@@ -252,14 +252,14 @@ struct CodexiOSRootView: View {
                 Text(title)
                     .font(.headline)
                 Spacer(minLength: 10)
-                Text("\(window.usedPercentText) used")
+                Text("\(window.remainingPercentText) remaining")
                     .font(.headline.monospacedDigit())
             }
             Text(resetText(for: window))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-            ProgressView(value: window.clampedUsedPercent / 100)
+            ProgressView(value: window.remainingPercent / 100)
                 .tint(tint)
                 .scaleEffect(x: 1, y: 1.6, anchor: .center)
         }
@@ -394,7 +394,7 @@ struct CodexiOSRootView: View {
     private func headlineWindow(for limit: CodexLimit) -> CodexQuotaWindow? {
         [limit.fiveHourWindow, limit.weeklyWindow]
             .compactMap { $0 }
-            .max { $0.clampedUsedPercent < $1.clampedUsedPercent }
+            .min { $0.remainingPercent < $1.remainingPercent }
     }
 
     private func tint(for bucket: CodexLimitBucket) -> Color {

@@ -1,0 +1,37 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [{
+          "type": "command",
+          "command": "file=\"${CLAUDE_TOOL_INPUT_PATH:-}\"; if echo \"$file\" | grep -q '\\.xcodeproj/'; then echo \"BLOCKED: edit project.yml instead of .xcodeproj directly.\"; exit 2; fi"
+        }]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [{
+          "type": "command",
+          "command": "cd \"$CLAUDE_PROJECT_DIR\" && swift-format format --in-place --recursive Sources/ 2>/dev/null || true"
+        }]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(xcodebuild *)",
+      "Bash(xcodegen *)",
+      "Bash(swift *)",
+      "Bash(git *)",
+      "Bash(bundle exec fastlane *)",
+      "Bash(bash Scripts/*)",
+      "Read",
+      "Edit",
+      "Write",
+      "Glob",
+      "Grep"
+    ]
+  }
+}

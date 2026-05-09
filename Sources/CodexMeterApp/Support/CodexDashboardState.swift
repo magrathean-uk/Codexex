@@ -8,6 +8,7 @@ struct CodexDashboardState {
     var lastUpdatedAt: Date?
     var usageHistory: [CodexUsageHistorySample] = []
     var usageInsights: CodexUsageInsights?
+    var localUsageSummary: CodexLocalUsageSummary?
 
     mutating func setHistory(_ history: [CodexUsageHistorySample], now: Date = Date()) {
         usageHistory = history
@@ -17,6 +18,10 @@ struct CodexDashboardState {
     mutating func setHistory(_ state: CodexHistoryRepositoryState) {
         usageHistory = state.samples
         usageInsights = state.insights
+    }
+
+    mutating func applyLocalUsageSummary(_ summary: CodexLocalUsageSummary?) {
+        localUsageSummary = summary
     }
 
     mutating func applySnapshot(_ snapshot: CodexSnapshot, history: [CodexUsageHistorySample]) {
@@ -42,6 +47,7 @@ struct CodexDashboardState {
         if keepHistory == false {
             usageHistory = []
         }
+        localUsageSummary = nil
         refreshInsights(now: now)
     }
 
@@ -53,6 +59,7 @@ struct CodexDashboardState {
     mutating func applyPreview(now: Date) {
         snapshot = CodexPreviewData.snapshot(now: now)
         usageHistory = CodexPreviewData.history(now: now)
+        localUsageSummary = CodexPreviewData.localUsageSummary(now: now)
         lastUpdatedAt = now
         lastError = nil
         refreshInsights(now: now)

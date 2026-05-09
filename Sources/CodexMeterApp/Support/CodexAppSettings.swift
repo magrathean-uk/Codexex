@@ -111,6 +111,7 @@ enum CodexAppSettings {
         static let defaultHistoryMode = "codexex.defaultHistoryMode"
         static let showPaceConfidence = "codexex.showPaceConfidence"
         static let hideIdleSecondaryLimits = "codexex.hideIdleSecondaryLimits"
+        static let codexSessionsPath = "codexex.codexSessionsPath"
         static let summarySnoozeFingerprint = "codexex.summarySnoozeFingerprint"
         static let summarySnoozeExpiresAt = "codexex.summarySnoozeExpiresAt"
 
@@ -132,6 +133,7 @@ enum CodexAppSettings {
             defaultHistoryMode,
             showPaceConfidence,
             hideIdleSecondaryLimits,
+            codexSessionsPath,
             summarySnoozeFingerprint,
             summarySnoozeExpiresAt
         ]
@@ -275,7 +277,7 @@ enum CodexAppSettings {
         get {
             guard let rawValue = UserDefaults.standard.string(forKey: Key.menuBarDisplayMode),
                   let mode = CodexMenuBarDisplayMode(rawValue: rawValue) else {
-                return .used
+                return .remaining
             }
             return mode
         }
@@ -374,6 +376,24 @@ enum CodexAppSettings {
         summarySnoozeExpiresAt = nil
     }
 
+    static var codexSessionsPath: String? {
+        get { UserDefaults.standard.string(forKey: Key.codexSessionsPath) }
+        set {
+            if let newValue {
+                UserDefaults.standard.set(newValue, forKey: Key.codexSessionsPath)
+            } else {
+                UserDefaults.standard.removeObject(forKey: Key.codexSessionsPath)
+            }
+        }
+    }
+
+    static var codexSessionsURL: URL {
+        if let codexSessionsPath {
+            return URL(fileURLWithPath: codexSessionsPath)
+        }
+        return CodexLocalUsageDirectoryReader.defaultSessionsURL()
+    }
+
     static func removeAll(defaults: UserDefaults = .standard) {
         for key in Key.all {
             defaults.removeObject(forKey: key)
@@ -399,6 +419,7 @@ struct CodexAppSettingsSnapshot: Equatable {
     let defaultHistoryMode: PopupHistoryMode
     let showPaceConfidence: Bool
     let hideIdleSecondaryLimits: Bool
+    let codexSessionsPath: String?
     let summarySnoozeFingerprint: String?
     let summarySnoozeExpiresAt: Date?
 }
@@ -429,6 +450,7 @@ struct CodexAppSettingsStore {
             defaultHistoryMode: defaultHistoryMode,
             showPaceConfidence: showPaceConfidence,
             hideIdleSecondaryLimits: hideIdleSecondaryLimits,
+            codexSessionsPath: codexSessionsPath,
             summarySnoozeFingerprint: summarySnoozeFingerprint,
             summarySnoozeExpiresAt: summarySnoozeExpiresAt
         )
@@ -478,10 +500,14 @@ struct CodexAppSettingsStore {
         bool(forKey: CodexAppSettings.Key.showWeeklyInMenubar, defaultValue: true)
     }
 
+    var codexSessionsPath: String? {
+        defaults.string(forKey: CodexAppSettings.Key.codexSessionsPath)
+    }
+
     var menuBarDisplayMode: CodexMenuBarDisplayMode {
         enumValue(
             forKey: CodexAppSettings.Key.menuBarDisplayMode,
-            defaultValue: CodexMenuBarDisplayMode.used
+            defaultValue: CodexMenuBarDisplayMode.remaining
         )
     }
 
@@ -584,6 +610,10 @@ struct CodexAppSettingsStore {
 
     func setShowPaceConfidence(_ value: Bool) {
         defaults.set(value, forKey: CodexAppSettings.Key.showPaceConfidence)
+    }
+
+    func setCodexSessionsPath(_ value: String?) {
+        setOptional(value, forKey: CodexAppSettings.Key.codexSessionsPath)
     }
 
     func setHideIdleSecondaryLimits(_ value: Bool) {

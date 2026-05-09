@@ -16,10 +16,7 @@ struct LimitCardView: View {
     }
     private var contentSpacing: CGFloat { 12 }
     private var headlineWindow: CodexQuotaWindow? {
-        let windows = [limit.fiveHourWindow, limit.weeklyWindow].compactMap { $0 }
-        return windows.max { lhs, rhs in
-            lhs.clampedUsedPercent < rhs.clampedUsedPercent
-        } ?? limit.primary ?? limit.secondary
+        PopupPresentation.headlineWindow(for: limit)
     }
 
     var body: some View {
@@ -33,12 +30,12 @@ struct LimitCardView: View {
                     Spacer()
 
                     if let headlineWindow {
-                        Text(headlineWindow.usedPercentText)
+                        Text(PopupPresentation.quotaRemainingText(for: headlineWindow))
                             .font(headlineFont)
                             .contentTransition(
                                 accessibilityReduceMotion
                                     ? .identity
-                                    : .numericText(value: headlineWindow.clampedUsedPercent)
+                                    : .numericText(value: headlineWindow.remainingPercent)
                             )
                     }
                 }
@@ -88,13 +85,13 @@ struct LimitCardView: View {
 
                 Spacer()
 
-                Text(window.usedPercentText)
+                Text(PopupPresentation.quotaRemainingText(for: window))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(CodexTheme.text)
                     .contentTransition(
                         accessibilityReduceMotion
                             ? .identity
-                            : .numericText(value: window.clampedUsedPercent)
+                            : .numericText(value: window.remainingPercent)
                     )
 
                 Text(resetText)
@@ -103,10 +100,10 @@ struct LimitCardView: View {
             }
 
             UsageBar(
-                progress: window.clampedUsedPercent / 100,
+                progress: PopupPresentation.quotaRemainingProgress(for: window),
                 bucket: limit.bucket,
-                label: "\(title) usage",
-                value: "\(window.usedPercentText), \(resetText)"
+                label: "\(title) remaining",
+                value: "\(PopupPresentation.quotaRemainingText(for: window)) remaining, \(resetText)"
             )
         }
     }
