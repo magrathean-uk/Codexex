@@ -4,7 +4,7 @@ import XCTest
 @testable import CodexMeterCore
 
 final class CodexSummarySnoozeTests: XCTestCase {
-    func testSnoozeMatchesOnlySameSummaryBeforeExpiry() {
+    func testSnoozeMatchesSameAlertBeforeExpiryEvenWhenNumbersChange() {
         let summary = makeSummary(projected: "91% by reset")
         let laterSummary = makeSummary(projected: "96% by reset")
         let fingerprint = CodexSummarySnooze.fingerprint(for: summary)
@@ -17,7 +17,7 @@ final class CodexSummarySnoozeTests: XCTestCase {
             expiresAt: expiresAt,
             now: now
         ))
-        XCTAssertFalse(CodexSummarySnooze.isSnoozed(
+        XCTAssertTrue(CodexSummarySnooze.isSnoozed(
             summary: laterSummary,
             storedFingerprint: fingerprint,
             expiresAt: expiresAt,
