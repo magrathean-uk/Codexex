@@ -378,6 +378,9 @@ final class CodexMenuBarModel {
     func setCodexSessionsPath(_ path: String?) {
         codexSessionsPath = path
         settingsStore.setCodexSessionsPath(path)
+        if path == nil {
+            settingsStore.setCodexSessionsBookmark(nil)
+        }
     }
 
     func chooseCodexSessionsFolder() {
@@ -394,7 +397,8 @@ final class CodexMenuBarModel {
               let url = panel.url else {
             return
         }
-        setCodexSessionsPath(url.path)
+        codexSessionsPath = url.path
+        settingsStore.setCodexSessionsFolder(url: url)
         Task { @MainActor [weak self] in
             await self?.refreshNow(manual: true)
         }
