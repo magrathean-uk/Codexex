@@ -112,6 +112,7 @@ enum CodexAppSettings {
         static let showPaceConfidence = "codexex.showPaceConfidence"
         static let hideIdleSecondaryLimits = "codexex.hideIdleSecondaryLimits"
         static let codexSessionsPath = "codexex.codexSessionsPath"
+        static let codexSessionsBookmark = "codexex.codexSessionsBookmark"
         static let summarySnoozeFingerprint = "codexex.summarySnoozeFingerprint"
         static let summarySnoozeExpiresAt = "codexex.summarySnoozeExpiresAt"
 
@@ -134,6 +135,7 @@ enum CodexAppSettings {
             showPaceConfidence,
             hideIdleSecondaryLimits,
             codexSessionsPath,
+            codexSessionsBookmark,
             summarySnoozeFingerprint,
             summarySnoozeExpiresAt
         ]
@@ -387,11 +389,33 @@ enum CodexAppSettings {
         }
     }
 
+    static var codexSessionsBookmark: Data? {
+        get { UserDefaults.standard.data(forKey: Key.codexSessionsBookmark) }
+        set {
+            if let newValue {
+                UserDefaults.standard.set(newValue, forKey: Key.codexSessionsBookmark)
+            } else {
+                UserDefaults.standard.removeObject(forKey: Key.codexSessionsBookmark)
+            }
+        }
+    }
+
     static var codexSessionsURL: URL {
         if let codexSessionsPath {
             return URL(fileURLWithPath: codexSessionsPath)
         }
         return CodexLocalUsageDirectoryReader.defaultSessionsURL()
+    }
+
+    static func codexSessionsSecurityScopedURL() -> URL? {
+        guard let bookmark = codexSessionsBookmark else { return nil }
+        var isStale = false
+        return try? URL(
+            resolvingBookmarkData: bookmark,
+            options: [.withSecurityScope],
+            relativeTo: nil,
+            bookmarkDataIsStale: &isStale
+        )
     }
 
     static func removeAll(defaults: UserDefaults = .standard) {
@@ -420,6 +444,7 @@ struct CodexAppSettingsSnapshot: Equatable {
     let showPaceConfidence: Bool
     let hideIdleSecondaryLimits: Bool
     let codexSessionsPath: String?
+    let codexSessionsBookmark: Data?
     let summarySnoozeFingerprint: String?
     let summarySnoozeExpiresAt: Date?
 }
@@ -451,6 +476,7 @@ struct CodexAppSettingsStore {
             showPaceConfidence: showPaceConfidence,
             hideIdleSecondaryLimits: hideIdleSecondaryLimits,
             codexSessionsPath: codexSessionsPath,
+            codexSessionsBookmark: codexSessionsBookmark,
             summarySnoozeFingerprint: summarySnoozeFingerprint,
             summarySnoozeExpiresAt: summarySnoozeExpiresAt
         )
@@ -502,6 +528,10 @@ struct CodexAppSettingsStore {
 
     var codexSessionsPath: String? {
         defaults.string(forKey: CodexAppSettings.Key.codexSessionsPath)
+    }
+
+    var codexSessionsBookmark: Data? {
+        defaults.data(forKey: CodexAppSettings.Key.codexSessionsBookmark)
     }
 
     var menuBarDisplayMode: CodexMenuBarDisplayMode {
@@ -614,6 +644,26 @@ struct CodexAppSettingsStore {
 
     func setCodexSessionsPath(_ value: String?) {
         setOptional(value, forKey: CodexAppSettings.Key.codexSessionsPath)
+    }
+
+    func setCodexSessionsBookmark(_ value: Data?) {
+        setOptional(value, forKey: CodexAppSettings.Key.codexSessionsBookmark)
+    }
+
+    func setCodexSessionsFolder(url: URL?) {
+        guard let url else {
+            setCodexSessionsPath(nil)
+            setCodexSessionsBookmark(nil)
+            return
+        }
+
+        setCodexSessionsPath(url.path)
+        let bookmark = try? url.bookmarkData(
+            options: [.withSecurityScope],
+            includingResourceValuesForKeys: nil,
+            relativeTo: nil
+        )
+        setCodexSessionsBookmark(bookmark)
     }
 
     func setHideIdleSecondaryLimits(_ value: Bool) {

@@ -10,9 +10,16 @@ struct CodexLocalUsageProvider: CodexLocalUsageProviding {
     var sessionsURL: URL?
 
     func fetchLocalUsageSummary() async -> CodexLocalUsageSummary? {
-        let resolvedSessionsURL = sessionsURL ?? CodexAppSettings.codexSessionsURL
+        let bookmarkURL = sessionsURL == nil ? CodexAppSettings.codexSessionsSecurityScopedURL() : nil
+        let resolvedSessionsURL = sessionsURL ?? bookmarkURL ?? CodexAppSettings.codexSessionsURL
         return await Task.detached(priority: .utility) {
-            try? CodexLocalUsageDirectoryReader.summary(
+            let hasScopedAccess = bookmarkURL?.startAccessingSecurityScopedResource() ?? false
+            defer {
+                if hasScopedAccess {
+                    bookmarkURL?.stopAccessingSecurityScopedResource()
+                }
+            }
+            return try? CodexLocalUsageDirectoryReader.summary(
                 in: resolvedSessionsURL,
                 hooksInstalled: FileManager.default.fileExists(
                     atPath: FileManager.default.homeDirectoryForCurrentUser

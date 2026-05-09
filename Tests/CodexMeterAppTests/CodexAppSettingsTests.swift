@@ -12,6 +12,7 @@ final class CodexAppSettingsTests: XCTestCase {
         UserDefaults.standard.removeObject(forKey: "codexex.menuBarDisplayMode")
         UserDefaults.standard.removeObject(forKey: "codexex.resetDisplayStyle")
         UserDefaults.standard.removeObject(forKey: "codexex.codexSessionsPath")
+        UserDefaults.standard.removeObject(forKey: "codexex.codexSessionsBookmark")
         UserDefaults.standard.removeObject(forKey: "codexex.summarySnoozeFingerprint")
         UserDefaults.standard.removeObject(forKey: "codexex.summarySnoozeExpiresAt")
     }
@@ -28,6 +29,7 @@ final class CodexAppSettingsTests: XCTestCase {
         XCTAssertEqual(snapshot.menuBarDisplayMode, .remaining)
         XCTAssertEqual(snapshot.resetDisplayStyle, .relative)
         XCTAssertNil(snapshot.codexSessionsPath)
+        XCTAssertNil(snapshot.codexSessionsBookmark)
     }
 
     func testNewPopupSettingsPersist() {
@@ -55,10 +57,14 @@ final class CodexAppSettingsTests: XCTestCase {
         let store = CodexAppSettingsStore(defaults: makeDefaults())
 
         store.setCodexSessionsPath("/Users/me/.codex/sessions")
+        store.setCodexSessionsBookmark(Data([1, 2, 3]))
         XCTAssertEqual(store.snapshot().codexSessionsPath, "/Users/me/.codex/sessions")
+        XCTAssertEqual(store.snapshot().codexSessionsBookmark, Data([1, 2, 3]))
 
         store.setCodexSessionsPath(nil)
+        store.setCodexSessionsBookmark(nil)
         XCTAssertNil(store.snapshot().codexSessionsPath)
+        XCTAssertNil(store.snapshot().codexSessionsBookmark)
     }
 
     func testSummarySnoozeSettingsPersistAndClear() {
