@@ -108,7 +108,7 @@ final class CodexStatusItemController: NSObject {
         if visible {
             if popover.isShown == false {
                 updatePopoverSize(force: true)
-                popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+                showPopover(from: button)
             }
             stopEventMonitor()
         } else if popover.isShown {
@@ -126,10 +126,19 @@ final class CodexStatusItemController: NSObject {
             stopEventMonitor()
         } else {
             updatePopoverSize(force: true)
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            showPopover(from: button)
             if settingsVisible == false {
                 startEventMonitor()
             }
+        }
+    }
+
+    private func showPopover(from button: NSStatusBarButton) {
+        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        clampPopoverToVisibleFrame(anchorFrame: CodexPopoverSizing.anchorFrameOnScreen(for: button))
+        DispatchQueue.main.async { [weak self, weak button] in
+            guard let self, let button else { return }
+            self.clampPopoverToVisibleFrame(anchorFrame: CodexPopoverSizing.anchorFrameOnScreen(for: button))
         }
     }
 
