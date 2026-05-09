@@ -7,9 +7,7 @@ enum CodexSummarySnooze {
             "\(summary.severity.rawValue)",
             summary.title,
             summary.message,
-            summary.supportingLabel,
-            summary.supportingValue,
-            summary.supportingDetail ?? ""
+            summary.supportingLabel
         ].joined(separator: "|")
     }
 
