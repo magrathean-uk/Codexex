@@ -294,6 +294,20 @@ struct SettingsRootView: View {
                 }
             }
 
+            SettingsListGroup(
+                title: "Codex data",
+                footer: "Choose the Codex sessions folder if sandbox permissions block the default path."
+            ) {
+                SettingsListRow(
+                    title: "Sessions folder",
+                    detail: model.codexSessionsPath ?? "~/.codex/sessions",
+                    isLast: true
+                ) {
+                    Button("Choose") { model.chooseCodexSessionsFolder() }
+                        .buttonStyle(CodexGhostButtonStyle())
+                }
+            }
+
             appearanceSection
         }
     }

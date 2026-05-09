@@ -30,6 +30,34 @@ xcodegen generate
 
 `Package.swift` is a local development and package-test adapter. Keep Xcode target wiring in `project.yml`.
 
+## Local Codex usage path
+
+Codexex reads official local Codex session logs under `~/.codex/sessions/`.
+It parses `token_count` events, local rate-limit fields, project/model context, command counts, and context-window metadata.
+This is separate from ChatGPT sign-in: sign-in remains the quota truth, local sessions explain what burned the quota.
+
+The local reader stays sandbox-safe and does not read browser state, cookies, private APIs, or token stores.
+It can surface:
+
+- today/week/session/project/model token burn
+- cache-read pressure
+- heavy shell/tool loops
+- expensive max-model turns with small output
+- missing local sessions or missing hook setup
+
+## Companion commands
+
+These are optional local helpers:
+
+```bash
+Scripts/codexex-status.sh
+Scripts/check-codexex-companions.sh
+Scripts/install-codexex-companions.sh
+```
+
+`codexex-status.sh` emits compact JSON from local session logs. The hook command writes redacted event metadata only: event, cwd, tool, session id, turn id, and status.
+The installer backs up `~/.codex/hooks.json` and `~/.codex/config.toml` before adding Codexex hook entries.
+
 Build or test the app target:
 
 ```bash

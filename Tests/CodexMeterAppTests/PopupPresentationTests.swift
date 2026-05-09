@@ -40,6 +40,25 @@ final class PopupPresentationTests: XCTestCase {
         XCTAssertEqual(rows.map { Int($0.window.usedPercent) }, [0, 13])
     }
 
+    func testQuotaWindowDisplayUsesRemainingPercentLikeAccountPage() {
+        let window = CodexQuotaWindow(
+            usedPercent: 100,
+            windowDurationMinutes: 300,
+            resetsAt: Date(timeIntervalSince1970: 1_800_000_000)
+        )
+
+        XCTAssertEqual(PopupPresentation.quotaRemainingText(for: window), "0%")
+        XCTAssertEqual(PopupPresentation.quotaRemainingProgress(for: window), 0)
+    }
+
+    func testLimitHeadlineUsesLowestRemainingWindow() throws {
+        let codex = makeLimit(id: "codex", name: "Codex", bucket: .codex, fiveHour: 100, weekly: 45)
+        let spark = makeLimit(id: "spark", name: "Codex Spark", bucket: .spark, fiveHour: 0, weekly: 64)
+
+        XCTAssertEqual(PopupPresentation.headlineWindow(for: codex)?.remainingPercentText, "0%")
+        XCTAssertEqual(PopupPresentation.headlineWindow(for: spark)?.remainingPercentText, "36%")
+    }
+
     func testZeroAndUnlimitedCreditsStayHidden() {
         let zeroCredits = PopupPresentation.presentation(
             for: makeLimit(

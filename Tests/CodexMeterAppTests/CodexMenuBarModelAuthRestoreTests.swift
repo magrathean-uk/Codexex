@@ -11,7 +11,7 @@ final class CodexMenuBarModelAuthRestoreTests: XCTestCase {
     }
 
     func testRefreshFailureDoesNotResolveAuthToSignedOut() async {
-        let model = CodexMenuBarModel(service: FailingService())
+        let model = testModel(service: FailingService())
 
         await model.refreshNow()
 
@@ -24,7 +24,7 @@ final class CodexMenuBarModelAuthRestoreTests: XCTestCase {
     func testSnoozeCurrentSummaryNotifiesObservers() async {
         UserDefaults.standard.removeObject(forKey: "codexex.summarySnoozeFingerprint")
         UserDefaults.standard.removeObject(forKey: "codexex.summarySnoozeExpiresAt")
-        let model = CodexMenuBarModel(service: SnapshotService(snapshot: makeRiskSnapshot()))
+        let model = testModel(service: SnapshotService(snapshot: makeRiskSnapshot()))
         await model.refreshNow()
         XCTAssertFalse(model.isCurrentSummarySnoozed)
 
@@ -42,7 +42,7 @@ final class CodexMenuBarModelAuthRestoreTests: XCTestCase {
     }
 
     func testDiagnosticsReportRedactsEmail() async {
-        let model = CodexMenuBarModel(service: SnapshotService(snapshot: makeRiskSnapshot()))
+        let model = testModel(service: SnapshotService(snapshot: makeRiskSnapshot()))
         await model.refreshNow()
 
         let report = model.diagnosticsReport(now: Date(timeIntervalSince1970: 1_800_000_100))
@@ -52,12 +52,25 @@ final class CodexMenuBarModelAuthRestoreTests: XCTestCase {
         XCTAssertTrue(report.contains("History samples:"))
     }
 
+    func testRefreshAppliesLocalCodexUsageSummary() async {
+        let model = CodexMenuBarModel(
+            service: SnapshotService(snapshot: makeRiskSnapshot()),
+            localUsageProvider: StaticLocalUsageProvider(summary: makeLocalUsageSummary())
+        )
+
+        await model.refreshNow()
+
+        XCTAssertEqual(model.localUsageSummary?.today.totalTokens, 42_000)
+        XCTAssertEqual(model.localUsageSummary?.latestProjectName, "Codexex")
+        XCTAssertEqual(model.localUsageSummary?.wasteSignals.first?.kind, .modelOverkill)
+    }
+
     func testDeviceAuthAutoPollingRefreshesSnapshotAfterApproval() async throws {
         let service = DeviceAuthService(
             snapshot: makeRiskSnapshot(),
             pollResults: [.pending, .signedIn]
         )
-        let model = CodexMenuBarModel(
+        let model = testModel(
             service: service,
             deviceAuthPollingConfiguration: CodexDeviceAuthPollingConfiguration(
                 intervalSeconds: 0.02,
@@ -85,7 +98,7 @@ final class CodexMenuBarModelAuthRestoreTests: XCTestCase {
             snapshot: makeRiskSnapshot(),
             pollResults: [.pending, .pending, .pending]
         )
-        let model = CodexMenuBarModel(
+        let model = testModel(
             service: service,
             deviceAuthPollingConfiguration: CodexDeviceAuthPollingConfiguration(
                 intervalSeconds: 0.02,
@@ -106,6 +119,17 @@ final class CodexMenuBarModelAuthRestoreTests: XCTestCase {
         XCTAssertEqual(finalPollCount, pollCountAfterClear)
         XCTAssertNil(model.authDeviceCode)
         XCTAssertFalse(model.isSignedIn)
+    }
+
+    private func testModel(
+        service: any CodexServiceClient,
+        deviceAuthPollingConfiguration: CodexDeviceAuthPollingConfiguration = .production
+    ) -> CodexMenuBarModel {
+        CodexMenuBarModel(
+            service: service,
+            localUsageProvider: StaticLocalUsageProvider(summary: nil),
+            deviceAuthPollingConfiguration: deviceAuthPollingConfiguration
+        )
     }
 
     private func makeRiskSnapshot() -> CodexSnapshot {
@@ -151,6 +175,81 @@ final class CodexMenuBarModelAuthRestoreTests: XCTestCase {
         }
         XCTFail("Timed out waiting for condition")
     }
+}
+
+private struct StaticLocalUsageProvider: CodexLocalUsageProviding {
+    let summary: CodexLocalUsageSummary?
+
+    func fetchLocalUsageSummary() async -> CodexLocalUsageSummary? {
+        summary
+    }
+}
+
+private func makeLocalUsageSummary() -> CodexLocalUsageSummary {
+    let now = Date(timeIntervalSince1970: 1_800_000_000)
+    let tokens = CodexLocalTokenUsage(
+        inputTokens: 40_000,
+        cachedInputTokens: 34_000,
+        outputTokens: 2_000,
+        reasoningOutputTokens: 500,
+        totalTokens: 42_000
+    )
+    let period = CodexLocalUsagePeriodSummary(entryCount: 1, tokens: tokens)
+    return CodexLocalUsageSummary(
+        capturedAt: now,
+        dataPath: "/Users/me/.codex/sessions",
+        total: period,
+        today: period,
+        week: period,
+        sessions: [
+            CodexLocalSessionSummary(
+                id: "s1",
+                projectPath: "/Users/me/Codexex",
+                latestModel: "gpt-5.1-codex-max",
+                startedAt: now.addingTimeInterval(-300),
+                lastActivityAt: now,
+                entryCount: 1,
+                commandCount: 4,
+                tokens: tokens
+            )
+        ],
+        projects: [
+            CodexLocalProjectSummary(
+                id: "/Users/me/Codexex",
+                displayName: "Codexex",
+                path: "/Users/me/Codexex",
+                latestModel: "gpt-5.1-codex-max",
+                lastActivityAt: now,
+                sessionCount: 1,
+                commandCount: 4,
+                tokens: tokens
+            )
+        ],
+        modelSummaries: [
+            CodexLocalModelSummary(model: "gpt-5.1-codex-max", entryCount: 1, tokens: tokens)
+        ],
+        fiveHourBlocks: [
+            CodexLocalUsageBlock(
+                id: "block",
+                startsAt: now.addingTimeInterval(-600),
+                endsAt: now.addingTimeInterval(5 * 60 * 60),
+                tokens: tokens,
+                entryCount: 1
+            )
+        ],
+        wasteSignals: [
+            CodexLocalWasteSignal(
+                id: "model-overkill",
+                kind: .modelOverkill,
+                title: "Model overkill",
+                detail: "Max spent a lot for a small output."
+            )
+        ],
+        configReport: CodexLocalConfigReport(severity: .ok, issues: []),
+        latestProjectName: "Codexex",
+        latestModel: "gpt-5.1-codex-max",
+        contextWindowPercent: 42
+    )
 }
 
 private struct FailingService: CodexServiceClient {

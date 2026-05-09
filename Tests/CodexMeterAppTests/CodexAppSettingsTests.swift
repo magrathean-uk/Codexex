@@ -11,6 +11,7 @@ final class CodexAppSettingsTests: XCTestCase {
         UserDefaults.standard.removeObject(forKey: "codexex.hideIdleSecondaryLimits")
         UserDefaults.standard.removeObject(forKey: "codexex.menuBarDisplayMode")
         UserDefaults.standard.removeObject(forKey: "codexex.resetDisplayStyle")
+        UserDefaults.standard.removeObject(forKey: "codexex.codexSessionsPath")
         UserDefaults.standard.removeObject(forKey: "codexex.summarySnoozeFingerprint")
         UserDefaults.standard.removeObject(forKey: "codexex.summarySnoozeExpiresAt")
     }
@@ -24,8 +25,9 @@ final class CodexAppSettingsTests: XCTestCase {
         XCTAssertEqual(snapshot.defaultHistoryMode, .dailyPeaks)
         XCTAssertTrue(snapshot.showPaceConfidence)
         XCTAssertFalse(snapshot.hideIdleSecondaryLimits)
-        XCTAssertEqual(snapshot.menuBarDisplayMode, .used)
+        XCTAssertEqual(snapshot.menuBarDisplayMode, .remaining)
         XCTAssertEqual(snapshot.resetDisplayStyle, .relative)
+        XCTAssertNil(snapshot.codexSessionsPath)
     }
 
     func testNewPopupSettingsPersist() {
@@ -47,6 +49,16 @@ final class CodexAppSettingsTests: XCTestCase {
         XCTAssertTrue(snapshot.hideIdleSecondaryLimits)
         XCTAssertEqual(snapshot.menuBarDisplayMode, .pace)
         XCTAssertEqual(snapshot.resetDisplayStyle, .absolute)
+    }
+
+    func testCodexSessionsPathPersistsAndClears() {
+        let store = CodexAppSettingsStore(defaults: makeDefaults())
+
+        store.setCodexSessionsPath("/Users/me/.codex/sessions")
+        XCTAssertEqual(store.snapshot().codexSessionsPath, "/Users/me/.codex/sessions")
+
+        store.setCodexSessionsPath(nil)
+        XCTAssertNil(store.snapshot().codexSessionsPath)
     }
 
     func testSummarySnoozeSettingsPersistAndClear() {
