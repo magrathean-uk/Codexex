@@ -11,8 +11,8 @@ struct CodexLocalUsageCardView: View {
                 header
 
                 HStack(spacing: 10) {
-                    metric("Today tokens", value: compactTokens(summary.today.totalTokens), systemImage: "bolt.fill")
-                    metric("Last 7 days", value: compactTokens(summary.week.totalTokens), systemImage: "calendar")
+                    metric("Today output", value: compactTokens(summary.today.outputTokens), systemImage: "bolt.fill")
+                    metric("Last 7 days output", value: compactTokens(summary.week.outputTokens), systemImage: "calendar")
                     metric("Active sessions", value: "\(summary.sessions.count)", systemImage: "terminal.fill")
                 }
 
@@ -56,7 +56,7 @@ struct CodexLocalUsageCardView: View {
             }
 
             if let top = summary.projects.first {
-                infoRow("Top project", value: "\(top.displayName) · \(compactTokens(top.tokens.totalTokens))")
+                infoRow("Top project", value: "\(top.displayName) · \(compactTokens(top.tokens.outputTokens))")
             }
 
             if let signal = summary.wasteSignals.first {
