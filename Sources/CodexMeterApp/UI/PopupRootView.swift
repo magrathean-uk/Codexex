@@ -189,7 +189,11 @@ struct PopupRootView: View {
         case .compact:
             CompactLimitCardView(presentation: presentation)
         case .hero, .standard:
-            LimitCardView(presentation: presentation, resetDisplayStyle: model.resetDisplayStyle)
+            LimitCardView(
+                presentation: presentation,
+                resetDisplayStyle: model.resetDisplayStyle,
+                displayMode: model.menuBarDisplayMode
+            )
         }
     }
 

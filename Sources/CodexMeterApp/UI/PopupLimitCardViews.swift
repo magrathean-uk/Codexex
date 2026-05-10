@@ -6,6 +6,7 @@ struct LimitCardView: View {
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
     let presentation: PopupLimitPresentation
     let resetDisplayStyle: CodexResetDisplayStyle
+    let displayMode: CodexMenuBarDisplayMode
 
     private var limit: CodexLimit { presentation.limit }
     private var cardStyle: GlassSurfaceStyle {
@@ -30,12 +31,12 @@ struct LimitCardView: View {
                     Spacer()
 
                     if let headlineWindow {
-                        Text(PopupPresentation.quotaRemainingText(for: headlineWindow))
+                        Text(windowValueText(for: headlineWindow))
                             .font(headlineFont)
                             .contentTransition(
                                 accessibilityReduceMotion
                                     ? .identity
-                                    : .numericText(value: headlineWindow.remainingPercent)
+                                    : .numericText(value: windowValuePercent(for: headlineWindow))
                             )
                     }
                 }
@@ -85,13 +86,13 @@ struct LimitCardView: View {
 
                 Spacer()
 
-                Text(PopupPresentation.quotaRemainingText(for: window))
+                Text(windowValueText(for: window))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(CodexTheme.text)
                     .contentTransition(
                         accessibilityReduceMotion
                             ? .identity
-                            : .numericText(value: window.remainingPercent)
+                            : .numericText(value: windowValuePercent(for: window))
                     )
 
                 Text(resetText)
@@ -100,11 +101,47 @@ struct LimitCardView: View {
             }
 
             UsageBar(
-                progress: PopupPresentation.quotaRemainingProgress(for: window),
+                progress: windowProgress(for: window),
                 bucket: limit.bucket,
-                label: "\(title) remaining",
-                value: "\(PopupPresentation.quotaRemainingText(for: window)) remaining, \(resetText)"
+                label: "\(title) \(windowValueLabel)",
+                value: "\(windowValueText(for: window)) \(windowValueLabel), \(resetText)"
             )
+        }
+    }
+
+    private func windowValueText(for window: CodexQuotaWindow) -> String {
+        switch displayMode {
+        case .used, .pace:
+            return window.usedPercentText
+        case .remaining:
+            return window.remainingPercentText
+        }
+    }
+
+    private func windowValuePercent(for window: CodexQuotaWindow) -> Double {
+        switch displayMode {
+        case .used, .pace:
+            return window.usedPercent
+        case .remaining:
+            return window.remainingPercent
+        }
+    }
+
+    private func windowProgress(for window: CodexQuotaWindow) -> Double {
+        switch displayMode {
+        case .used, .pace:
+            return window.usedPercent / 100
+        case .remaining:
+            return PopupPresentation.quotaRemainingProgress(for: window)
+        }
+    }
+
+    private var windowValueLabel: String {
+        switch displayMode {
+        case .used, .pace:
+            return "used"
+        case .remaining:
+            return "remaining"
         }
     }
 }
