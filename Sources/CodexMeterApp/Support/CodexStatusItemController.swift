@@ -228,9 +228,11 @@ final class CodexStatusItemController: NSObject {
 
     private func trackPopupModelState() {
         _ = model.snapshot
+        _ = model.localUsageSummary
         _ = model.isRefreshing
         _ = model.lastError
         _ = model.popupSummary
+        _ = model.isCurrentSummarySnoozed
         _ = model.isSigningIn
         _ = model.isSignedIn
         _ = model.hasResolvedAuthState
@@ -260,7 +262,9 @@ final class CodexStatusItemController: NSObject {
         if force == false {
             guard popover.isShown || hostingController.view.window == nil else { return }
         }
-        guard sizingState != lastSizingState else { return }
+        if force == false, sizingState == lastSizingState {
+            return
+        }
         lastSizingState = sizingState
         let anchorFrame = statusItem.button.flatMap(CodexPopoverSizing.anchorFrameOnScreen(for:))
         let maxHeight = CodexPopoverSizing.maxHeight(
@@ -341,13 +345,20 @@ enum CodexPopoverSizing {
         }
 
         let availableHeight = max(0, min(screenSafeHeight, anchoredHeight))
-        let preferredHeight = min(GlassTokens.popupMaxHeight, availableHeight)
-        let usableFloor = min(GlassTokens.popupMinimumUsableHeight, preferredHeight)
-        return max(usableFloor, preferredHeight)
+        return clampedPreferredHeight(forAvailableHeight: availableHeight)
     }
 
     static func height(fittingHeight: CGFloat, maxHeight: CGFloat) -> CGFloat {
         min(ceil(fittingHeight), maxHeight)
+    }
+
+    static func clampedPreferredHeight(forAvailableHeight availableHeight: CGFloat) -> CGFloat {
+        let preferredHeight = min(GlassTokens.popupMaxHeight, max(0, availableHeight))
+        let minimumUsable = min(GlassTokens.popupMinimumUsableHeight, GlassTokens.popupMaxHeight)
+        guard preferredHeight < minimumUsable else {
+            return preferredHeight
+        }
+        return preferredHeight
     }
 
     @MainActor

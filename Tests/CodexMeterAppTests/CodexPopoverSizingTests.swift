@@ -24,4 +24,18 @@ final class CodexPopoverSizingTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(maxHeight, GlassTokens.popupMinimumUsableHeight)
         XCTAssertLessThanOrEqual(maxHeight, GlassTokens.popupMaxHeight)
     }
+
+    func testClampedPreferredHeightKeepsSmallAvailableHeight() {
+        XCTAssertEqual(
+            CodexPopoverSizing.clampedPreferredHeight(forAvailableHeight: 300),
+            300
+        )
+    }
+
+    func testClampedPreferredHeightRespectsPopupMaxHeight() {
+        XCTAssertEqual(
+            CodexPopoverSizing.clampedPreferredHeight(forAvailableHeight: 4_000),
+            GlassTokens.popupMaxHeight
+        )
+    }
 }

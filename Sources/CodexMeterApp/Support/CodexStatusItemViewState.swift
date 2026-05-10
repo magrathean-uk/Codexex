@@ -32,24 +32,26 @@ struct CodexStatusItemViewState: Equatable {
 struct CodexPopupSizingState: Equatable {
     let isShown: Bool
     let hasStatusCard: Bool
+    let hasLocalUsageCard: Bool
     let limitCount: Int
     let historyCount: Int
     let showHistory: Bool
     let showHistoryChart: Bool
     let showSpark: Bool
-    let hasSummary: Bool
+    let hasVisibleSummary: Bool
     let appearance: CodexAppearanceMode
 
     @MainActor
     init(model: CodexMenuBarModel, isShown: Bool) {
         self.isShown = isShown
         hasStatusCard = model.shouldShowStatusCard
+        hasLocalUsageCard = model.localUsageSummary != nil
         limitCount = model.snapshot?.limits.count ?? 0
         historyCount = model.usageHistory.count
         showHistory = model.showHistoryEnabled
         showHistoryChart = model.showHistoryChartEnabled
         showSpark = model.showSparkEnabled
-        hasSummary = model.popupSummary != nil
+        hasVisibleSummary = model.popupSummary != nil && model.isCurrentSummarySnoozed == false
         appearance = model.appearanceMode
     }
 }
