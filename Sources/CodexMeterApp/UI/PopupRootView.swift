@@ -64,6 +64,7 @@ struct PopupRootView: View {
                 .scrollIndicators(.hidden)
                 .frame(maxWidth: .infinity, maxHeight: GlassTokens.popupMaxHeight - 58, alignment: .top)
             }
+            .id(layoutResetToken)
 
             if displayMode == .live {
                 footer
@@ -119,6 +120,15 @@ struct PopupRootView: View {
                     }
                 }
             }
+    }
+
+    private var layoutResetToken: String {
+        [
+            shouldShowStatusCard ? "status" : "nostatus",
+            presentedSummary.map(CodexSummarySnooze.fingerprint(for:)) ?? "nosummary",
+            presentedLocalUsageSummary == nil ? "nolocal" : "local",
+            presentedSnapshot == nil ? "nosnapshot" : "snapshot"
+        ].joined(separator: "|")
     }
 
     private var footer: some View {

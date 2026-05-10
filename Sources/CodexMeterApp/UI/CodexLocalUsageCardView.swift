@@ -11,9 +11,9 @@ struct CodexLocalUsageCardView: View {
                 header
 
                 HStack(spacing: 10) {
-                    metric("Today", value: compactTokens(summary.today.totalTokens), systemImage: "bolt.fill")
-                    metric("Week", value: compactTokens(summary.week.totalTokens), systemImage: "calendar")
-                    metric("Sessions", value: "\(summary.sessions.count)", systemImage: "terminal.fill")
+                    metric("Today tokens", value: compactTokens(summary.today.totalTokens), systemImage: "bolt.fill")
+                    metric("Last 7 days", value: compactTokens(summary.week.totalTokens), systemImage: "calendar")
+                    metric("Active sessions", value: "\(summary.sessions.count)", systemImage: "terminal.fill")
                 }
 
                 Divider()
@@ -27,10 +27,10 @@ struct CodexLocalUsageCardView: View {
     private var header: some View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Local Codex burn")
+                Text("Current session")
                     .font(.system(size: 13, weight: .semibold))
 
-                Text(summary.latestProjectName ?? "Session usage")
+                Text("Current session: \(summary.latestProjectName ?? "No active session")")
                     .font(.system(size: 12))
                     .foregroundStyle(CodexTheme.muted)
                     .lineLimit(1)
