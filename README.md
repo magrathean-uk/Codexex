@@ -56,8 +56,8 @@ Codexex is proprietary software. See [`LICENSE`](./LICENSE) for the full licence
 
 The published Codexex application (macOS & iOS) is governed by the user-facing terms published at:
 
-- Privacy Policy — <https://magrathean.uk/apps/codexex/privacy/>
-- Terms of Service — <https://magrathean.uk/apps/codexex/terms/>
+- Privacy Policy — <https://codexex.eu/privacy/>
+- Terms of Service — <https://codexex.eu/terms/>
 
 ### Quota information is informational only
 

@@ -33,7 +33,7 @@ In scope:
 
 - Source code in this repository, including the SwiftUI/AppKit shell, the XPC service, and the bundled Rust helper under `Helper/CodexexHelper/`.
 - Application binaries published by Magrathean UK Ltd. that correspond to this repository (in particular, App Store builds of Codexex).
-- The Magrathean UK web pages directly supporting this product (privacy, terms, app landing).
+- The Codexex product-domain web pages directly supporting this product (privacy, terms, app landing).
 
 Out of scope:
 
