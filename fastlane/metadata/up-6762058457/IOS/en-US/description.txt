@@ -5,3 +5,6 @@ It shows 5-hour and weekly usage, reset times, Peaks/Cycle/Month history views, 
 Version 3 adds adaptive light, dark, and system appearance, flexible iPhone and iPad layouts, improved history forecasting, 24-hour snooze, and a cleaner Settings experience.
 
 Codexex supports ChatGPT sign-in and Preview Mode for App Review and offline testing. Sign-in uses Safari and a device-code flow. Quota reads stay on this device with no Mac bridge, no browser cookies, and no scraping.
+
+Privacy Policy: https://codexex.eu/privacy/
+Terms of Use (EULA): https://codexex.eu/terms/

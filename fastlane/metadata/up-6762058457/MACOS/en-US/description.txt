@@ -5,3 +5,6 @@ It shows 5-hour and weekly usage, reset times, Peaks/Cycle/Month history views, 
 Version 3 adds adaptive light, dark, and system appearance, a more compact popup that stays usable from the menu bar, improved history forecasting, 24-hour snooze, and a cleaner Settings experience.
 
 Codexex supports ChatGPT sign-in, Preview Mode for App Review and offline testing, and a compact helper-based release flow that keeps the app fast and self-contained.
+
+Privacy Policy: https://codexex.eu/privacy/
+Terms of Use (EULA): https://codexex.eu/terms/
