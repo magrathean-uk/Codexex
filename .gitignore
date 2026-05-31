@@ -5,3 +5,6 @@ DerivedData/
 *.swp
 
 Helper/CodexexHelper/target/
+
+# Swift build artifacts
+.build/
