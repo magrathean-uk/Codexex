@@ -14,14 +14,23 @@ public enum CodexLocalUsageAggregator {
             ?? todayStart.addingTimeInterval(-(7 * 24 * 60 * 60))
         let latest = deduped.max { $0.timestamp < $1.timestamp }
         let models = modelSummaries(from: deduped)
+        let sessions = sessionSummaries(from: deduped)
+        let total = periodSummary(for: deduped)
+        let latestContextWindowPercent = deduped
+            .compactMap { entry -> (Date, Double)? in
+                guard let percent = entry.rateLimits?.contextWindowPercent else { return nil }
+                return (entry.timestamp, percent)
+            }
+            .max { lhs, rhs in lhs.0 < rhs.0 }?
+            .1
 
         return CodexLocalUsageSummary(
             capturedAt: capturedAt,
             dataPath: dataPath,
-            total: periodSummary(for: deduped),
+            total: total,
             today: periodSummary(for: deduped.filter { $0.timestamp >= todayStart && $0.timestamp <= capturedAt }),
             week: periodSummary(for: deduped.filter { $0.timestamp >= weekStart && $0.timestamp <= capturedAt }),
-            sessions: sessionSummaries(from: deduped),
+            sessions: sessions,
             projects: projectSummaries(from: deduped),
             modelSummaries: models,
             fiveHourBlocks: fiveHourBlocks(from: deduped, calendar: calendar),
@@ -29,7 +38,9 @@ public enum CodexLocalUsageAggregator {
             configReport: configReport,
             latestProjectName: latest?.projectPath.map(projectDisplayName),
             latestModel: latest?.model,
-            contextWindowPercent: nil
+            contextWindowPercent: latestContextWindowPercent,
+            sessionAutopsies: sessionAutopsies(from: sessions, totalTokens: total.totalTokens),
+            attributionConfidence: attributionConfidence(entries: deduped)
         )
     }
 
@@ -186,6 +197,51 @@ public enum CodexLocalUsageAggregator {
         }
 
         return signals
+    }
+
+    private static func sessionAutopsies(
+        from sessions: [CodexLocalSessionSummary],
+        totalTokens: Int
+    ) -> [CodexLocalSessionAutopsy] {
+        sessions.map { session in
+            let share = totalTokens > 0
+                ? (Double(session.tokens.totalTokens) / Double(totalTokens)) * 100
+                : 0
+            return CodexLocalSessionAutopsy(
+                id: session.id,
+                projectName: session.projectPath.map(projectDisplayName),
+                model: session.latestModel,
+                tokens: session.tokens,
+                totalSharePercent: share,
+                commandCount: session.commandCount,
+                entryCount: session.entryCount,
+                lastActivityAt: session.lastActivityAt
+            )
+        }
+    }
+
+    private static func attributionConfidence(entries: [CodexLocalUsageEntry]) -> CodexLocalAttributionConfidence {
+        guard entries.isEmpty == false else {
+            return .unknown
+        }
+
+        let hasMissingContext = entries.contains { entry in
+            entry.projectPath?.nilIfEmpty == nil || entry.model.nilIfEmpty == nil || entry.model == "unknown"
+        }
+
+        if hasMissingContext {
+            return CodexLocalAttributionConfidence(
+                level: .partial,
+                title: "Partial confidence",
+                detail: "Some local session rows are missing project or model context."
+            )
+        }
+
+        return CodexLocalAttributionConfidence(
+            level: .high,
+            title: "High confidence",
+            detail: "Official local Codex session logs provide session, project, and model burn. Per-user ownership is not claimed."
+        )
     }
 
     private static func projectDisplayName(_ path: String) -> String {

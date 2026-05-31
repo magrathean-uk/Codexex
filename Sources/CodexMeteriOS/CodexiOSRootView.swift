@@ -15,7 +15,7 @@ struct CodexiOSRootView: View {
         NavigationStack {
             ScrollView {
                 if #available(iOS 26.0, *) {
-                    GlassEffectContainer(spacing: 16) {
+                    GlassEffectContainer(spacing: 12) {
                         responsiveLayout
                     }
                 } else {
@@ -23,34 +23,12 @@ struct CodexiOSRootView: View {
                 }
             }
             .background(CodexiOSTheme.background.ignoresSafeArea())
-            .navigationTitle("Codexex")
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    NavigationLink {
-                        CodexiOSSettingsView(model: model)
-                    } label: {
-                        Label("Settings", systemImage: "gearshape.fill")
-                    }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        Task { await model.refresh() }
-                    } label: {
-                        if model.isRefreshing {
-                            ProgressView()
-                        } else {
-                            Label("Refresh", systemImage: "arrow.clockwise")
-                        }
-                    }
-                    .disabled(model.isRefreshing)
-                }
-            }
         }
         .preferredColorScheme(CodexiOSAppearanceMode(rawValue: appearanceMode)?.colorScheme)
     }
 
     private var narrowLayout: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             if shouldShowStatusCard {
                 statusCard
             }
@@ -66,8 +44,8 @@ struct CodexiOSRootView: View {
     }
 
     private var wideLayout: some View {
-        HStack(alignment: .top, spacing: 18) {
-            VStack(alignment: .leading, spacing: 16) {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 12) {
                 if shouldShowStatusCard {
                     statusCard
                 }
@@ -86,8 +64,8 @@ struct CodexiOSRootView: View {
     }
 
     private var largeLayout: some View {
-        HStack(alignment: .top, spacing: 18) {
-            VStack(alignment: .leading, spacing: 16) {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 12) {
                 if shouldShowStatusCard {
                     statusCard
                 }
@@ -113,12 +91,12 @@ struct CodexiOSRootView: View {
 
     private var statusCard: some View {
         iOSCard {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 10) {
                 Text(statusCardTitle)
-                    .font(.headline)
+                    .font(.headline.weight(.semibold))
 
                 Text(model.statusMessage)
-                    .font(.body.weight(.semibold))
+                    .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -139,9 +117,9 @@ struct CodexiOSRootView: View {
                             .textSelection(.enabled)
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                    .padding(14)
+                    .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(CodexiOSTheme.inset, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .background(CodexiOSTheme.inset, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
 
                 authButtons
@@ -150,14 +128,54 @@ struct CodexiOSRootView: View {
     }
 
     private var responsiveLayout: some View {
-        ViewThatFits(in: .horizontal) {
-            largeLayout
-            wideLayout
-            narrowLayout
+        VStack(alignment: .leading, spacing: 16) {
+            contentHeader
+
+            ViewThatFits(in: .horizontal) {
+                largeLayout
+                wideLayout
+                narrowLayout
+            }
         }
         .padding(.horizontal, 18)
-        .padding(.vertical, 20)
+        .padding(.vertical, 16)
         .frame(maxWidth: .infinity, alignment: .topLeading)
+    }
+
+    private var contentHeader: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                NavigationLink {
+                    CodexiOSSettingsView(model: model)
+                } label: {
+                    Text("Settings")
+                }
+                .buttonStyle(CodexiOSTopButtonStyle())
+
+                Spacer()
+
+                Button {
+                    Task { await model.refresh() }
+                } label: {
+                    if model.isRefreshing {
+                        HStack(spacing: 6) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("Refreshing")
+                        }
+                    } else {
+                        Text("Refresh")
+                    }
+                }
+                .buttonStyle(CodexiOSTopButtonStyle())
+                .disabled(model.isRefreshing)
+            }
+
+            Text("Codexex")
+                .font(.system(size: 38, weight: .bold))
+                .tracking(-1.2)
+                .lineLimit(1)
+        }
     }
 
     @ViewBuilder
@@ -182,11 +200,7 @@ struct CodexiOSRootView: View {
             Button {
                 Task { await model.beginSignIn() }
             } label: {
-                if model.isSigningIn {
-                    Label("Starting sign-in", systemImage: "hourglass")
-                } else {
-                    Label("Sign in with ChatGPT", systemImage: "person.crop.circle.badge.checkmark")
-                }
+                Text(model.isSigningIn ? "Starting sign-in" : "Sign in with ChatGPT")
             }
             .buttonStyle(CodexiOSPrimaryButtonStyle())
             .disabled(model.isSigningIn)
@@ -194,7 +208,7 @@ struct CodexiOSRootView: View {
     }
 
     private var mainQuotaCards: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             if let snapshot = model.snapshot {
                 ForEach(CodexQuotaPresentationRules.orderedLimits(snapshot.limits)) { limit in
                     if shouldShow(limit) {
@@ -217,21 +231,22 @@ struct CodexiOSRootView: View {
 
     private func quotaCard(_ limit: CodexLimit) -> some View {
         iOSCard {
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .firstTextBaseline, spacing: 12) {
                     Text(limit.displayName)
-                        .font(.title2.weight(.bold))
+                        .font(.headline.weight(.semibold))
                         .fixedSize(horizontal: false, vertical: true)
+                        .lineLimit(2)
                     Spacer(minLength: 12)
                     if let headline = headlineWindow(for: limit) {
                         Text(headline.remainingPercentText)
-                            .font(.system(size: 46, weight: .bold, design: .rounded).monospacedDigit())
+                            .font(.system(size: 36, weight: .semibold).monospacedDigit())
                             .minimumScaleFactor(0.7)
                     }
                 }
 
                 if let fiveHour = limit.fiveHourWindow {
-                    quotaRow(title: "Five hours", window: fiveHour, tint: tint(for: limit.bucket))
+                    quotaRow(title: "5H", window: fiveHour, tint: tint(for: limit.bucket))
                 }
                 if let weekly = limit.weeklyWindow, weekly != limit.fiveHourWindow {
                     quotaRow(title: "Weekly", window: weekly, tint: tint(for: limit.bucket))
@@ -247,21 +262,21 @@ struct CodexiOSRootView: View {
     }
 
     private func quotaRow(title: String, window: CodexQuotaWindow, tint: Color) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text(title)
-                    .font(.headline)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
                 Spacer(minLength: 10)
-                Text("\(window.remainingPercentText) remaining")
-                    .font(.headline.monospacedDigit())
+                Text(window.remainingPercentText)
+                    .font(.subheadline.weight(.semibold).monospacedDigit())
+                Text(resetText(for: window))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
             }
-            Text(resetText(for: window))
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            ProgressView(value: window.remainingPercent / 100)
-                .tint(tint)
-                .scaleEffect(x: 1, y: 1.6, anchor: .center)
+            CodexiOSQuotaBar(progress: window.remainingPercent / 100, tint: tint)
         }
     }
 
@@ -310,16 +325,10 @@ struct CodexiOSRootView: View {
 
     private func summaryCard(_ summary: PopupSummaryPresentation) -> some View {
         iOSCard {
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: summarySymbol(for: summary.severity))
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(summaryColor(for: summary.severity))
-                    .frame(width: 32, height: 32)
-                    .background(summaryColor(for: summary.severity).opacity(0.16), in: Circle())
-
+            HStack(alignment: .top, spacing: 10) {
                 VStack(alignment: .leading, spacing: 5) {
                     Text(summary.title)
-                        .font(.title3.weight(.bold))
+                        .font(.headline.weight(.semibold))
                         .foregroundStyle(summaryColor(for: summary.severity))
 
                     Text(summary.message)
@@ -362,29 +371,13 @@ struct CodexiOSRootView: View {
         }
     }
 
-    private func summarySymbol(for severity: CodexQuotaSeverity) -> String {
-        switch severity {
-        case .tooEarly:
-            return "clock.badge.questionmark"
-        case .safe:
-            return "checkmark.circle.fill"
-        case .watch:
-            return "exclamationmark.triangle"
-        case .risk:
-            return "exclamationmark.triangle.fill"
-        }
-    }
-
     private var emptyCard: some View {
         iOSCard {
             VStack(alignment: .leading, spacing: 12) {
-                Image(systemName: "lock.shield")
-                    .font(.largeTitle)
-                    .foregroundStyle(CodexiOSTheme.secondary)
                 Text("Private by default")
-                    .font(.title2.weight(.bold))
+                    .font(.headline.weight(.semibold))
                 Text("No server, no Mac bridge, no browser cookies. Sign in happens on-device and tokens stay in Keychain.")
-                    .font(.body)
+                    .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -441,19 +434,14 @@ private struct CodexiOSHistoryCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
                 Text("Usage history")
-                    .font(.title3.weight(.bold))
+                    .font(.headline.weight(.semibold))
                 Spacer()
             }
 
-            Picker("History", selection: Binding(get: { mode }, set: onModeChange)) {
-                ForEach(CodexiOSHistoryMode.allCases) { mode in
-                    Text(mode.title).tag(mode)
-                }
-            }
-            .pickerStyle(.segmented)
+            CodexiOSModeTabs(selection: mode, onChange: onModeChange)
 
             weeklyPace
             historyContent
@@ -461,10 +449,10 @@ private struct CodexiOSHistoryCard: View {
     }
 
     private var weeklyPace: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text("Weekly pace")
-                    .font(.callout.weight(.semibold))
+                    .font(.subheadline.weight(.medium))
                     .foregroundStyle(.secondary)
                 Spacer()
                 Text(forecastHeadline(weeklyForecast))
@@ -586,7 +574,26 @@ private struct CodexiOSHistoryCard: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
-        .background(CodexiOSTheme.inset, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(CodexiOSTheme.inset, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+}
+
+private struct CodexiOSQuotaBar: View {
+    let progress: Double
+    let tint: Color
+
+    var body: some View {
+        GeometryReader { proxy in
+            let clamped = min(max(progress, 0), 1)
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .fill(CodexiOSTheme.inset)
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .fill(tint)
+                    .frame(width: max(8, proxy.size.width * clamped))
+            }
+        }
+        .frame(height: 8)
     }
 }
 
@@ -647,11 +654,11 @@ private struct CodexiOSForecastBar: View {
             let projectedX = width * min(max(projectedPercent / 100, 0), 1)
 
             ZStack(alignment: .leading) {
-                Capsule().fill(CodexiOSTheme.inset)
-                Capsule()
+                RoundedRectangle(cornerRadius: 4, style: .continuous).fill(CodexiOSTheme.inset)
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
                     .fill(CodexiOSTheme.primaryGradient)
                     .frame(width: max(8, currentX))
-                Circle()
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
                     .fill(.primary)
                     .frame(width: 12, height: 12)
                     .offset(x: max(0, currentX - 6))
@@ -709,28 +716,24 @@ enum CodexiOSTheme {
 
 private struct CodexiOSGlassCardModifier: ViewModifier {
     func body(content: Content) -> some View {
-        let shape = RoundedRectangle(cornerRadius: 26, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
 
         if #available(iOS 26.0, *) {
             content
-                .padding(18)
+                .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(CodexiOSTheme.card, in: shape)
-                .glassEffect(.regular.tint(CodexiOSTheme.card), in: .rect(cornerRadius: 26))
                 .overlay {
                     shape.strokeBorder(CodexiOSTheme.border, lineWidth: 1)
                 }
-                .shadow(color: .black.opacity(0.28), radius: 22, y: 12)
         } else {
             content
-                .padding(18)
+                .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(.ultraThinMaterial, in: shape)
                 .background(CodexiOSTheme.card, in: shape)
                 .overlay {
                     shape.strokeBorder(CodexiOSTheme.border, lineWidth: 1)
                 }
-                .shadow(color: .black.opacity(0.28), radius: 22, y: 12)
         }
     }
 }
@@ -738,6 +741,73 @@ private struct CodexiOSGlassCardModifier: ViewModifier {
 private extension View {
     func codexiOSGlassCard() -> some View {
         modifier(CodexiOSGlassCardModifier())
+    }
+}
+
+struct CodexiOSTopButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(isEnabled ? Color.primary : Color.secondary)
+            .padding(.horizontal, 13)
+            .frame(minHeight: 38)
+            .scaleEffect(configuration.isPressed && reduceMotion == false ? 0.98 : 1)
+            .background(CodexiOSTheme.card.opacity(configuration.isPressed ? 0.72 : 1), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .strokeBorder(CodexiOSTheme.border, lineWidth: 1)
+            }
+            .contentShape(Rectangle())
+            .animation(.spring(response: 0.20, dampingFraction: 0.85), value: configuration.isPressed)
+    }
+}
+
+private struct CodexiOSModeTabs: View {
+    let selection: CodexiOSHistoryMode
+    let onChange: (CodexiOSHistoryMode) -> Void
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(CodexiOSHistoryMode.allCases) { mode in
+                CodexiOSModeTabButton(
+                    mode: mode,
+                    isSelected: selection == mode,
+                    onSelect: { onChange(mode) }
+                )
+            }
+        }
+        .padding(3)
+        .background(CodexiOSTheme.inset, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(CodexiOSTheme.border.opacity(0.9), lineWidth: 1)
+        }
+    }
+}
+
+private struct CodexiOSModeTabButton: View {
+    let mode: CodexiOSHistoryMode
+    let isSelected: Bool
+    let onSelect: () -> Void
+
+    var body: some View {
+        Button(action: onSelect) {
+            Text(mode.title)
+                .font(.subheadline.weight(isSelected ? .semibold : .medium))
+                .foregroundStyle(isSelected ? Color.primary : Color.secondary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+        }
+        .buttonStyle(.plain)
+        .background(selectionBackground)
+    }
+
+    private var selectionBackground: some View {
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
+            .fill(isSelected ? CodexiOSTheme.card : Color.clear)
     }
 }
 
@@ -754,7 +824,7 @@ struct CodexiOSPrimaryButtonStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed && reduceMotion == false ? 0.97 : 1)
             .background(
                 CodexiOSTheme.primaryGradient.opacity(isEnabled ? (configuration.isPressed ? 0.72 : 1) : 0.45),
-                in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+                in: RoundedRectangle(cornerRadius: 10, style: .continuous)
             )
             .contentShape(Rectangle())
             .animation(.spring(response: 0.22, dampingFraction: 0.78), value: configuration.isPressed)
@@ -770,9 +840,9 @@ struct CodexiOSSecondaryButtonStyle: ButtonStyle {
             .padding(.horizontal, 16)
             .frame(minHeight: 44)
             .scaleEffect(configuration.isPressed && reduceMotion == false ? 0.97 : 1)
-            .background(CodexiOSTheme.inset.opacity(configuration.isPressed ? 0.70 : 1), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .background(CodexiOSTheme.inset.opacity(configuration.isPressed ? 0.70 : 1), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .strokeBorder(CodexiOSTheme.border, lineWidth: 1)
             }
             .contentShape(Rectangle())

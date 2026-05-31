@@ -2,16 +2,20 @@
 
 Read in this order:
 
-- [Root AGENTS](/Users/bolyki/dev/source/AGENTS.md)
-- [Agent index](/Users/bolyki/dev/source/AGENT_INDEX.md)
 - [README](./README.md)
 - [RUNBOOK](./RUNBOOK.md)
 - `project.yml`
 - `Package.swift`
+- `Scripts/release-smoke.sh`
+
+Older prompts may mention `/Users/bolyki/dev/source/AGENTS.md` and
+`/Users/bolyki/dev/source/AGENT_INDEX.md`. They are not present in this
+checkout; do not stop for them. If they appear later, read them before this
+file and follow the closest AGENTS.md when rules conflict.
 
 Rules:
 
-- Source `/Users/bolyki/dev/source/build-env.sh` before local build, test, or packaging work.
+- Build, test, and packaging commands must be self-contained in this checkout. Do not depend on parent-directory environment scripts.
 - `project.yml` is the Xcode source of truth. Regenerate `CodexMeter.xcodeproj`; do not hand-edit it.
 - Keep core quota parsing and contracts in `Sources/CodexMeterCore/`.
 - Keep menu bar UI, onboarding, settings, and history state in `Sources/CodexMeterApp/`.
@@ -19,6 +23,29 @@ Rules:
 - Do not add browser scraping, private APIs, cookie theft, or alternate auth flows.
 - Keep release text in `fastlane/metadata/` and privacy text in `PRIVACY.md`; do not grow extra review-note markdown.
 - For Figma-driven UI work: use SwiftUI only, use project tokens/components, do not paste Tailwind styles, fetch Figma context and a screenshot before implementation, and reuse provided Figma assets when present.
+- Do not edit `CodexMeter.xcodeproj` directly; update `project.yml` and run `xcodegen generate --spec project.yml`.
+- Treat `.codex/` as local agent state unless the task explicitly asks for Codex hook/config work.
+
+## Commands
+
+Run from repo root unless noted. Use explicit local cache paths when Xcode needs them:
+
+- Swift package tests: `swift test`
+- Helper tests: `cargo test --manifest-path Helper/CodexexHelper/Cargo.toml`
+- Regenerate project: `xcodegen generate --spec project.yml`
+- macOS app tests: `xcodebuild -project CodexMeter.xcodeproj -scheme CodexMeterApp -derivedDataPath /tmp/codexex-derived-data -clonedSourcePackagesDirPath /tmp/codexex-swiftpm-cache test`
+- Release smoke: `bash Scripts/release-smoke.sh`
+- Companion script smoke: `bash Scripts/check-codexex-companions.sh`
+
+No SwiftLint, SwiftFormat config, Makefile, Justfile, or CI workflow was found in this checkout. The Claude hook formats `Sources/` with `swift-format` when available, but that is not a repo-wide lint gate.
+
+## Done when
+
+- The change is scoped to the right owner directory above.
+- Relevant tests or smoke scripts ran, or the blocker is named.
+- `project.yml` changes are followed by project regeneration.
+- Release-facing text stays in `fastlane/metadata/` or `PRIVACY.md`.
+- Final notes include verification, result, blockers, and any risky unknowns.
 
 ## Telemetry
 

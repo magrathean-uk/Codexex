@@ -61,15 +61,18 @@ public struct CodexLocalRateLimits: Codable, Sendable, Equatable {
     public let primary: CodexLocalRateLimitWindow?
     public let secondary: CodexLocalRateLimitWindow?
     public let planType: String?
+    public let contextWindowPercent: Double?
 
     public init(
         primary: CodexLocalRateLimitWindow?,
         secondary: CodexLocalRateLimitWindow?,
-        planType: String?
+        planType: String?,
+        contextWindowPercent: Double? = nil
     ) {
         self.primary = primary
         self.secondary = secondary
         self.planType = planType
+        self.contextWindowPercent = contextWindowPercent
     }
 }
 
@@ -247,6 +250,7 @@ public enum CodexLocalConfigSeverity: String, Codable, Sendable, Equatable {
 public enum CodexLocalConfigIssueKind: String, Codable, Sendable, Equatable {
     case missingSessionData
     case hooksNotInstalled
+    case staleSessionData
 }
 
 public struct CodexLocalConfigIssue: Codable, Sendable, Equatable, Identifiable {
@@ -272,6 +276,61 @@ public struct CodexLocalConfigReport: Codable, Sendable, Equatable {
     }
 }
 
+public enum CodexLocalAttributionConfidenceLevel: String, Codable, Sendable, Equatable {
+    case high
+    case partial
+    case unknown
+}
+
+public struct CodexLocalAttributionConfidence: Codable, Sendable, Equatable {
+    public let level: CodexLocalAttributionConfidenceLevel
+    public let title: String
+    public let detail: String
+
+    public init(level: CodexLocalAttributionConfidenceLevel, title: String, detail: String) {
+        self.level = level
+        self.title = title
+        self.detail = detail
+    }
+
+    public static let unknown = CodexLocalAttributionConfidence(
+        level: .unknown,
+        title: "Unknown confidence",
+        detail: "No local Codex session token rows were found."
+    )
+}
+
+public struct CodexLocalSessionAutopsy: Codable, Sendable, Equatable, Identifiable {
+    public let id: String
+    public let projectName: String?
+    public let model: String
+    public let tokens: CodexLocalTokenUsage
+    public let totalSharePercent: Double
+    public let commandCount: Int
+    public let entryCount: Int
+    public let lastActivityAt: Date
+
+    public init(
+        id: String,
+        projectName: String?,
+        model: String,
+        tokens: CodexLocalTokenUsage,
+        totalSharePercent: Double,
+        commandCount: Int,
+        entryCount: Int,
+        lastActivityAt: Date
+    ) {
+        self.id = id
+        self.projectName = projectName
+        self.model = model
+        self.tokens = tokens
+        self.totalSharePercent = max(0, min(100, totalSharePercent))
+        self.commandCount = max(0, commandCount)
+        self.entryCount = max(0, entryCount)
+        self.lastActivityAt = lastActivityAt
+    }
+}
+
 public struct CodexLocalUsageSummary: Codable, Sendable, Equatable {
     public let capturedAt: Date
     public let dataPath: String
@@ -287,6 +346,8 @@ public struct CodexLocalUsageSummary: Codable, Sendable, Equatable {
     public let latestProjectName: String?
     public let latestModel: String?
     public let contextWindowPercent: Double?
+    public let sessionAutopsies: [CodexLocalSessionAutopsy]
+    public let attributionConfidence: CodexLocalAttributionConfidence
 
     public init(
         capturedAt: Date,
@@ -302,7 +363,9 @@ public struct CodexLocalUsageSummary: Codable, Sendable, Equatable {
         configReport: CodexLocalConfigReport,
         latestProjectName: String?,
         latestModel: String?,
-        contextWindowPercent: Double?
+        contextWindowPercent: Double?,
+        sessionAutopsies: [CodexLocalSessionAutopsy] = [],
+        attributionConfidence: CodexLocalAttributionConfidence = .unknown
     ) {
         self.capturedAt = capturedAt
         self.dataPath = dataPath
@@ -318,6 +381,8 @@ public struct CodexLocalUsageSummary: Codable, Sendable, Equatable {
         self.latestProjectName = latestProjectName
         self.latestModel = latestModel
         self.contextWindowPercent = contextWindowPercent
+        self.sessionAutopsies = sessionAutopsies
+        self.attributionConfidence = attributionConfidence
     }
 }
 

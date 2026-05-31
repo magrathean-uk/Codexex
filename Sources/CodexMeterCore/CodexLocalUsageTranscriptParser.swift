@@ -72,6 +72,12 @@ private struct ParseState {
             return min(100, (Double(usage.totalTokens ?? 0) / Double(window)) * 100)
         }
 
+        let rawRateLimits = raw.payload.rateLimits ?? raw.rateLimits
+        let rateLimits = rawRateLimits?.summary(contextWindowPercent: contextWindowPercent)
+            ?? contextWindowPercent.map {
+                CodexLocalRateLimits(primary: nil, secondary: nil, planType: nil, contextWindowPercent: $0)
+            }
+
         return CodexLocalUsageEntry(
             id: "\(sourcePath)#\(lineNumber)",
             timestamp: timestamp,
@@ -82,7 +88,7 @@ private struct ParseState {
             tokens: usage.tokens,
             sourcePath: sourcePath,
             commandCount: commandCount,
-            rateLimits: raw.payload.rateLimits?.summary(contextWindowPercent: contextWindowPercent)
+            rateLimits: rateLimits
         )
     }
 
@@ -114,11 +120,13 @@ private struct RawLine: Decodable {
     let timestamp: String?
     let type: String?
     let payload: RawPayload
+    let rateLimits: RawRateLimits?
 
     enum CodingKeys: String, CodingKey {
         case timestamp
         case type
         case payload
+        case rateLimits = "rate_limits"
     }
 
     init(from decoder: Decoder) throws {
@@ -126,6 +134,7 @@ private struct RawLine: Decodable {
         timestamp = try container.decodeIfPresent(String.self, forKey: .timestamp)
         type = try container.decodeIfPresent(String.self, forKey: .type)
         payload = try container.decodeIfPresent(RawPayload.self, forKey: .payload) ?? RawPayload()
+        rateLimits = try container.decodeIfPresent(RawRateLimits.self, forKey: .rateLimits)
     }
 }
 
@@ -219,11 +228,12 @@ private struct RawRateLimits: Decodable {
     let secondary: RawRateLimitWindow?
     let planType: String?
 
-    func summary(contextWindowPercent _: Double?) -> CodexLocalRateLimits {
+    func summary(contextWindowPercent: Double?) -> CodexLocalRateLimits {
         CodexLocalRateLimits(
             primary: primary?.summary,
             secondary: secondary?.summary,
-            planType: planType
+            planType: planType,
+            contextWindowPercent: contextWindowPercent
         )
     }
 

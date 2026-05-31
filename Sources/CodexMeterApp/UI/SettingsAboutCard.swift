@@ -14,8 +14,7 @@ struct SettingsAboutCard: View {
                         .renderingMode(.original)
                         .resizable()
                         .frame(width: 72, height: 72)
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        .shadow(color: .black.opacity(0.10), radius: 8, y: 2)
+                        .clipShape(RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous))
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Codexex")

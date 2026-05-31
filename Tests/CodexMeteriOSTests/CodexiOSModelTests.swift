@@ -4,6 +4,12 @@ import CodexMeterCore
 
 @MainActor
 final class CodexiOSModelTests: XCTestCase {
+    func testPreviewDataUsesCurrentSparkDisplayName() {
+        let snapshot = CodexiOSPreviewData.snapshot(now: Date(timeIntervalSince1970: 1_800_000_000))
+
+        XCTAssertEqual(snapshot.sparkLimit?.displayName, "Spark")
+    }
+
     func testPreviewModeSkipsLiveRefreshOnStart() async {
         let service = StubCodexiOSService(
             fetchHandler: {

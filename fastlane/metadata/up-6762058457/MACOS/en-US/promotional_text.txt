@@ -1,1 +1,1 @@
-Track Codex usage in the menu bar with adaptive themes, compact history, forecasting, and ChatGPT sign-in.
+Track Codex usage, local session burn, forecasts, and opt-in quota alerts from the Mac menu bar.

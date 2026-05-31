@@ -445,6 +445,39 @@ final class CodexUsageInsightsTests: XCTestCase {
         XCTAssertFalse(insights?.recentPeaks.message.isEmpty ?? true)
     }
 
+    func testPreviewDataUsesCurrentSparkDisplayName() {
+        let snapshot = CodexPreviewData.snapshot(now: Date(timeIntervalSince1970: 1_800_000_000))
+
+        XCTAssertEqual(snapshot.sparkLimit?.displayName, "GPT-5.3-Codex-Spark")
+    }
+
+    func testPreviewDataMatchesReferenceQuotaCards() throws {
+        let snapshot = CodexPreviewData.snapshot(now: Date(timeIntervalSince1970: 1_800_000_000))
+        let codex = try XCTUnwrap(snapshot.codexLimit)
+        let spark = try XCTUnwrap(snapshot.sparkLimit)
+
+        XCTAssertEqual(codex.fiveHourWindow?.remainingPercentText, "92%")
+        XCTAssertEqual(codex.weeklyWindow?.remainingPercentText, "95%")
+        XCTAssertEqual(spark.fiveHourWindow?.remainingPercentText, "100%")
+        XCTAssertEqual(spark.weeklyWindow?.remainingPercentText, "51%")
+    }
+
+    func testPreviewLocalUsageMatchesReferenceEmptyState() {
+        let summary = CodexPreviewData.localUsageSummary(now: Date(timeIntervalSince1970: 1_800_000_000))
+
+        XCTAssertEqual(summary.sessions.count, 0)
+        XCTAssertEqual(summary.projects.count, 0)
+        XCTAssertEqual(summary.total.totalTokens, 0)
+        XCTAssertEqual(summary.total.cachedInputTokens, 0)
+        XCTAssertEqual(summary.total.outputTokens, 0)
+        XCTAssertEqual(summary.configReport.issues.first?.title, "No local sessions")
+        XCTAssertEqual(summary.dataPath, "\(NSHomeDirectory())/.codex/sessions")
+        XCTAssertEqual(
+            summary.configReport.issues.first?.detail,
+            "No Codex JSONL session data found at \(NSHomeDirectory())/.codex/sessions."
+        )
+    }
+
     func testUsageHistoryStoreSkipsDuplicateSamplesAndUsesInjectedFileURL() async throws {
         let fileManager = FileManager.default
         let root = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)

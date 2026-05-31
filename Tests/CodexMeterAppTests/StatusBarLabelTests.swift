@@ -68,6 +68,30 @@ final class StatusBarLabelTests: XCTestCase {
         XCTAssertEqual(title, "W 70%->89%")
     }
 
+    func testNormalMenuBarImageUsesSeverityDot() {
+        let image = StatusBarLabel.menuBarImage(
+            isRefreshing: false,
+            hasError: false,
+            isStale: false,
+            severity: .safe
+        )
+
+        XCTAssertEqual(image?.size.width, 8)
+        XCTAssertEqual(image?.size.height, 8)
+        XCTAssertEqual(image?.isTemplate, false)
+    }
+
+    func testNormalMenuBarImageIsNilWithoutSeverity() {
+        let image = StatusBarLabel.menuBarImage(
+            isRefreshing: false,
+            hasError: false,
+            isStale: false,
+            severity: nil
+        )
+
+        XCTAssertNil(image)
+    }
+
     private func makeSnapshot() -> CodexSnapshot {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         return CodexSnapshot(

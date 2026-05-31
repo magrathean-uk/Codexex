@@ -1,5 +1,5 @@
 import XCTest
-@testable import CodexMeteriOS
+@testable import Codexex
 
 final class CodexiOSPendingAuthRegistryTests: XCTestCase {
     func testFlowIDDoesNotExposePendingAuthState() throws {

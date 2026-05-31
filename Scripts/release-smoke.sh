@@ -34,6 +34,7 @@ require_file AppStore/CodexexHelper.entitlements
 require_file AppStore/CodexexXPCService.entitlements
 require_file Scripts/build-codexex-helper.sh
 require_file Scripts/embed-codexex-helper.sh
+require_file Scripts/check-codexex-companions.sh
 require_file Helper/CodexexHelper/Cargo.toml
 require_file Helper/CodexexHelper/src/protocol.rs
 require_file Sources/CodexexXPCService/Info.plist
@@ -53,7 +54,11 @@ require_text "Helpers/codexex-helper" Sources/CodexexXPCService/CodexHelperProce
 require_text "com.apple.security.app-sandbox" AppStore/Codexex.entitlements
 require_text "com.apple.security.app-sandbox" AppStore/CodexexXPCService.entitlements
 require_text "com.apple.security.inherit" AppStore/CodexexHelper.entitlements
-require_text "ChatGPT sign-in" PRIVACY.md
+require_text "ChatGPT/OpenAI sign-in" PRIVACY.md
+require_text "Paid packaging" RUNBOOK.md
+require_text "paid-upfront App Store pricing" RUNBOOK.md
+
+bash Scripts/check-codexex-companions.sh
 
 if command -v cargo >/dev/null 2>&1; then
   cargo test --manifest-path Helper/CodexexHelper/Cargo.toml

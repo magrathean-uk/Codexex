@@ -136,15 +136,16 @@ public struct CodexLimit: Sendable, Equatable, Codable, Identifiable {
     }
 
     public var displayName: String {
+        if let rawLimitName, rawLimitName.isEmpty == false {
+            return rawLimitName
+        }
+
         switch bucket {
         case .codex:
             return "Codex"
         case .spark:
             return "Codex Spark"
         case .other:
-            if let rawLimitName, rawLimitName.isEmpty == false {
-                return rawLimitName
-            }
             return id
         }
     }

@@ -14,72 +14,59 @@ struct PopupRootView: View {
     @Bindable var model: CodexMenuBarModel
     var onOpenSettings: () -> Void = {}
     var displayMode: PopupRootDisplayMode = .live
+    var reduceMotionOverride: Bool?
     private let previewReferenceDate: Date
 
     init(
         model: CodexMenuBarModel,
         onOpenSettings: @escaping () -> Void = {},
         displayMode: PopupRootDisplayMode = .live,
+        reduceMotionOverride: Bool? = nil,
         previewReferenceDate: Date = Date()
     ) {
         self.model = model
         self.onOpenSettings = onOpenSettings
         self.displayMode = displayMode
+        self.reduceMotionOverride = reduceMotionOverride
         self.previewReferenceDate = previewReferenceDate
     }
 
     var body: some View {
-        ZStack(alignment: .top) {
-            Triangle()
-                .fill(CodexTheme.window)
-                .frame(width: 18, height: 12)
-                .offset(y: -7)
+        popupContent
+            .background(CodexTheme.window)
+            .preferredColorScheme(model.appearanceMode.colorScheme)
+            .frame(width: GlassTokens.popupWidth)
+            .onAppear {
+                model.setReduceMotionEnabled(reduceMotionEnabled)
+            }
+            .onChange(of: accessibilityReduceMotion) { _, newValue in
+                guard reduceMotionOverride == nil else { return }
+                model.setReduceMotionEnabled(newValue)
+            }
+    }
 
-            popupContent
-        }
-        .background(CodexTheme.window, in: RoundedRectangle(cornerRadius: GlassTokens.popupRadius, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: GlassTokens.popupRadius, style: .continuous)
-                .strokeBorder(CodexTheme.hairline, lineWidth: 1)
-        }
-        .shadow(color: CodexTheme.popupShadow, radius: 28, y: 18)
-        .preferredColorScheme(model.appearanceMode.colorScheme)
-        .frame(width: GlassTokens.popupWidth)
-        .onAppear {
-            model.setReduceMotionEnabled(accessibilityReduceMotion)
-        }
-        .onChange(of: accessibilityReduceMotion) { _, newValue in
-            model.setReduceMotionEnabled(newValue)
-        }
+    private var reduceMotionEnabled: Bool {
+        reduceMotionOverride ?? accessibilityReduceMotion
     }
 
     private var popupContent: some View {
         VStack(alignment: .leading, spacing: GlassTokens.contentSpacing) {
-            ViewThatFits(in: .vertical) {
-                mainContent
-
-                ScrollView(.vertical) {
-                    mainContent
-                }
-                .scrollIndicators(.hidden)
-                .frame(maxWidth: .infinity, maxHeight: GlassTokens.popupMaxHeight - 58, alignment: .top)
-            }
-            .id(layoutResetToken)
+            mainContent
+                .id(layoutResetToken)
 
             if displayMode == .live {
                 footer
             }
         }
-            .padding(GlassTokens.pagePadding)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(GlassTokens.pagePadding)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
     private var mainContent: some View {
-            VStack(alignment: .leading, spacing: GlassTokens.contentSpacing) {
-                if shouldShowStatusCard {
-                    PopupStatusCardView(model: model)
-                }
+        VStack(alignment: .leading, spacing: GlassTokens.contentSpacing) {
+            if shouldShowStatusCard {
+                PopupStatusCardView(model: model)
+            }
 
                 if let summary = presentedSummary {
                     PopupSummaryCardView(
@@ -89,16 +76,12 @@ struct PopupRootView: View {
                     )
                 }
 
-                if let localUsageSummary = presentedLocalUsageSummary {
-                    CodexLocalUsageCardView(summary: localUsageSummary)
-                }
-
                 if presentedSnapshot != nil {
-                    ForEach(primaryLimitPresentations) { presentation in
+                    ForEach(primaryLimitPresentations, id: \.id) { presentation in
                         limitCard(for: presentation)
                     }
 
-                    ForEach(activeSecondaryLimitPresentations) { presentation in
+                    ForEach(activeSecondaryLimitPresentations, id: \.id) { presentation in
                         limitCard(for: presentation)
                     }
                 }
@@ -115,18 +98,17 @@ struct PopupRootView: View {
                 }
 
                 if presentedSnapshot != nil {
-                    ForEach(compactSecondaryLimitPresentations) { presentation in
+                    ForEach(compactSecondaryLimitPresentations, id: \.id) { presentation in
                         limitCard(for: presentation)
                     }
                 }
-            }
+        }
     }
 
     private var layoutResetToken: String {
         [
             shouldShowStatusCard ? "status" : "nostatus",
             presentedSummary.map(CodexSummarySnooze.fingerprint(for:)) ?? "nosummary",
-            presentedLocalUsageSummary == nil ? "nolocal" : "local",
             presentedSnapshot == nil ? "nosnapshot" : "snapshot"
         ].joined(separator: "|")
     }
@@ -136,7 +118,7 @@ struct PopupRootView: View {
             Button {
                 onOpenSettings()
             } label: {
-                Label("Settings", systemImage: "gearshape.fill")
+                Text("Settings")
             }
             .buttonStyle(CodexGhostButtonStyle())
             .keyboardShortcut(",", modifiers: .command)
@@ -147,11 +129,17 @@ struct PopupRootView: View {
                 Text(updatedText(for: lastUpdatedAt))
                     .font(.system(size: 11.5))
                     .foregroundStyle(CodexTheme.dim)
-                    .contentTransition(accessibilityReduceMotion ? .identity : .numericText())
             }
+
+            Button {
+                guard model.isRefreshing == false else { return }
+                Task { await model.refreshNow(manual: true) }
+            } label: {
+                Text(model.isRefreshing ? "Refreshing" : "Refresh")
+            }
+            .buttonStyle(CodexGhostButtonStyle())
         }
         .padding(.top, 2)
-        .contentTransition(accessibilityReduceMotion ? .identity : .opacity)
     }
 
     private func updatedText(for date: Date) -> String {
@@ -215,6 +203,9 @@ struct PopupRootView: View {
         if displayMode == .settingsPreview {
             return model.snapshot ?? CodexPreviewData.snapshot(now: previewReferenceDate)
         }
+        if model.previewModeEnabled {
+            return model.snapshot ?? CodexPreviewData.snapshot(now: previewReferenceDate)
+        }
         return model.snapshot
     }
 
@@ -222,6 +213,11 @@ struct PopupRootView: View {
         if displayMode == .settingsPreview,
            model.usageHistory.isEmpty,
            model.snapshot == nil {
+            return CodexPreviewData.history(now: previewReferenceDate)
+        }
+        if displayMode == .live,
+           model.previewModeEnabled,
+           model.usageHistory.isEmpty {
             return CodexPreviewData.history(now: previewReferenceDate)
         }
         return model.usageHistory
@@ -242,6 +238,10 @@ struct PopupRootView: View {
         if displayMode == .settingsPreview,
            model.localUsageSummary == nil {
             return CodexPreviewData.localUsageSummary(now: previewReferenceDate)
+        }
+        if displayMode == .live,
+           model.previewModeEnabled {
+            return model.localUsageSummary ?? CodexPreviewData.localUsageSummary(now: previewReferenceDate)
         }
         return model.localUsageSummary
     }
@@ -276,14 +276,4 @@ struct PopupRootView: View {
     }
 }
 
-private struct Triangle: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: rect.midX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
-        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
-        path.closeSubpath()
-        return path
-    }
-}
 #endif

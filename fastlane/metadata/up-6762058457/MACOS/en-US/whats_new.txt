@@ -3,6 +3,8 @@ Codexex 3.0 refines the menu bar experience:
 - Adaptive System, Light, and Dark appearance, with a new Settings control.
 - Cleaner light theme matched across popup and Settings.
 - More compact popup layout so Settings stays reachable from the menu bar.
+- All-session local usage attribution from Codex session logs.
+- Opt-in alerts for 5-hour pressure, reset timing, and weekly risk.
 - 24-hour snooze for usage warnings.
 - Improved 5-hour, weekly, cycle, and month history presentation.
 - Forecast and sign-in flow fixes, including refresh after ChatGPT sign-in.

@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 
 public enum CodexLocalUsageDirectoryReader {
@@ -73,11 +74,14 @@ public enum CodexLocalUsageDirectoryReader {
         maximumFiles: Int? = nil
     ) throws -> CodexLocalUsageSummary {
         let parsed = try entries(in: rootURL, maximumFiles: maximumFiles)
+        let latestActivityAt = parsed.map(\.timestamp).max()
         let configReport = CodexLocalConfigDoctor.report(
             hasSessionData: parsed.isEmpty == false,
             hooksInstalled: hooksInstalled,
             configPath: defaultConfigURL().path,
-            sessionsPath: rootURL.path
+            sessionsPath: rootURL.path,
+            latestSessionActivityAt: latestActivityAt,
+            now: capturedAt
         )
         return CodexLocalUsageAggregator.snapshot(
             entries: parsed,
@@ -93,7 +97,7 @@ public enum CodexLocalUsageDirectoryReader {
            codexHome.isEmpty == false {
             return URL(fileURLWithPath: codexHome).appending(path: "sessions", directoryHint: .isDirectory)
         }
-        return FileManager.default.homeDirectoryForCurrentUser
+        return defaultCodexHomeURL()
             .appending(path: ".codex", directoryHint: .isDirectory)
             .appending(path: "sessions", directoryHint: .isDirectory)
     }
@@ -103,9 +107,17 @@ public enum CodexLocalUsageDirectoryReader {
            codexHome.isEmpty == false {
             return URL(fileURLWithPath: codexHome).appending(path: "config.toml")
         }
-        return FileManager.default.homeDirectoryForCurrentUser
+        return defaultCodexHomeURL()
             .appending(path: ".codex", directoryHint: .isDirectory)
             .appending(path: "config.toml")
+    }
+
+    private static func defaultCodexHomeURL() -> URL {
+        if let passwd = getpwuid(getuid()),
+           let home = passwd.pointee.pw_dir {
+            return URL(fileURLWithPath: String(cString: home), isDirectory: true)
+        }
+        return URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
     }
 }
 

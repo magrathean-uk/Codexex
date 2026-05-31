@@ -18,6 +18,40 @@ final class CodexFormattingTests: XCTestCase {
     func testBucketInference() {
         XCTAssertEqual(CodexLimitBucket.infer(limitId: "codex", limitName: nil), .codex)
         XCTAssertEqual(CodexLimitBucket.infer(limitId: "gpt-5.3-codex-spark", limitName: "Codex Spark"), .spark)
+        XCTAssertEqual(CodexLimitBucket.infer(limitId: "spark-week", limitName: "Spark"), .spark)
         XCTAssertEqual(CodexLimitBucket.infer(limitId: "other_meter", limitName: nil), .other)
+    }
+
+    func testLimitDisplayNamePreservesOfficialNamesForNamingDrift() {
+        XCTAssertEqual(
+            CodexLimit(
+                id: "spark-week",
+                rawLimitName: "Spark",
+                bucket: .spark,
+                primary: nil,
+                secondary: nil
+            ).displayName,
+            "Spark"
+        )
+        XCTAssertEqual(
+            CodexLimit(
+                id: "codex-week",
+                rawLimitName: "Codex Pro",
+                bucket: .codex,
+                primary: nil,
+                secondary: nil
+            ).displayName,
+            "Codex Pro"
+        )
+        XCTAssertEqual(
+            CodexLimit(
+                id: "spark-week",
+                rawLimitName: nil,
+                bucket: .spark,
+                primary: nil,
+                secondary: nil
+            ).displayName,
+            "Codex Spark"
+        )
     }
 }

@@ -11,7 +11,14 @@ extension CodexMenuBarModel {
     }
 
     var shouldShowStatusCard: Bool {
-        snapshot == nil || authDeviceCode != nil || isSigningIn || lastError != nil || previewModeEnabled
+        if previewModeEnabled,
+           snapshot != nil,
+           authDeviceCode == nil,
+           isSigningIn == false,
+           lastError == nil {
+            return false
+        }
+        return snapshot == nil || authDeviceCode != nil || isSigningIn || lastError != nil
     }
 
     var statusCardTitle: String {

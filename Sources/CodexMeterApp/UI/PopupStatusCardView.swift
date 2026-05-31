@@ -4,50 +4,47 @@ import Observation
 import SwiftUI
 
 struct PopupStatusCardView: View {
-    @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
     @Bindable var model: CodexMenuBarModel
 
     var body: some View {
-        GlassCard(style: model.snapshot == nil ? .primary : .secondary) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .top, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 6) {
+        PopupPlainSection {
+            if let code = model.authDeviceCode {
+                CodexDeviceCodeCallout(
+                    code: code,
+                    openSafari: { model.openAuthVerificationPage() },
+                    copyCode: { model.copyAuthCode() },
+                    cancel: { model.cancelPendingChatGPTSignIn() }
+                )
+            } else {
+                VStack(alignment: .leading, spacing: 7) {
+                    HStack(alignment: .firstTextBaseline, spacing: 9) {
                         Text(model.statusCardTitle)
-                            .font(.headline)
+                            .font(.system(size: 15.5, weight: .semibold))
+                            .foregroundStyle(statusTint)
+                            .lineLimit(1)
 
                         Text(model.statusCardMessage)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .font(.system(size: 13.5))
+                            .foregroundStyle(CodexTheme.muted)
+                            .lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
+
+                        Spacer(minLength: 0)
                     }
 
-                    Spacer(minLength: 0)
-                    CodexStateBadge(kind: model.designStateBadgeKind)
+                    actionRow
                 }
-
-                if let code = model.authDeviceCode {
-                    CodexDeviceCodeCallout(
-                        code: code,
-                        message: model.authStatusMessage,
-                        canCheck: model.canCheckPendingChatGPTSignIn,
-                        openSafari: { model.openAuthVerificationPage() },
-                        copyCode: { model.copyAuthCode() },
-                        checkStatus: { model.checkPendingChatGPTSignIn() },
-                        cancel: { model.cancelPendingChatGPTSignIn() }
-                    )
-                }
-
-                actionRow
             }
         }
-        .transition(accessibilityReduceMotion ? .identity : .opacity.combined(with: .scale(scale: 0.985)))
+    }
+
+    private var statusTint: Color {
+        model.designStateBadgeKind.tint
     }
 
     @ViewBuilder
     private var actionRow: some View {
-        if model.authDeviceCode != nil {
-            EmptyView()
-        } else if model.previewModeEnabled {
+        if model.previewModeEnabled {
             HStack(spacing: 8) {
                 Button("Leave Preview") {
                     model.disablePreviewMode()
@@ -79,7 +76,7 @@ struct PopupStatusCardView: View {
             Button {
                 Task { await model.refreshNow(manual: true) }
             } label: {
-                Label(model.isRefreshing ? "Refreshing" : "Refresh Now", systemImage: "arrow.clockwise")
+                Text(model.isRefreshing ? "Refreshing" : "Refresh Now")
             }
             .buttonStyle(.borderedProminent)
             .keyboardShortcut(.defaultAction)

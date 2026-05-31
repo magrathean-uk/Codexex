@@ -21,6 +21,16 @@ final class CodexMenuBarModelAuthRestoreTests: XCTestCase {
         XCTAssertEqual(model.authStatusMessage, "Ready.")
     }
 
+    func testPreviewModeWithSampleQuotaStartsOnSafeSummary() {
+        let model = testModel(service: FailingService())
+
+        model.enablePreviewMode()
+
+        XCTAssertNotNil(model.snapshot)
+        XCTAssertFalse(model.shouldShowStatusCard)
+        XCTAssertEqual(model.popupSummary?.title, "Safe")
+    }
+
     func testSnoozeCurrentSummaryNotifiesObservers() async {
         UserDefaults.standard.removeObject(forKey: "codexex.summarySnoozeFingerprint")
         UserDefaults.standard.removeObject(forKey: "codexex.summarySnoozeExpiresAt")
@@ -52,6 +62,23 @@ final class CodexMenuBarModelAuthRestoreTests: XCTestCase {
         XCTAssertTrue(report.contains("History samples:"))
     }
 
+    func testDiagnosticsReportIncludesAllSessionLocalUsage() async {
+        let model = CodexMenuBarModel(
+            service: SnapshotService(snapshot: makeRiskSnapshot()),
+            localUsageProvider: StaticLocalUsageProvider(summary: makeLocalUsageSummary())
+        )
+
+        await model.refreshNow()
+
+        let report = model.diagnosticsReport(now: Date(timeIntervalSince1970: 1_800_000_100))
+
+        XCTAssertTrue(report.contains("Local sessions: 1"))
+        XCTAssertTrue(report.contains("Local all-session tokens: 42000"))
+        XCTAssertTrue(report.contains("Local top project: Codexex"))
+        XCTAssertTrue(report.contains("Local attribution: high"))
+        XCTAssertTrue(report.contains("Local context: 42%"))
+    }
+
     func testRefreshAppliesLocalCodexUsageSummary() async {
         let model = CodexMenuBarModel(
             service: SnapshotService(snapshot: makeRiskSnapshot()),
@@ -63,6 +90,48 @@ final class CodexMenuBarModelAuthRestoreTests: XCTestCase {
         XCTAssertEqual(model.localUsageSummary?.today.totalTokens, 42_000)
         XCTAssertEqual(model.localUsageSummary?.latestProjectName, "Codexex")
         XCTAssertEqual(model.localUsageSummary?.wasteSignals.first?.kind, .modelOverkill)
+    }
+
+    func testRefreshFailureStillAppliesLocalCodexUsageSummary() async {
+        let model = CodexMenuBarModel(
+            service: FailingService(),
+            localUsageProvider: StaticLocalUsageProvider(summary: makeLocalUsageSummary())
+        )
+
+        await model.refreshNow()
+
+        XCTAssertEqual(model.lastError, "network down")
+        XCTAssertEqual(model.localUsageSummary?.total.totalTokens, 42_000)
+        XCTAssertEqual(model.localUsageSummary?.sessionAutopsies.first?.totalSharePercent, 100)
+    }
+
+    func testRefreshDeliversQuotaNotificationOncePerFingerprint() async throws {
+        let suiteName = "CodexMenuBarModelNotifications.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let settingsStore = CodexAppSettingsStore(defaults: defaults)
+        settingsStore.setQuotaNotificationsEnabled(true)
+        let delivery = RecordingQuotaNotificationDelivery()
+        let historyURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("codexex-notification-history-\(UUID().uuidString).json")
+
+        let model = CodexMenuBarModel(
+            service: SnapshotService(snapshot: makeHighPressureSnapshot()),
+            localUsageProvider: StaticLocalUsageProvider(summary: nil),
+            settingsStore: settingsStore,
+            historyRepository: CodexHistoryRepository(store: CodexUsageHistoryStore(fileURL: historyURL)),
+            notificationDelivery: delivery
+        )
+
+        await model.refreshNow()
+        await model.refreshNow()
+
+        let delivered = await delivery.deliveredNotifications()
+        XCTAssertEqual(delivered.map(\.kind), [.fiveHourPressure])
+        XCTAssertEqual(
+            settingsStore.quotaNotificationReceipts.deliveredFingerprints[.fiveHourPressure],
+            "fiveHourPressure|1800007200|92"
+        )
     }
 
     func testDeviceAuthAutoPollingRefreshesSnapshotAfterApproval() async throws {
@@ -91,6 +160,32 @@ final class CodexMenuBarModelAuthRestoreTests: XCTestCase {
         XCTAssertEqual(fetchCount, 1)
         XCTAssertGreaterThanOrEqual(pollCount, 2)
         XCTAssertNil(model.authDeviceCode)
+    }
+
+    func testStartingDeviceAuthOpensVerificationURL() async throws {
+        let service = DeviceAuthService(
+            snapshot: makeRiskSnapshot(),
+            pollResults: [.pending]
+        )
+        var openedURLs: [URL] = []
+        let model = CodexMenuBarModel(
+            service: service,
+            localUsageProvider: StaticLocalUsageProvider(summary: nil),
+            deviceAuthPollingConfiguration: CodexDeviceAuthPollingConfiguration(
+                intervalSeconds: 10,
+                timeoutSeconds: 10,
+                requestTimeoutSeconds: 0.5
+            ),
+            openURL: { url in
+                openedURLs.append(url)
+                return true
+            }
+        )
+
+        model.startChatGPTSignIn()
+
+        try await waitUntil(timeout: 1) { openedURLs == [URL(string: "https://chatgpt.com/activate")!] }
+        XCTAssertEqual(model.authDeviceCode, "CODE-123")
     }
 
     func testClearingDeviceCodeStopsAutoPolling() async throws {
@@ -162,6 +257,36 @@ final class CodexMenuBarModelAuthRestoreTests: XCTestCase {
         )
     }
 
+    private func makeHighPressureSnapshot() -> CodexSnapshot {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        return CodexSnapshot(
+            capturedAt: now,
+            executablePath: "/Applications/Codexex.app",
+            account: CodexAccount(
+                authType: "chatGPT",
+                email: "user@example.com",
+                planType: "PRO"
+            ),
+            limits: [
+                CodexLimit(
+                    id: "codex",
+                    rawLimitName: "Codex",
+                    bucket: .codex,
+                    primary: CodexQuotaWindow(
+                        usedPercent: 92,
+                        windowDurationMinutes: 300,
+                        resetsAt: now.addingTimeInterval(2 * 60 * 60)
+                    ),
+                    secondary: CodexQuotaWindow(
+                        usedPercent: 44,
+                        windowDurationMinutes: 10_080,
+                        resetsAt: now.addingTimeInterval(2 * 24 * 60 * 60)
+                    )
+                )
+            ]
+        )
+    }
+
     private func waitUntil(
         timeout: TimeInterval,
         condition: @escaping @MainActor () async -> Bool
@@ -174,6 +299,21 @@ final class CodexMenuBarModelAuthRestoreTests: XCTestCase {
             try await Task.sleep(for: .seconds(0.01))
         }
         XCTFail("Timed out waiting for condition")
+    }
+}
+
+private actor RecordingQuotaNotificationDelivery: CodexQuotaNotificationDelivering {
+    private var delivered: [CodexQuotaNotification] = []
+
+    func deliver(_ notifications: [CodexQuotaNotification]) async -> [CodexQuotaNotificationDeliveryResult] {
+        delivered.append(contentsOf: notifications)
+        return notifications.map {
+            CodexQuotaNotificationDeliveryResult(notification: $0, delivered: true)
+        }
+    }
+
+    func deliveredNotifications() -> [CodexQuotaNotification] {
+        delivered
     }
 }
 
@@ -248,7 +388,24 @@ private func makeLocalUsageSummary() -> CodexLocalUsageSummary {
         configReport: CodexLocalConfigReport(severity: .ok, issues: []),
         latestProjectName: "Codexex",
         latestModel: "gpt-5.1-codex-max",
-        contextWindowPercent: 42
+        contextWindowPercent: 42,
+        sessionAutopsies: [
+            CodexLocalSessionAutopsy(
+                id: "s1",
+                projectName: "Codexex",
+                model: "gpt-5.1-codex-max",
+                tokens: tokens,
+                totalSharePercent: 100,
+                commandCount: 4,
+                entryCount: 1,
+                lastActivityAt: now
+            )
+        ],
+        attributionConfidence: CodexLocalAttributionConfidence(
+            level: .high,
+            title: "High confidence",
+            detail: "All local token rows include project, model, and session data."
+        )
     )
 }
 

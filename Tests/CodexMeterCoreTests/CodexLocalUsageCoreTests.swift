@@ -1,3 +1,4 @@
+import Darwin
 import XCTest
 @testable import CodexMeterCore
 
@@ -6,7 +7,7 @@ final class CodexLocalUsageCoreTests: XCTestCase {
         let payload = """
         {"timestamp":"2026-05-06T09:00:00.000Z","type":"session_meta","payload":{"id":"session-1","cwd":"/Users/me/App"}}
         {"timestamp":"2026-05-06T09:01:00.000Z","type":"turn_context","payload":{"turn_id":"turn-1","cwd":"/Users/me/App","model":"gpt-5.1-codex-max"}}
-        {"timestamp":"2026-05-06T09:01:10.000Z","type":"event_msg","payload":{"type":"token_count","info":{"last_token_usage":{"input_tokens":1200,"cached_input_tokens":800,"output_tokens":300,"reasoning_output_tokens":40,"total_tokens":1500},"model_context_window":1000000},"rate_limits":{"primary":{"used_percent":22.5,"window_minutes":300,"resets_at":1778079600},"secondary":{"used_percent":41.0,"window_minutes":10080,"resets_at":1778684400},"plan_type":"pro"}}}
+        {"timestamp":"2026-05-06T09:01:10.000Z","type":"event_msg","payload":{"type":"token_count","info":{"last_token_usage":{"input_tokens":1200,"cached_input_tokens":800,"output_tokens":300,"reasoning_output_tokens":40,"total_tokens":1500},"model_context_window":1000000}},"rate_limits":{"primary":{"used_percent":22.5,"window_minutes":300,"resets_at":1778079600},"secondary":{"used_percent":41.0,"window_minutes":10080,"resets_at":1778684400},"plan_type":"pro"}}
         """
 
         let entries = try CodexLocalUsageTranscriptParser.entries(
@@ -23,6 +24,9 @@ final class CodexLocalUsageCoreTests: XCTestCase {
         XCTAssertEqual(entries[0].tokens.cachedInputTokens, 800)
         XCTAssertEqual(entries[0].tokens.reasoningOutputTokens, 40)
         XCTAssertEqual(entries[0].rateLimits?.primary?.usedPercent, 22.5)
+        XCTAssertEqual(entries[0].rateLimits?.primary?.resetsAt, Date(timeIntervalSince1970: 1_778_079_600))
+        XCTAssertEqual(entries[0].rateLimits?.secondary?.windowMinutes, 10_080)
+        XCTAssertEqual(entries[0].rateLimits?.contextWindowPercent ?? -1, 0.15, accuracy: 0.001)
     }
 
     func testAggregatorBuildsProjectsModelsBlocksAndWasteSignals() throws {
@@ -49,6 +53,80 @@ final class CodexLocalUsageCoreTests: XCTestCase {
         XCTAssertTrue(summary.wasteSignals.contains { $0.kind == .highCacheRead })
         XCTAssertTrue(summary.wasteSignals.contains { $0.kind == .toolLoop })
         XCTAssertTrue(summary.wasteSignals.contains { $0.kind == .modelOverkill })
+    }
+
+    func testAggregatorBuildsAllSessionsAutopsyAndHighAttributionConfidence() throws {
+        let now = Date(timeIntervalSince1970: 1_778_095_200)
+        let entries = [
+            entry(id: "a", timestamp: now.addingTimeInterval(-600), sessionID: "s1", project: "/Users/me/App", model: "gpt-5.1-codex-max", total: 90_000, cached: 70_000, output: 200, commandCount: 8),
+            entry(id: "b", timestamp: now.addingTimeInterval(-300), sessionID: "s1", project: "/Users/me/App", model: "gpt-5.1-codex-max", total: 85_000, cached: 68_000, output: 180, commandCount: 7),
+            entry(id: "c", timestamp: now.addingTimeInterval(-60), sessionID: "s2", project: "/Users/me/Tool", model: "gpt-5.4-mini", total: 25_000, cached: 5_000, output: 4_200, commandCount: 1)
+        ]
+
+        let summary = CodexLocalUsageAggregator.snapshot(
+            entries: entries,
+            dataPath: "/Users/me/.codex/sessions",
+            capturedAt: now,
+            calendar: fixedCalendar
+        )
+
+        XCTAssertEqual(summary.attributionConfidence.level, .high)
+        XCTAssertEqual(summary.attributionConfidence.title, "High confidence")
+        XCTAssertEqual(summary.sessionAutopsies.map(\.id), ["s1", "s2"])
+        XCTAssertEqual(summary.sessionAutopsies.first?.projectName, "App")
+        XCTAssertEqual(summary.sessionAutopsies.first?.model, "gpt-5.1-codex-max")
+        XCTAssertEqual(summary.sessionAutopsies.first?.tokens.totalTokens, 175_000)
+        XCTAssertEqual(summary.sessionAutopsies.first?.totalSharePercent ?? 0, 87.5, accuracy: 0.01)
+    }
+
+    func testAggregatorKeepsLatestContextWindowPressure() throws {
+        let now = Date(timeIntervalSince1970: 1_778_095_200)
+        let entries = try CodexLocalUsageTranscriptParser.entries(
+            from: Data("""
+            {"timestamp":"2026-05-06T09:00:00.000Z","type":"session_meta","payload":{"id":"session-1","cwd":"/Users/me/App"}}
+            {"timestamp":"2026-05-06T09:01:00.000Z","type":"turn_context","payload":{"turn_id":"turn-1","cwd":"/Users/me/App","model":"gpt-5.1-codex-max"}}
+            {"timestamp":"2026-05-06T09:01:10.000Z","type":"event_msg","payload":{"type":"token_count","info":{"last_token_usage":{"input_tokens":90000,"cached_input_tokens":10000,"output_tokens":10000,"reasoning_output_tokens":1000,"total_tokens":100000},"model_context_window":200000}}}
+            """.utf8),
+            sourcePath: "/Users/me/.codex/sessions/2026/05/06/rollout-1.jsonl"
+        )
+
+        let summary = CodexLocalUsageAggregator.snapshot(
+            entries: entries,
+            dataPath: "/Users/me/.codex/sessions",
+            capturedAt: now,
+            calendar: fixedCalendar
+        )
+
+        XCTAssertEqual(summary.contextWindowPercent ?? -1, 50, accuracy: 0.001)
+    }
+
+    func testAggregatorMarksPartialAttributionWhenLocalContextIsMissing() {
+        let now = Date(timeIntervalSince1970: 1_778_095_200)
+        let entries = [
+            entry(id: "a", timestamp: now.addingTimeInterval(-60), sessionID: "s1", project: nil, model: "unknown", total: 12_000, cached: 3_000, output: 700, commandCount: 0)
+        ]
+
+        let summary = CodexLocalUsageAggregator.snapshot(
+            entries: entries,
+            dataPath: "/Users/me/.codex/sessions",
+            capturedAt: now,
+            calendar: fixedCalendar
+        )
+
+        XCTAssertEqual(summary.attributionConfidence.level, .partial)
+        XCTAssertTrue(summary.attributionConfidence.detail.contains("Some local session rows are missing project or model context."))
+    }
+
+    func testAggregatorMarksUnknownAttributionWhenNoSessionDataExists() {
+        let summary = CodexLocalUsageAggregator.snapshot(
+            entries: [],
+            dataPath: "/Users/me/.codex/sessions",
+            capturedAt: Date(timeIntervalSince1970: 1_778_095_200),
+            calendar: fixedCalendar
+        )
+
+        XCTAssertEqual(summary.attributionConfidence.level, .unknown)
+        XCTAssertEqual(summary.sessionAutopsies, [])
     }
 
     func testPersistentIndexPlansAppendAndRebuildsOnShrink() {
@@ -86,6 +164,16 @@ final class CodexLocalUsageCoreTests: XCTestCase {
         XCTAssertEqual(entries.first?.tokens.totalTokens, 200)
     }
 
+    func testDefaultSessionsURLUsesLoginHomeInsteadOfSandboxHome() throws {
+        let passwd = try XCTUnwrap(getpwuid(getuid()))
+        let loginHome = String(cString: passwd.pointee.pw_dir)
+
+        XCTAssertEqual(
+            CodexLocalUsageDirectoryReader.defaultSessionsURL().path,
+            "\(loginHome)/.codex/sessions"
+        )
+    }
+
     func testConfigDoctorFlagsMissingHooksAndSessionData() {
         let report = CodexLocalConfigDoctor.report(
             hasSessionData: false,
@@ -95,6 +183,20 @@ final class CodexLocalUsageCoreTests: XCTestCase {
         )
 
         XCTAssertEqual(report.issues.map(\.kind), [.missingSessionData, .hooksNotInstalled])
+        XCTAssertEqual(report.severity, .warning)
+    }
+
+    func testConfigDoctorFlagsStaleSessionData() {
+        let report = CodexLocalConfigDoctor.report(
+            hasSessionData: true,
+            hooksInstalled: true,
+            configPath: "/Users/me/.codex/config.toml",
+            sessionsPath: "/Users/me/.codex/sessions",
+            latestSessionActivityAt: Date(timeIntervalSince1970: 1_000),
+            now: Date(timeIntervalSince1970: 200_000)
+        )
+
+        XCTAssertEqual(report.issues.map(\.kind), [.staleSessionData])
         XCTAssertEqual(report.severity, .warning)
     }
 
@@ -108,7 +210,7 @@ final class CodexLocalUsageCoreTests: XCTestCase {
         id: String,
         timestamp: Date,
         sessionID: String,
-        project: String,
+        project: String?,
         model: String,
         total: Int,
         cached: Int,

@@ -4,10 +4,10 @@ import CodexMeterCore
 
 enum CodexPreviewData {
     static func snapshot(now: Date = Date()) -> CodexSnapshot {
-        let fiveHourReset = Calendar.current.date(byAdding: .minute, value: 96, to: now)
-        let weeklyReset = Calendar.current.date(byAdding: .day, value: 4, to: now)
-        let sparkFiveHourReset = Calendar.current.date(byAdding: .minute, value: 202, to: now)
-        let sparkWeeklyReset = Calendar.current.date(byAdding: .day, value: 2, to: now)
+        let fiveHourReset = Calendar.current.date(byAdding: .minute, value: 262, to: now)
+        let weeklyReset = Calendar.current.date(byAdding: .minute, value: 9_480, to: now)
+        let sparkFiveHourReset = Calendar.current.date(byAdding: .minute, value: 299, to: now)
+        let sparkWeeklyReset = Calendar.current.date(byAdding: .minute, value: 2_220, to: now)
 
         return CodexSnapshot(
             capturedAt: now,
@@ -22,16 +22,15 @@ enum CodexPreviewData {
                     id: "codex",
                     rawLimitName: "Codex",
                     bucket: .codex,
-                    primary: CodexQuotaWindow(usedPercent: 34, windowDurationMinutes: 300, resetsAt: fiveHourReset),
-                    secondary: CodexQuotaWindow(usedPercent: 58, windowDurationMinutes: 10_080, resetsAt: weeklyReset),
-                    credits: CodexCredits(hasCredits: true, unlimited: false, balance: "12.50")
+                    primary: CodexQuotaWindow(usedPercent: 8, windowDurationMinutes: 300, resetsAt: fiveHourReset),
+                    secondary: CodexQuotaWindow(usedPercent: 5, windowDurationMinutes: 10_080, resetsAt: weeklyReset)
                 ),
                 CodexLimit(
                     id: "spark",
-                    rawLimitName: "Codex Spark",
+                    rawLimitName: "GPT-5.3-Codex-Spark",
                     bucket: .spark,
-                    primary: CodexQuotaWindow(usedPercent: 12, windowDurationMinutes: 300, resetsAt: sparkFiveHourReset),
-                    secondary: CodexQuotaWindow(usedPercent: 41, windowDurationMinutes: 10_080, resetsAt: sparkWeeklyReset)
+                    primary: CodexQuotaWindow(usedPercent: 0, windowDurationMinutes: 300, resetsAt: sparkFiveHourReset),
+                    secondary: CodexQuotaWindow(usedPercent: 49, windowDurationMinutes: 10_080, resetsAt: sparkWeeklyReset)
                 )
             ]
         )
@@ -48,8 +47,18 @@ enum CodexPreviewData {
                 return nil
             }
 
-            let weekly = min(100.0, 18.0 + Double(day) * 1.7 + sin(Double(day) / 3.0) * 4.0)
-            let fiveHour = max(6.0, min(92.0, 22.0 + sin(Double(day) * 0.9) * 18.0 + Double(day % 5) * 3.5))
+            let weeklyReference: [Double] = [
+                56, 64, 68, 10, 26, 44, 61, 14, 62, 69,
+                8, 18, 22, 24, 52, 21, 30, 34, 18, 35,
+                72, 76, 4, 11, 22, 27, 36, 58, 70, 5
+            ]
+            let fiveHourReference: [Double] = [
+                18, 10, 9, 14, 72, 76, 8, 16, 18, 12,
+                14, 15, 7, 18, 16, 18, 21, 16, 18, 22,
+                60, 59, 5, 14, 38, 7, 9, 33, 29, 8
+            ]
+            let weekly = weeklyReference[day]
+            let fiveHour = fiveHourReference[day]
 
             return CodexUsageHistorySample(
                 capturedAt: date,
@@ -70,83 +79,29 @@ enum CodexPreviewData {
     }
 
     static func localUsageSummary(now: Date = Date()) -> CodexLocalUsageSummary {
-        let tokens = CodexLocalTokenUsage(
-            inputTokens: 38_000,
-            cachedInputTokens: 24_000,
-            outputTokens: 3_400,
-            reasoningOutputTokens: 620,
-            totalTokens: 41_400
-        )
-        let period = CodexLocalUsagePeriodSummary(entryCount: 9, tokens: tokens)
+        let sessionsPath = CodexLocalUsageDirectoryReader.defaultSessionsURL().path
+        let period = CodexLocalUsagePeriodSummary(entryCount: 0, tokens: .zero)
         return CodexLocalUsageSummary(
             capturedAt: now,
-            dataPath: "~/.codex/sessions",
+            dataPath: sessionsPath,
             total: period,
             today: period,
-            week: CodexLocalUsagePeriodSummary(
-                entryCount: 48,
-                tokens: CodexLocalTokenUsage(
-                    inputTokens: 210_000,
-                    cachedInputTokens: 151_000,
-                    outputTokens: 18_000,
-                    reasoningOutputTokens: 4_400,
-                    totalTokens: 228_000
-                )
-            ),
-            sessions: [
-                CodexLocalSessionSummary(
-                    id: "preview",
-                    projectPath: "/Users/you/dev/source/Codexex",
-                    latestModel: "gpt-5.1-codex-max",
-                    startedAt: now.addingTimeInterval(-42 * 60),
-                    lastActivityAt: now,
-                    entryCount: 9,
-                    commandCount: 16,
-                    tokens: tokens
-                )
-            ],
-            projects: [
-                CodexLocalProjectSummary(
-                    id: "/Users/you/dev/source/Codexex",
-                    displayName: "Codexex",
-                    path: "/Users/you/dev/source/Codexex",
-                    latestModel: "gpt-5.1-codex-max",
-                    lastActivityAt: now,
-                    sessionCount: 1,
-                    commandCount: 16,
-                    tokens: tokens
-                )
-            ],
-            modelSummaries: [
-                CodexLocalModelSummary(model: "gpt-5.1-codex-max", entryCount: 9, tokens: tokens)
-            ],
-            fiveHourBlocks: [
-                CodexLocalUsageBlock(
-                    id: "preview-block",
-                    startsAt: now.addingTimeInterval(-2 * 60 * 60),
-                    endsAt: now.addingTimeInterval(3 * 60 * 60),
-                    tokens: tokens,
-                    entryCount: 9
-                )
-            ],
-            wasteSignals: [
-                CodexLocalWasteSignal(
-                    id: "preview-tool-loop",
-                    kind: .toolLoop,
-                    title: "Tool loop",
-                    detail: "16 shell/tool completions in one session."
-                )
-            ],
+            week: period,
+            sessions: [],
+            projects: [],
+            modelSummaries: [],
+            fiveHourBlocks: [],
+            wasteSignals: [],
             configReport: CodexLocalConfigReport(severity: .warning, issues: [
                 CodexLocalConfigIssue(
-                    kind: .hooksNotInstalled,
-                    title: "Hooks not installed",
-                    detail: "Install local Codexex hooks for live tool and approval events."
+                    kind: .missingSessionData,
+                    title: "No local sessions",
+                    detail: "No Codex JSONL session data found at \(sessionsPath)."
                 )
             ]),
-            latestProjectName: "Codexex",
-            latestModel: "gpt-5.1-codex-max",
-            contextWindowPercent: 4.1
+            latestProjectName: nil,
+            latestModel: nil,
+            contextWindowPercent: nil
         )
     }
 }

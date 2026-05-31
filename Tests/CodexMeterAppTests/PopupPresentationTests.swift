@@ -1,9 +1,18 @@
 import Foundation
+import AppKit
 import XCTest
 @testable import CodexMeterApp
 @testable import CodexMeterCore
 
 final class PopupPresentationTests: XCTestCase {
+    func testSparkAccentUsesCyanReferenceColor() throws {
+        let color = try XCTUnwrap(NSColor(limitAccentColor(for: .spark)).usingColorSpace(.sRGB))
+
+        XCTAssertLessThan(color.redComponent, 0.55)
+        XCTAssertGreaterThan(color.greenComponent, 0.75)
+        XCTAssertGreaterThan(color.blueComponent, 0.85)
+    }
+
     func testPopupOrdersSparkAfterPrimaryLimits() {
         let ordered = PopupPresentation.orderedLimits([
             makeLimit(id: "spark", name: "Codex Spark", bucket: .spark, fiveHour: 12, weekly: 18),

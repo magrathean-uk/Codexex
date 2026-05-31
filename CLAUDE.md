@@ -5,10 +5,11 @@ Swift 6 / SwiftUI macOS (XcodeGen + SwiftPM), fastlane
 
 ## Build
 ```
-source /Users/bolyki/dev/source/build-env.sh
 xcodegen generate --spec project.yml   # regenerate .xcodeproj
-xcodebuild -project CodexMeter.xcodeproj -scheme CodexMeter build
+xcodebuild -project CodexMeter.xcodeproj -scheme CodexMeterApp -derivedDataPath /tmp/codexex-derived-data -clonedSourcePackagesDirPath /tmp/codexex-swiftpm-cache build
 swift test
+cargo test --manifest-path Helper/CodexexHelper/Cargo.toml
+bash Scripts/release-smoke.sh
 ```
 
 ## Key paths
@@ -21,6 +22,11 @@ swift test
 
 ## Generated — do not hand-edit
 - `CodexMeter.xcodeproj` — edit `project.yml` instead
+
+## Done when
+- Relevant build/test/smoke command ran, or the blocker is explicit
+- `project.yml` changes are followed by `xcodegen generate --spec project.yml`
+- Final note includes verification result and remaining unknowns
 
 ## Notes
 - No browser scraping, private APIs, cookie theft, or alternate auth flows

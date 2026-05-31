@@ -95,7 +95,6 @@ struct StatusBarLabel: View {
             return image
         }
         guard let severity else { return nil }
-
         let size = NSSize(width: 8, height: 8)
         let image = NSImage(size: size)
         image.lockFocus()

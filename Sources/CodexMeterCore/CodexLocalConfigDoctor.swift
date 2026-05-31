@@ -5,7 +5,10 @@ public enum CodexLocalConfigDoctor {
         hasSessionData: Bool,
         hooksInstalled: Bool,
         configPath: String,
-        sessionsPath: String
+        sessionsPath: String,
+        latestSessionActivityAt: Date? = nil,
+        now: Date = Date(),
+        staleAfter: TimeInterval = 24 * 60 * 60
     ) -> CodexLocalConfigReport {
         var issues: [CodexLocalConfigIssue] = []
 
@@ -15,6 +18,18 @@ public enum CodexLocalConfigDoctor {
                     kind: .missingSessionData,
                     title: "No local sessions",
                     detail: "No Codex JSONL session data found at \(sessionsPath)."
+                )
+            )
+        }
+
+        if hasSessionData,
+           let latestSessionActivityAt,
+           now.timeIntervalSince(latestSessionActivityAt) > staleAfter {
+            issues.append(
+                CodexLocalConfigIssue(
+                    kind: .staleSessionData,
+                    title: "Stale local sessions",
+                    detail: "No Codex token row has been seen in the last 24 hours."
                 )
             )
         }

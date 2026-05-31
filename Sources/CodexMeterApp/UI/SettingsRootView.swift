@@ -317,7 +317,7 @@ struct SettingsRootView: View {
             title: "Popup contents",
             footer: "Choose which sections appear in the menu bar popup."
         ) {
-            SettingsListRow(title: "Codex Spark", detail: "Show the Spark secondary meter.") {
+            SettingsListRow(title: "Spark", detail: "Show the secondary Spark meter.") {
                 CodexSwitch(isOn: Binding(get: { model.showSparkEnabled }, set: { model.setShowSparkEnabled($0) }))
             }
 
@@ -398,6 +398,13 @@ struct SettingsRootView: View {
                 CodexSwitch(isOn: Binding(get: { model.showPaceConfidence }, set: { model.setShowPaceConfidence($0) }))
             }
 
+            SettingsListRow(title: "Quota notifications", detail: "Opt-in alerts for 5H pressure, reset, and weekly risk.") {
+                CodexSwitch(isOn: Binding(
+                    get: { model.quotaNotificationsEnabled },
+                    set: { model.setQuotaNotificationsEnabled($0) }
+                ))
+            }
+
             SettingsListRow(title: "Hide idle limits", detail: "Collapse secondary limits when inactive.") {
                 CodexSwitch(isOn: Binding(get: { model.hideIdleSecondaryLimits }, set: { model.setHideIdleSecondaryLimits($0) }))
             }
@@ -423,7 +430,7 @@ struct SettingsRootView: View {
                     Image(nsImage: appIconImage)
                         .resizable()
                         .frame(width: 48, height: 48)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous))
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Codexex")
@@ -526,39 +533,12 @@ struct SettingsRootView: View {
                 .frame(height: 66)
 
                 if let code = model.authDeviceCode {
-                    VStack(alignment: .leading, spacing: 9) {
-                        Text("Device code")
-                            .font(.system(size: 11, weight: .semibold))
-                            .textCase(.uppercase)
-                            .tracking(1.3)
-                            .foregroundStyle(CodexTheme.dim)
-
-                        HStack(spacing: 12) {
-                            Text(code)
-                                .textSelection(.enabled)
-                                .font(.system(size: 18, weight: .semibold))
-                                .foregroundStyle(CodexTheme.text)
-
-                            Spacer()
-
-                            Button("Open Safari") { model.openAuthVerificationPage() }
-                                .buttonStyle(CodexPrimaryButtonStyle())
-                                .disabled(model.authVerificationURL == nil)
-
-                            Button("Copy") {
-                                NSPasteboard.general.clearContents()
-                                NSPasteboard.general.setString(code, forType: .string)
-                            }
-                            .buttonStyle(CodexGhostButtonStyle())
-
-                            Button("Check") { model.checkPendingChatGPTSignIn() }
-                                .buttonStyle(CodexGhostButtonStyle())
-                                .disabled(model.canCheckPendingChatGPTSignIn == false)
-
-                            Button("Cancel") { model.cancelPendingChatGPTSignIn() }
-                                .buttonStyle(CodexGhostButtonStyle())
-                        }
-                    }
+                    CodexDeviceCodeCallout(
+                        code: code,
+                        openSafari: { model.openAuthVerificationPage() },
+                        copyCode: { model.copyAuthCode() },
+                        cancel: { model.cancelPendingChatGPTSignIn() }
+                    )
                     .padding(14)
                     .overlay(alignment: .bottom) {
                         Rectangle()
@@ -706,7 +686,6 @@ private struct CodexSwitch: View {
                 Circle()
                     .fill(Color.white.opacity(0.94))
                     .frame(width: 17, height: 17)
-                    .shadow(color: .black.opacity(0.26), radius: 2, y: 1)
                     .offset(x: isOn ? 9 : -9)
             }
             .frame(width: 40, height: 22)
@@ -714,7 +693,6 @@ private struct CodexSwitch: View {
         }
         .buttonStyle(.plain)
         .opacity(isEnabled ? 1 : 0.45)
-        .animation(.easeInOut(duration: 0.14), value: isOn)
     }
 }
 
@@ -752,13 +730,12 @@ private struct CodexSegmentedControl<Value: Hashable>: View {
             }
         }
         .padding(2)
-        .background(CodexTheme.control, in: RoundedRectangle(cornerRadius: GlassTokens.pillRadius + 2, style: .continuous))
+        .background(CodexTheme.control, in: RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: GlassTokens.pillRadius + 2, style: .continuous)
+            RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
                 .strokeBorder(CodexTheme.hairline, lineWidth: 1)
         }
         .opacity(isEnabled ? 1 : 0.45)
-        .animation(.easeInOut(duration: 0.14), value: selection)
     }
 }
 
@@ -774,7 +751,6 @@ struct CodexPrimaryButtonStyle: ButtonStyle {
                 in: RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
             )
             .opacity(configuration.isPressed ? 0.82 : 1)
-            .modifier(CodexPressableScale(isPressed: configuration.isPressed))
     }
 }
 
@@ -793,7 +769,6 @@ struct CodexDestructiveButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
                     .strokeBorder(Color(red: 0.8, green: 0.22, blue: 0.20).opacity(0.55), lineWidth: 1)
             }
-            .modifier(CodexPressableScale(isPressed: configuration.isPressed))
     }
 }
 #endif

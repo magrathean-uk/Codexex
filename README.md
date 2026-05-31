@@ -35,15 +35,25 @@ Built by [Magrathean UK](https://magrathean.uk).
 
 ## Quick start
 
+Local build and test commands are self-contained. Xcode examples use `/tmp`
+cache paths so they do not depend on files outside this checkout.
+
 ```bash
-source ../build-env.sh
 swift test
-xcodegen generate
+xcodegen generate --spec project.yml
 xcodebuild -project CodexMeter.xcodeproj \
   -scheme CodexMeterApp \
-  -derivedDataPath "$XCODE_DERIVED_DATA_PATH" \
-  -clonedSourcePackagesDirPath "$SWIFTPM_SHARED_CACHE" \
+  -derivedDataPath /tmp/codexex-derived-data \
+  -clonedSourcePackagesDirPath /tmp/codexex-swiftpm-cache \
   build
+```
+
+Useful checks:
+
+```bash
+cargo test --manifest-path Helper/CodexexHelper/Cargo.toml
+bash Scripts/check-codexex-companions.sh
+bash Scripts/release-smoke.sh
 ```
 
 Use [RUNBOOK.md](./RUNBOOK.md) for helper flow, XPC notes, and release hygiene.
@@ -52,7 +62,7 @@ Use [RUNBOOK.md](./RUNBOOK.md) for helper flow, XPC notes, and release hygiene.
 
 Copyright © 2026 Magrathean UK Ltd. All rights reserved.
 
-Codexex is proprietary software. See [`LICENSE`](./LICENSE) for the full licence text. Third-party components and their licences are listed in [`LICENSE.md`](./LICENSE.md). Apache-2.0 attribution required by the openai/codex Rust crates and other upstream components is recorded in [`NOTICE`](./NOTICE). Public availability of this repository does not grant any right to copy, modify, redistribute, or use the Codexex source outside the licence terms.
+Codexex is proprietary software. See [`LICENSE`](./LICENSE) for the full licence text. Third-party components and their licences are listed in [`license.md`](./license.md). Apache-2.0 attribution required by the openai/codex Rust crates and other upstream components is recorded in [`NOTICE`](./NOTICE). Public availability of this repository does not grant any right to copy, modify, redistribute, or use the Codexex source outside the licence terms.
 
 The published Codexex application (macOS & iOS) is governed by the user-facing terms published at:
 

@@ -87,6 +87,9 @@ fn random_flow_id() -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::LazyLock;
+
+    static TEST_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
 
     fn sample_code() -> StoredDeviceCode {
         StoredDeviceCode {
@@ -99,6 +102,7 @@ mod tests {
 
     #[test]
     fn flow_id_is_opaque_and_resolves_to_stored_device_code() {
+        let _guard = TEST_LOCK.lock().unwrap();
         clear_all();
         let flow_id = insert(sample_code()).unwrap();
         assert!(flow_id.len() >= 32);
@@ -111,6 +115,7 @@ mod tests {
 
     #[test]
     fn removed_flow_cannot_be_replayed() {
+        let _guard = TEST_LOCK.lock().unwrap();
         clear_all();
         let flow_id = insert(sample_code()).unwrap();
         remove(&flow_id);

@@ -49,35 +49,12 @@ struct CodexStateBadge: View {
             .foregroundStyle(kind.tint)
             .padding(.horizontal, 8)
             .frame(height: 22)
-            .background(kind.tint.opacity(0.12), in: Capsule(style: .continuous))
+            .background(kind.tint.opacity(0.12), in: RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous))
             .overlay {
-                Capsule(style: .continuous)
+                RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
                     .strokeBorder(kind.tint.opacity(0.22), lineWidth: 1)
             }
             .accessibilityLabel(kind.title)
-    }
-}
-
-struct CodexPulseRing: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    let tint: Color
-    @State private var isExpanded = false
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(tint)
-                .frame(width: 7, height: 7)
-
-            if reduceMotion == false {
-                Circle()
-                    .stroke(tint.opacity(isExpanded ? 0 : 0.35), lineWidth: 1)
-                    .frame(width: isExpanded ? 20 : 8, height: isExpanded ? 20 : 8)
-                    .animation(.easeOut(duration: 1.2).repeatForever(autoreverses: false), value: isExpanded)
-            }
-        }
-        .frame(width: 22, height: 22)
-        .onAppear { isExpanded = true }
     }
 }
 
@@ -87,72 +64,52 @@ struct CodexPressableScale: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .scaleEffect(reduceMotion ? 1 : (isPressed ? 0.985 : 1))
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: isPressed)
     }
 }
 
 struct CodexDeviceCodeCallout: View {
     let code: String
-    let message: String
-    let canCheck: Bool
     let openSafari: () -> Void
     let copyCode: () -> Void
-    let checkStatus: () -> Void
     let cancel: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .center, spacing: 10) {
-                CodexPulseRing(tint: CodexTheme.amber)
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Device code")
+                .font(.system(size: 10.5, weight: .semibold))
+                .textCase(.uppercase)
+                .tracking(1.2)
+                .foregroundStyle(CodexTheme.dim)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Finish ChatGPT sign-in")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(CodexTheme.text)
-                    Text(message)
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(CodexTheme.dim)
-                        .lineLimit(2)
+            Text(code)
+                .font(.system(size: 28, weight: .bold, design: .monospaced))
+                .minimumScaleFactor(0.78)
+                .lineLimit(1)
+                .textSelection(.enabled)
+                .foregroundStyle(CodexTheme.text)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 9)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(CodexTheme.window, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .strokeBorder(CodexTheme.hairline, lineWidth: 1)
                 }
 
-                Spacer(minLength: 0)
-                CodexStateBadge(kind: .waiting)
-            }
-
-            HStack(alignment: .firstTextBaseline, spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Device code")
-                        .font(.system(size: 10.5, weight: .semibold))
-                        .textCase(.uppercase)
-                        .tracking(1.2)
-                        .foregroundStyle(CodexTheme.dim)
-                    Text(code)
-                        .font(.system(size: 20, weight: .semibold, design: .monospaced))
-                        .textSelection(.enabled)
-                        .foregroundStyle(CodexTheme.text)
-                }
-
-                Spacer(minLength: 0)
-
+            HStack(spacing: 8) {
+                Button("Open", action: openSafari)
+                    .buttonStyle(CodexPrimaryButtonStyle())
+                    .keyboardShortcut(.defaultAction)
                 Button("Copy", action: copyCode)
                     .buttonStyle(CodexGhostButtonStyle())
-                Button("Open Safari", action: openSafari)
-                    .buttonStyle(CodexPrimaryButtonStyle())
-                Button("Check", action: checkStatus)
-                    .buttonStyle(CodexGhostButtonStyle())
-                    .disabled(canCheck == false)
+
+                Spacer(minLength: 0)
+
                 Button("Cancel", action: cancel)
                     .buttonStyle(CodexGhostButtonStyle())
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassEffect(
-            GlassSurfaceStyle.inset.glass,
-            in: .rect(cornerRadius: GlassSurfaceStyle.inset.radius)
-        )
     }
 }
 #endif

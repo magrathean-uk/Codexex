@@ -23,7 +23,7 @@ enum CodexiOSPreviewData {
                 ),
                 CodexLimit(
                     id: "spark",
-                    rawLimitName: "Codex Spark",
+                    rawLimitName: "Spark",
                     bucket: .spark,
                     primary: CodexQuotaWindow(usedPercent: 8, windowDurationMinutes: 300, resetsAt: sparkFiveHourReset),
                     secondary: CodexQuotaWindow(usedPercent: 38, windowDurationMinutes: 10_080, resetsAt: sparkWeeklyReset)

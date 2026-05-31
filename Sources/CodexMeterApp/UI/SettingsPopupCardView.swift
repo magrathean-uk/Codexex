@@ -15,7 +15,7 @@ struct SettingsPopupCardView: View {
                 .foregroundStyle(.primary)
 
             SettingsToggleRow(
-                title: "Show Codex Spark",
+                title: "Show Spark",
                 detail: "Keep Spark visible as raw usage only.",
                 isOn: Binding(
                     get: { model.showSparkEnabled },

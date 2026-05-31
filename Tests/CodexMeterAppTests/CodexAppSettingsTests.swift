@@ -15,6 +15,8 @@ final class CodexAppSettingsTests: XCTestCase {
         UserDefaults.standard.removeObject(forKey: "codexex.codexSessionsBookmark")
         UserDefaults.standard.removeObject(forKey: "codexex.summarySnoozeFingerprint")
         UserDefaults.standard.removeObject(forKey: "codexex.summarySnoozeExpiresAt")
+        UserDefaults.standard.removeObject(forKey: "codexex.quotaNotificationsEnabled")
+        UserDefaults.standard.removeObject(forKey: "codexex.quotaNotificationFingerprints")
     }
 
     func testNewPopupSettingsDefaultOn() {
@@ -30,6 +32,7 @@ final class CodexAppSettingsTests: XCTestCase {
         XCTAssertEqual(snapshot.resetDisplayStyle, .relative)
         XCTAssertNil(snapshot.codexSessionsPath)
         XCTAssertNil(snapshot.codexSessionsBookmark)
+        XCTAssertFalse(snapshot.quotaNotificationsEnabled)
     }
 
     func testNewPopupSettingsPersist() {
@@ -53,6 +56,27 @@ final class CodexAppSettingsTests: XCTestCase {
         XCTAssertEqual(snapshot.resetDisplayStyle, .absolute)
     }
 
+    func testQuotaNotificationSettingsPersistAndClear() {
+        let store = CodexAppSettingsStore(defaults: makeDefaults())
+
+        store.setQuotaNotificationsEnabled(true)
+        store.setQuotaNotificationReceipts(CodexQuotaNotificationReceipts(deliveredFingerprints: [
+            .fiveHourPressure: "fiveHourPressure|1800007200|92"
+        ]))
+
+        XCTAssertTrue(store.snapshot().quotaNotificationsEnabled)
+        XCTAssertEqual(
+            store.quotaNotificationReceipts.deliveredFingerprints[.fiveHourPressure],
+            "fiveHourPressure|1800007200|92"
+        )
+
+        store.setQuotaNotificationsEnabled(false)
+        store.setQuotaNotificationReceipts(.empty)
+
+        XCTAssertFalse(store.snapshot().quotaNotificationsEnabled)
+        XCTAssertTrue(store.quotaNotificationReceipts.deliveredFingerprints.isEmpty)
+    }
+
     func testCodexSessionsPathPersistsAndClears() {
         let store = CodexAppSettingsStore(defaults: makeDefaults())
 
@@ -65,6 +89,22 @@ final class CodexAppSettingsTests: XCTestCase {
         store.setCodexSessionsBookmark(nil)
         XCTAssertNil(store.snapshot().codexSessionsPath)
         XCTAssertNil(store.snapshot().codexSessionsBookmark)
+    }
+
+    func testCodexSessionsFolderSelectionNormalizesCodexHome() {
+        let store = CodexAppSettingsStore(defaults: makeDefaults())
+
+        store.setCodexSessionsFolder(url: URL(fileURLWithPath: "/Users/me/.codex", isDirectory: true))
+
+        XCTAssertEqual(store.snapshot().codexSessionsPath, "/Users/me/.codex/sessions")
+    }
+
+    func testCodexSessionsFolderSelectionKeepsSessionsFolder() {
+        let store = CodexAppSettingsStore(defaults: makeDefaults())
+
+        store.setCodexSessionsFolder(url: URL(fileURLWithPath: "/Users/me/.codex/sessions", isDirectory: true))
+
+        XCTAssertEqual(store.snapshot().codexSessionsPath, "/Users/me/.codex/sessions")
     }
 
     func testSummarySnoozeSettingsPersistAndClear() {

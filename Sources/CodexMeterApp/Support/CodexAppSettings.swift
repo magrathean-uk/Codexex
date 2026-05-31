@@ -115,6 +115,8 @@ enum CodexAppSettings {
         static let codexSessionsBookmark = "codexex.codexSessionsBookmark"
         static let summarySnoozeFingerprint = "codexex.summarySnoozeFingerprint"
         static let summarySnoozeExpiresAt = "codexex.summarySnoozeExpiresAt"
+        static let quotaNotificationsEnabled = "codexex.quotaNotificationsEnabled"
+        static let quotaNotificationFingerprints = "codexex.quotaNotificationFingerprints"
 
         static let all = [
             hasCompletedOnboarding,
@@ -137,7 +139,9 @@ enum CodexAppSettings {
             codexSessionsPath,
             codexSessionsBookmark,
             summarySnoozeFingerprint,
-            summarySnoozeExpiresAt
+            summarySnoozeExpiresAt,
+            quotaNotificationsEnabled,
+            quotaNotificationFingerprints
         ]
     }
 
@@ -351,6 +355,29 @@ enum CodexAppSettings {
         }
     }
 
+    static var quotaNotificationsEnabled: Bool {
+        get {
+            if UserDefaults.standard.object(forKey: Key.quotaNotificationsEnabled) == nil {
+                return false
+            }
+            return UserDefaults.standard.bool(forKey: Key.quotaNotificationsEnabled)
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Key.quotaNotificationsEnabled)
+        }
+    }
+
+    static var quotaNotificationReceipts: CodexQuotaNotificationReceipts {
+        get {
+            CodexQuotaNotificationReceipts(
+                rawFingerprints: rawNotificationFingerprints(defaults: .standard)
+            )
+        }
+        set {
+            setNotificationFingerprints(newValue.rawFingerprints, defaults: .standard)
+        }
+    }
+
     static var summarySnoozeFingerprint: String? {
         get { UserDefaults.standard.string(forKey: Key.summarySnoozeFingerprint) }
         set {
@@ -407,6 +434,13 @@ enum CodexAppSettings {
         return CodexLocalUsageDirectoryReader.defaultSessionsURL()
     }
 
+    static func normalizedCodexSessionsURL(_ url: URL) -> URL {
+        if url.lastPathComponent == ".codex" {
+            return url.appending(path: "sessions", directoryHint: .isDirectory)
+        }
+        return url
+    }
+
     static func codexSessionsSecurityScopedURL() -> URL? {
         guard let bookmark = codexSessionsBookmark else { return nil }
         var isStale = false
@@ -421,6 +455,23 @@ enum CodexAppSettings {
     static func removeAll(defaults: UserDefaults = .standard) {
         for key in Key.all {
             defaults.removeObject(forKey: key)
+        }
+    }
+
+    fileprivate static func rawNotificationFingerprints(defaults: UserDefaults) -> [String: String] {
+        defaults.dictionary(forKey: Key.quotaNotificationFingerprints)?.compactMapValues {
+            $0 as? String
+        } ?? [:]
+    }
+
+    fileprivate static func setNotificationFingerprints(
+        _ fingerprints: [String: String],
+        defaults: UserDefaults
+    ) {
+        if fingerprints.isEmpty {
+            defaults.removeObject(forKey: Key.quotaNotificationFingerprints)
+        } else {
+            defaults.set(fingerprints, forKey: Key.quotaNotificationFingerprints)
         }
     }
 }
@@ -447,6 +498,8 @@ struct CodexAppSettingsSnapshot: Equatable {
     let codexSessionsBookmark: Data?
     let summarySnoozeFingerprint: String?
     let summarySnoozeExpiresAt: Date?
+    let quotaNotificationsEnabled: Bool
+    let quotaNotificationReceipts: CodexQuotaNotificationReceipts
 }
 
 struct CodexAppSettingsStore {
@@ -478,7 +531,9 @@ struct CodexAppSettingsStore {
             codexSessionsPath: codexSessionsPath,
             codexSessionsBookmark: codexSessionsBookmark,
             summarySnoozeFingerprint: summarySnoozeFingerprint,
-            summarySnoozeExpiresAt: summarySnoozeExpiresAt
+            summarySnoozeExpiresAt: summarySnoozeExpiresAt,
+            quotaNotificationsEnabled: quotaNotificationsEnabled,
+            quotaNotificationReceipts: quotaNotificationReceipts
         )
     }
 
@@ -570,6 +625,16 @@ struct CodexAppSettingsStore {
         bool(forKey: CodexAppSettings.Key.hideIdleSecondaryLimits, defaultValue: false)
     }
 
+    var quotaNotificationsEnabled: Bool {
+        bool(forKey: CodexAppSettings.Key.quotaNotificationsEnabled, defaultValue: false)
+    }
+
+    var quotaNotificationReceipts: CodexQuotaNotificationReceipts {
+        CodexQuotaNotificationReceipts(
+            rawFingerprints: CodexAppSettings.rawNotificationFingerprints(defaults: defaults)
+        )
+    }
+
     var summarySnoozeFingerprint: String? {
         defaults.string(forKey: CodexAppSettings.Key.summarySnoozeFingerprint)
     }
@@ -657,8 +722,9 @@ struct CodexAppSettingsStore {
             return
         }
 
-        setCodexSessionsPath(url.path)
-        let bookmark = try? url.bookmarkData(
+        let sessionsURL = CodexAppSettings.normalizedCodexSessionsURL(url)
+        setCodexSessionsPath(sessionsURL.path)
+        let bookmark = try? sessionsURL.bookmarkData(
             options: [.withSecurityScope],
             includingResourceValuesForKeys: nil,
             relativeTo: nil
@@ -668,6 +734,14 @@ struct CodexAppSettingsStore {
 
     func setHideIdleSecondaryLimits(_ value: Bool) {
         defaults.set(value, forKey: CodexAppSettings.Key.hideIdleSecondaryLimits)
+    }
+
+    func setQuotaNotificationsEnabled(_ value: Bool) {
+        defaults.set(value, forKey: CodexAppSettings.Key.quotaNotificationsEnabled)
+    }
+
+    func setQuotaNotificationReceipts(_ receipts: CodexQuotaNotificationReceipts) {
+        CodexAppSettings.setNotificationFingerprints(receipts.rawFingerprints, defaults: defaults)
     }
 
     func setSummarySnoozeFingerprint(_ value: String?) {

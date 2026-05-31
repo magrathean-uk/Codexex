@@ -215,7 +215,7 @@ struct CodexiOSSettingsView: View {
 
     private var displaySection: some View {
         Section {
-            Toggle("Show Codex Spark", isOn: $showSpark)
+            Toggle("Show Spark", isOn: $showSpark)
             Toggle("Show Usage History", isOn: $showHistory)
 
             Picker("Reset Times", selection: $resetDisplayStyle) {
@@ -279,7 +279,7 @@ struct CodexiOSSettingsView: View {
         } header: {
             Text("Privacy")
         } footer: {
-            Text("No server, no Mac bridge, and no browser cookie scraping.")
+            Text("Quota reads stay on this device. Local Codex session-log burn is Mac-only.")
         }
     }
 

@@ -312,6 +312,7 @@ final class CodexStatusItemController: NSObject {
         lastStatusState = state
         let button = statusItem.button
         button?.title = state.title
+        button?.toolTip = state.title
         button?.image = StatusBarLabel.menuBarImage(
             isRefreshing: state.isRefreshing,
             hasError: state.hasError,

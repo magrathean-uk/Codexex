@@ -3,41 +3,37 @@ import CodexMeterCore
 import SwiftUI
 
 struct LimitCardView: View {
-    @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
     let presentation: PopupLimitPresentation
     let resetDisplayStyle: CodexResetDisplayStyle
     let displayMode: CodexMenuBarDisplayMode
 
     private var limit: CodexLimit { presentation.limit }
-    private var cardStyle: GlassSurfaceStyle {
-        presentation.style == .hero ? .primary : .secondary
-    }
     private var headlineFont: Font {
-        .system(size: 28, weight: .semibold)
+        .system(size: GlassTokens.quotaHeadlineSize, weight: .semibold)
     }
-    private var contentSpacing: CGFloat { 12 }
+    private var contentSpacing: CGFloat { 7 }
     private var headlineWindow: CodexQuotaWindow? {
         PopupPresentation.headlineWindow(for: limit)
     }
 
     var body: some View {
-        GlassCard(style: cardStyle) {
+        PopupPlainSection {
             VStack(alignment: .leading, spacing: contentSpacing) {
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
                     Text(limit.displayName)
-                        .font(.system(size: presentation.style == .hero ? 15 : 14, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(CodexTheme.text)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.74)
 
-                    Spacer()
+                    Spacer(minLength: 8)
 
                     if let headlineWindow {
                         Text(windowValueText(for: headlineWindow))
                             .font(headlineFont)
-                            .contentTransition(
-                                accessibilityReduceMotion
-                                    ? .identity
-                                    : .numericText(value: windowValuePercent(for: headlineWindow))
-                            )
+                            .foregroundStyle(CodexTheme.text)
+                            .monospacedDigit()
+                            .minimumScaleFactor(0.72)
                     }
                 }
 
@@ -60,8 +56,8 @@ struct LimitCardView: View {
                     .padding(.top, 2)
                 }
             }
+            .frame(minHeight: GlassTokens.limitCardMinHeight, alignment: .center)
         }
-        .transition(accessibilityReduceMotion ? .identity : .opacity.combined(with: .scale(scale: 0.985)))
     }
 
     private var visibleWindows: [(title: String, window: CodexQuotaWindow)] {
@@ -89,15 +85,13 @@ struct LimitCardView: View {
                 Text(windowValueText(for: window))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(CodexTheme.text)
-                    .contentTransition(
-                        accessibilityReduceMotion
-                            ? .identity
-                            : .numericText(value: windowValuePercent(for: window))
-                    )
+                    .monospacedDigit()
 
                 Text(resetText)
                     .font(.system(size: 12))
                     .foregroundStyle(CodexTheme.dim)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
             }
 
             UsageBar(
@@ -147,16 +141,11 @@ struct LimitCardView: View {
 }
 
 struct CompactLimitCardView: View {
-    @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
     let presentation: PopupLimitPresentation
 
     var body: some View {
-        GlassCard(style: .secondary) {
+        PopupPlainSection {
             HStack(spacing: 10) {
-                Circle()
-                    .fill(limitAccentColor(for: presentation.limit.bucket))
-                    .frame(width: 8, height: 8)
-
                 Text(presentation.limit.displayName)
                     .font(.subheadline.weight(.semibold))
 
@@ -167,12 +156,10 @@ struct CompactLimitCardView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .transition(accessibilityReduceMotion ? .identity : .opacity)
     }
 }
 
 struct UsageBar: View {
-    @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
     let progress: Double
     let bucket: CodexLimitBucket
     let label: String
@@ -189,11 +176,13 @@ struct UsageBar: View {
         GeometryReader { proxy in
             let clamped = progress.clamped(to: 0 ... 1)
             ZStack(alignment: .leading) {
-                Capsule(style: .continuous)
+                RoundedRectangle(cornerRadius: GlassTokens.quotaBarHeight / 2, style: .continuous)
                     .fill(limitTrackColor(for: bucket))
 
                 if clamped > 0 {
-                    Capsule(style: .continuous)
+                    let fillWidth = max(6, proxy.size.width * clamped)
+
+                    RoundedRectangle(cornerRadius: GlassTokens.quotaBarHeight / 2, style: .continuous)
                         .fill(
                             LinearGradient(
                                 colors: limitGradient(for: bucket),
@@ -201,13 +190,13 @@ struct UsageBar: View {
                                 endPoint: .trailing
                             )
                         )
-                        .frame(width: max(6, proxy.size.width * clamped))
+                        .frame(width: fillWidth)
+                        .clipShape(RoundedRectangle(cornerRadius: GlassTokens.quotaBarHeight / 2, style: .continuous))
                 }
             }
         }
-        .frame(height: 6)
+        .frame(height: GlassTokens.quotaBarHeight)
         .allowsHitTesting(false)
-        .animation(accessibilityReduceMotion ? nil : .easeInOut(duration: 0.18), value: progress)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(label)
         .accessibilityValue(value.isEmpty ? "\(Int((progress * 100).rounded()))%" : value)
@@ -217,7 +206,7 @@ struct UsageBar: View {
 func limitAccentColor(for bucket: CodexLimitBucket) -> Color {
     switch bucket {
     case .spark:
-        return Color(red: 0.66, green: 0.38, blue: 0.84)
+        return CodexTheme.spark2
     case .codex, .other:
         return CodexTheme.accent
     }
@@ -241,9 +230,9 @@ func limitGradient(for bucket: CodexLimitBucket) -> [Color] {
 func limitTrackColor(for bucket: CodexLimitBucket) -> Color {
     switch bucket {
     case .spark:
-        return Color.white.opacity(0.06)
+        return CodexTheme.control.opacity(0.86)
     case .codex, .other:
-        return Color.white.opacity(0.06)
+        return CodexTheme.control.opacity(0.86)
     }
 }
 

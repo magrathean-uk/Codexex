@@ -31,6 +31,7 @@ final class CodexMenuBarModel {
     private(set) var defaultHistoryMode = CodexAppSettings.defaultHistoryMode
     private(set) var showPaceConfidence = CodexAppSettings.showPaceConfidence
     private(set) var hideIdleSecondaryLimits = CodexAppSettings.hideIdleSecondaryLimits
+    private(set) var quotaNotificationsEnabled = CodexAppSettings.quotaNotificationsEnabled
     private(set) var codexSessionsPath = CodexAppSettings.codexSessionsPath
     private(set) var showFiveHourInMenubar = CodexAppSettings.showFiveHourInMenubar
     private(set) var showWeeklyInMenubar = CodexAppSettings.showWeeklyInMenubar
@@ -48,7 +49,9 @@ final class CodexMenuBarModel {
     private let localUsageProvider: any CodexLocalUsageProviding
     private let settingsStore: CodexAppSettingsStore
     private let historyRepository: CodexHistoryRepository
+    private let notificationDelivery: any CodexQuotaNotificationDelivering
     private let deviceAuthPollingConfiguration: CodexDeviceAuthPollingConfiguration
+    private let openURL: @MainActor (URL) -> Bool
     private let refreshCoordinator = CodexRefreshCoordinator()
     private let lifecycle = Lifecycle()
     private var didStart = false
@@ -59,13 +62,17 @@ final class CodexMenuBarModel {
         localUsageProvider: any CodexLocalUsageProviding = CodexLocalUsageProvider(),
         settingsStore: CodexAppSettingsStore = CodexAppSettingsStore(),
         historyRepository: CodexHistoryRepository = CodexHistoryRepository(),
-        deviceAuthPollingConfiguration: CodexDeviceAuthPollingConfiguration = .production
+        notificationDelivery: any CodexQuotaNotificationDelivering = CodexUserNotificationDelivery(),
+        deviceAuthPollingConfiguration: CodexDeviceAuthPollingConfiguration = .production,
+        openURL: @escaping @MainActor (URL) -> Bool = { NSWorkspace.shared.open($0) }
     ) {
         self.service = service
         self.localUsageProvider = localUsageProvider
         self.settingsStore = settingsStore
         self.historyRepository = historyRepository
+        self.notificationDelivery = notificationDelivery
         self.deviceAuthPollingConfiguration = deviceAuthPollingConfiguration
+        self.openURL = openURL
         let settings = settingsStore.snapshot()
         autoRefreshEnabled = settings.autoRefreshEnabled
         refreshIntervalSeconds = settings.refreshIntervalSeconds
@@ -77,6 +84,7 @@ final class CodexMenuBarModel {
         defaultHistoryMode = settings.defaultHistoryMode
         showPaceConfidence = settings.showPaceConfidence
         hideIdleSecondaryLimits = settings.hideIdleSecondaryLimits
+        quotaNotificationsEnabled = settings.quotaNotificationsEnabled
         codexSessionsPath = settings.codexSessionsPath
         showFiveHourInMenubar = settings.showFiveHourInMenubar
         showWeeklyInMenubar = settings.showWeeklyInMenubar
@@ -190,8 +198,9 @@ final class CodexMenuBarModel {
         }
         defer { dashboard.isRefreshing = false }
 
+        async let localSummary = localUsageProvider.fetchLocalUsageSummary()
+
         do {
-            async let localSummary = localUsageProvider.fetchLocalUsageSummary()
             let response = try await service.fetchSnapshotResponse()
             let resolvedLocalSummary = await localSummary
             guard refreshCoordinator.isCurrent(generation) else { return }
@@ -206,6 +215,7 @@ final class CodexMenuBarModel {
                     authSession.apply(.signedIn)
                 }
                 refreshBackoff.recordSuccess()
+                await deliverQuotaNotificationsIfNeeded(snapshot: result)
             } else {
                 CodexLog.refresh.log(
                     "refresh no snapshot authMode=\(String(describing: response.authMode), privacy: .public)"
@@ -223,10 +233,12 @@ final class CodexMenuBarModel {
             }
         } catch {
             CodexLog.refresh.error("refresh failed message=\(error.localizedDescription, privacy: .public)")
+            let resolvedLocalSummary = await localSummary
             guard refreshCoordinator.isCurrent(generation) else { return }
             let failureClass = CodexRefreshBackoff.classify(errorMessage: error.localizedDescription)
             refreshBackoff.recordFailure(failureClass)
             animateStateChange(.easeInOut(duration: 0.18)) {
+                dashboard.applyLocalUsageSummary(resolvedLocalSummary)
                 dashboard.setError(error.localizedDescription)
             }
         }
@@ -266,6 +278,12 @@ final class CodexMenuBarModel {
                 self.dashboard.setError(nil)
                 self.authSession.apply(.beginSucceeded(context))
                 CodexLog.auth.log("device code ready flow=\(auth.flowID, privacy: .private(mask: .hash))")
+                if self.openURL(auth.verificationURL) == false {
+                    self.authSession.apply(
+                        .pollingFailed("Could not open Safari. Copy the code and open the sign-in page manually.")
+                    )
+                    return
+                }
                 self.startDeviceAuthPolling(flowID: auth.flowID, generation: generation, pollImmediately: false)
             } catch {
                 guard self.refreshCoordinator.isCurrent(generation) else { return }
@@ -303,7 +321,7 @@ final class CodexMenuBarModel {
         guard let authVerificationURL else { return }
         completeOnboarding()
         CodexLog.auth.log("opening Safari for device auth")
-        guard NSWorkspace.shared.open(authVerificationURL) else {
+        guard openURL(authVerificationURL) else {
             authSession.apply(
                 .pollingFailed("Could not open Safari. Copy the code and open the sign-in page manually.")
             )
@@ -375,6 +393,11 @@ final class CodexMenuBarModel {
         settingsStore.setHideIdleSecondaryLimits(enabled)
     }
 
+    func setQuotaNotificationsEnabled(_ enabled: Bool) {
+        quotaNotificationsEnabled = enabled
+        settingsStore.setQuotaNotificationsEnabled(enabled)
+    }
+
     func setCodexSessionsPath(_ path: String?) {
         codexSessionsPath = path
         settingsStore.setCodexSessionsPath(path)
@@ -388,8 +411,9 @@ final class CodexMenuBarModel {
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
+        panel.showsHiddenFiles = true
         panel.prompt = "Use Folder"
-        panel.message = "Choose your Codex sessions folder."
+        panel.message = "Choose ~/.codex or ~/.codex/sessions."
         panel.directoryURL = codexSessionsPath.map(URL.init(fileURLWithPath:))
             ?? CodexLocalUsageDirectoryReader.defaultSessionsURL().deletingLastPathComponent()
 
@@ -397,7 +421,8 @@ final class CodexMenuBarModel {
               let url = panel.url else {
             return
         }
-        codexSessionsPath = url.path
+        let sessionsURL = CodexAppSettings.normalizedCodexSessionsURL(url)
+        codexSessionsPath = sessionsURL.path
         settingsStore.setCodexSessionsFolder(url: url)
         Task { @MainActor [weak self] in
             await self?.refreshNow(manual: true)
@@ -552,6 +577,29 @@ final class CodexMenuBarModel {
         }
     }
 
+    private func deliverQuotaNotificationsIfNeeded(snapshot: CodexSnapshot) async {
+        guard quotaNotificationsEnabled,
+              previewModeEnabled == false else {
+            return
+        }
+
+        let plan = CodexQuotaNotificationPlanner.plan(
+            snapshot: snapshot,
+            insights: dashboard.usageInsights,
+            preferences: CodexQuotaNotificationPreferences(isEnabled: true),
+            receipts: settingsStore.quotaNotificationReceipts,
+            now: snapshot.capturedAt
+        )
+        guard plan.notifications.isEmpty == false else { return }
+
+        let results = await notificationDelivery.deliver(plan.notifications)
+        var receipts = settingsStore.quotaNotificationReceipts
+        for result in results where result.delivered {
+            receipts = receipts.recording(result.notification)
+        }
+        settingsStore.setQuotaNotificationReceipts(receipts)
+    }
+
     private func invalidateRefreshResults(cancelHelper: Bool) {
         lifecycle.deviceAuthPollTask?.cancel()
         lifecycle.deviceAuthPollTask = nil
@@ -655,14 +703,10 @@ final class CodexMenuBarModel {
     }
 
     private func animateStateChange(
-        _ animation: Animation,
+        _: Animation,
         updates: () -> Void
     ) {
-        if reduceMotionEnabled {
-            updates()
-        } else {
-            withAnimation(animation, updates)
-        }
+        updates()
     }
 
     func diagnosticsReport(now: Date) -> String {
@@ -676,6 +720,8 @@ final class CodexMenuBarModel {
             .joined(separator: ", ")
             return "- \(limit.displayName): \(windows.isEmpty ? "no windows" : windows)"
         } ?? ["- no snapshot"]
+        let localUsage = localUsageSummary
+        let localContextText = localUsage?.contextWindowPercent.map { "\(Int($0.rounded()))%" } ?? "none"
 
         let forecast = usageInsights?.weeklyPace
         let readiness = forecast?.modelReadiness
@@ -698,6 +744,12 @@ final class CodexMenuBarModel {
             "Menu mode: \(menuBarDisplayMode.rawValue)",
             "Reset style: \(resetDisplayStyle.rawValue)",
             "History samples: \(usageHistory.count)",
+            "Local sessions: \(localUsage?.sessions.count ?? 0)",
+            "Local all-session tokens: \(localUsage?.total.totalTokens ?? 0)",
+            "Local top project: \(localUsage?.projects.first?.displayName ?? "none")",
+            "Local top model: \(localUsage?.modelSummaries.first?.model ?? "none")",
+            "Local attribution: \(localUsage?.attributionConfidence.level.rawValue ?? "unknown")",
+            "Local context: \(localContextText)",
             "Last updated: \(lastUpdatedAt.map { formatter.string(from: $0) } ?? "none")",
             "Last error: \(redactedDiagnosticText(lastError ?? "none"))",
             "Weekly forecast: \(forecast?.confidence.label ?? "none") current=\(percentText(forecast?.currentPercent)) projected=\(percentText(forecast?.projectedPercentAtReset)) range=\(rangeText)",

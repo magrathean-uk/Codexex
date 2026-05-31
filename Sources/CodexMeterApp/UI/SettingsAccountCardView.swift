@@ -4,7 +4,6 @@ import Observation
 import SwiftUI
 
 struct SettingsAccountCardView: View {
-    @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
     @Bindable var model: CodexMenuBarModel
 
     var body: some View {
@@ -55,23 +54,15 @@ struct SettingsAccountCardView: View {
                 }
             }
         }
-        .animation(accessibilityReduceMotion ? nil : .easeInOut(duration: 0.18), value: model.authDeviceCode)
-        .animation(accessibilityReduceMotion ? nil : .easeInOut(duration: 0.18), value: model.isSigningIn)
-        .animation(accessibilityReduceMotion ? nil : .easeInOut(duration: 0.18), value: model.isSignedIn)
     }
 
     private func deviceCodeCard(code: String) -> some View {
         CodexDeviceCodeCallout(
             code: code,
-            message: model.authStatusMessage,
-            canCheck: model.canCheckPendingChatGPTSignIn,
             openSafari: { model.openAuthVerificationPage() },
             copyCode: { model.copyAuthCode() },
-            checkStatus: { model.checkPendingChatGPTSignIn() },
             cancel: { model.cancelPendingChatGPTSignIn() }
         )
-        .contentTransition(accessibilityReduceMotion ? .identity : .opacity)
-        .transition(accessibilityReduceMotion ? .identity : .opacity)
     }
 
     @ViewBuilder

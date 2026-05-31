@@ -7,21 +7,15 @@ struct PopupSummaryCardView: View {
     var onSnooze: (() -> Void)?
 
     var body: some View {
-        GlassCard(style: .primary) {
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: symbolName)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(summaryColor)
-                    .frame(width: 24, height: 24)
-                    .background(summaryColor.opacity(0.16), in: Circle())
-
+        PopupPlainSection {
+            HStack(alignment: .top, spacing: 10) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(summary.title)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(summaryColor)
 
                     Text(summary.message)
-                        .font(.system(size: 12.5))
+                        .font(.system(size: 13.5))
                         .foregroundStyle(CodexTheme.muted)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -42,6 +36,7 @@ struct PopupSummaryCardView: View {
                     }
                 }
             }
+            .frame(minHeight: GlassTokens.summaryBannerMinHeight, alignment: .center)
         }
     }
 
@@ -62,18 +57,6 @@ struct PopupSummaryCardView: View {
         }
     }
 
-    private var symbolName: String {
-        switch summary.severity {
-        case .tooEarly:
-            return "clock.badge.questionmark"
-        case .safe:
-            return "checkmark.circle.fill"
-        case .watch:
-            return "exclamationmark.triangle"
-        case .risk:
-            return "exclamationmark.triangle.fill"
-        }
-    }
 }
 
 extension PopupSummaryPresentation {
@@ -102,7 +85,6 @@ struct CodexGhostButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
                     .strokeBorder(CodexTheme.hairlineStrong, lineWidth: 1)
             }
-            .modifier(CodexPressableScale(isPressed: configuration.isPressed))
     }
 }
 #endif
