@@ -213,9 +213,18 @@ enum CodexQuotaNotificationPlanner {
             id: fingerprint,
             kind: .weeklyForecastRisk,
             title: "Codex weekly pace risky",
-            body: forecast.message,
+            body: weeklyRiskBody(forecast),
             fingerprint: fingerprint
         )
+    }
+
+    private static func weeklyRiskBody(_ forecast: CodexUsageForecast) -> String {
+        let confidence = forecast.confidence.label
+        if let lower = forecast.likelyLowerPercent,
+           let upper = forecast.likelyUpperPercent {
+            return "\(forecast.message) · \(confidence), likely \(Int(lower.rounded()))-\(Int(upper.rounded()))%."
+        }
+        return "\(forecast.message) · \(confidence)."
     }
 
     private static func fingerprint(

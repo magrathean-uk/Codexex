@@ -135,10 +135,57 @@ final class CodexStatusItemController: NSObject {
 
     private func showPopover(from button: NSStatusBarButton) {
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        stylePopoverChrome()
         clampPopoverToVisibleFrame(anchorFrame: CodexPopoverSizing.anchorFrameOnScreen(for: button))
         DispatchQueue.main.async { [weak self, weak button] in
             guard let self, let button else { return }
+            self.stylePopoverChrome()
             self.clampPopoverToVisibleFrame(anchorFrame: CodexPopoverSizing.anchorFrameOnScreen(for: button))
+        }
+    }
+
+    private func stylePopoverChrome() {
+        guard let window = popover.contentViewController?.view.window else { return }
+        let appearance = popoverAppearance
+        popover.appearance = appearance
+        window.appearance = appearance
+        window.contentView?.appearance = appearance
+        hostingController?.view.appearance = appearance
+
+        let resolvedAppearance = appearance ?? window.effectiveAppearance
+        let resolvedBackground = CodexTheme.windowNSColor(for: resolvedAppearance)
+        window.isOpaque = false
+        window.backgroundColor = resolvedBackground
+
+        if let contentView = window.contentView {
+            let rootView = contentView.superview ?? contentView
+            applyPopoverBackground(resolvedBackground, to: rootView)
+        }
+    }
+
+    private var popoverAppearance: NSAppearance? {
+        switch model.appearanceMode {
+        case .system:
+            return nil
+        case .light:
+            return NSAppearance(named: .aqua)
+        case .dark:
+            return NSAppearance(named: .darkAqua)
+        }
+    }
+
+    private func applyPopoverBackground(_ color: NSColor, to view: NSView) {
+        view.wantsLayer = true
+        view.layer?.backgroundColor = color.cgColor
+
+        if let visualEffectView = view as? NSVisualEffectView {
+            visualEffectView.material = .popover
+            visualEffectView.blendingMode = .withinWindow
+            visualEffectView.state = .active
+        }
+
+        for subview in view.subviews {
+            applyPopoverBackground(color, to: subview)
         }
     }
 
@@ -223,12 +270,14 @@ final class CodexStatusItemController: NSObject {
             self.updateScheduled = false
             self.updateTitle()
             self.updatePopoverSize()
+            self.stylePopoverChrome()
         }
     }
 
     private func trackPopupModelState() {
         _ = model.snapshot
         _ = model.localUsageSummary
+        _ = model.localIntelligenceSummary
         _ = model.isRefreshing
         _ = model.lastError
         _ = model.popupSummary

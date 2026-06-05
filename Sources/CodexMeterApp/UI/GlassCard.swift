@@ -3,19 +3,21 @@ import AppKit
 import SwiftUI
 
 enum CodexTheme {
-    static let desktopTop = adaptive(light: ns(0xF4F8FF), dark: ns(0x060914))
-    static let desktopBottom = adaptive(light: ns(0xF4F8FF), dark: ns(0x05141F))
-    static let window = adaptive(light: ns(0xEEF5FF), dark: ns(0x060914))
-    static let titlebar = adaptive(light: ns(0xF8FBFF), dark: ns(0x081021))
-    static let sidebar = adaptive(light: ns(0xEDF4FF), dark: ns(0x050D1A))
-    static let surface = adaptive(light: ns(0xFFFFFF).withAlphaComponent(0.76), dark: ns(0x081021).withAlphaComponent(0.88))
-    static let surfaceRaised = adaptive(light: ns(0xFFFFFF).withAlphaComponent(0.84), dark: ns(0x0A1426))
-    static let control = adaptive(light: ns(0xFFFFFF).withAlphaComponent(0.62), dark: ns(0x0F1A2E))
-    static let hairline = adaptive(light: ns(0x3156B8).withAlphaComponent(0.16), dark: ns(0x5FAAFF).withAlphaComponent(0.12))
-    static let hairlineStrong = adaptive(light: ns(0x3156B8).withAlphaComponent(0.24), dark: ns(0x5FAAFF).withAlphaComponent(0.20))
-    static let text = adaptive(light: ns(0x101727).withAlphaComponent(0.94), dark: ns(0xFFFFFF).withAlphaComponent(0.94))
-    static let muted = adaptive(light: ns(0x101727).withAlphaComponent(0.62), dark: ns(0xFFFFFF).withAlphaComponent(0.62))
-    static let dim = adaptive(light: ns(0x101727).withAlphaComponent(0.44), dark: ns(0xFFFFFF).withAlphaComponent(0.42))
+    static let windowNSColor = adaptiveNS(light: ns(0xEEF5FF), dark: ns(0x060914))
+
+    static let desktopTop = color(light: ns(0xF4F8FF), dark: ns(0x060914))
+    static let desktopBottom = color(light: ns(0xF4F8FF), dark: ns(0x05141F))
+    static let window = Color(nsColor: windowNSColor)
+    static let titlebar = color(light: ns(0xF8FBFF), dark: ns(0x081021))
+    static let sidebar = color(light: ns(0xEDF4FF), dark: ns(0x050D1A))
+    static let surface = color(light: ns(0xFFFFFF).withAlphaComponent(0.76), dark: ns(0x081021).withAlphaComponent(0.88))
+    static let surfaceRaised = color(light: ns(0xFFFFFF).withAlphaComponent(0.84), dark: ns(0x0A1426))
+    static let control = color(light: ns(0xFFFFFF).withAlphaComponent(0.62), dark: ns(0x0F1A2E))
+    static let hairline = color(light: ns(0x3156B8).withAlphaComponent(0.16), dark: ns(0x5FAAFF).withAlphaComponent(0.12))
+    static let hairlineStrong = color(light: ns(0x3156B8).withAlphaComponent(0.24), dark: ns(0x5FAAFF).withAlphaComponent(0.20))
+    static let text = color(light: ns(0x101727).withAlphaComponent(0.94), dark: ns(0xFFFFFF).withAlphaComponent(0.94))
+    static let muted = color(light: ns(0x101727).withAlphaComponent(0.62), dark: ns(0xFFFFFF).withAlphaComponent(0.62))
+    static let dim = color(light: ns(0x101727).withAlphaComponent(0.44), dark: ns(0xFFFFFF).withAlphaComponent(0.42))
     static let accent = Color(red: 0.10, green: 0.15, blue: 1.00)
     static let accent2 = Color(red: 0.13, green: 0.84, blue: 0.91)
     static let spark = Color(red: 0.42, green: 0.85, blue: 1.00)
@@ -23,14 +25,19 @@ enum CodexTheme {
     static let amber = Color(red: 1.00, green: 0.65, blue: 0.08)
     static let danger = Color(red: 1.00, green: 0.27, blue: 0.32)
     static let success = Color(red: 0.35, green: 0.82, blue: 0.44)
-    static let shadow = adaptive(light: ns(0x5C6F93).withAlphaComponent(0.16), dark: ns(0x000000).withAlphaComponent(0.32))
-    static let popupShadow = adaptive(light: ns(0x5C6F93).withAlphaComponent(0.24), dark: ns(0x000000).withAlphaComponent(0.42))
+    static let shadow = color(light: ns(0x5C6F93).withAlphaComponent(0.16), dark: ns(0x000000).withAlphaComponent(0.32))
+    static let popupShadow = color(light: ns(0x5C6F93).withAlphaComponent(0.24), dark: ns(0x000000).withAlphaComponent(0.42))
 
     static let desktopGradient = LinearGradient(
         colors: [desktopTop, desktopBottom],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
+
+    static func windowNSColor(for appearance: NSAppearance) -> NSColor {
+        let match = appearance.bestMatch(from: [.aqua, .darkAqua])
+        return match == .darkAqua ? ns(0x060914) : ns(0xEEF5FF)
+    }
 
     private static func ns(_ hex: UInt32) -> NSColor {
         NSColor(
@@ -41,11 +48,15 @@ enum CodexTheme {
         )
     }
 
-    private static func adaptive(light: NSColor, dark: NSColor) -> Color {
-        Color(nsColor: NSColor(name: nil) { appearance in
+    private static func color(light: NSColor, dark: NSColor) -> Color {
+        Color(nsColor: adaptiveNS(light: light, dark: dark))
+    }
+
+    private static func adaptiveNS(light: NSColor, dark: NSColor) -> NSColor {
+        NSColor(name: nil) { appearance in
             let match = appearance.bestMatch(from: [.aqua, .darkAqua])
             return match == .darkAqua ? dark : light
-        })
+        }
     }
 }
 
@@ -143,10 +154,16 @@ struct PopupPlainSection<Content: View>: View {
     }
 
     var body: some View {
+        let shape = RoundedRectangle(cornerRadius: GlassTokens.cardRadius, style: .continuous)
+
         content
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(GlassTokens.cardPadding)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .background(CodexTheme.surface.opacity(0.72), in: shape)
+            .overlay {
+                shape.strokeBorder(CodexTheme.hairlineStrong, lineWidth: 1)
+            }
+            .glassEffect(.regular.tint(CodexTheme.surface.opacity(0.52)), in: shape)
     }
 }
 #endif

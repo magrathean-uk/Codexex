@@ -11,7 +11,7 @@ struct LimitCardView: View {
     private var headlineFont: Font {
         .system(size: GlassTokens.quotaHeadlineSize, weight: .semibold)
     }
-    private var contentSpacing: CGFloat { 7 }
+    private var contentSpacing: CGFloat { 10 }
     private var headlineWindow: CodexQuotaWindow? {
         PopupPresentation.headlineWindow(for: limit)
     }
@@ -21,7 +21,7 @@ struct LimitCardView: View {
             VStack(alignment: .leading, spacing: contentSpacing) {
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
                     Text(limit.displayName)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: GlassTokens.popupBodyFontSize, weight: .semibold))
                         .foregroundStyle(CodexTheme.text)
                         .lineLimit(1)
                         .minimumScaleFactor(0.74)
@@ -44,13 +44,13 @@ struct LimitCardView: View {
                 if let credits = presentation.visibleCredits {
                     HStack(alignment: .firstTextBaseline, spacing: 10) {
                         Text("Credits")
-                            .font(.caption.weight(.semibold))
+                            .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
                             .foregroundStyle(.secondary)
 
                         Spacer()
 
                         Text(credits.displayText)
-                            .font(.caption.weight(.semibold))
+                            .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
                             .foregroundStyle(credits.isNegativeBalance ? Color.red : .secondary)
                     }
                     .padding(.top, 2)
@@ -74,21 +74,21 @@ struct LimitCardView: View {
             now: now,
             resetAt: window.resetsAt
         )
-        return VStack(alignment: .leading, spacing: 4) {
+        return VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(title)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: GlassTokens.popupMetaFontSize, weight: .medium))
                     .foregroundStyle(CodexTheme.muted)
 
                 Spacer()
 
                 Text(windowValueText(for: window))
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: GlassTokens.popupBodyFontSize, weight: .semibold))
                     .foregroundStyle(CodexTheme.text)
                     .monospacedDigit()
 
                 Text(resetText)
-                    .font(.system(size: 12))
+                    .font(.system(size: GlassTokens.popupMetaFontSize))
                     .foregroundStyle(CodexTheme.dim)
                     .lineLimit(1)
                     .minimumScaleFactor(0.82)
@@ -147,12 +147,12 @@ struct CompactLimitCardView: View {
         PopupPlainSection {
             HStack(spacing: 10) {
                 Text(presentation.limit.displayName)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.system(size: GlassTokens.popupBodyFontSize, weight: .semibold))
 
                 Spacer()
 
                 Text("Idle")
-                    .font(.footnote.weight(.medium))
+                    .font(.system(size: GlassTokens.popupMetaFontSize, weight: .medium))
                     .foregroundStyle(.secondary)
             }
         }

@@ -51,6 +51,7 @@ final class CodexQuotaNotificationPlannerTests: XCTestCase {
 
         XCTAssertEqual(plan.notifications.map(\.kind), [.weeklyForecastRisk])
         XCTAssertEqual(plan.notifications.first?.fingerprint, "weeklyForecastRisk|1800345600|116")
+        XCTAssertEqual(plan.notifications.first?.body, "Projected 116% by reset · Stable.")
     }
 
     func testSuppressesAlreadyDeliveredFingerprint() {

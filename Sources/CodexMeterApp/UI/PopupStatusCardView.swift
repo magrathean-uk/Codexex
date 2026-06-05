@@ -19,12 +19,12 @@ struct PopupStatusCardView: View {
                 VStack(alignment: .leading, spacing: 7) {
                     HStack(alignment: .firstTextBaseline, spacing: 9) {
                         Text(model.statusCardTitle)
-                            .font(.system(size: 15.5, weight: .semibold))
+                            .font(.system(size: GlassTokens.popupBodyFontSize, weight: .semibold))
                             .foregroundStyle(statusTint)
                             .lineLimit(1)
 
                         Text(model.statusCardMessage)
-                            .font(.system(size: 13.5))
+                            .font(.system(size: GlassTokens.popupBodyFontSize))
                             .foregroundStyle(CodexTheme.muted)
                             .lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)

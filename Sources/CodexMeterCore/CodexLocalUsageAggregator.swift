@@ -196,7 +196,31 @@ public enum CodexLocalUsageAggregator {
             )
         }
 
-        return signals
+        if let heavySession = sessionSummaries(from: entries).first(where: { $0.tokens.totalTokens >= 150_000 }) {
+            signals.append(
+                CodexLocalWasteSignal(
+                    id: "heavy-session-\(heavySession.id)",
+                    kind: .heavySession,
+                    title: "Heavy session",
+                    detail: "\(projectDisplayName(heavySession.projectPath ?? "Unknown")) used \(compactTokens(heavySession.tokens.totalTokens)) tokens."
+                )
+            )
+        }
+
+        if let spike = entries.sorted(by: { $0.timestamp > $1.timestamp }).first(where: { $0.tokens.totalTokens >= 75_000 }) {
+            signals.append(
+                CodexLocalWasteSignal(
+                    id: "sudden-spike-\(spike.id)",
+                    kind: .suddenSpike,
+                    title: "Sudden spike",
+                    detail: "\(compactTokens(spike.tokens.totalTokens)) tokens in one turn."
+                )
+            )
+        }
+
+        return signals.sorted { lhs, rhs in
+            signalPriority(lhs.kind) > signalPriority(rhs.kind)
+        }
     }
 
     private static func sessionAutopsies(
@@ -246,6 +270,31 @@ public enum CodexLocalUsageAggregator {
 
     private static func projectDisplayName(_ path: String) -> String {
         URL(fileURLWithPath: path).lastPathComponent.nilIfEmpty ?? path
+    }
+
+    private static func compactTokens(_ value: Int) -> String {
+        if value >= 1_000_000 {
+            return "\(Int((Double(value) / 1_000_000).rounded()))M"
+        }
+        if value >= 1_000 {
+            return "\(Int((Double(value) / 1_000).rounded()))K"
+        }
+        return "\(value)"
+    }
+
+    private static func signalPriority(_ kind: CodexLocalWasteSignalKind) -> Int {
+        switch kind {
+        case .heavySession:
+            return 50
+        case .suddenSpike:
+            return 40
+        case .modelOverkill:
+            return 30
+        case .toolLoop:
+            return 20
+        case .highCacheRead:
+            return 10
+        }
     }
 }
 

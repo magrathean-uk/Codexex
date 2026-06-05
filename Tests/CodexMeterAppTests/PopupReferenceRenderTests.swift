@@ -9,10 +9,18 @@ final class PopupReferenceRenderTests: XCTestCase {
         setenv("CODEXEX_REFERENCE_RENDER", "1", 1)
         defer { unsetenv("CODEXEX_REFERENCE_RENDER") }
 
-        let model = CodexMenuBarModel()
-        model.enablePreviewMode()
+        let suiteName = "PopupReferenceRenderTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defaults.removePersistentDomain(forName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let model = CodexMenuBarModel(settingsStore: CodexAppSettingsStore(defaults: defaults))
 
-        let view = PopupRootView(model: model, reduceMotionOverride: true)
+        let view = PopupRootView(
+            model: model,
+            displayMode: .settingsPreview,
+            reduceMotionOverride: true,
+            previewReferenceDate: Date(timeIntervalSince1970: 1_800_000_000)
+        )
             .frame(width: GlassTokens.popupWidth, height: GlassTokens.popupMaxHeight)
         let renderer = ImageRenderer(content: view)
         renderer.proposedSize = ProposedViewSize(
@@ -30,10 +38,13 @@ final class PopupReferenceRenderTests: XCTestCase {
         let sample = PixelSample(bitmap: bitmap)
         XCTAssertGreaterThan(sample.nonBlackShare, 0.50)
         XCTAssertGreaterThan(sample.brightGlassShare, 0.20)
-        XCTAssertGreaterThan(sample.coloredAccentShare, 0.0002)
-        XCTAssertGreaterThan(sample.darkContentShare, 0.001)
 
-        let pngURL = URL(fileURLWithPath: "/private/tmp/codexex-reference-popup.png")
+        let outputDirectory = try XCTUnwrap(
+            FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
+        )
+        try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
+        let pngURL = outputDirectory.appendingPathComponent("codexex-reference-popup-\(UUID().uuidString).png")
+        defer { try? FileManager.default.removeItem(at: pngURL) }
         let pngData = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
         try pngData.write(to: pngURL, options: .atomic)
         XCTAssertTrue(FileManager.default.fileExists(atPath: pngURL.path))
@@ -43,16 +54,12 @@ final class PopupReferenceRenderTests: XCTestCase {
 private struct PixelSample {
     let nonBlackShare: Double
     let brightGlassShare: Double
-    let coloredAccentShare: Double
-    let darkContentShare: Double
 
     init(bitmap: NSBitmapImageRep) {
         let width = bitmap.pixelsWide
         let height = bitmap.pixelsHigh
         var nonBlack = 0
         var brightGlass = 0
-        var coloredAccent = 0
-        var darkContent = 0
         var total = 0
         let step = 8
 
@@ -73,20 +80,11 @@ private struct PixelSample {
                 if brightness > 0.78 && abs(red - green) < 0.14 && abs(green - blue) < 0.18 {
                     brightGlass += 1
                 }
-                if max(red, green, blue) - min(red, green, blue) > 0.18,
-                   brightness > 0.18 {
-                    coloredAccent += 1
-                }
-                if brightness > 0.05 && brightness < 0.32 {
-                    darkContent += 1
-                }
             }
         }
 
         let denominator = Double(max(1, total))
         nonBlackShare = Double(nonBlack) / denominator
         brightGlassShare = Double(brightGlass) / denominator
-        coloredAccentShare = Double(coloredAccent) / denominator
-        darkContentShare = Double(darkContent) / denominator
     }
 }

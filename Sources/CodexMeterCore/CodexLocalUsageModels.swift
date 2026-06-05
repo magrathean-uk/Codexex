@@ -226,6 +226,8 @@ public enum CodexLocalWasteSignalKind: String, Codable, Sendable, Equatable {
     case highCacheRead
     case toolLoop
     case modelOverkill
+    case heavySession
+    case suddenSpike
 }
 
 public struct CodexLocalWasteSignal: Codable, Sendable, Equatable, Identifiable {

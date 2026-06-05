@@ -283,7 +283,7 @@ enum CodexAppSettings {
         get {
             guard let rawValue = UserDefaults.standard.string(forKey: Key.menuBarDisplayMode),
                   let mode = CodexMenuBarDisplayMode(rawValue: rawValue) else {
-                return .remaining
+                return .used
             }
             return mode
         }
@@ -592,7 +592,7 @@ struct CodexAppSettingsStore {
     var menuBarDisplayMode: CodexMenuBarDisplayMode {
         enumValue(
             forKey: CodexAppSettings.Key.menuBarDisplayMode,
-            defaultValue: CodexMenuBarDisplayMode.remaining
+            defaultValue: CodexMenuBarDisplayMode.used
         )
     }
 

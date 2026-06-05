@@ -11,11 +11,11 @@ struct PopupSummaryCardView: View {
             HStack(alignment: .top, spacing: 10) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(summary.title)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: GlassTokens.popupHeadlineFontSize, weight: .semibold))
                         .foregroundStyle(summaryColor)
 
                     Text(summary.message)
-                        .font(.system(size: 13.5))
+                        .font(.system(size: GlassTokens.popupBodyFontSize))
                         .foregroundStyle(CodexTheme.muted)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -73,10 +73,10 @@ extension PopupSummaryPresentation {
 struct CodexGhostButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 12.5, weight: .medium))
+            .font(.system(size: GlassTokens.popupMetaFontSize, weight: .medium))
             .foregroundStyle(CodexTheme.text)
             .padding(.horizontal, 12)
-            .frame(minWidth: 68, minHeight: GlassTokens.pillHeight)
+            .frame(minWidth: 68, minHeight: 30)
             .background(
                 configuration.isPressed ? CodexTheme.control.opacity(0.82) : CodexTheme.control,
                 in: RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)

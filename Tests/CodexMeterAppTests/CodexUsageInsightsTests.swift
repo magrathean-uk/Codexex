@@ -464,6 +464,7 @@ final class CodexUsageInsightsTests: XCTestCase {
 
     func testPreviewLocalUsageMatchesReferenceEmptyState() {
         let summary = CodexPreviewData.localUsageSummary(now: Date(timeIntervalSince1970: 1_800_000_000))
+        let sessionsPath = CodexLocalUsageDirectoryReader.defaultSessionsURL().path
 
         XCTAssertEqual(summary.sessions.count, 0)
         XCTAssertEqual(summary.projects.count, 0)
@@ -471,10 +472,10 @@ final class CodexUsageInsightsTests: XCTestCase {
         XCTAssertEqual(summary.total.cachedInputTokens, 0)
         XCTAssertEqual(summary.total.outputTokens, 0)
         XCTAssertEqual(summary.configReport.issues.first?.title, "No local sessions")
-        XCTAssertEqual(summary.dataPath, "\(NSHomeDirectory())/.codex/sessions")
+        XCTAssertEqual(summary.dataPath, sessionsPath)
         XCTAssertEqual(
             summary.configReport.issues.first?.detail,
-            "No Codex JSONL session data found at \(NSHomeDirectory())/.codex/sessions."
+            "No Codex JSONL session data found at \(sessionsPath)."
         )
     }
 

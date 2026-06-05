@@ -9,11 +9,15 @@ enum GlassTokens {
     static let settingsWidth: CGFloat = 820
     static let settingsHeight: CGFloat = 540
 
-    static let pagePadding: CGFloat = 10
-    static let cardPadding: CGFloat = 12
+    static let pagePadding: CGFloat = 14
+    static let cardPadding: CGFloat = 14
     static let insetPadding: CGFloat = 10
-    static let contentSpacing: CGFloat = 8
+    static let contentSpacing: CGFloat = 10
     static let sectionSpacing: CGFloat = 12
+
+    static let popupHeadlineFontSize: CGFloat = 20
+    static let popupBodyFontSize: CGFloat = 14
+    static let popupMetaFontSize: CGFloat = 12
 
     static let cardRadius: CGFloat = 10
     static let popupRadius: CGFloat = 10
@@ -29,10 +33,10 @@ enum GlassTokens {
     static let statusIconSize: CGFloat = 34
     static let summaryBannerMinHeight: CGFloat = 0
     static let summaryIconSize: CGFloat = 32
-    static let quotaHeadlineSize: CGFloat = 29
+    static let quotaHeadlineSize: CGFloat = popupHeadlineFontSize
     static let quotaBarHeight: CGFloat = 7
-    static let limitCardMinHeight: CGFloat = 72
-    static let historyGraphHeight: CGFloat = 58
+    static let limitCardMinHeight: CGFloat = 94
+    static let historyGraphHeight: CGFloat = 76
     static let revealOffset: CGFloat = 10
     static let revealDuration: Double = 0.32
     static let cardHighlightOpacity: Double = 0

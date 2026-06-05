@@ -112,6 +112,12 @@ final class CodexMenuBarModel {
     var usageHistory: [CodexUsageHistorySample] { dashboard.usageHistory }
     var usageInsights: CodexUsageInsights? { dashboard.usageInsights }
     var localUsageSummary: CodexLocalUsageSummary? { dashboard.localUsageSummary }
+    var localIntelligenceSummary: CodexLocalIntelligenceSummary? {
+        CodexLocalIntelligence.summary(
+            insights: usageInsights,
+            localUsage: localUsageSummary
+        )
+    }
     var shouldDimStatusItem: Bool { lastError != nil || isDataStale }
     var isDataStale: Bool {
         guard previewModeEnabled == false,
@@ -123,11 +129,16 @@ final class CodexMenuBarModel {
         return Date().timeIntervalSince(lastUpdatedAt) > staleSeconds
     }
     var popupSummary: PopupSummaryPresentation? {
-        PopupPresentation.summary(
+        let fallback = PopupPresentation.summary(
             snapshot: snapshot,
             insights: usageInsights,
             previewModeEnabled: previewModeEnabled,
             hasRefreshIssue: dashboard.lastError != nil
+        )
+        return CodexLocalIntelligence.popupSummary(
+            insights: usageInsights,
+            localUsage: localUsageSummary,
+            fallback: fallback
         )
     }
     var isCurrentSummarySnoozed: Bool {
@@ -485,14 +496,6 @@ final class CodexMenuBarModel {
         summarySnoozeExpiresAt = expiry
         settingsStore.setSummarySnoozeFingerprint(fingerprint)
         settingsStore.setSummarySnoozeExpiresAt(expiry)
-    }
-
-    func openAppStoreUpdates() {
-        NSWorkspace.shared.open(CodexAppLinks.appStoreURL)
-    }
-
-    func openReleaseNotes() {
-        NSWorkspace.shared.open(CodexAppLinks.releaseNotesURL)
     }
 
     func openManageSubscription() {

@@ -53,6 +53,8 @@ final class CodexLocalUsageCoreTests: XCTestCase {
         XCTAssertTrue(summary.wasteSignals.contains { $0.kind == .highCacheRead })
         XCTAssertTrue(summary.wasteSignals.contains { $0.kind == .toolLoop })
         XCTAssertTrue(summary.wasteSignals.contains { $0.kind == .modelOverkill })
+        XCTAssertTrue(summary.wasteSignals.contains { $0.kind == .heavySession })
+        XCTAssertTrue(summary.wasteSignals.contains { $0.kind == .suddenSpike })
     }
 
     func testAggregatorBuildsAllSessionsAutopsyAndHighAttributionConfidence() throws {

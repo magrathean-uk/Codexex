@@ -28,7 +28,7 @@ final class CodexAppSettingsTests: XCTestCase {
         XCTAssertEqual(snapshot.defaultHistoryMode, .dailyPeaks)
         XCTAssertTrue(snapshot.showPaceConfidence)
         XCTAssertFalse(snapshot.hideIdleSecondaryLimits)
-        XCTAssertEqual(snapshot.menuBarDisplayMode, .remaining)
+        XCTAssertEqual(snapshot.menuBarDisplayMode, .used)
         XCTAssertEqual(snapshot.resetDisplayStyle, .relative)
         XCTAssertNil(snapshot.codexSessionsPath)
         XCTAssertNil(snapshot.codexSessionsBookmark)

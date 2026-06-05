@@ -43,7 +43,7 @@ struct UsageHistoryCardView: View {
 
     var body: some View {
         PopupPlainSection {
-            VStack(alignment: .leading, spacing: 7) {
+            VStack(alignment: .leading, spacing: 10) {
                 header
                 forecastSummary
                 contentSection
@@ -54,30 +54,31 @@ struct UsageHistoryCardView: View {
     private var header: some View {
         HStack(alignment: .firstTextBaseline) {
             Text("Usage history")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: GlassTokens.popupBodyFontSize, weight: .semibold))
                 .foregroundStyle(CodexTheme.text)
 
             Spacer()
 
-            HStack(spacing: 12) {
+            HStack(spacing: 3) {
                 ForEach(PopupHistoryMode.allCases, id: \.self) { mode in
                     Button {
                         onHistoryModeChange(mode)
                     } label: {
                         Text(compactTitle(for: mode))
-                            .font(.system(size: 12, weight: mode == historyMode ? .semibold : .medium))
+                            .font(.system(size: GlassTokens.popupMetaFontSize, weight: mode == historyMode ? .semibold : .medium))
                             .foregroundStyle(mode == historyMode ? CodexTheme.text : CodexTheme.muted)
-                            .overlay(alignment: .bottom) {
-                                Rectangle()
-                                    .fill(mode == historyMode ? CodexTheme.accent : Color.clear)
-                                    .frame(height: 2)
-                                    .offset(y: 4)
-                            }
+                            .padding(.horizontal, 8)
+                            .frame(height: 24)
+                            .background(
+                                mode == historyMode ? CodexTheme.control.opacity(0.95) : Color.clear,
+                                in: RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            )
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .frame(height: 24)
+            .padding(3)
+            .background(CodexTheme.control.opacity(0.58), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
     }
 
@@ -97,23 +98,23 @@ struct UsageHistoryCardView: View {
     }
 
     private var forecastSummary: some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text("Weekly pace")
-                    .font(.system(size: 12.5, weight: .medium))
+                    .font(.system(size: GlassTokens.popupMetaFontSize, weight: .medium))
                     .foregroundStyle(CodexTheme.muted)
 
                 Spacer(minLength: 8)
 
                 Text(forecastHeadline(for: weeklyForecast))
-                    .font(.system(size: 11.5, weight: .semibold))
+                    .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
                     .foregroundStyle(forecastMessageColor)
                     .lineLimit(1)
             }
 
             if showPaceConfidence, let detail = forecastDetail(for: weeklyForecast) {
                 Text(detail)
-                    .font(.system(size: 10.5))
+                    .font(.system(size: GlassTokens.popupMetaFontSize))
                     .foregroundStyle(CodexTheme.dim)
                     .lineLimit(1)
                     .fixedSize(horizontal: false, vertical: true)
@@ -123,7 +124,7 @@ struct UsageHistoryCardView: View {
                historyMode == .dailyPeaks,
                let rangeText = likelyRangeText(for: weeklyForecast) {
                 Text(rangeText)
-                    .font(.system(size: 10.5))
+                    .font(.system(size: GlassTokens.popupMetaFontSize))
                     .foregroundStyle(CodexTheme.dim)
                     .lineLimit(1)
             }
@@ -141,7 +142,7 @@ struct UsageHistoryCardView: View {
                     Spacer()
                     Text("By reset \(Int(projected.rounded()))%")
                 }
-                .font(.caption2)
+                .font(.system(size: GlassTokens.popupMetaFontSize))
                 .foregroundStyle(CodexTheme.dim)
             }
 
@@ -200,7 +201,7 @@ struct UsageHistoryCardView: View {
     private var contentSection: some View {
         switch historyMode {
         case .dailyPeaks:
-            VStack(alignment: .leading, spacing: 7) {
+            VStack(alignment: .leading, spacing: 9) {
                 if showsChart {
                     MiniUsageHistoryGraph(
                         fiveHourPoints: fiveHourPoints,
@@ -223,7 +224,7 @@ struct UsageHistoryCardView: View {
                 }
             }
         case .thisCycle:
-            VStack(alignment: .leading, spacing: 7) {
+            VStack(alignment: .leading, spacing: 9) {
                 if showsChart {
                     MiniUsageHistoryGraph(
                         fiveHourPoints: currentCycleFiveHourPoints,
@@ -246,7 +247,7 @@ struct UsageHistoryCardView: View {
                 }
             }
         case .monthly:
-            VStack(alignment: .leading, spacing: 7) {
+            VStack(alignment: .leading, spacing: 9) {
                 if showsChart {
                     MiniUsageHistoryGraph(
                         fiveHourPoints: [],
@@ -280,12 +281,12 @@ struct UsageHistoryCardView: View {
     private func legendItem(label: String, value: String, color: Color) -> some View {
         HStack(spacing: 6) {
             Text(label)
-                .font(.system(size: 11.5, weight: .semibold))
+                .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
                 .foregroundStyle(color)
                 .lineLimit(1)
 
             Text(value)
-                .font(.system(size: 11.5, weight: .semibold))
+                .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
                 .foregroundStyle(CodexTheme.text)
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
@@ -296,16 +297,15 @@ struct UsageHistoryCardView: View {
     private func cycleChip(label: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label)
-                .font(.caption2.weight(.semibold))
+                .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
                 .foregroundStyle(CodexTheme.dim)
                 .textCase(.uppercase)
-                .tracking(0.9)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 .allowsTightening(true)
 
             Text(value)
-                .font(.caption.weight(.semibold))
+                .font(.system(size: GlassTokens.popupBodyFontSize, weight: .semibold))
                 .foregroundStyle(CodexTheme.text)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
@@ -338,9 +338,9 @@ private struct MiniUsageHistoryGraph: View {
                 Spacer()
                 Text("0%")
             }
-                .font(.system(size: 10.5, weight: .medium))
+                .font(.system(size: GlassTokens.popupMetaFontSize, weight: .medium))
                 .foregroundStyle(CodexTheme.dim)
-                .frame(width: 30, height: GlassTokens.historyGraphHeight - 18)
+                .frame(width: 34, height: GlassTokens.historyGraphHeight - 22)
 
             VStack(spacing: 3) {
                 Canvas { context, size in
@@ -348,7 +348,7 @@ private struct MiniUsageHistoryGraph: View {
                     drawFiveHourBars(in: &context, size: size)
                     drawWeeklyLine(in: &context, size: size)
                 }
-                .frame(height: GlassTokens.historyGraphHeight - 18)
+                .frame(height: GlassTokens.historyGraphHeight - 22)
                 .allowsHitTesting(false)
 
                 HStack {
@@ -357,7 +357,7 @@ private struct MiniUsageHistoryGraph: View {
                             .frame(maxWidth: .infinity)
                     }
                 }
-                .font(.system(size: 10.5, weight: .medium))
+                .font(.system(size: GlassTokens.popupMetaFontSize, weight: .medium))
                 .foregroundStyle(CodexTheme.dim)
             }
         }
@@ -447,7 +447,7 @@ private struct ForecastUsageBar: View {
 
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(CodexTheme.control.opacity(0.72))
 
                 RoundedRectangle(cornerRadius: 4, style: .continuous)
                     .fill(
@@ -460,7 +460,7 @@ private struct ForecastUsageBar: View {
                     .frame(width: max(10, currentX))
 
                 RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .fill(Color.white.opacity(0.96))
+                    .fill(CodexTheme.window)
                     .frame(width: 12, height: 12)
                     .overlay {
                         RoundedRectangle(cornerRadius: 4, style: .continuous)

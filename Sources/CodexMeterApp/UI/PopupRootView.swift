@@ -32,7 +32,9 @@ struct PopupRootView: View {
     }
 
     var body: some View {
-        popupContent
+        GlassEffectContainer(spacing: GlassTokens.contentSpacing) {
+            popupContent
+        }
             .background(CodexTheme.window)
             .preferredColorScheme(model.appearanceMode.colorScheme)
             .frame(width: GlassTokens.popupWidth)
@@ -127,7 +129,7 @@ struct PopupRootView: View {
 
             if let lastUpdatedAt = presentedLastUpdatedAt {
                 Text(updatedText(for: lastUpdatedAt))
-                    .font(.system(size: 11.5))
+                    .font(.system(size: GlassTokens.popupMetaFontSize))
                     .foregroundStyle(CodexTheme.dim)
             }
 
@@ -247,11 +249,16 @@ struct PopupRootView: View {
     }
 
     private var presentedSummary: PopupSummaryPresentation? {
-        let summary = PopupPresentation.summary(
+        let fallback = PopupPresentation.summary(
             snapshot: presentedSnapshot,
             insights: presentedInsights,
             previewModeEnabled: displayMode == .live && model.previewModeEnabled,
             hasRefreshIssue: displayMode == .live && model.lastError != nil
+        )
+        let summary = CodexLocalIntelligence.popupSummary(
+            insights: presentedInsights,
+            localUsage: presentedLocalUsageSummary,
+            fallback: fallback
         )
         guard displayMode == .live, let summary else { return summary }
         return model.isSummarySnoozed(summary) ? nil : summary

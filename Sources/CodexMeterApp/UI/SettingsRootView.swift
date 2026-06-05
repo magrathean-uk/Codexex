@@ -182,50 +182,57 @@ struct SettingsRootView: View {
     }
 
     private var sidebarAccount: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "person")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 34, height: 34)
-                .background(
-                    LinearGradient(colors: [CodexTheme.accent, CodexTheme.accent2], startPoint: .topLeading, endPoint: .bottomTrailing),
-                    in: Circle()
-                )
+        Button {
+            selection = .about
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "person")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 34, height: 34)
+                    .background(
+                        LinearGradient(colors: [CodexTheme.accent, CodexTheme.accent2], startPoint: .topLeading, endPoint: .bottomTrailing),
+                        in: Circle()
+                    )
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(model.accountHeadline)
-                    .font(.system(size: 12, weight: .semibold))
-                    .lineLimit(1)
-
-                HStack(spacing: 5) {
-                    if model.snapshot?.account.planType?.isEmpty == false {
-                        Text(model.snapshot?.account.planType?.uppercased() ?? "")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 1)
-                            .background(selectedGradient, in: RoundedRectangle(cornerRadius: 3, style: .continuous))
-                    }
-
-                    Text("Account")
-                        .font(.system(size: 11))
-                        .foregroundStyle(CodexTheme.dim)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(model.accountHeadline)
+                        .font(.system(size: 12, weight: .semibold))
                         .lineLimit(1)
+
+                    HStack(spacing: 5) {
+                        if model.snapshot?.account.planType?.isEmpty == false {
+                            Text(model.snapshot?.account.planType?.uppercased() ?? "")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 1)
+                                .background(selectedGradient, in: RoundedRectangle(cornerRadius: 3, style: .continuous))
+                        }
+
+                        Text("Account")
+                            .font(.system(size: 11))
+                            .foregroundStyle(CodexTheme.dim)
+                            .lineLimit(1)
+                    }
                 }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(CodexTheme.dim)
             }
-
-            Spacer(minLength: 0)
-
-            Image(systemName: "chevron.right")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(CodexTheme.dim)
+            .padding(8)
+            .background(CodexTheme.window, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(selection == .about ? CodexTheme.hairlineStrong : CodexTheme.hairline, lineWidth: 1)
+            }
         }
-        .padding(8)
-        .background(CodexTheme.window, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .strokeBorder(CodexTheme.hairline, lineWidth: 1)
-        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Account")
+        .accessibilityHint("Opens About settings with account sign-in")
     }
 
     @ViewBuilder
@@ -448,19 +455,6 @@ struct SettingsRootView: View {
                 }
                 .padding(.horizontal, 14)
                 .frame(height: 72)
-
-                SettingsListRow(title: "Check for updates") {
-                    Button("Check") { model.openAppStoreUpdates() }
-                        .buttonStyle(CodexGhostButtonStyle())
-                }
-
-                SettingsListRow(title: "Release notes") {
-                    Button { model.openReleaseNotes() } label: {
-                        Label("Open", systemImage: "chevron.right")
-                            .labelStyle(.titleAndIcon)
-                    }
-                    .buttonStyle(CodexGhostButtonStyle())
-                }
 
                 SettingsListRow(title: "Terms of Use") {
                     Button { NSWorkspace.shared.open(CodexAppLinks.termsURL) } label: {
