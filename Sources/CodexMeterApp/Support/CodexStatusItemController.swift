@@ -154,7 +154,7 @@ final class CodexStatusItemController: NSObject {
 
         let resolvedAppearance = appearance ?? window.effectiveAppearance
         let resolvedBackground = CodexTheme.windowNSColor(for: resolvedAppearance)
-        window.isOpaque = false
+        window.isOpaque = true
         window.backgroundColor = resolvedBackground
 
         if let contentView = window.contentView {
@@ -179,7 +179,7 @@ final class CodexStatusItemController: NSObject {
         view.layer?.backgroundColor = color.cgColor
 
         if let visualEffectView = view as? NSVisualEffectView {
-            visualEffectView.material = .popover
+            visualEffectView.material = .windowBackground
             visualEffectView.blendingMode = .withinWindow
             visualEffectView.state = .active
         }
@@ -326,6 +326,10 @@ final class CodexStatusItemController: NSObject {
         )
         let height = CodexPopoverSizing.height(fittingHeight: fittingSize.height, maxHeight: maxHeight)
         popover.contentSize = NSSize(width: GlassTokens.popupWidth, height: height)
+        hostingController.view.needsLayout = true
+        hostingController.view.needsDisplay = true
+        hostingController.view.window?.contentView?.needsDisplay = true
+        hostingController.view.window?.displayIfNeeded()
         if popover.isShown {
             clampPopoverToVisibleFrame(anchorFrame: anchorFrame)
         }

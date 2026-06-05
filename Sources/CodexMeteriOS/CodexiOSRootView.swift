@@ -136,6 +136,8 @@ struct CodexiOSRootView: View {
                 wideLayout
                 narrowLayout
             }
+
+            bottomActionBar
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 16)
@@ -143,39 +145,45 @@ struct CodexiOSRootView: View {
     }
 
     private var contentHeader: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                NavigationLink {
-                    CodexiOSSettingsView(model: model)
-                } label: {
-                    Text("Settings")
-                }
-                .buttonStyle(CodexiOSTopButtonStyle())
+        Text("Codexex")
+            .font(.system(size: 38, weight: .bold))
+            .lineLimit(1)
+    }
 
-                Spacer()
-
-                Button {
-                    Task { await model.refresh() }
-                } label: {
-                    if model.isRefreshing {
-                        HStack(spacing: 6) {
-                            ProgressView()
-                                .controlSize(.small)
-                            Text("Refreshing")
-                        }
-                    } else {
-                        Text("Refresh")
-                    }
-                }
-                .buttonStyle(CodexiOSTopButtonStyle())
-                .disabled(model.isRefreshing)
-            }
-
-            Text("Codexex")
-                .font(.system(size: 38, weight: .bold))
-                .tracking(-1.2)
-                .lineLimit(1)
+    private var bottomActionBar: some View {
+        HStack(spacing: 10) {
+            settingsActionButton
+            Spacer(minLength: 12)
+            refreshActionButton
         }
+    }
+
+    private var settingsActionButton: some View {
+        NavigationLink {
+            CodexiOSSettingsView(model: model)
+        } label: {
+            Label("Settings", systemImage: "gearshape")
+        }
+        .buttonStyle(CodexiOSTopButtonStyle())
+    }
+
+    private var refreshActionButton: some View {
+        Button {
+            Task { await model.refresh() }
+        } label: {
+            if model.isRefreshing {
+                Label {
+                    Text("Refreshing")
+                } icon: {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+            } else {
+                Label("Refresh", systemImage: "arrow.clockwise")
+            }
+        }
+        .buttonStyle(CodexiOSTopButtonStyle())
+        .disabled(model.isRefreshing)
     }
 
     @ViewBuilder

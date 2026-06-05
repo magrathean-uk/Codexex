@@ -32,12 +32,10 @@ struct PopupRootView: View {
     }
 
     var body: some View {
-        GlassEffectContainer(spacing: GlassTokens.contentSpacing) {
-            popupContent
-        }
+        popupContent
+            .frame(width: GlassTokens.popupWidth, alignment: .topLeading)
             .background(CodexTheme.window)
             .preferredColorScheme(model.appearanceMode.colorScheme)
-            .frame(width: GlassTokens.popupWidth)
             .onAppear {
                 model.setReduceMotionEnabled(reduceMotionEnabled)
             }
@@ -54,7 +52,6 @@ struct PopupRootView: View {
     private var popupContent: some View {
         VStack(alignment: .leading, spacing: GlassTokens.contentSpacing) {
             mainContent
-                .id(layoutResetToken)
 
             if displayMode == .live {
                 footer
@@ -62,6 +59,10 @@ struct PopupRootView: View {
         }
         .padding(GlassTokens.pagePadding)
         .frame(maxWidth: .infinity, alignment: .topLeading)
+        .transaction { transaction in
+            transaction.animation = nil
+            transaction.disablesAnimations = true
+        }
     }
 
     private var mainContent: some View {
@@ -107,41 +108,35 @@ struct PopupRootView: View {
         }
     }
 
-    private var layoutResetToken: String {
-        [
-            shouldShowStatusCard ? "status" : "nostatus",
-            presentedSummary.map(CodexSummarySnooze.fingerprint(for:)) ?? "nosummary",
-            presentedSnapshot == nil ? "nosnapshot" : "snapshot"
-        ].joined(separator: "|")
-    }
-
     private var footer: some View {
         HStack(spacing: 10) {
-            Button {
+            PopupFooterControl(title: "Settings", systemImage: "gearshape", tone: .secondary) {
                 onOpenSettings()
-            } label: {
-                Text("Settings")
             }
-            .buttonStyle(CodexGhostButtonStyle())
-            .keyboardShortcut(",", modifiers: .command)
 
-            Spacer()
+            Spacer(minLength: 12)
 
             if let lastUpdatedAt = presentedLastUpdatedAt {
                 Text(updatedText(for: lastUpdatedAt))
                     .font(.system(size: GlassTokens.popupMetaFontSize))
                     .foregroundStyle(CodexTheme.dim)
+                    .lineLimit(1)
+                    .frame(minWidth: 104, alignment: .trailing)
+                    .allowsHitTesting(false)
             }
 
-            Button {
+            PopupFooterControl(
+                title: model.isRefreshing ? "Refreshing" : "Refresh",
+                systemImage: "arrow.clockwise",
+                tone: .primary
+            ) {
                 guard model.isRefreshing == false else { return }
                 Task { await model.refreshNow(manual: true) }
-            } label: {
-                Text(model.isRefreshing ? "Refreshing" : "Refresh")
             }
-            .buttonStyle(CodexGhostButtonStyle())
+            .disabled(model.isRefreshing)
         }
         .padding(.top, 2)
+        .frame(maxWidth: .infinity, minHeight: GlassTokens.pillHeight, alignment: .center)
     }
 
     private func updatedText(for date: Date) -> String {
@@ -279,6 +274,99 @@ struct PopupRootView: View {
             Task { await model.refreshNow(manual: true) }
         case .useSampleData:
             model.enablePreviewMode()
+        }
+    }
+}
+
+private struct PopupFooterControl: View {
+    enum Tone {
+        case primary
+        case secondary
+    }
+
+    @Environment(\.isEnabled) private var isEnabled
+    @State private var isHovered = false
+    let title: String
+    let systemImage: String
+    let tone: Tone
+    let action: () -> Void
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: systemImage)
+                .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
+                .imageScale(.small)
+
+            Text(title)
+                .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .allowsTightening(true)
+        }
+        .foregroundStyle(foreground)
+        .padding(.horizontal, 12)
+        .frame(minWidth: minimumWidth)
+        .frame(height: GlassTokens.pillHeight)
+        .background {
+            buttonBackground
+        }
+        .overlay {
+            if tone == .secondary {
+                RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
+                    .strokeBorder(CodexTheme.hairlineStrong, lineWidth: 1)
+            }
+        }
+        .opacity(isEnabled ? 1 : 0.72)
+        .contentShape(RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous))
+        .onHover { hovering in
+            isHovered = hovering
+        }
+        .onTapGesture {
+            guard isEnabled else { return }
+            action()
+        }
+        .unredacted()
+        .accessibilityElement()
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(.isButton)
+    }
+
+    private var minimumWidth: CGFloat {
+        switch tone {
+        case .primary:
+            return 86
+        case .secondary:
+            return 92
+        }
+    }
+
+    private var foreground: Color {
+        switch tone {
+        case .primary:
+            return .white
+        case .secondary:
+            return CodexTheme.text
+        }
+    }
+
+    @ViewBuilder
+    private var buttonBackground: some View {
+        let shape = RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
+        switch tone {
+        case .primary:
+            shape.fill(
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.36, green: 0.60, blue: 1.0),
+                        Color(red: 0.12, green: 0.42, blue: 0.93)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .opacity(isHovered && isEnabled ? 0.90 : 1)
+        case .secondary:
+            shape.fill(isHovered && isEnabled ? CodexTheme.control.opacity(0.88) : CodexTheme.control)
         }
     }
 }

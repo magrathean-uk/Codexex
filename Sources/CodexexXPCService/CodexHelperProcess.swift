@@ -139,24 +139,25 @@ final class CodexHelperProcess {
                 executableURL
                     .deletingLastPathComponent()
                     .deletingLastPathComponent()
+                    .appending(path: "Helpers/codexex-helper")
+            )
+
+            candidates.append(
+                executableURL
+                    .deletingLastPathComponent()
+                    .deletingLastPathComponent()
                     .deletingLastPathComponent()
                     .deletingLastPathComponent()
                     .deletingLastPathComponent()
                     .appending(path: "Helpers/codexex-helper")
             )
-            #if DEBUG
-            if ProcessInfo.processInfo.environment["CODEXEX_ENABLE_XPC_BUNDLE_HELPER"] == "1" {
-                candidates.append(
-                    executableURL
-                        .deletingLastPathComponent()
-                        .deletingLastPathComponent()
-                        .appending(path: "Helpers/codexex-helper")
-                )
-            }
-            #endif
         }
 
         let bundleURL = Bundle.main.bundleURL
+        candidates.append(
+            bundleURL
+                .appending(path: "Contents/Helpers/codexex-helper")
+        )
         candidates.append(
             bundleURL
                 .deletingLastPathComponent()

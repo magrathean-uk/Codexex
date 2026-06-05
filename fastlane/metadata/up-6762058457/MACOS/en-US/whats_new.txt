@@ -1,10 +1,7 @@
-Codexex 3.0 refines the menu bar experience:
+Codexex 4.0 tightens up the menu bar experience:
 
-- Adaptive System, Light, and Dark appearance, with a new Settings control.
-- Cleaner light theme matched across popup and Settings.
-- More compact popup layout so Settings stays reachable from the menu bar.
-- All-session local usage attribution from Codex session logs.
-- Opt-in alerts for 5-hour pressure, reset timing, and weekly risk.
-- 24-hour snooze for usage warnings.
-- Improved 5-hour, weekly, cycle, and month history presentation.
-- Forecast and sign-in flow fixes, including refresh after ChatGPT sign-in.
+- Redesigned popup cards with better padding and spacing.
+- Settings now use a cleaner single-accent style with SF Symbols.
+- Forecasts and history focus on current usage, not remaining quota.
+- Preview Mode still works on macOS for App Review and offline testing.
+- Updated full-screen macOS screenshot and EULA link: https://codexex.eu/terms

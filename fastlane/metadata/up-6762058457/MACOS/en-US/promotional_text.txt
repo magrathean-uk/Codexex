@@ -1,1 +1,1 @@
-Track Codex usage, local session burn, forecasts, and opt-in quota alerts from the Mac menu bar.
+Track Codex usage, local session burn, forecasts, and Preview Mode from the Mac menu bar.

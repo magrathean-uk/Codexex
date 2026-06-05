@@ -52,44 +52,18 @@ struct UsageHistoryCardView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .firstTextBaseline) {
+        HStack(alignment: .center, spacing: 12) {
             Text("Usage history")
                 .font(.system(size: GlassTokens.popupBodyFontSize, weight: .semibold))
                 .foregroundStyle(CodexTheme.text)
+                .lineLimit(1)
 
-            Spacer()
+            Spacer(minLength: 12)
 
-            HStack(spacing: 3) {
-                ForEach(PopupHistoryMode.allCases, id: \.self) { mode in
-                    Button {
-                        onHistoryModeChange(mode)
-                    } label: {
-                        Text(compactTitle(for: mode))
-                            .font(.system(size: GlassTokens.popupMetaFontSize, weight: mode == historyMode ? .semibold : .medium))
-                            .foregroundStyle(mode == historyMode ? CodexTheme.text : CodexTheme.muted)
-                            .padding(.horizontal, 8)
-                            .frame(height: 24)
-                            .background(
-                                mode == historyMode ? CodexTheme.control.opacity(0.95) : Color.clear,
-                                in: RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(3)
-            .background(CodexTheme.control.opacity(0.58), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-        }
-    }
-
-    private func compactTitle(for mode: PopupHistoryMode) -> String {
-        switch mode {
-        case .dailyPeaks:
-            return "Peaks"
-        case .thisCycle:
-            return "Cycle"
-        case .monthly:
-            return "Month"
+            PopupHistoryModeSelector(
+                historyMode: historyMode,
+                onHistoryModeChange: onHistoryModeChange
+            )
         }
     }
 
@@ -321,6 +295,59 @@ struct UsageHistoryCardView: View {
             return String(text.dropFirst(prefix.count))
         }
         return text
+    }
+}
+
+struct PopupHistoryModeSelector: View {
+    static let segmentWidth: CGFloat = 48
+    static let segmentHeight: CGFloat = 24
+    static let selectedIndicatorWidth: CGFloat = 28
+    static let selectedIndicatorHeight: CGFloat = 2
+
+    let historyMode: PopupHistoryMode
+    let onHistoryModeChange: (PopupHistoryMode) -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(PopupHistoryMode.allCases, id: \.self) { mode in
+                VStack(spacing: 3) {
+                    Text(mode.popupCompactTitle)
+                        .font(.system(size: GlassTokens.popupMetaFontSize, weight: mode == historyMode ? .semibold : .medium))
+                        .foregroundStyle(mode == historyMode ? CodexTheme.text : CodexTheme.muted)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.9)
+                        .allowsTightening(true)
+                        .frame(width: Self.segmentWidth, height: Self.segmentHeight - Self.selectedIndicatorHeight - 3)
+
+                    Capsule(style: .continuous)
+                        .fill(mode == historyMode ? CodexTheme.accent : Color.clear)
+                        .frame(width: Self.selectedIndicatorWidth, height: Self.selectedIndicatorHeight)
+                }
+                .frame(width: Self.segmentWidth, height: Self.segmentHeight)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    onHistoryModeChange(mode)
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(mode.title)
+                .accessibilityValue(mode == historyMode ? "Selected" : "")
+                .accessibilityAddTraits(.isButton)
+            }
+        }
+        .fixedSize(horizontal: true, vertical: false)
+    }
+}
+
+private extension PopupHistoryMode {
+    var popupCompactTitle: String {
+        switch self {
+        case .dailyPeaks:
+            return "Peaks"
+        case .thisCycle:
+            return "Cycle"
+        case .monthly:
+            return "Month"
+        }
     }
 }
 

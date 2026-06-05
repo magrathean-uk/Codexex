@@ -159,11 +159,12 @@ struct PopupPlainSection<Content: View>: View {
         content
             .padding(GlassTokens.cardPadding)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(CodexTheme.surface.opacity(0.72), in: shape)
+            .background(CodexTheme.surface.opacity(0.82), in: shape)
+            .clipShape(shape)
             .overlay {
                 shape.strokeBorder(CodexTheme.hairlineStrong, lineWidth: 1)
             }
-            .glassEffect(.regular.tint(CodexTheme.surface.opacity(0.52)), in: shape)
+            .compositingGroup()
     }
 }
 #endif

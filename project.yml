@@ -11,7 +11,7 @@ settings:
     SWIFT_VERSION: 6.0
     SUPPORTS_MACCATALYST: NO
     MARKETING_VERSION: 4.0
-    CURRENT_PROJECT_VERSION: 10
+    CURRENT_PROJECT_VERSION: 12
     DEVELOPMENT_TEAM: NPSQV9WYS5
     CODE_SIGN_STYLE: Automatic
 
@@ -81,8 +81,10 @@ targets:
         inputFiles:
           - $(DERIVED_FILE_DIR)/codexex-helper/codexex-helper
           - $(PROJECT_DIR)/AppStore/CodexexHelper.entitlements
+          - $(PROJECT_DIR)/AppStore/CodexexXPCService.entitlements
         outputFiles:
           - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/codexex-helper
+          - $(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/XPCServices/CodexexXPCService.xpc/Contents/Helpers/codexex-helper
         script: |
           "$PROJECT_DIR/Scripts/embed-codexex-helper.sh"
 

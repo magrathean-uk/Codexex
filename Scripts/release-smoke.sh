@@ -47,6 +47,7 @@ require_text "CodexexXPCService" project.yml
 require_count "Build Codexex Helper" 1 project.yml
 require_count "Embed Codexex Helper" 1 project.yml
 require_text '$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/codexex-helper' project.yml
+require_text '$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/XPCServices/CodexexXPCService.xpc/Contents/Helpers/codexex-helper' project.yml
 require_text "protocolVersion" Sources/CodexMeterCore/CodexServiceContracts.swift
 require_text "requestId" Sources/CodexMeterCore/CodexServiceContracts.swift
 require_text "CODEXEX_ENABLE_LEGACY_PROBE" Sources/CodexMeterCore/CodexAppServerProbe.swift

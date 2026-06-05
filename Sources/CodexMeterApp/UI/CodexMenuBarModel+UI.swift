@@ -32,7 +32,7 @@ extension CodexMenuBarModel {
             return "Signing in"
         }
         if lastError != nil, snapshot == nil {
-            return hasResolvedAuthState ? "Couldn’t load quota" : "Checking quota"
+            return "Couldn’t load quota"
         }
         if isSignedIn == false, hasResolvedAuthState {
             return "Sign in required"
@@ -54,7 +54,7 @@ extension CodexMenuBarModel {
             return "Use code \(code) in Safari, then check status here."
         }
         if let lastError {
-            return lastError
+            return userFacingStatusMessage(for: lastError)
         }
         return authStatusMessage
     }
@@ -110,6 +110,14 @@ extension CodexMenuBarModel {
 
     func cancelPendingChatGPTSignIn() {
         clearAuthCode()
+    }
+
+    private func userFacingStatusMessage(for error: String) -> String {
+        let lowercased = error.lowercased()
+        if lowercased.contains("codexex-helper") || lowercased.contains("embedded helper") {
+            return "Codexex couldn’t start its bundled helper. Reopen the app or refresh quota."
+        }
+        return error
     }
 }
 #endif

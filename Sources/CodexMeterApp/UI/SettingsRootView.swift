@@ -43,17 +43,19 @@ private enum SettingsSection: String, CaseIterable, Identifiable {
     }
 
     var tint: Color {
-        switch self {
-        case .general, .about:
-            return Color(red: 0.42, green: 0.47, blue: 0.56)
-        case .popup:
-            return CodexTheme.accent
-        case .menuBar:
-            return Color(red: 0.0, green: 0.55, blue: 0.58)
-        case .forecast:
-            return Color(red: 0.08, green: 0.55, blue: 0.20)
-        }
+        SettingsTheme.accent
     }
+}
+
+private enum SettingsTheme {
+    static let accent = Color.accentColor
+    static let groupedBackground = Color(nsColor: .windowBackgroundColor)
+    static let sidebarBackground = Color(nsColor: .underPageBackgroundColor)
+    static let cardFill = Color(nsColor: .controlBackgroundColor)
+    static let secondaryFill = Color.primary.opacity(0.06)
+    static let selectedFill = accent.opacity(0.13)
+    static let hairline = Color.primary.opacity(0.08)
+    static let hairlineStrong = Color.primary.opacity(0.12)
 }
 
 struct SettingsRootView: View {
@@ -71,7 +73,7 @@ struct SettingsRootView: View {
                     .frame(width: 200)
 
                 Divider()
-                    .overlay(CodexTheme.hairline)
+                    .overlay(SettingsTheme.hairline)
 
                 ScrollView {
                     content
@@ -80,12 +82,12 @@ struct SettingsRootView: View {
                         .frame(maxWidth: .infinity, alignment: .topLeading)
                 }
                 .scrollIndicators(.hidden)
-                .background(CodexTheme.window)
+                .background(SettingsTheme.groupedBackground)
             }
         }
         .frame(minWidth: 760, minHeight: 540)
-        .background(CodexTheme.window)
-        .foregroundStyle(CodexTheme.text)
+        .background(SettingsTheme.groupedBackground)
+        .foregroundStyle(.primary)
         .preferredColorScheme(model.appearanceMode.colorScheme)
         .onAppear {
             model.setReduceMotionEnabled(accessibilityReduceMotion)
@@ -114,13 +116,13 @@ struct SettingsRootView: View {
 
             Text(selection.title)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(CodexTheme.text)
+                .foregroundStyle(.primary)
         }
         .frame(height: 38)
-        .background(CodexTheme.titlebar)
+        .background(SettingsTheme.groupedBackground)
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(CodexTheme.hairline)
+                .fill(SettingsTheme.hairline)
                 .frame(height: 1)
         }
     }
@@ -139,7 +141,7 @@ struct SettingsRootView: View {
             sidebarAccount
                 .padding(8)
         }
-        .background(CodexTheme.sidebar)
+        .background(SettingsTheme.sidebarBackground)
     }
 
     private func sidebarItem(_ section: SettingsSection) -> some View {
@@ -151,11 +153,11 @@ struct SettingsRootView: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(width: 22, height: 22)
-                    .background(selection == section ? Color.white.opacity(0.18) : section.tint, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+                    .background(section.tint, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
 
                 Text(section.title)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(selection == section ? .white : CodexTheme.text)
+                    .foregroundStyle(selection == section ? SettingsTheme.accent : .primary)
 
                 Spacer(minLength: 0)
             }
@@ -164,7 +166,7 @@ struct SettingsRootView: View {
             .frame(height: 32)
             .background {
                 if selection == section {
-                    selectedGradient
+                    SettingsTheme.selectedFill
                         .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                 }
             }
@@ -173,27 +175,12 @@ struct SettingsRootView: View {
         .buttonStyle(.plain)
     }
 
-    private var selectedGradient: LinearGradient {
-        LinearGradient(
-            colors: [Color(red: 0.28, green: 0.56, blue: 1.0), Color(red: 0.12, green: 0.39, blue: 0.92)],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-    }
-
     private var sidebarAccount: some View {
         Button {
             selection = .about
         } label: {
             HStack(spacing: 10) {
-                Image(systemName: "person")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 34, height: 34)
-                    .background(
-                        LinearGradient(colors: [CodexTheme.accent, CodexTheme.accent2], startPoint: .topLeading, endPoint: .bottomTrailing),
-                        in: Circle()
-                    )
+                SettingsRowIcon(systemImage: "person.crop.circle")
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(model.accountHeadline)
@@ -207,12 +194,12 @@ struct SettingsRootView: View {
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 4)
                                 .padding(.vertical, 1)
-                                .background(selectedGradient, in: RoundedRectangle(cornerRadius: 3, style: .continuous))
+                                .background(SettingsTheme.accent, in: RoundedRectangle(cornerRadius: 3, style: .continuous))
                         }
 
                         Text("Account")
                             .font(.system(size: 11))
-                            .foregroundStyle(CodexTheme.dim)
+                            .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
                 }
@@ -221,13 +208,13 @@ struct SettingsRootView: View {
 
                 Image(systemName: "chevron.right")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(CodexTheme.dim)
+                    .foregroundStyle(.secondary)
             }
             .padding(8)
-            .background(CodexTheme.window, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .background(SettingsTheme.cardFill, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .strokeBorder(selection == .about ? CodexTheme.hairlineStrong : CodexTheme.hairline, lineWidth: 1)
+                    .strokeBorder(selection == .about ? SettingsTheme.accent.opacity(0.35) : SettingsTheme.hairline, lineWidth: 1)
             }
         }
         .buttonStyle(.plain)
@@ -296,7 +283,7 @@ struct SettingsRootView: View {
                     } label: {
                         Label(model.isRefreshing ? "Refreshing" : "Refresh", systemImage: "arrow.clockwise")
                     }
-                    .buttonStyle(CodexGhostButtonStyle())
+                    .buttonStyle(SettingsGhostButtonStyle())
                     .disabled(model.isRefreshing)
                 }
             }
@@ -311,7 +298,7 @@ struct SettingsRootView: View {
                     isLast: true
                 ) {
                     Button("Choose") { model.chooseCodexSessionsFolder() }
-                        .buttonStyle(CodexGhostButtonStyle())
+                        .buttonStyle(SettingsGhostButtonStyle())
                 }
             }
 
@@ -434,24 +421,21 @@ struct SettingsRootView: View {
         VStack(alignment: .leading, spacing: 24) {
             SettingsListGroup(title: "Application") {
                 HStack(spacing: 14) {
-                    Image(nsImage: appIconImage)
-                        .resizable()
-                        .frame(width: 48, height: 48)
-                        .clipShape(RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous))
+                    SettingsRowIcon(systemImage: "command.circle.fill", size: 44, imageSize: 22)
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Codexex")
                             .font(.system(size: 13.5, weight: .semibold))
                         Text("Menu bar meter for Codex usage")
                             .font(.system(size: 11.5))
-                            .foregroundStyle(CodexTheme.muted)
+                            .foregroundStyle(.secondary)
                     }
 
                     Spacer()
 
                     Text(Bundle.main.codexexVersionString)
                         .font(.system(size: 11.5))
-                        .foregroundStyle(CodexTheme.dim)
+                        .foregroundStyle(.secondary)
                 }
                 .padding(.horizontal, 14)
                 .frame(height: 72)
@@ -461,7 +445,7 @@ struct SettingsRootView: View {
                         Label("Open", systemImage: "chevron.right")
                             .labelStyle(.titleAndIcon)
                     }
-                    .buttonStyle(CodexGhostButtonStyle())
+                    .buttonStyle(SettingsGhostButtonStyle())
                 }
 
                 SettingsListRow(title: "Privacy Policy", isLast: true) {
@@ -469,7 +453,7 @@ struct SettingsRootView: View {
                         Label("Open", systemImage: "chevron.right")
                             .labelStyle(.titleAndIcon)
                     }
-                    .buttonStyle(CodexGhostButtonStyle())
+                    .buttonStyle(SettingsGhostButtonStyle())
                 }
             }
 
@@ -483,7 +467,7 @@ struct SettingsRootView: View {
                     isLast: true
                 ) {
                     Button("Copy") { model.copyDiagnosticsReport() }
-                        .buttonStyle(CodexGhostButtonStyle())
+                        .buttonStyle(SettingsGhostButtonStyle())
                 }
             }
 
@@ -499,14 +483,7 @@ struct SettingsRootView: View {
 
             SettingsListGroup(title: "Account") {
                 HStack(spacing: 14) {
-                    Image(systemName: "person")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 40, height: 40)
-                        .background(
-                            LinearGradient(colors: [CodexTheme.accent, CodexTheme.accent2], startPoint: .topLeading, endPoint: .bottomTrailing),
-                            in: Circle()
-                        )
+                    SettingsRowIcon(systemImage: "person.crop.circle", size: 40, imageSize: 18)
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text(model.accountHeadline)
@@ -515,7 +492,7 @@ struct SettingsRootView: View {
 
                         Text(model.accountDetail ?? "Account")
                             .font(.system(size: 11.5))
-                            .foregroundStyle(CodexTheme.dim)
+                            .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
 
@@ -527,7 +504,7 @@ struct SettingsRootView: View {
                 .frame(height: 66)
 
                 if let code = model.authDeviceCode {
-                    CodexDeviceCodeCallout(
+                    SettingsDeviceCodeCallout(
                         code: code,
                         openSafari: { model.openAuthVerificationPage() },
                         copyCode: { model.copyAuthCode() },
@@ -536,7 +513,7 @@ struct SettingsRootView: View {
                     .padding(14)
                     .overlay(alignment: .bottom) {
                         Rectangle()
-                            .fill(CodexTheme.hairline)
+                            .fill(SettingsTheme.hairline)
                             .frame(height: 1)
                     }
                 }
@@ -549,7 +526,7 @@ struct SettingsRootView: View {
                             model.enablePreviewMode()
                         }
                     }
-                    .buttonStyle(CodexGhostButtonStyle())
+                    .buttonStyle(SettingsGhostButtonStyle())
                 }
 
                 SettingsListRow(title: "Sign out", isLast: true) {
@@ -559,7 +536,7 @@ struct SettingsRootView: View {
                     } else {
                         Text(model.previewModeEnabled ? "Sample data active" : "Not signed in")
                             .font(.system(size: 11.5))
-                            .foregroundStyle(CodexTheme.dim)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
@@ -573,19 +550,12 @@ struct SettingsRootView: View {
                 .buttonStyle(CodexPrimaryButtonStyle())
         } else if model.authDeviceCode != nil {
             Button("Clear Code") { model.clearAuthCode() }
-                .buttonStyle(CodexGhostButtonStyle())
+                .buttonStyle(SettingsGhostButtonStyle())
         } else {
             Button("Sign In") { model.startChatGPTSignIn() }
                 .buttonStyle(CodexPrimaryButtonStyle())
                 .disabled(model.canStartChatGPTSignIn == false)
         }
-    }
-
-    private var appIconImage: NSImage {
-        let image = NSWorkspace.shared.icon(forFile: Bundle.main.bundlePath)
-        image.size = NSSize(width: 256, height: 256)
-        image.isTemplate = false
-        return image
     }
 }
 
@@ -599,23 +569,22 @@ private struct SettingsListGroup<Content: View>: View {
             Text(title)
                 .font(.system(size: 11, weight: .semibold))
                 .textCase(.uppercase)
-                .tracking(1.8)
-                .foregroundStyle(CodexTheme.dim)
+                .foregroundStyle(.secondary)
                 .padding(.horizontal, 4)
 
             VStack(spacing: 0) {
                 content
             }
-            .background(CodexTheme.surface, in: RoundedRectangle(cornerRadius: GlassTokens.groupRadius, style: .continuous))
+            .background(SettingsTheme.cardFill, in: RoundedRectangle(cornerRadius: GlassTokens.groupRadius, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: GlassTokens.groupRadius, style: .continuous)
-                    .strokeBorder(CodexTheme.hairlineStrong, lineWidth: 1)
+                    .strokeBorder(SettingsTheme.hairlineStrong, lineWidth: 1)
             }
 
             if let footer {
                 Text(footer)
                     .font(.system(size: 11.5))
-                    .foregroundStyle(CodexTheme.dim)
+                    .foregroundStyle(.secondary)
                     .padding(.horizontal, 4)
             }
         }
@@ -629,16 +598,18 @@ private struct SettingsListRow<Accessory: View>: View {
     @ViewBuilder let accessory: Accessory
 
     var body: some View {
-        HStack(alignment: .center, spacing: 16) {
+        HStack(alignment: .center, spacing: 12) {
+            SettingsRowIcon(systemImage: SettingsRowIconName.systemImage(for: title))
+
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(CodexTheme.text)
+                    .foregroundStyle(.primary)
 
                 if let detail {
                     Text(detail)
                         .font(.system(size: 11.5))
-                        .foregroundStyle(CodexTheme.dim)
+                        .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
             }
@@ -654,10 +625,145 @@ private struct SettingsListRow<Accessory: View>: View {
         .overlay(alignment: .bottom) {
             if isLast == false {
                 Rectangle()
-                    .fill(CodexTheme.hairline)
+                    .fill(SettingsTheme.hairline)
                     .frame(height: 1)
+                    .padding(.leading, 60)
             }
         }
+    }
+}
+
+private struct SettingsRowIcon: View {
+    let systemImage: String
+    var size: CGFloat = 30
+    var imageSize: CGFloat = 14
+
+    var body: some View {
+        Image(systemName: systemImage)
+            .font(.system(size: imageSize, weight: .semibold))
+            .foregroundStyle(.white)
+            .frame(width: size, height: size)
+            .background(SettingsTheme.accent, in: RoundedRectangle(cornerRadius: min(8, size * 0.22), style: .continuous))
+            .accessibilityHidden(true)
+    }
+}
+
+private enum SettingsRowIconName {
+    static func systemImage(for title: String) -> String {
+        switch title {
+        case "Launch at login":
+            return "power"
+        case "Auto-refresh":
+            return "arrow.clockwise"
+        case "Interval":
+            return "timer"
+        case "Refresh now":
+            return "arrow.triangle.2.circlepath"
+        case "Sessions folder":
+            return "folder"
+        case "Appearance":
+            return "circle.lefthalf.filled"
+        case "Spark":
+            return "sparkles"
+        case "Usage history":
+            return "chart.bar.xaxis"
+        case "History chart":
+            return "waveform.path.ecg"
+        case "Mode":
+            return "menubar.rectangle"
+        case "5-hour window":
+            return "clock"
+        case "Weekly window":
+            return "calendar"
+        case "Reset times":
+            return "clock.badge.checkmark"
+        case "Pace confidence":
+            return "chart.line.uptrend.xyaxis"
+        case "Quota notifications":
+            return "bell"
+        case "Hide idle limits":
+            return "eye.slash"
+        case "History default":
+            return "chart.xyaxis.line"
+        case "Terms of Use":
+            return "doc.text"
+        case "Privacy Policy":
+            return "hand.raised"
+        case "Copy diagnostics":
+            return "doc.on.doc"
+        case "Reset app":
+            return "trash"
+        case "Sample data":
+            return "square.stack.3d.up"
+        case "Sign out":
+            return "rectangle.portrait.and.arrow.right"
+        default:
+            return "gearshape"
+        }
+    }
+}
+
+private struct SettingsDeviceCodeCallout: View {
+    let code: String
+    let openSafari: () -> Void
+    let copyCode: () -> Void
+    let cancel: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                SettingsRowIcon(systemImage: "key")
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Device code")
+                        .font(.system(size: 13, weight: .medium))
+                    Text("Use this code to finish sign-in.")
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Text(code)
+                .font(.system(size: 26, weight: .bold, design: .monospaced))
+                .minimumScaleFactor(0.78)
+                .lineLimit(1)
+                .textSelection(.enabled)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 9)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(SettingsTheme.secondaryFill, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .strokeBorder(SettingsTheme.hairline, lineWidth: 1)
+                }
+
+            HStack(spacing: 8) {
+                Button {
+                    openSafari()
+                } label: {
+                    Label("Open", systemImage: "safari")
+                }
+                .buttonStyle(CodexPrimaryButtonStyle())
+                .keyboardShortcut(.defaultAction)
+
+                Button {
+                    copyCode()
+                } label: {
+                    Label("Copy", systemImage: "doc.on.doc")
+                }
+                .buttonStyle(SettingsGhostButtonStyle())
+
+                Spacer(minLength: 0)
+
+                Button {
+                    cancel()
+                } label: {
+                    Label("Cancel", systemImage: "xmark")
+                }
+                .buttonStyle(SettingsGhostButtonStyle())
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -671,14 +777,14 @@ private struct CodexSwitch: View {
         } label: {
             ZStack {
                 Capsule(style: .continuous)
-                    .fill(isOn ? CodexTheme.accent : Color.white.opacity(0.10))
+                    .fill(isOn ? SettingsTheme.accent : SettingsTheme.secondaryFill)
                     .overlay {
                         Capsule(style: .continuous)
-                            .strokeBorder(isOn ? Color.white.opacity(0.20) : Color.white.opacity(0.14), lineWidth: 1)
+                            .strokeBorder(isOn ? SettingsTheme.accent.opacity(0.35) : SettingsTheme.hairlineStrong, lineWidth: 1)
                     }
 
                 Circle()
-                    .fill(Color.white.opacity(0.94))
+                    .fill(Color.white)
                     .frame(width: 17, height: 17)
                     .offset(x: isOn ? 9 : -9)
             }
@@ -703,7 +809,7 @@ private struct CodexSegmentedControl<Value: Hashable>: View {
                 } label: {
                     Text(segment.0)
                         .font(.system(size: 12.5, weight: selection == segment.1 ? .semibold : .medium))
-                        .foregroundStyle(selection == segment.1 ? Color.white : CodexTheme.muted)
+                        .foregroundStyle(selection == segment.1 ? Color.white : Color.secondary)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .contentShape(Rectangle())
                 }
@@ -711,29 +817,52 @@ private struct CodexSegmentedControl<Value: Hashable>: View {
                 .background {
                     if selection == segment.1 {
                         RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
-                            .fill(CodexTheme.accent)
+                            .fill(SettingsTheme.accent)
                     }
                 }
 
                 if index < segments.count - 1 {
                     Rectangle()
-                        .fill(CodexTheme.hairline)
+                        .fill(SettingsTheme.hairline)
                         .frame(width: 1, height: 16)
                         .opacity(selection == segment.1 || selection == segments[index + 1].1 ? 0 : 1)
                 }
             }
         }
         .padding(2)
-        .background(CodexTheme.control, in: RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous))
+        .background(SettingsTheme.secondaryFill, in: RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
-                .strokeBorder(CodexTheme.hairline, lineWidth: 1)
+                .strokeBorder(SettingsTheme.hairline, lineWidth: 1)
         }
         .opacity(isEnabled ? 1 : 0.45)
     }
 }
 
+struct SettingsGhostButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 12.5, weight: .semibold))
+            .foregroundStyle(isEnabled ? Color.primary : Color.secondary)
+            .padding(.horizontal, 13)
+            .frame(height: GlassTokens.pillHeight)
+            .background(
+                configuration.isPressed ? SettingsTheme.secondaryFill.opacity(0.72) : SettingsTheme.secondaryFill,
+                in: RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
+                    .strokeBorder(SettingsTheme.hairlineStrong, lineWidth: 1)
+            }
+            .opacity(isEnabled ? 1 : 0.45)
+    }
+}
+
 struct CodexPrimaryButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 12.5, weight: .semibold))
@@ -741,10 +870,10 @@ struct CodexPrimaryButtonStyle: ButtonStyle {
             .padding(.horizontal, 13)
             .frame(height: GlassTokens.pillHeight)
             .background(
-                LinearGradient(colors: [Color(red: 0.36, green: 0.60, blue: 1.0), Color(red: 0.12, green: 0.42, blue: 0.93)], startPoint: .top, endPoint: .bottom),
+                Color.accentColor,
                 in: RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
             )
-            .opacity(configuration.isPressed ? 0.82 : 1)
+            .opacity(isEnabled ? (configuration.isPressed ? 0.82 : 1) : 0.45)
     }
 }
 

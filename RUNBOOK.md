@@ -92,7 +92,7 @@ The normal path is:
 
 1. Xcode prebuild compiles the helper in release mode.
 2. The helper binary is staged in derived data.
-3. The app target embeds that helper into `Contents/Helpers/`.
+3. The app target embeds that helper into `Contents/Helpers/` and into the bundled XPC service's `Contents/Helpers/`.
 4. The embed script signs it when code signing is enabled.
 5. The app talks to the helper through the bundled XPC service.
 
