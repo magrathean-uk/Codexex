@@ -48,14 +48,54 @@ private enum SettingsSection: String, CaseIterable, Identifiable {
 }
 
 private enum SettingsTheme {
-    static let accent = Color.accentColor
-    static let groupedBackground = Color(nsColor: .windowBackgroundColor)
-    static let sidebarBackground = Color(nsColor: .underPageBackgroundColor)
-    static let cardFill = Color(nsColor: .controlBackgroundColor)
-    static let secondaryFill = Color.primary.opacity(0.06)
-    static let selectedFill = accent.opacity(0.13)
-    static let hairline = Color.primary.opacity(0.08)
-    static let hairlineStrong = Color.primary.opacity(0.12)
+    static let accent = CodexTheme.accent
+    static let groupedBackground = color(light: ns(0xFAFAFB), dark: ns(0x1E1E20))
+    static let sidebarBackground = color(light: ns(0xF0F1F3), dark: ns(0x252527))
+    static let cardFill = color(light: ns(0xFFFFFF), dark: ns(0x242426))
+    static let controlFill = color(light: ns(0xF1F2F4), dark: ns(0x303034))
+    static let pressedControlFill = color(light: ns(0xE7E9ED), dark: ns(0x3A3A3E))
+    static let secondaryFill = color(light: ns(0xF1F2F4), dark: ns(0x303034))
+    static let selectedFill = color(light: ns(0xE8F0FF), dark: ns(0x273654))
+    static let hairline = color(light: ns(0x111827, alpha: 0.10), dark: ns(0xFFFFFF, alpha: 0.08))
+    static let hairlineStrong = color(light: ns(0x111827, alpha: 0.14), dark: ns(0xFFFFFF, alpha: 0.12))
+    static let destructiveText = color(light: ns(0xB42318), dark: ns(0xFFB4AB))
+    static let destructiveFill = color(light: ns(0xFEE4E2), dark: ns(0x421815))
+    static let destructivePressedFill = color(light: ns(0xFECACA), dark: ns(0x53211D))
+    static let destructiveBorder = color(light: ns(0xF04438, alpha: 0.38), dark: ns(0xFF6B61, alpha: 0.44))
+
+    private static func color(light: NSColor, dark: NSColor) -> Color {
+        Color(nsColor: NSColor(name: nil) { appearance in
+            let match = appearance.bestMatch(from: [.aqua, .darkAqua])
+            return match == .darkAqua ? dark : light
+        })
+    }
+
+    private static func ns(_ hex: UInt32, alpha: CGFloat = 1) -> NSColor {
+        NSColor(
+            red: CGFloat((hex >> 16) & 0xFF) / 255,
+            green: CGFloat((hex >> 8) & 0xFF) / 255,
+            blue: CGFloat(hex & 0xFF) / 255,
+            alpha: alpha
+        )
+    }
+}
+
+private enum SettingsControlMetrics {
+    static let cornerRadius: CGFloat = 10
+    static let controlHeight: CGFloat = 28
+    static let actionMinWidth: CGFloat = 86
+    static let contentMaxWidth: CGFloat = 600
+    static let switchWidth: CGFloat = 40
+    static let switchHeight: CGFloat = 22
+    static let switchKnobSize: CGFloat = 17
+
+    static func iconRadius(for size: CGFloat) -> CGFloat {
+        min(cornerRadius, size / 2)
+    }
+}
+
+private enum SettingsScrollTarget: Hashable {
+    case account
 }
 
 struct SettingsRootView: View {
@@ -63,6 +103,8 @@ struct SettingsRootView: View {
     @Bindable var model: CodexMenuBarModel
     @State private var selection: SettingsSection = .general
     @State private var isShowingResetConfirmation = false
+    @State private var accountScrollRequest = 0
+    @State private var pendingAccountScroll = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -75,14 +117,24 @@ struct SettingsRootView: View {
                 Divider()
                     .overlay(SettingsTheme.hairline)
 
-                ScrollView {
-                    content
-                        .padding(.horizontal, 28)
-                        .padding(.vertical, 26)
-                        .frame(maxWidth: .infinity, alignment: .topLeading)
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        content
+                            .padding(.horizontal, 28)
+                            .padding(.vertical, 26)
+                            .frame(maxWidth: SettingsControlMetrics.contentMaxWidth, alignment: .topLeading)
+                            .frame(maxWidth: .infinity, alignment: .topLeading)
+                    }
+                    .scrollIndicators(.hidden)
+                    .background(SettingsTheme.groupedBackground)
+                    .onChange(of: accountScrollRequest) { _, _ in
+                        scrollToAccount(using: proxy)
+                    }
+                    .onChange(of: selection) { _, newSelection in
+                        guard newSelection == .about, pendingAccountScroll else { return }
+                        scrollToAccount(using: proxy)
+                    }
                 }
-                .scrollIndicators(.hidden)
-                .background(SettingsTheme.groupedBackground)
             }
         }
         .frame(minWidth: 760, minHeight: 540)
@@ -153,11 +205,17 @@ struct SettingsRootView: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(width: 22, height: 22)
-                    .background(section.tint, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+                    .background(
+                        section.tint,
+                        in: RoundedRectangle(
+                            cornerRadius: SettingsControlMetrics.iconRadius(for: 22),
+                            style: .continuous
+                        )
+                    )
 
                 Text(section.title)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(selection == section ? SettingsTheme.accent : .primary)
+                    .foregroundStyle(.primary)
 
                 Spacer(minLength: 0)
             }
@@ -167,7 +225,7 @@ struct SettingsRootView: View {
             .background {
                 if selection == section {
                     SettingsTheme.selectedFill
-                        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous))
                 }
             }
             .contentShape(Rectangle())
@@ -177,7 +235,7 @@ struct SettingsRootView: View {
 
     private var sidebarAccount: some View {
         Button {
-            selection = .about
+            openAccountSettings()
         } label: {
             HStack(spacing: 10) {
                 SettingsRowIcon(systemImage: "person.crop.circle")
@@ -211,15 +269,36 @@ struct SettingsRootView: View {
                     .foregroundStyle(.secondary)
             }
             .padding(8)
-            .background(SettingsTheme.cardFill, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .background(
+                SettingsTheme.cardFill,
+                in: RoundedRectangle(cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous)
+            )
             .overlay {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                RoundedRectangle(cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous)
                     .strokeBorder(selection == .about ? SettingsTheme.accent.opacity(0.35) : SettingsTheme.hairline, lineWidth: 1)
             }
+            .contentShape(RoundedRectangle(cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Account")
         .accessibilityHint("Opens About settings with account sign-in")
+    }
+
+    private func openAccountSettings() {
+        pendingAccountScroll = true
+        selection = .about
+        accountScrollRequest += 1
+    }
+
+    private func scrollToAccount(using proxy: ScrollViewProxy) {
+        Task { @MainActor in
+            await Task.yield()
+            await Task.yield()
+            withAnimation(.easeInOut(duration: 0.18)) {
+                proxy.scrollTo(SettingsScrollTarget.account, anchor: .center)
+            }
+            pendingAccountScroll = false
+        }
     }
 
     @ViewBuilder
@@ -273,7 +352,7 @@ struct SettingsRootView: View {
                         ("10m", 600),
                         ("60m", 3600)
                     ])
-                    .frame(width: 146, height: GlassTokens.pillHeight)
+                    .frame(width: 146, height: SettingsControlMetrics.controlHeight)
                     .disabled(model.autoRefreshEnabled == false)
                 }
 
@@ -340,7 +419,7 @@ struct SettingsRootView: View {
                     ("Light", .light),
                     ("Dark", .dark)
                 ])
-                .frame(width: 198, height: GlassTokens.pillHeight)
+                .frame(width: 198, height: SettingsControlMetrics.controlHeight)
             }
         }
     }
@@ -359,7 +438,7 @@ struct SettingsRootView: View {
                     ("Left", .remaining),
                     ("Pace", .pace)
                 ])
-                .frame(width: 174, height: GlassTokens.pillHeight)
+                .frame(width: 174, height: SettingsControlMetrics.controlHeight)
             }
 
             SettingsListRow(title: "5-hour window") {
@@ -378,7 +457,7 @@ struct SettingsRootView: View {
                     ("In 2h", .relative),
                     ("Clock", .absolute)
                 ])
-                .frame(width: 132, height: GlassTokens.pillHeight)
+                .frame(width: 132, height: SettingsControlMetrics.controlHeight)
             }
         }
     }
@@ -412,7 +491,7 @@ struct SettingsRootView: View {
                     ("Cycle", .thisCycle),
                     ("Month", .monthly)
                 ])
-                .frame(width: 190, height: GlassTokens.pillHeight)
+                .frame(width: 190, height: SettingsControlMetrics.controlHeight)
             }
         }
     }
@@ -421,7 +500,7 @@ struct SettingsRootView: View {
         VStack(alignment: .leading, spacing: 24) {
             SettingsListGroup(title: "Application") {
                 HStack(spacing: 14) {
-                    SettingsRowIcon(systemImage: "command.circle.fill", size: 44, imageSize: 22)
+                    SettingsAppIconView(size: 44)
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Codexex")
@@ -540,6 +619,7 @@ struct SettingsRootView: View {
                     }
                 }
             }
+            .id(SettingsScrollTarget.account)
         }
     }
 
@@ -643,8 +723,54 @@ private struct SettingsRowIcon: View {
             .font(.system(size: imageSize, weight: .semibold))
             .foregroundStyle(.white)
             .frame(width: size, height: size)
-            .background(SettingsTheme.accent, in: RoundedRectangle(cornerRadius: min(8, size * 0.22), style: .continuous))
+            .background(
+                SettingsTheme.accent,
+                in: RoundedRectangle(
+                    cornerRadius: SettingsControlMetrics.iconRadius(for: size),
+                    style: .continuous
+                )
+            )
             .accessibilityHidden(true)
+    }
+}
+
+private struct SettingsAppIconView: View {
+    let size: CGFloat
+
+    var body: some View {
+        Image(nsImage: appIconImage)
+            .renderingMode(.original)
+            .resizable()
+            .interpolation(.high)
+            .aspectRatio(contentMode: .fit)
+            .frame(width: size, height: size)
+            .clipShape(RoundedRectangle(cornerRadius: SettingsControlMetrics.iconRadius(for: size), style: .continuous))
+            .accessibilityHidden(true)
+    }
+
+    private var appIconImage: NSImage {
+        if let namedImage = NSImage(named: "AppIcon"), namedImage.isValid {
+            return prepared(namedImage)
+        }
+
+        if let iconURL = Bundle.main.url(forResource: "AppIcon", withExtension: "icns"),
+           let image = NSImage(contentsOf: iconURL) {
+            return prepared(image)
+        }
+
+        if NSApplication.shared.applicationIconImage.isValid {
+            return prepared(NSApplication.shared.applicationIconImage)
+        }
+
+        let image = NSWorkspace.shared.icon(forFile: Bundle.main.bundlePath)
+        return prepared(image)
+    }
+
+    private func prepared(_ image: NSImage) -> NSImage {
+        let copy = image.copy() as? NSImage ?? image
+        copy.size = NSSize(width: 256, height: 256)
+        copy.isTemplate = false
+        return copy
     }
 }
 
@@ -785,10 +911,10 @@ private struct CodexSwitch: View {
 
                 Circle()
                     .fill(Color.white)
-                    .frame(width: 17, height: 17)
+                    .frame(width: SettingsControlMetrics.switchKnobSize, height: SettingsControlMetrics.switchKnobSize)
                     .offset(x: isOn ? 9 : -9)
             }
-            .frame(width: 40, height: 22)
+            .frame(width: SettingsControlMetrics.switchWidth, height: SettingsControlMetrics.switchHeight)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -816,7 +942,7 @@ private struct CodexSegmentedControl<Value: Hashable>: View {
                 .buttonStyle(.plain)
                 .background {
                     if selection == segment.1 {
-                        RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
+                        RoundedRectangle(cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous)
                             .fill(SettingsTheme.accent)
                     }
                 }
@@ -830,9 +956,12 @@ private struct CodexSegmentedControl<Value: Hashable>: View {
             }
         }
         .padding(2)
-        .background(SettingsTheme.secondaryFill, in: RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous))
+        .background(
+            SettingsTheme.controlFill,
+            in: RoundedRectangle(cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous)
+        )
         .overlay {
-            RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
+            RoundedRectangle(cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous)
                 .strokeBorder(SettingsTheme.hairline, lineWidth: 1)
         }
         .opacity(isEnabled ? 1 : 0.45)
@@ -847,13 +976,14 @@ struct SettingsGhostButtonStyle: ButtonStyle {
             .font(.system(size: 12.5, weight: .semibold))
             .foregroundStyle(isEnabled ? Color.primary : Color.secondary)
             .padding(.horizontal, 13)
-            .frame(height: GlassTokens.pillHeight)
+            .frame(minWidth: SettingsControlMetrics.actionMinWidth)
+            .frame(height: SettingsControlMetrics.controlHeight)
             .background(
-                configuration.isPressed ? SettingsTheme.secondaryFill.opacity(0.72) : SettingsTheme.secondaryFill,
-                in: RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
+                configuration.isPressed ? SettingsTheme.pressedControlFill : SettingsTheme.controlFill,
+                in: RoundedRectangle(cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous)
             )
             .overlay {
-                RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
+                RoundedRectangle(cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous)
                     .strokeBorder(SettingsTheme.hairlineStrong, lineWidth: 1)
             }
             .opacity(isEnabled ? 1 : 0.45)
@@ -868,10 +998,11 @@ struct CodexPrimaryButtonStyle: ButtonStyle {
             .font(.system(size: 12.5, weight: .semibold))
             .foregroundStyle(.white)
             .padding(.horizontal, 13)
-            .frame(height: GlassTokens.pillHeight)
+            .frame(minWidth: SettingsControlMetrics.actionMinWidth)
+            .frame(height: SettingsControlMetrics.controlHeight)
             .background(
-                Color.accentColor,
-                in: RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
+                SettingsTheme.accent.opacity(configuration.isPressed ? 0.88 : 1),
+                in: RoundedRectangle(cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous)
             )
             .opacity(isEnabled ? (configuration.isPressed ? 0.82 : 1) : 0.45)
     }
@@ -880,17 +1011,18 @@ struct CodexPrimaryButtonStyle: ButtonStyle {
 struct CodexDestructiveButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 12.5, weight: .medium))
-            .foregroundStyle(Color(red: 1.0, green: 0.66, blue: 0.62))
+            .font(.system(size: 12.5, weight: .semibold))
+            .foregroundStyle(SettingsTheme.destructiveText)
             .padding(.horizontal, 13)
-            .frame(height: GlassTokens.pillHeight)
+            .frame(minWidth: SettingsControlMetrics.actionMinWidth)
+            .frame(height: SettingsControlMetrics.controlHeight)
             .background(
-                Color(red: 0.25, green: 0.08, blue: 0.08).opacity(configuration.isPressed ? 0.9 : 0.7),
-                in: RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
+                configuration.isPressed ? SettingsTheme.destructivePressedFill : SettingsTheme.destructiveFill,
+                in: RoundedRectangle(cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous)
             )
             .overlay {
-                RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
-                    .strokeBorder(Color(red: 0.8, green: 0.22, blue: 0.20).opacity(0.55), lineWidth: 1)
+                RoundedRectangle(cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous)
+                    .strokeBorder(SettingsTheme.destructiveBorder, lineWidth: 1)
             }
     }
 }

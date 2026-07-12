@@ -6,7 +6,7 @@ public enum CodexXPCClientIdentityRequirement {
     public static let developmentBypassEnvironmentKey = "CODEXEX_DISABLE_XPC_CODE_SIGNING_REQUIREMENT"
 
     public static var mainAppRequirement: String {
-        #"identifier "\#(appBundleIdentifier)" and certificate leaf[subject.OU] = "\#(teamIdentifier)""#
+        #"anchor apple generic and identifier "\#(appBundleIdentifier)" and (certificate leaf[subject.OU] = "\#(teamIdentifier)" or entitlement["com.apple.developer.team-identifier"] = "\#(teamIdentifier)")"#
     }
 
     public static var isDebugBuild: Bool {

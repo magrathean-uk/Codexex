@@ -5,7 +5,7 @@ final class CodexXPCClientIdentityRequirementTests: XCTestCase {
     func testMainAppRequirementMatchesSignedAppIdentity() {
         XCTAssertEqual(
             CodexXPCClientIdentityRequirement.mainAppRequirement,
-            #"identifier "com.magrathean.CodexexApp" and certificate leaf[subject.OU] = "NPSQV9WYS5""#
+            #"anchor apple generic and identifier "com.magrathean.CodexexApp" and (certificate leaf[subject.OU] = "NPSQV9WYS5" or entitlement["com.apple.developer.team-identifier"] = "NPSQV9WYS5")"#
         )
     }
 

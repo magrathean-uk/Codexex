@@ -32,9 +32,22 @@ install_helper() {
 }
 
 install_helper "$app_helper_dir"
-install_helper "$xpc_helper_dir"
 
-if [[ "${CODE_SIGNING_ALLOWED:-NO}" == "YES" ]]; then
+if [[ "${WRAPPER_EXTENSION:-}" != "xpc" && -d "$xpc_bundle_dir/Contents" ]]; then
+  install_helper "$xpc_helper_dir"
+fi
+
+if [[ "${CODE_SIGNING_ALLOWED:-NO}" == "YES" && "${WRAPPER_EXTENSION:-}" == "xpc" ]]; then
+  sign_identity="${EXPANDED_CODE_SIGN_IDENTITY:--}"
+  codesign \
+    --force \
+    --sign "$sign_identity" \
+    --entitlements "$xpc_entitlements_file" \
+    --timestamp=none \
+    "$TARGET_BUILD_DIR/$WRAPPER_NAME"
+fi
+
+if [[ "${CODE_SIGNING_ALLOWED:-NO}" == "YES" && "${WRAPPER_EXTENSION:-}" != "xpc" && -d "$xpc_bundle_dir/Contents" ]]; then
   sign_identity="${EXPANDED_CODE_SIGN_IDENTITY:--}"
   codesign \
     --force \

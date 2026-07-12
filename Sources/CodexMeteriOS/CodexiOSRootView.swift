@@ -8,7 +8,6 @@ struct CodexiOSRootView: View {
     @AppStorage(CodexiOSSettingsKeys.resetDisplayStyle) private var resetDisplayStyle = CodexiOSResetDisplayStyle.relative.rawValue
     @AppStorage(CodexiOSSettingsKeys.appearanceMode) private var appearanceMode = CodexiOSAppearanceMode.system.rawValue
     @AppStorage(CodexiOSSettingsKeys.defaultHistoryMode) private var defaultHistoryMode = CodexiOSHistoryMode.dailyPeaks.rawValue
-    @AppStorage(CodexiOSSettingsKeys.showPaceConfidence) private var showPaceConfidence = true
     @Bindable var model: CodexiOSModel
 
     var body: some View {
@@ -25,15 +24,13 @@ struct CodexiOSRootView: View {
             .background(CodexiOSTheme.background.ignoresSafeArea())
         }
         .preferredColorScheme(CodexiOSAppearanceMode(rawValue: appearanceMode)?.colorScheme)
+        .onAppear(perform: normalizeHistoryMode)
     }
 
     private var narrowLayout: some View {
         VStack(alignment: .leading, spacing: 12) {
             if shouldShowStatusCard {
                 statusCard
-            }
-            if let summary = presentedSummary {
-                summaryCard(summary)
             }
             mainQuotaCards
             if showHistory {
@@ -48,9 +45,6 @@ struct CodexiOSRootView: View {
             VStack(alignment: .leading, spacing: 12) {
                 if shouldShowStatusCard {
                     statusCard
-                }
-                if let summary = presentedSummary {
-                    summaryCard(summary)
                 }
                 if showHistory {
                     historyCard
@@ -68,9 +62,6 @@ struct CodexiOSRootView: View {
             VStack(alignment: .leading, spacing: 12) {
                 if shouldShowStatusCard {
                     statusCard
-                }
-                if let summary = presentedSummary {
-                    summaryCard(summary)
                 }
             }
             .frame(minWidth: 300, maxWidth: 380, alignment: .topLeading)
@@ -175,8 +166,7 @@ struct CodexiOSRootView: View {
                 Label {
                     Text("Refreshing")
                 } icon: {
-                    ProgressView()
-                        .controlSize(.small)
+                    CodexiOSRefreshingIcon()
                 }
             } else {
                 Label("Refresh", systemImage: "arrow.clockwise")
@@ -188,7 +178,15 @@ struct CodexiOSRootView: View {
 
     @ViewBuilder
     private var authButtons: some View {
-        if model.hasPendingSignIn {
+        if model.isCheckingSavedAccount {
+            Label {
+                Text("Loading quota")
+            } icon: {
+                CodexiOSRefreshingIcon()
+            }
+            .font(.callout.weight(.semibold))
+            .foregroundStyle(.secondary)
+        } else if model.hasPendingSignIn {
             FlowLayout(spacing: 10) {
                 Button("Open Safari") { Task { await model.openSignInPage() } }
                     .buttonStyle(CodexiOSPrimaryButtonStyle())
@@ -217,7 +215,9 @@ struct CodexiOSRootView: View {
 
     private var mainQuotaCards: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if let snapshot = model.snapshot {
+            if model.isCheckingSavedAccount {
+                loadingQuotaCard
+            } else if let snapshot = model.snapshot {
                 ForEach(CodexQuotaPresentationRules.orderedLimits(snapshot.limits)) { limit in
                     if shouldShow(limit) {
                         quotaCard(limit)
@@ -304,79 +304,19 @@ struct CodexiOSRootView: View {
         iOSCard {
             CodexiOSHistoryCard(
                 samples: model.usageHistory,
-                mode: CodexiOSHistoryMode(rawValue: defaultHistoryMode) ?? .dailyPeaks,
-                resetDisplayStyle: CodexiOSResetDisplayStyle(rawValue: resetDisplayStyle) ?? .relative,
-                showPaceConfidence: showPaceConfidence,
+                mode: selectedHistoryMode,
                 onModeChange: { defaultHistoryMode = $0.rawValue }
             )
         }
     }
 
-    private var presentedInsights: CodexUsageInsights? {
-        CodexUsageHistoryAnalytics.insights(
-            snapshot: model.snapshot,
-            samples: model.usageHistory,
-            now: model.lastUpdatedAt ?? Date()
-        )
+    private var selectedHistoryMode: CodexiOSHistoryMode {
+        CodexiOSHistoryMode(rawValue: defaultHistoryMode) ?? .dailyPeaks
     }
 
-    private var presentedSummary: PopupSummaryPresentation? {
-        let summary = PopupPresentation.summary(
-            snapshot: model.snapshot,
-            insights: presentedInsights,
-            previewModeEnabled: model.previewModeEnabled,
-            hasRefreshIssue: model.errorMessage != nil
-        )
-        guard let summary, model.isSummarySnoozed(summary) == false else { return nil }
-        return summary
-    }
-
-    private func summaryCard(_ summary: PopupSummaryPresentation) -> some View {
-        iOSCard {
-            HStack(alignment: .top, spacing: 10) {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(summary.title)
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(summaryColor(for: summary.severity))
-
-                    Text(summary.message)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Text([summary.supportingLabel, summary.supportingValue, summary.supportingDetail].compactMap { $0 }.joined(separator: " · "))
-                        .font(.callout.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer(minLength: 4)
-
-                VStack(alignment: .trailing, spacing: 8) {
-                    if summary.action == .refresh {
-                        Button("Refresh") { Task { await model.refresh() } }
-                            .buttonStyle(CodexiOSSecondaryButtonStyle())
-                    }
-                    if summary.severity == .watch || summary.severity == .risk {
-                        Button("Snooze") { model.snoozeSummary(summary) }
-                            .buttonStyle(CodexiOSSecondaryButtonStyle())
-                    }
-                }
-            }
-        }
-    }
-
-    private func summaryColor(for severity: CodexQuotaSeverity) -> Color {
-        switch severity {
-        case .tooEarly:
-            return .secondary
-        case .safe:
-            return .green
-        case .watch:
-            return .orange
-        case .risk:
-            return .red
-        }
+    private func normalizeHistoryMode() {
+        guard CodexiOSHistoryMode(rawValue: defaultHistoryMode) == nil else { return }
+        defaultHistoryMode = CodexiOSHistoryMode.dailyPeaks.rawValue
     }
 
     private var emptyCard: some View {
@@ -392,6 +332,20 @@ struct CodexiOSRootView: View {
         }
     }
 
+    private var loadingQuotaCard: some View {
+        iOSCard {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Loading quota")
+                    .font(.headline.weight(.semibold))
+                Text("Checking the saved ChatGPT session before showing account actions.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                CodexiOSLoadingBar(tint: CodexiOSTheme.secondary)
+            }
+        }
+    }
+
     private func headlineWindow(for limit: CodexLimit) -> CodexQuotaWindow? {
         [limit.fiveHourWindow, limit.weeklyWindow]
             .compactMap { $0 }
@@ -403,6 +357,9 @@ struct CodexiOSRootView: View {
     }
 
     private var statusCardTitle: String {
+        if model.isCheckingSavedAccount {
+            return "Loading quota"
+        }
         if model.hasPendingSignIn {
             return "Finish sign-in"
         }
@@ -421,8 +378,6 @@ struct CodexiOSRootView: View {
 private struct CodexiOSHistoryCard: View {
     let samples: [CodexUsageHistorySample]
     let mode: CodexiOSHistoryMode
-    let resetDisplayStyle: CodexiOSResetDisplayStyle
-    let showPaceConfidence: Bool
     let onModeChange: (CodexiOSHistoryMode) -> Void
 
     private var fiveHourPoints: [CodexUsageHistoryPoint] {
@@ -451,41 +406,7 @@ private struct CodexiOSHistoryCard: View {
 
             CodexiOSModeTabs(selection: mode, onChange: onModeChange)
 
-            weeklyPace
             historyContent
-        }
-    }
-
-    private var weeklyPace: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text("Weekly pace")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Text(forecastHeadline(weeklyForecast))
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(weeklyForecast.tone.color)
-            }
-
-            if showPaceConfidence, let detail = forecastDetail(weeklyForecast) {
-                Text(detail)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            if let current = weeklyForecast.currentPercent,
-               let projected = weeklyForecast.projectedPercentAtReset {
-                CodexiOSForecastBar(currentPercent: current, projectedPercent: projected)
-                HStack {
-                    Text("Now \(Int(current.rounded()))%")
-                    Spacer()
-                    Text("Reset \(Int(projected.rounded()))%")
-                }
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
-            }
         }
     }
 
@@ -497,20 +418,6 @@ private struct CodexiOSHistoryCard: View {
             FlowLayout(spacing: 8) {
                 chip("5H", PopupPresentation.historyLegendValue(for: fiveHourForecast))
                 chip("Weekly", PopupPresentation.historyLegendValue(for: weeklyForecast))
-            }
-        case .thisCycle:
-            CodexiOSHistoryGraph(
-                fiveHourPoints: CodexUsageHistoryAnalytics.currentCyclePoints(from: samples, series: .fiveHour),
-                weeklyPoints: CodexUsageHistoryAnalytics.currentCyclePoints(from: samples, series: .weekly)
-            )
-            FlowLayout(spacing: 8) {
-                if let range = likelyRange(weeklyForecast) {
-                    chip("Range", range)
-                }
-                chip("Data", "\(weeklyForecast.sampleCount) samples")
-                if let resetAt = weeklyForecast.resetAt {
-                    chip("Reset", resetText(resetAt))
-                }
             }
         case .monthly:
             CodexiOSHistoryGraph(fiveHourPoints: [], weeklyPoints: weeklyPoints)
@@ -528,45 +435,6 @@ private struct CodexiOSHistoryCard: View {
 
     private func points(for series: CodexUsageHistorySeries) -> [CodexUsageHistoryPoint] {
         CodexUsageHistoryAnalytics.points(from: samples, series: series)
-    }
-
-    private func forecastHeadline(_ forecast: CodexUsageForecast) -> String {
-        switch forecast.confidence {
-        case .tooEarly, .learning, .estimatedFromHistory:
-            return forecast.message
-        case .patternMatched:
-            return "Pattern matched"
-        case .machineLearned:
-            return "ML tuned"
-        case .stable:
-            return "Stable"
-        case .volatile:
-            return "Volatile"
-        }
-    }
-
-    private func forecastDetail(_ forecast: CodexUsageForecast) -> String? {
-        guard let detail = forecast.detail else { return nil }
-        let parts = detail
-            .components(separatedBy: " · ")
-            .filter { $0 != forecast.confidence.label && $0.hasSuffix("samples") == false && $0.hasSuffix("cycles") == false }
-        return parts.isEmpty ? nil : parts.joined(separator: " · ")
-    }
-
-    private func likelyRange(_ forecast: CodexUsageForecast) -> String? {
-        guard let lower = forecast.likelyLowerPercent,
-              let upper = forecast.likelyUpperPercent,
-              upper - lower >= 2 else { return nil }
-        return "\(Int(lower.rounded()))-\(Int(upper.rounded()))%"
-    }
-
-    private func resetText(_ resetAt: Date) -> String {
-        switch resetDisplayStyle {
-        case .relative:
-            return CodexQuotaPresentationRules.resetText(style: .relative, now: Date(), resetAt: resetAt)
-        case .absolute:
-            return CodexQuotaPresentationRules.resetText(style: .absolute(prefix: "resets"), now: Date(), resetAt: resetAt)
-        }
     }
 
     private func chip(_ label: String, _ value: String) -> some View {
@@ -587,21 +455,48 @@ private struct CodexiOSHistoryCard: View {
 }
 
 private struct CodexiOSQuotaBar: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var displayedProgress = 0.0
     let progress: Double
     let tint: Color
 
     var body: some View {
         GeometryReader { proxy in
-            let clamped = min(max(progress, 0), 1)
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 4, style: .continuous)
                     .fill(CodexiOSTheme.inset)
                 RoundedRectangle(cornerRadius: 4, style: .continuous)
                     .fill(tint)
-                    .frame(width: max(8, proxy.size.width * clamped))
+                    .frame(width: max(8, proxy.size.width * visibleProgress))
             }
         }
         .frame(height: 8)
+        .onAppear {
+            syncProgress(animated: true)
+        }
+        .onChange(of: progress) { _, _ in
+            syncProgress(animated: true)
+        }
+    }
+
+    private var clampedProgress: Double {
+        min(max(progress, 0), 1)
+    }
+
+    private var visibleProgress: Double {
+        reduceMotion ? clampedProgress : displayedProgress
+    }
+
+    private func syncProgress(animated: Bool) {
+        let target = clampedProgress
+        guard reduceMotion == false, animated else {
+            displayedProgress = target
+            return
+        }
+
+        withAnimation(.easeOut(duration: 0.42)) {
+            displayedProgress = target
+        }
     }
 }
 
@@ -648,35 +543,6 @@ private struct CodexiOSHistoryGraph: View {
             }
         }
         context.stroke(path, with: .color(CodexiOSTheme.secondary), style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
-    }
-}
-
-private struct CodexiOSForecastBar: View {
-    let currentPercent: Double
-    let projectedPercent: Double
-
-    var body: some View {
-        GeometryReader { proxy in
-            let width = proxy.size.width
-            let currentX = width * min(max(currentPercent / 100, 0), 1)
-            let projectedX = width * min(max(projectedPercent / 100, 0), 1)
-
-            ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 4, style: .continuous).fill(CodexiOSTheme.inset)
-                RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .fill(CodexiOSTheme.primaryGradient)
-                    .frame(width: max(8, currentX))
-                RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .fill(.primary)
-                    .frame(width: 12, height: 12)
-                    .offset(x: max(0, currentX - 6))
-                RoundedRectangle(cornerRadius: 1)
-                    .fill(.orange)
-                    .frame(width: 2, height: 16)
-                    .offset(x: max(0, projectedX - 1))
-            }
-        }
-        .frame(height: 9)
     }
 }
 

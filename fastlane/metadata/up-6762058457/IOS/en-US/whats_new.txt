@@ -1,7 +1,5 @@
-Codexex 4.0 is mostly about making the app feel cleaner and easier to trust:
+Codexex 5.1 refines the Codexex experience:
 
-- Refreshed iPhone and iPad layout with better spacing.
-- Settings and Refresh now sit at the bottom of the iOS screen.
-- Forecasts and history focus on current usage, not remaining quota.
-- Preview Mode still works on iOS for App Review and offline testing.
-- Updated App Store screenshots and EULA link: https://codexex.eu/terms
+- Design refinements across the app.
+- Smoother, more reliable ChatGPT sign-in.
+- Reliability fixes for quota refresh.

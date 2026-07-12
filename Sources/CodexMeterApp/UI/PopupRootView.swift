@@ -71,40 +71,28 @@ struct PopupRootView: View {
                 PopupStatusCardView(model: model)
             }
 
-                if let summary = presentedSummary {
-                    PopupSummaryCardView(
-                        summary: summary,
-                        performAction: performSummaryAction(_:),
-                        onSnooze: displayMode == .live ? { model.snoozeSummary(summary) } : nil
-                    )
-                }
+            if let summary = presentedSummary {
+                PopupSummaryCardView(
+                    summary: summary,
+                    performAction: performSummaryAction(_:),
+                    onSnooze: displayMode == .live ? { model.snoozeSummary(summary) } : nil
+                )
+            }
 
-                if presentedSnapshot != nil {
-                    ForEach(primaryLimitPresentations, id: \.id) { presentation in
-                        limitCard(for: presentation)
-                    }
+            if quotaLimitPresentations.isEmpty == false {
+                quotaGroup
+            }
 
-                    ForEach(activeSecondaryLimitPresentations, id: \.id) { presentation in
-                        limitCard(for: presentation)
-                    }
-                }
-
-                if showHistorySection {
-                    UsageHistoryCardView(
-                        samples: presentedHistory,
-                        showsChart: model.showHistoryChartEnabled,
-                        historyMode: model.defaultHistoryMode,
-                        showPaceConfidence: model.showPaceConfidence,
-                        resetDisplayStyle: model.resetDisplayStyle,
-                        onHistoryModeChange: { model.setDefaultHistoryMode($0) }
-                    )
-                }
-
-                if presentedSnapshot != nil {
-                    ForEach(compactSecondaryLimitPresentations, id: \.id) { presentation in
-                        limitCard(for: presentation)
-                    }
-                }
+            if showHistorySection {
+                UsageHistoryCardView(
+                    samples: presentedHistory,
+                    showsChart: model.showHistoryChartEnabled,
+                    historyMode: model.defaultHistoryMode,
+                    showPaceConfidence: model.showPaceConfidence,
+                    resetDisplayStyle: model.resetDisplayStyle,
+                    onHistoryModeChange: { model.setDefaultHistoryMode($0) }
+                )
+            }
         }
     }
 
@@ -128,7 +116,8 @@ struct PopupRootView: View {
             PopupFooterControl(
                 title: model.isRefreshing ? "Refreshing" : "Refresh",
                 systemImage: "arrow.clockwise",
-                tone: .primary
+                tone: .primary,
+                isAnimating: model.isRefreshing
             ) {
                 guard model.isRefreshing == false else { return }
                 Task { await model.refreshNow(manual: true) }
@@ -151,13 +140,9 @@ struct PopupRootView: View {
         return PopupPresentation.orderedLimits(snapshot.limits).map(PopupPresentation.presentation(for:))
     }
 
-    private var primaryLimitPresentations: [PopupLimitPresentation] {
-        orderedLimitPresentations.filter { $0.limit.bucket != .spark }
-    }
-
-    private var secondaryLimitPresentations: [PopupLimitPresentation] {
+    private var quotaLimitPresentations: [PopupLimitPresentation] {
         orderedLimitPresentations.filter { presentation in
-            guard presentation.limit.bucket == .spark else { return false }
+            guard presentation.limit.bucket == .spark else { return true }
             return CodexQuotaPresentationRules.shouldShow(
                 presentation.limit,
                 showSpark: model.showSparkEnabled,
@@ -166,16 +151,21 @@ struct PopupRootView: View {
         }
     }
 
-    private var activeSecondaryLimitPresentations: [PopupLimitPresentation] {
-        secondaryLimitPresentations.filter { $0.style != .compact }
-    }
-
-    private var compactSecondaryLimitPresentations: [PopupLimitPresentation] {
-        secondaryLimitPresentations.filter { $0.style == .compact }
-    }
-
     private var showHistorySection: Bool {
         model.showHistoryEnabled && presentedHistory.isEmpty == false
+    }
+
+    private var quotaGroup: some View {
+        PopupPlainSection {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(Array(quotaLimitPresentations.enumerated()), id: \.element.id) { index, presentation in
+                    if index > 0 {
+                        PopupQuotaDivider()
+                    }
+                    limitCard(for: presentation)
+                }
+            }
+        }
     }
 
     @ViewBuilder
@@ -278,6 +268,15 @@ struct PopupRootView: View {
     }
 }
 
+private struct PopupQuotaDivider: View {
+    var body: some View {
+        Rectangle()
+            .fill(CodexTheme.hairline)
+            .frame(height: 1)
+            .padding(.vertical, 8)
+    }
+}
+
 private struct PopupFooterControl: View {
     enum Tone {
         case primary
@@ -289,13 +288,18 @@ private struct PopupFooterControl: View {
     let title: String
     let systemImage: String
     let tone: Tone
+    var isAnimating = false
     let action: () -> Void
 
     var body: some View {
         HStack(spacing: 6) {
-            Image(systemName: systemImage)
-                .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
-                .imageScale(.small)
+            if isAnimating {
+                PopupSpinningRefreshIcon(systemImage: systemImage)
+            } else {
+                Image(systemName: systemImage)
+                    .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
+                    .imageScale(.small)
+            }
 
             Text(title)
                 .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
@@ -329,15 +333,13 @@ private struct PopupFooterControl: View {
         .accessibilityElement()
         .accessibilityLabel(title)
         .accessibilityAddTraits(.isButton)
+        .transaction { transaction in
+            transaction.disablesAnimations = false
+        }
     }
 
     private var minimumWidth: CGFloat {
-        switch tone {
-        case .primary:
-            return 86
-        case .secondary:
-            return 92
-        }
+        92
     }
 
     private var foreground: Color {
@@ -354,19 +356,74 @@ private struct PopupFooterControl: View {
         let shape = RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
         switch tone {
         case .primary:
-            shape.fill(
-                LinearGradient(
-                    colors: [
-                        Color(red: 0.36, green: 0.60, blue: 1.0),
-                        Color(red: 0.12, green: 0.42, blue: 0.93)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
+            shape.fill(CodexTheme.accent)
             .opacity(isHovered && isEnabled ? 0.90 : 1)
         case .secondary:
             shape.fill(isHovered && isEnabled ? CodexTheme.control.opacity(0.88) : CodexTheme.control)
+        }
+    }
+}
+
+struct PopupSpinningRefreshIcon: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isActive = false
+    let systemImage: String
+
+    var body: some View {
+        Image(systemName: systemImage)
+            .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
+            .imageScale(.small)
+            .rotationEffect(.degrees(isActive && reduceMotion == false ? 360 : 0))
+            .onAppear {
+                guard reduceMotion == false else { return }
+                isActive = true
+            }
+            .animation(
+                reduceMotion ? nil : .linear(duration: 0.85).repeatForever(autoreverses: false),
+                value: isActive
+            )
+            .accessibilityHidden(true)
+    }
+}
+
+struct PopupLoadingBar: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isActive = false
+
+    var body: some View {
+        GeometryReader { proxy in
+            let width = max(proxy.size.width, 1)
+            let segmentWidth = max(46, width * 0.30)
+
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .fill(CodexTheme.control.opacity(0.82))
+
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [CodexTheme.accent, CodexTheme.accent2],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(width: segmentWidth)
+                    .offset(x: reduceMotion ? 0 : (isActive ? width - segmentWidth : 0))
+                    .opacity(reduceMotion ? 0.78 : 1)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
+        }
+        .frame(height: 6)
+        .onAppear {
+            guard reduceMotion == false else { return }
+            isActive = true
+        }
+        .animation(
+            reduceMotion ? nil : .easeInOut(duration: 1.05).repeatForever(autoreverses: true),
+            value: isActive
+        )
+        .transaction { transaction in
+            transaction.disablesAnimations = false
         }
     }
 }

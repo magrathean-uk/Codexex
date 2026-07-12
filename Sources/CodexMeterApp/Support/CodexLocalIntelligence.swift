@@ -41,7 +41,9 @@ enum CodexLocalIntelligence {
 
         let rangeText = weekly.flatMap(likelyRangeText)
         let forecastSentence: String
-        if let rangeText {
+        if let weekly, isZeroPressureForecast(weekly) {
+            forecastSentence = "No weekly pressure yet."
+        } else if let rangeText {
             forecastSentence = "Likely \(rangeText) by reset."
         } else if let weekly {
             forecastSentence = weekly.message.hasSuffix(".") ? weekly.message : "\(weekly.message)."
@@ -59,7 +61,7 @@ enum CodexLocalIntelligence {
             title: riskTitle,
             message: message,
             supportingLabel: "Local AI",
-            supportingValue: rangeText ?? burnSignal?.title ?? weekly?.confidence.label ?? "Learning",
+            supportingValue: supportingValue(rangeText: rangeText, weekly: weekly, burnSignal: burnSignal),
             supportingDetail: burnSignal?.detail ?? weekly?.detail
         )
     }
@@ -86,6 +88,9 @@ enum CodexLocalIntelligence {
     }
 
     private static func likelyRangeText(_ forecast: CodexUsageForecast) -> String? {
+        guard isZeroPressureForecast(forecast) == false else {
+            return nil
+        }
         if let lower = forecast.likelyLowerPercent,
            let upper = forecast.likelyUpperPercent {
             let roundedLower = Int(lower.rounded())
@@ -101,6 +106,24 @@ enum CodexLocalIntelligence {
         }
 
         return nil
+    }
+
+    private static func supportingValue(
+        rangeText: String?,
+        weekly: CodexUsageForecast?,
+        burnSignal: CodexLocalWasteSignal?
+    ) -> String {
+        if let weekly, isZeroPressureForecast(weekly) {
+            return "Low"
+        }
+        return rangeText ?? burnSignal?.title ?? weekly?.confidence.label ?? "Learning"
+    }
+
+    private static func isZeroPressureForecast(_ forecast: CodexUsageForecast) -> Bool {
+        let current = forecast.currentPercent ?? 0
+        let projected = forecast.projectedPercentAtReset ?? 0
+        let upper = forecast.likelyUpperPercent ?? projected
+        return max(current, projected, upper) < 0.5
     }
 
     private static func strongestBurnSignal(from summary: CodexLocalUsageSummary) -> CodexLocalWasteSignal? {

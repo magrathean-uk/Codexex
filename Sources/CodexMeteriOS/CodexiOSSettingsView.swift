@@ -81,7 +81,6 @@ enum CodexiOSAppearanceMode: String, CaseIterable, Identifiable {
 
 enum CodexiOSHistoryMode: String, CaseIterable, Identifiable {
     case dailyPeaks
-    case thisCycle
     case monthly
 
     var id: String { rawValue }
@@ -90,8 +89,6 @@ enum CodexiOSHistoryMode: String, CaseIterable, Identifiable {
         switch self {
         case .dailyPeaks:
             return "Peaks"
-        case .thisCycle:
-            return "Cycle"
         case .monthly:
             return "Month"
         }
@@ -107,7 +104,6 @@ struct CodexiOSSettingsView: View {
     @AppStorage(CodexiOSSettingsKeys.resetDisplayStyle) private var resetDisplayStyle = CodexiOSResetDisplayStyle.relative.rawValue
     @AppStorage(CodexiOSSettingsKeys.appearanceMode) private var appearanceMode = CodexiOSAppearanceMode.system.rawValue
     @AppStorage(CodexiOSSettingsKeys.defaultHistoryMode) private var defaultHistoryMode = CodexiOSHistoryMode.dailyPeaks.rawValue
-    @AppStorage(CodexiOSSettingsKeys.showPaceConfidence) private var showPaceConfidence = true
     @AppStorage(CodexiOSSettingsKeys.refreshIntervalSeconds) private var refreshIntervalSeconds = 300
     @Bindable var model: CodexiOSModel
     @State private var isShowingResetConfirmation = false
@@ -235,8 +231,6 @@ struct CodexiOSSettingsView: View {
                     Text(mode.title).tag(mode.rawValue)
                 }
             }
-
-            Toggle("Show Pace Details", isOn: $showPaceConfidence)
         } header: {
             Text("Display")
         } footer: {

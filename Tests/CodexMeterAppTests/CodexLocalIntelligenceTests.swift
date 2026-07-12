@@ -17,6 +17,18 @@ final class CodexLocalIntelligenceTests: XCTestCase {
         XCTAssertEqual(summary?.supportingValue, "42-58%")
     }
 
+    func testSummaryDoesNotPromoteZeroProjectionAsLikelyByReset() {
+        let summary = CodexLocalIntelligence.summary(
+            insights: makeInsights(tone: .safe, lower: 0, upper: 0, current: 0),
+            localUsage: nil
+        )
+
+        XCTAssertEqual(summary?.severity, .safe)
+        XCTAssertEqual(summary?.title, "Safe")
+        XCTAssertEqual(summary?.message, "No weekly pressure yet.")
+        XCTAssertEqual(summary?.supportingValue, "Low")
+    }
+
     func testBurnSignalRaisesSafeForecastToWatch() {
         let summary = CodexLocalIntelligence.summary(
             insights: makeInsights(tone: .safe, lower: 42, upper: 58),
@@ -27,6 +39,19 @@ final class CodexLocalIntelligenceTests: XCTestCase {
         XCTAssertEqual(summary?.title, "Watch")
         XCTAssertEqual(summary?.message, "Likely 42-58% by reset. Heavy session detected.")
         XCTAssertEqual(summary?.supportingDetail, "Codexex used 160K tokens.")
+    }
+
+    func testPopupHeaderDoesNotClipLongLocalDetailIntoSummaryLine() {
+        let summary = CodexLocalIntelligence.popupSummary(
+            insights: makeInsights(tone: .safe, lower: 42, upper: 58),
+            localUsage: makeLocalUsage(signal: .heavySession),
+            fallback: nil
+        )
+
+        XCTAssertEqual(summary?.popupHeaderText.primary, "Likely 42-58% by reset.")
+        XCTAssertEqual(summary?.popupHeaderText.secondary, "Heavy session detected. · Local AI · 42-58%")
+        XCTAssertFalse(summary?.popupHeaderText.secondary.contains("tokens") ?? true)
+        XCTAssertFalse(summary?.popupHeaderText.secondary.contains("...") ?? true)
     }
 
     func testDangerForecastKeepsDangerTitle() {
@@ -43,14 +68,15 @@ final class CodexLocalIntelligenceTests: XCTestCase {
     private func makeInsights(
         tone: CodexUsageForecast.Tone,
         lower: Double,
-        upper: Double
+        upper: Double,
+        current: Double = 40
     ) -> CodexUsageInsights {
         CodexUsageInsights(
             weeklyPace: CodexUsageForecast(
                 message: "Projected \(Int(upper.rounded()))% by reset",
                 tone: tone,
                 confidence: .stable,
-                currentPercent: 40,
+                currentPercent: current,
                 projectedPercentAtReset: upper,
                 paceVariancePercent: nil,
                 sampleCount: 6,

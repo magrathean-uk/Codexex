@@ -26,6 +26,9 @@ struct PopupLimitPresentation: Equatable, Identifiable {
     let visibleCredits: CodexCredits?
 
     var id: String { limit.id }
+    var compactDisplayName: String {
+        limit.bucket == .spark ? "Spark" : limit.displayName
+    }
 }
 
 enum PopupSummaryAction: Equatable {
@@ -217,17 +220,23 @@ enum PopupPresentation {
             return .zero
         }
 
-        let spacing: CGFloat = count > 18 ? 4 : 5
+        let preferredSpacing: CGFloat = count > 18 ? 4 : 5
+        let minimumReadableBarWidth: CGFloat = 3
+        let availableSpacing = size.width - (minimumReadableBarWidth * CGFloat(count))
+        let spacing = count > 1
+            ? min(preferredSpacing, max(0, availableSpacing / CGFloat(count - 1)))
+            : 0
         let totalSpacing = spacing * CGFloat(max(count - 1, 0))
-        let barWidth = max(3, (size.width - totalSpacing) / CGFloat(count))
+        let barWidth = max(0, (size.width - totalSpacing) / CGFloat(count))
         let clamped = min(max(usedPercent, 0), 100)
         let barHeight = max(2, size.height * CGFloat(clamped / 100))
         let x = CGFloat(index) * (barWidth + spacing)
+        let width = max(0, min(barWidth, size.width - x))
 
         return CGRect(
             x: x,
             y: size.height - barHeight,
-            width: barWidth,
+            width: width,
             height: barHeight
         )
     }

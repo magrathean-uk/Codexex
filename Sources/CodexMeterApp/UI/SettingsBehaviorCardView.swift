@@ -59,7 +59,7 @@ struct SettingsBehaviorCardView: View {
                 } label: {
                     Label(model.isRefreshing ? "Refreshing" : "Refresh Now", systemImage: "arrow.clockwise")
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(CodexPrimaryButtonStyle())
                 .disabled(model.isRefreshing)
             }
         }

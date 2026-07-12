@@ -11,52 +11,38 @@ struct LimitCardView: View {
     private var headlineFont: Font {
         .system(size: GlassTokens.quotaHeadlineSize, weight: .semibold)
     }
-    private var contentSpacing: CGFloat { 10 }
-    private var headlineWindow: CodexQuotaWindow? {
-        PopupPresentation.headlineWindow(for: limit)
-    }
+    private var contentSpacing: CGFloat { 8 }
 
     var body: some View {
-        PopupPlainSection {
-            VStack(alignment: .leading, spacing: contentSpacing) {
-                HStack(alignment: .firstTextBaseline, spacing: 10) {
-                    Text(limit.displayName)
-                        .font(.system(size: GlassTokens.popupBodyFontSize, weight: .semibold))
-                        .foregroundStyle(CodexTheme.text)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.74)
+        VStack(alignment: .leading, spacing: contentSpacing) {
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text(limit.displayName)
+                    .font(.system(size: GlassTokens.popupBodyFontSize, weight: .semibold))
+                    .foregroundStyle(CodexTheme.text)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.74)
 
-                    Spacer(minLength: 8)
-
-                    if let headlineWindow {
-                        Text(windowValueText(for: headlineWindow))
-                            .font(headlineFont)
-                            .foregroundStyle(CodexTheme.text)
-                            .monospacedDigit()
-                            .minimumScaleFactor(0.72)
-                    }
-                }
-
-                ForEach(visibleWindows, id: \.title) { item in
-                    windowRow(title: item.title, window: item.window)
-                }
-
-                if let credits = presentation.visibleCredits {
-                    HStack(alignment: .firstTextBaseline, spacing: 10) {
-                        Text("Credits")
-                            .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
-                            .foregroundStyle(.secondary)
-
-                        Spacer()
-
-                        Text(credits.displayText)
-                            .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
-                            .foregroundStyle(credits.isNegativeBalance ? Color.red : .secondary)
-                    }
-                    .padding(.top, 2)
-                }
+                Spacer(minLength: 8)
             }
-            .frame(minHeight: GlassTokens.limitCardMinHeight, alignment: .center)
+
+            ForEach(visibleWindows, id: \.title) { item in
+                windowRow(title: item.title, window: item.window)
+            }
+
+            if let credits = presentation.visibleCredits {
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    Text("Credits")
+                        .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
+                        .foregroundStyle(.secondary)
+
+                    Spacer()
+
+                    Text(credits.displayText)
+                        .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
+                        .foregroundStyle(credits.isNegativeBalance ? Color.red : .secondary)
+                }
+                .padding(.top, 2)
+            }
         }
     }
 
@@ -74,24 +60,29 @@ struct LimitCardView: View {
             now: now,
             resetAt: window.resetsAt
         )
-        return VStack(alignment: .leading, spacing: 6) {
+        return VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(title)
-                    .font(.system(size: GlassTokens.popupMetaFontSize, weight: .medium))
-                    .foregroundStyle(CodexTheme.muted)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title)
+                        .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
+                        .foregroundStyle(CodexTheme.muted)
+                        .lineLimit(1)
 
-                Spacer()
+                    Text(resetText)
+                        .font(.system(size: GlassTokens.popupMetaFontSize))
+                        .foregroundStyle(CodexTheme.dim)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.82)
+                }
+
+                Spacer(minLength: 8)
 
                 Text(windowValueText(for: window))
-                    .font(.system(size: GlassTokens.popupBodyFontSize, weight: .semibold))
+                    .font(headlineFont)
                     .foregroundStyle(CodexTheme.text)
                     .monospacedDigit()
-
-                Text(resetText)
-                    .font(.system(size: GlassTokens.popupMetaFontSize))
-                    .foregroundStyle(CodexTheme.dim)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.82)
+                    .minimumScaleFactor(0.72)
             }
 
             UsageBar(
@@ -109,15 +100,6 @@ struct LimitCardView: View {
             return window.usedPercentText
         case .remaining:
             return window.remainingPercentText
-        }
-    }
-
-    private func windowValuePercent(for window: CodexQuotaWindow) -> Double {
-        switch displayMode {
-        case .used, .pace:
-            return window.usedPercent
-        case .remaining:
-            return window.remainingPercent
         }
     }
 
@@ -144,22 +126,26 @@ struct CompactLimitCardView: View {
     let presentation: PopupLimitPresentation
 
     var body: some View {
-        PopupPlainSection {
-            HStack(spacing: 10) {
-                Text(presentation.limit.displayName)
-                    .font(.system(size: GlassTokens.popupBodyFontSize, weight: .semibold))
+        HStack(spacing: 10) {
+            Text(presentation.compactDisplayName)
+                .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
+                .foregroundStyle(CodexTheme.muted)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
 
-                Spacer()
+            Spacer()
 
-                Text("Idle")
-                    .font(.system(size: GlassTokens.popupMetaFontSize, weight: .medium))
-                    .foregroundStyle(.secondary)
-            }
+            Text("Idle")
+                .font(.system(size: GlassTokens.popupMetaFontSize, weight: .medium))
+                .foregroundStyle(CodexTheme.dim)
         }
+        .frame(minHeight: 18)
     }
 }
 
 struct UsageBar: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var displayedProgress = 0.0
     let progress: Double
     let bucket: CodexLimitBucket
     let label: String
@@ -174,13 +160,12 @@ struct UsageBar: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let clamped = progress.clamped(to: 0 ... 1)
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: GlassTokens.quotaBarHeight / 2, style: .continuous)
                     .fill(limitTrackColor(for: bucket))
 
-                if clamped > 0 {
-                    let fillWidth = max(6, proxy.size.width * clamped)
+                if visibleProgress > 0 {
+                    let fillWidth = max(6, proxy.size.width * visibleProgress)
 
                     RoundedRectangle(cornerRadius: GlassTokens.quotaBarHeight / 2, style: .continuous)
                         .fill(
@@ -196,10 +181,39 @@ struct UsageBar: View {
             }
         }
         .frame(height: GlassTokens.quotaBarHeight)
+        .onAppear {
+            syncProgress(animated: true)
+        }
+        .onChange(of: progress) { _, _ in
+            syncProgress(animated: true)
+        }
+        .transaction { transaction in
+            transaction.disablesAnimations = false
+        }
         .allowsHitTesting(false)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(label)
         .accessibilityValue(value.isEmpty ? "\(Int((progress * 100).rounded()))%" : value)
+    }
+
+    private var clampedProgress: Double {
+        progress.clamped(to: 0 ... 1)
+    }
+
+    private var visibleProgress: Double {
+        reduceMotion ? clampedProgress : displayedProgress
+    }
+
+    private func syncProgress(animated: Bool) {
+        let target = clampedProgress
+        guard reduceMotion == false, animated else {
+            displayedProgress = target
+            return
+        }
+
+        withAnimation(.easeOut(duration: 0.38)) {
+            displayedProgress = target
+        }
     }
 }
 

@@ -38,7 +38,7 @@ struct SettingsAccountCardView: View {
                             model.enablePreviewMode()
                         }
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(SettingsGhostButtonStyle())
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
@@ -71,17 +71,17 @@ struct SettingsAccountCardView: View {
             Button("Sign Out") {
                 model.signOut()
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(CodexDestructiveButtonStyle())
         } else if model.authDeviceCode != nil {
             Button("Clear Code") {
                 model.clearAuthCode()
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(SettingsGhostButtonStyle())
         } else {
             Button("Sign In with ChatGPT") {
                 model.startChatGPTSignIn()
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(CodexPrimaryButtonStyle())
             .disabled(model.canStartChatGPTSignIn == false)
         }
     }

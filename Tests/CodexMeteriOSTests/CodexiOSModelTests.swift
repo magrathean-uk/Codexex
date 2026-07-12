@@ -10,6 +10,72 @@ final class CodexiOSModelTests: XCTestCase {
         XCTAssertEqual(snapshot.sparkLimit?.displayName, "Spark")
     }
 
+    func testIOSHistoryModesExcludeCycle() {
+        XCTAssertEqual(CodexiOSHistoryMode.allCases.map(\.title), ["Peaks", "Month"])
+        XCTAssertNil(CodexiOSHistoryMode(rawValue: "thisCycle"))
+    }
+
+    func testModelStartsByCheckingSavedAccount() {
+        let model = CodexiOSModel(
+            service: StubCodexiOSService(),
+            defaults: makeDefaults(),
+            openURLAction: { _ in },
+            copyTextAction: { _ in }
+        )
+
+        XCTAssertTrue(model.isCheckingSavedAccount)
+        XCTAssertFalse(model.isSignedIn)
+        XCTAssertNil(model.snapshot)
+        XCTAssertEqual(model.statusMessage, "Checking saved account.")
+    }
+
+    func testSignedInLaunchCompletesWithoutSignedOutInterimState() async {
+        let service = StubCodexiOSService(
+            fetchHandler: {
+                CodexServiceSnapshotResponse(authMode: .chatGPT, snapshot: CodexiOSPreviewData.snapshot(), errorMessage: nil)
+            }
+        )
+        let defaults = makeDefaults()
+        let model = CodexiOSModel(
+            service: service,
+            defaults: defaults,
+            openURLAction: { _ in },
+            copyTextAction: { _ in }
+        )
+
+        XCTAssertTrue(model.isCheckingSavedAccount)
+
+        await model.start()
+
+        XCTAssertFalse(model.isCheckingSavedAccount)
+        XCTAssertTrue(model.isSignedIn)
+        XCTAssertTrue(model.hasCompletedOnboarding)
+        XCTAssertNotNil(model.snapshot)
+        XCTAssertEqual(model.statusMessage, "Signed in.")
+    }
+
+    func testSignedOutLaunchOnlyShowsSignedOutAfterCheckFinishes() async {
+        let service = StubCodexiOSService(
+            fetchHandler: {
+                CodexServiceSnapshotResponse(authMode: nil, snapshot: nil, errorMessage: "Not signed in.")
+            }
+        )
+        let model = CodexiOSModel(
+            service: service,
+            defaults: makeDefaults(),
+            openURLAction: { _ in },
+            copyTextAction: { _ in }
+        )
+
+        await model.start()
+
+        XCTAssertFalse(model.isCheckingSavedAccount)
+        XCTAssertFalse(model.isSignedIn)
+        XCTAssertFalse(model.hasCompletedOnboarding)
+        XCTAssertNil(model.snapshot)
+        XCTAssertEqual(model.statusMessage, "Not signed in.")
+    }
+
     func testPreviewModeSkipsLiveRefreshOnStart() async {
         let service = StubCodexiOSService(
             fetchHandler: {
@@ -140,6 +206,7 @@ final class CodexiOSModelTests: XCTestCase {
 
         XCTAssertTrue(model.isSignedIn)
         XCTAssertEqual(model.statusMessage, "OpenAI is rate-limiting requests. Try again soon.")
+        XCTAssertTrue(model.hasCompletedOnboarding)
         XCTAssertNil(model.snapshot)
     }
 

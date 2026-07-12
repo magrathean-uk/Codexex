@@ -7,37 +7,50 @@ struct PopupSummaryCardView: View {
     var onSnooze: (() -> Void)?
 
     var body: some View {
-        PopupPlainSection {
-            HStack(alignment: .top, spacing: 10) {
-                VStack(alignment: .leading, spacing: 4) {
+        HStack(alignment: .top, spacing: 10) {
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(summary.title)
                         .font(.system(size: GlassTokens.popupHeadlineFontSize, weight: .semibold))
                         .foregroundStyle(summaryColor)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.82)
 
-                    Text(summary.message)
-                        .font(.system(size: GlassTokens.popupBodyFontSize))
+                    Text(primaryMessage)
+                        .font(.system(size: GlassTokens.popupBodyFontSize, weight: .medium))
                         .foregroundStyle(CodexTheme.muted)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.76)
+                        .allowsTightening(true)
                 }
 
-                Spacer(minLength: 0)
-
-                VStack(alignment: .trailing, spacing: 6) {
-                    if let action = summary.action {
-                        Button(action.title) {
-                            performAction(action)
-                        }
-                        .buttonStyle(CodexGhostButtonStyle())
-                    }
-
-                    if canSnooze, let onSnooze {
-                        Button("Snooze", action: onSnooze)
-                            .buttonStyle(CodexGhostButtonStyle())
-                    }
+                if secondaryLine.isEmpty == false {
+                    Text(secondaryLine)
+                        .font(.system(size: GlassTokens.popupMetaFontSize, weight: .medium))
+                        .foregroundStyle(CodexTheme.dim)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.74)
+                        .allowsTightening(true)
                 }
             }
-            .frame(minHeight: GlassTokens.summaryBannerMinHeight, alignment: .center)
+
+            Spacer(minLength: 0)
+
+            VStack(alignment: .trailing, spacing: 6) {
+                if let action = summary.action {
+                    Button(action.title) {
+                        performAction(action)
+                    }
+                    .buttonStyle(CodexGhostButtonStyle())
+                }
+
+                if canSnooze, let onSnooze {
+                    Button("Snooze", action: onSnooze)
+                        .buttonStyle(CodexGhostButtonStyle())
+                }
+            }
         }
+        .frame(maxWidth: .infinity, minHeight: GlassTokens.summaryBannerMinHeight, alignment: .center)
     }
 
     private var canSnooze: Bool {
@@ -57,16 +70,55 @@ struct PopupSummaryCardView: View {
         }
     }
 
+    private var detailLine: String {
+        summary.popupHeaderText.secondary
+    }
+
+    private var primaryMessage: String {
+        summary.popupHeaderText.primary
+    }
+
+    private var secondaryLine: String {
+        detailLine
+    }
+
+}
+
+struct PopupSummaryHeaderText: Equatable {
+    let primary: String
+    let secondary: String
 }
 
 extension PopupSummaryPresentation {
-    var detailLine: String {
+    var popupHeaderText: PopupSummaryHeaderText {
+        let messageParts = messageSentenceParts
+        let supportLine = compactSupportLine
+        let secondary = if messageParts.secondary.isEmpty {
+            supportLine
+        } else if supportLine.isEmpty {
+            messageParts.secondary
+        } else {
+            "\(messageParts.secondary) · \(supportLine)"
+        }
+
+        return PopupSummaryHeaderText(primary: messageParts.primary, secondary: secondary)
+    }
+
+    private var compactSupportLine: String {
         let label = supportingLabel.isEmpty ? nil : supportingLabel
         let value = supportingValue.isEmpty ? nil : supportingValue
-        let detail = supportingDetail?.isEmpty == false ? supportingDetail : nil
-        return [label, value, detail]
+        return [label, value]
             .compactMap { $0 }
             .joined(separator: " · ")
+    }
+
+    private var messageSentenceParts: (primary: String, secondary: String) {
+        guard let range = message.range(of: ". ") else {
+            return (message, "")
+        }
+        let first = String(message[..<range.upperBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+        let rest = String(message[range.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
+        return (first, rest)
     }
 }
 
@@ -75,8 +127,8 @@ struct CodexGhostButtonStyle: ButtonStyle {
         configuration.label
             .font(.system(size: GlassTokens.popupMetaFontSize, weight: .medium))
             .foregroundStyle(CodexTheme.text)
-            .padding(.horizontal, 12)
-            .frame(minWidth: 68, minHeight: 30)
+            .padding(.horizontal, 10)
+            .frame(minWidth: 74, minHeight: GlassTokens.pillHeight)
             .background(
                 configuration.isPressed ? CodexTheme.control.opacity(0.82) : CodexTheme.control,
                 in: RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)

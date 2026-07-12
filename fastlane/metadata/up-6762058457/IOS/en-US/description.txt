@@ -2,9 +2,9 @@ Codexex is a native iPhone and iPad utility for keeping Codex usage readable at 
 
 It shows 5-hour and weekly usage, reset timing, Peaks/Cycle/Month history, pace and forecast hints, and Preview Mode sample data so you can check the layout before signing in.
 
-Version 4 refreshes the UI with calmer spacing, current usage-first labels, bottom Settings/Refresh controls on iOS, and a cleaner light/dark theme across the app.
+Codexex keeps the iPhone and iPad experience focused on clear quota status, readable history, and quick refresh controls.
 
-Codexex supports ChatGPT sign-in through Safari and a device-code flow. Quota reads stay on this device. No Mac bridge, no browser cookies, and no scraping.
+Codexex supports ChatGPT sign-in through Safari and a device-code flow. Quota reads stay on this device, with no browser cookies and no scraping.
 
 EULA / Terms of Use: https://codexex.eu/terms
 Privacy Policy: https://codexex.eu/privacy/

@@ -39,23 +39,43 @@ final class CodexPopoverSizingTests: XCTestCase {
         )
     }
 
+    func testCompactPopupSizingContractStaysBelowMenuBarReferenceLimit() {
+        XCTAssertLessThan(GlassTokens.popupWidth, 400)
+        XCTAssertLessThan(GlassTokens.popupMinimumUsableHeight, GlassTokens.popupMaxHeight)
+        XCTAssertEqual(
+            CodexPopoverSizing.height(fittingHeight: 539.2, maxHeight: GlassTokens.popupMaxHeight),
+            540
+        )
+        XCTAssertEqual(
+            CodexPopoverSizing.height(fittingHeight: 700, maxHeight: GlassTokens.popupMaxHeight),
+            GlassTokens.popupMaxHeight
+        )
+    }
+
     func testGlassTokensMatchCompactMenuBarReferenceDesign() {
-        XCTAssertEqual(GlassTokens.popupWidth, 430)
-        XCTAssertEqual(GlassTokens.popupMaxHeight, 760)
-        XCTAssertEqual(GlassTokens.pagePadding, 14)
-        XCTAssertEqual(GlassTokens.contentSpacing, 10)
+        XCTAssertEqual(GlassTokens.popupWidth, 360)
+        XCTAssertEqual(GlassTokens.popupMaxHeight, 560)
+        XCTAssertEqual(GlassTokens.pagePadding, 9)
+        XCTAssertEqual(GlassTokens.popupMinimumUsableHeight, 360)
+        XCTAssertEqual(GlassTokens.popupScreenMargin, 72)
+        XCTAssertEqual(GlassTokens.contentSpacing, 7)
         XCTAssertEqual(GlassTokens.cardPadding, 14)
+        XCTAssertEqual(GlassTokens.popupSectionPadding, 9)
         XCTAssertEqual(GlassTokens.cardRadius, 10)
+        XCTAssertEqual(GlassTokens.popupSectionRadius, 10)
         XCTAssertEqual(GlassTokens.popupRadius, 10)
         XCTAssertEqual(GlassTokens.infoChipHeight, 50)
         XCTAssertEqual(GlassTokens.emptyStateHeight, 66)
         XCTAssertEqual(GlassTokens.statusIconSize, 34)
         XCTAssertEqual(GlassTokens.summaryBannerMinHeight, 0)
         XCTAssertEqual(GlassTokens.summaryIconSize, 32)
-        XCTAssertEqual(GlassTokens.quotaHeadlineSize, 20)
+        XCTAssertEqual(GlassTokens.popupHeadlineFontSize, 16)
+        XCTAssertEqual(GlassTokens.popupBodyFontSize, 12.5)
+        XCTAssertEqual(GlassTokens.popupMetaFontSize, 11)
+        XCTAssertEqual(GlassTokens.quotaHeadlineSize, 16)
         XCTAssertEqual(GlassTokens.quotaBarHeight, 7)
-        XCTAssertEqual(GlassTokens.limitCardMinHeight, 94)
-        XCTAssertEqual(GlassTokens.historyGraphHeight, 76)
+        XCTAssertEqual(GlassTokens.limitCardMinHeight, 0)
+        XCTAssertEqual(GlassTokens.historyGraphHeight, 48)
         XCTAssertEqual(GlassTokens.revealOffset, 10)
         XCTAssertEqual(GlassTokens.revealDuration, 0.32)
         XCTAssertEqual(GlassTokens.cardHighlightOpacity, 0)

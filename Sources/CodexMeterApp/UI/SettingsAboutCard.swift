@@ -34,12 +34,12 @@ struct SettingsAboutCard: View {
                     Button("Terms of Use") {
                         NSWorkspace.shared.open(CodexAppLinks.termsURL)
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(SettingsGhostButtonStyle())
 
                     Button("Privacy Policy") {
                         NSWorkspace.shared.open(CodexAppLinks.privacyURL)
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(SettingsGhostButtonStyle())
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)

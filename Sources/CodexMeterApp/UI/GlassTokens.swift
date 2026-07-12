@@ -2,30 +2,32 @@
 import SwiftUI
 
 enum GlassTokens {
-    static let popupWidth: CGFloat = 430
-    static let popupMaxHeight: CGFloat = 760
-    static let popupMinimumUsableHeight: CGFloat = 440
+    static let popupWidth: CGFloat = 360
+    static let popupMaxHeight: CGFloat = 560
+    static let popupMinimumUsableHeight: CGFloat = 360
     static let popupScreenMargin: CGFloat = 72
     static let settingsWidth: CGFloat = 820
     static let settingsHeight: CGFloat = 540
 
-    static let pagePadding: CGFloat = 14
+    static let pagePadding: CGFloat = 9
     static let cardPadding: CGFloat = 14
+    static let popupSectionPadding: CGFloat = 9
     static let insetPadding: CGFloat = 10
-    static let contentSpacing: CGFloat = 10
+    static let contentSpacing: CGFloat = 7
     static let sectionSpacing: CGFloat = 12
 
-    static let popupHeadlineFontSize: CGFloat = 20
-    static let popupBodyFontSize: CGFloat = 14
-    static let popupMetaFontSize: CGFloat = 12
+    static let popupHeadlineFontSize: CGFloat = 16
+    static let popupBodyFontSize: CGFloat = 12.5
+    static let popupMetaFontSize: CGFloat = 11
 
     static let cardRadius: CGFloat = 10
+    static let popupSectionRadius: CGFloat = 10
     static let popupRadius: CGFloat = 10
     static let settingsRadius: CGFloat = 10
     static let groupRadius: CGFloat = 10
     static let insetRadius: CGFloat = 10
 
-    static let pillHeight: CGFloat = 26
+    static let pillHeight: CGFloat = 28
     static let pillRadius: CGFloat = 10
     static let infoChipHeight: CGFloat = 50
     static let emptyStateHeight: CGFloat = 66
@@ -33,10 +35,10 @@ enum GlassTokens {
     static let statusIconSize: CGFloat = 34
     static let summaryBannerMinHeight: CGFloat = 0
     static let summaryIconSize: CGFloat = 32
-    static let quotaHeadlineSize: CGFloat = popupHeadlineFontSize
+    static let quotaHeadlineSize: CGFloat = 16
     static let quotaBarHeight: CGFloat = 7
-    static let limitCardMinHeight: CGFloat = 94
-    static let historyGraphHeight: CGFloat = 76
+    static let limitCardMinHeight: CGFloat = 0
+    static let historyGraphHeight: CGFloat = 48
     static let revealOffset: CGFloat = 10
     static let revealDuration: Double = 0.32
     static let cardHighlightOpacity: Double = 0

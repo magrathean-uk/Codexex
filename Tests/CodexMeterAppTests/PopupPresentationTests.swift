@@ -25,10 +25,11 @@ final class PopupPresentationTests: XCTestCase {
 
     func testSparkUsesCompactCardWhenIdle() {
         let presentation = PopupPresentation.presentation(
-            for: makeLimit(id: "spark", name: "Codex Spark", bucket: .spark, fiveHour: 0, weekly: 0)
+            for: makeLimit(id: "spark", name: "GPT-5.3-Codex-Spark", bucket: .spark, fiveHour: 0, weekly: 0)
         )
 
         XCTAssertEqual(presentation.style, .compact)
+        XCTAssertEqual(presentation.compactDisplayName, "Spark")
     }
 
     func testSparkUsesFullCardWhenActive() {
@@ -297,6 +298,58 @@ final class PopupPresentationTests: XCTestCase {
         XCTAssertEqual(rect.height, 10)
     }
 
+    func testHighCountHistoryGraphBarsFitCompactChartWidth() {
+        let count = 96
+        let size = CGSize(
+            width: GlassTokens.popupWidth
+                - (GlassTokens.pagePadding * 2)
+                - (GlassTokens.popupSectionPadding * 2),
+            height: 42
+        )
+
+        XCTAssertGreaterThan(size.width, 0)
+        XCTAssertTrue(size.width.isFinite)
+
+        for index in 0..<count {
+            let rect = PopupPresentation.historyBarRect(
+                usedPercent: 50,
+                index: index,
+                count: count,
+                size: size
+            )
+
+            XCTAssertTrue(rect.minX.isFinite, "bar \(index) should have a finite origin")
+            XCTAssertTrue(rect.maxX.isFinite, "bar \(index) should have a finite end")
+            XCTAssertTrue(rect.width.isFinite, "bar \(index) should have a finite width")
+            XCTAssertGreaterThan(rect.width, 0, "bar \(index) should remain visible")
+            XCTAssertGreaterThanOrEqual(rect.minX, 0, "bar \(index) should start inside chart")
+            XCTAssertLessThanOrEqual(rect.maxX, size.width, "bar \(index) should end inside chart")
+        }
+    }
+
+    func testHistoryGraphAccessibilityValueSummarizesVisibleSeriesData() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let value = PopupUsageHistoryAccessibility.graphAccessibilityValue(
+            fiveHourPoints: [
+                makeHistoryPoint(id: "5h-old", date: now.addingTimeInterval(-7_200), usedPercent: 44),
+                makeHistoryPoint(id: "5h-peak", date: now.addingTimeInterval(-3_600), usedPercent: 72),
+                makeHistoryPoint(id: "5h-current", date: now, usedPercent: 61)
+            ],
+            weeklyPoints: [
+                makeHistoryPoint(id: "w-old", date: now.addingTimeInterval(-7_200), usedPercent: 38),
+                makeHistoryPoint(id: "w-current", date: now, usedPercent: 47),
+                makeHistoryPoint(id: "w-peak", date: now.addingTimeInterval(-3_600), usedPercent: 83)
+            ],
+            axisStartLabel: "30d",
+            axisEndLabel: "Today"
+        )
+
+        XCTAssertEqual(
+            value,
+            "30d to Today. 5-hour latest 61%, peak 72%. Weekly latest 47%, peak 83%."
+        )
+    }
+
     private func makeLimit(
         id: String,
         name: String,
@@ -335,6 +388,16 @@ final class PopupPresentationTests: XCTestCase {
                 planType: "PRO"
             ),
             limits: [makeLimit(id: "codex", name: "Codex", bucket: .codex, fiveHour: 12, weekly: 41)]
+        )
+    }
+
+    private func makeHistoryPoint(id: String, date: Date, usedPercent: Double) -> CodexUsageHistoryPoint {
+        CodexUsageHistoryPoint(
+            id: id,
+            date: date,
+            usedPercent: usedPercent,
+            resetsAt: nil,
+            windowDurationMinutes: nil
         )
     }
 }

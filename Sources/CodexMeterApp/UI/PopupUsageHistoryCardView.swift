@@ -43,27 +43,10 @@ struct UsageHistoryCardView: View {
 
     var body: some View {
         PopupPlainSection {
-            VStack(alignment: .leading, spacing: 10) {
-                header
+            VStack(alignment: .leading, spacing: 6) {
                 forecastSummary
                 contentSection
             }
-        }
-    }
-
-    private var header: some View {
-        HStack(alignment: .center, spacing: 12) {
-            Text("Usage history")
-                .font(.system(size: GlassTokens.popupBodyFontSize, weight: .semibold))
-                .foregroundStyle(CodexTheme.text)
-                .lineLimit(1)
-
-            Spacer(minLength: 12)
-
-            PopupHistoryModeSelector(
-                historyMode: historyMode,
-                onHistoryModeChange: onHistoryModeChange
-            )
         }
     }
 
@@ -72,38 +55,37 @@ struct UsageHistoryCardView: View {
     }
 
     private var forecastSummary: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text("Weekly pace")
-                    .font(.system(size: GlassTokens.popupMetaFontSize, weight: .medium))
-                    .foregroundStyle(CodexTheme.muted)
-
-                Spacer(minLength: 8)
+                Text("Pace")
+                    .font(.system(size: GlassTokens.popupMetaFontSize - 1, weight: .medium))
+                    .foregroundStyle(CodexTheme.dim)
+                    .textCase(.uppercase)
 
                 Text(forecastHeadline(for: weeklyForecast))
                     .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
                     .foregroundStyle(forecastMessageColor)
                     .lineLimit(1)
-            }
 
-            if showPaceConfidence, let detail = forecastDetail(for: weeklyForecast) {
-                Text(detail)
-                    .font(.system(size: GlassTokens.popupMetaFontSize))
-                    .foregroundStyle(CodexTheme.dim)
-                    .lineLimit(1)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+                if let context = compactForecastContext(for: weeklyForecast) {
+                    Text(context)
+                        .font(.system(size: GlassTokens.popupMetaFontSize - 1, weight: .medium))
+                        .foregroundStyle(CodexTheme.dim)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+                }
 
-            if showPaceConfidence,
-               historyMode == .dailyPeaks,
-               let rangeText = likelyRangeText(for: weeklyForecast) {
-                Text(rangeText)
-                    .font(.system(size: GlassTokens.popupMetaFontSize))
-                    .foregroundStyle(CodexTheme.dim)
-                    .lineLimit(1)
-            }
+                Spacer(minLength: 6)
 
-            if historyMode != .dailyPeaks,
+                PopupHistoryModeSelector(
+                    historyMode: historyMode,
+                    onHistoryModeChange: onHistoryModeChange
+                )
+            }
+            .lineLimit(1)
+
+            if shouldShowProjectionBar(for: weeklyForecast),
+               historyMode != .dailyPeaks,
                let current = weeklyForecast.currentPercent,
                let projected = weeklyForecast.projectedPercentAtReset {
                 ForecastUsageBar(
@@ -111,15 +93,11 @@ struct UsageHistoryCardView: View {
                     projectedPercent: projected
                 )
 
-                HStack(spacing: 8) {
-                    Text("Now \(Int(current.rounded()))%")
-                    Spacer()
-                    Text("By reset \(Int(projected.rounded()))%")
-                }
-                .font(.system(size: GlassTokens.popupMetaFontSize))
-                .foregroundStyle(CodexTheme.dim)
+                Text("\(Int(current.rounded()))% now · \(Int(projected.rounded()))% reset")
+                    .font(.system(size: GlassTokens.popupMetaFontSize - 1, weight: .medium))
+                    .foregroundStyle(CodexTheme.dim)
+                    .lineLimit(1)
             }
-
         }
     }
 
@@ -134,17 +112,28 @@ struct UsageHistoryCardView: View {
         }
     }
 
-    private func likelyRangeText(for forecast: CodexUsageForecast) -> String? {
+    private func compactForecastContext(for forecast: CodexUsageForecast) -> String? {
+        guard showPaceConfidence else { return nil }
+        if historyMode == .dailyPeaks, let rangeText = compactLikelyRangeText(for: forecast) {
+            return rangeText
+        }
+        return forecastDetail(for: forecast)
+    }
+
+    private func compactLikelyRangeText(for forecast: CodexUsageForecast) -> String? {
         guard let lower = forecast.likelyLowerPercent,
               let upper = forecast.likelyUpperPercent,
               upper - lower >= 2 else {
             return nil
         }
 
-        return "Likely \(Int(lower.rounded()))-\(Int(upper.rounded()))% by reset"
+        return "\(Int(lower.rounded()))-\(Int(upper.rounded()))% reset"
     }
 
     private func forecastHeadline(for forecast: CodexUsageForecast) -> String {
+        if isZeroPressureForecast(forecast) {
+            return "No pressure"
+        }
         switch forecast.confidence {
         case .tooEarly, .learning, .estimatedFromHistory:
             return forecast.message
@@ -160,6 +149,9 @@ struct UsageHistoryCardView: View {
     }
 
     private func forecastDetail(for forecast: CodexUsageForecast) -> String? {
+        if isZeroPressureForecast(forecast) {
+            return nil
+        }
         guard let detail = forecast.detail else { return nil }
         let parts = detail
             .components(separatedBy: " · ")
@@ -171,16 +163,30 @@ struct UsageHistoryCardView: View {
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
+    private func shouldShowProjectionBar(for forecast: CodexUsageForecast) -> Bool {
+        isZeroPressureForecast(forecast) == false
+    }
+
+    private func isZeroPressureForecast(_ forecast: CodexUsageForecast) -> Bool {
+        let current = forecast.currentPercent ?? 0
+        let projected = forecast.projectedPercentAtReset ?? 0
+        let upper = forecast.likelyUpperPercent ?? projected
+        return max(current, projected, upper) < 0.5
+    }
+
     @ViewBuilder
     private var contentSection: some View {
         switch historyMode {
         case .dailyPeaks:
-            VStack(alignment: .leading, spacing: 9) {
+            VStack(alignment: .leading, spacing: 6) {
                 if showsChart {
                     MiniUsageHistoryGraph(
                         fiveHourPoints: fiveHourPoints,
                         weeklyPoints: weeklyPoints,
-                        weeklyColor: weeklySeriesColor
+                        weeklyColor: weeklySeriesColor,
+                        axisStartLabel: "30d",
+                        axisMiddleLabel: "15d",
+                        axisEndLabel: "Today"
                     )
                 }
 
@@ -198,12 +204,15 @@ struct UsageHistoryCardView: View {
                 }
             }
         case .thisCycle:
-            VStack(alignment: .leading, spacing: 9) {
+            VStack(alignment: .leading, spacing: 6) {
                 if showsChart {
                     MiniUsageHistoryGraph(
                         fiveHourPoints: currentCycleFiveHourPoints,
                         weeklyPoints: currentCycleWeeklyPoints,
-                        weeklyColor: weeklySeriesColor
+                        weeklyColor: weeklySeriesColor,
+                        axisStartLabel: "Start",
+                        axisMiddleLabel: "Mid",
+                        axisEndLabel: "Now"
                     )
                 }
 
@@ -221,12 +230,15 @@ struct UsageHistoryCardView: View {
                 }
             }
         case .monthly:
-            VStack(alignment: .leading, spacing: 9) {
+            VStack(alignment: .leading, spacing: 6) {
                 if showsChart {
                     MiniUsageHistoryGraph(
                         fiveHourPoints: [],
                         weeklyPoints: weeklyPoints,
-                        weeklyColor: weeklySeriesColor
+                        weeklyColor: weeklySeriesColor,
+                        axisStartLabel: "30d",
+                        axisMiddleLabel: "15d",
+                        axisEndLabel: "Today"
                     )
                 }
 
@@ -253,39 +265,42 @@ struct UsageHistoryCardView: View {
     }
 
     private func legendItem(label: String, value: String, color: Color) -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(color)
+                .frame(width: 5, height: 5)
+
             Text(label)
-                .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
-                .foregroundStyle(color)
+                .font(.system(size: GlassTokens.popupMetaFontSize - 1, weight: .medium))
+                .foregroundStyle(CodexTheme.muted)
                 .lineLimit(1)
 
             Text(value)
-                .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
-                .foregroundStyle(CodexTheme.text)
+                .font(.system(size: GlassTokens.popupMetaFontSize - 1, weight: .medium))
+                .foregroundStyle(CodexTheme.dim)
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
         }
-        .frame(height: GlassTokens.pillHeight)
+        .frame(height: 16)
     }
 
     private func cycleChip(label: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label)
-                .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
+        HStack(spacing: 3) {
+            Text(label.uppercased())
+                .font(.system(size: GlassTokens.popupMetaFontSize - 2, weight: .semibold))
                 .foregroundStyle(CodexTheme.dim)
-                .textCase(.uppercase)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 .allowsTightening(true)
 
             Text(value)
-                .font(.system(size: GlassTokens.popupBodyFontSize, weight: .semibold))
-                .foregroundStyle(CodexTheme.text)
+                .font(.system(size: GlassTokens.popupMetaFontSize - 1, weight: .medium))
+                .foregroundStyle(CodexTheme.muted)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .allowsTightening(true)
         }
-        .frame(maxWidth: .infinity, minHeight: 34, alignment: .leading)
+        .frame(height: 16, alignment: .leading)
     }
 
     private func resetChipValue(for resetAt: Date) -> String {
@@ -299,42 +314,56 @@ struct UsageHistoryCardView: View {
 }
 
 struct PopupHistoryModeSelector: View {
-    static let segmentWidth: CGFloat = 48
-    static let segmentHeight: CGFloat = 24
-    static let selectedIndicatorWidth: CGFloat = 28
-    static let selectedIndicatorHeight: CGFloat = 2
-
     let historyMode: PopupHistoryMode
     let onHistoryModeChange: (PopupHistoryMode) -> Void
 
     var body: some View {
-        HStack(spacing: 8) {
+        Menu {
             ForEach(PopupHistoryMode.allCases, id: \.self) { mode in
-                VStack(spacing: 3) {
-                    Text(mode.popupCompactTitle)
-                        .font(.system(size: GlassTokens.popupMetaFontSize, weight: mode == historyMode ? .semibold : .medium))
-                        .foregroundStyle(mode == historyMode ? CodexTheme.text : CodexTheme.muted)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.9)
-                        .allowsTightening(true)
-                        .frame(width: Self.segmentWidth, height: Self.segmentHeight - Self.selectedIndicatorHeight - 3)
-
-                    Capsule(style: .continuous)
-                        .fill(mode == historyMode ? CodexTheme.accent : Color.clear)
-                        .frame(width: Self.selectedIndicatorWidth, height: Self.selectedIndicatorHeight)
-                }
-                .frame(width: Self.segmentWidth, height: Self.segmentHeight)
-                .contentShape(Rectangle())
-                .onTapGesture {
+                Button {
                     onHistoryModeChange(mode)
+                } label: {
+                    if mode == historyMode {
+                        Label(mode.title, systemImage: "checkmark")
+                    } else {
+                        Text(mode.title)
+                    }
                 }
-                .accessibilityElement(children: .ignore)
                 .accessibilityLabel(mode.title)
                 .accessibilityValue(mode == historyMode ? "Selected" : "")
-                .accessibilityAddTraits(.isButton)
+            }
+        } label: {
+            HStack(spacing: 5) {
+                Text("View:")
+                    .font(.system(size: GlassTokens.popupMetaFontSize - 1, weight: .medium))
+                    .foregroundStyle(CodexTheme.dim)
+
+                Text(historyMode.popupCompactTitle)
+                    .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
+                    .foregroundStyle(CodexTheme.accent)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 8, weight: .semibold))
+                    .foregroundStyle(CodexTheme.muted)
+            }
+            .padding(.horizontal, 8)
+            .frame(height: 24)
+            .background {
+                RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
+                    .fill(CodexTheme.control.opacity(0.52))
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
+                    .stroke(CodexTheme.accent.opacity(0.32), lineWidth: 1)
             }
         }
-        .fixedSize(horizontal: true, vertical: false)
+        .buttonStyle(.plain)
+        .fixedSize(horizontal: true, vertical: true)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("History mode")
+        .accessibilityValue(historyMode.title)
     }
 }
 
@@ -355,40 +384,50 @@ private struct MiniUsageHistoryGraph: View {
     let fiveHourPoints: [CodexUsageHistoryPoint]
     let weeklyPoints: [CodexUsageHistoryPoint]
     let weeklyColor: Color
+    let axisStartLabel: String
+    let axisMiddleLabel: String
+    let axisEndLabel: String
 
     var body: some View {
-        HStack(alignment: .top, spacing: 6) {
-            VStack(alignment: .trailing, spacing: 0) {
-                Text("100%")
-                Spacer()
-                Text("50%")
-                Spacer()
-                Text("0%")
+        VStack(spacing: 2) {
+            Canvas { context, size in
+                drawGrid(in: &context, size: size)
+                drawFiveHourBars(in: &context, size: size)
+                drawWeeklyLine(in: &context, size: size)
             }
-                .font(.system(size: GlassTokens.popupMetaFontSize, weight: .medium))
-                .foregroundStyle(CodexTheme.dim)
-                .frame(width: 34, height: GlassTokens.historyGraphHeight - 22)
+            .frame(height: chartHeight)
+            .allowsHitTesting(false)
 
-            VStack(spacing: 3) {
-                Canvas { context, size in
-                    drawGrid(in: &context, size: size)
-                    drawFiveHourBars(in: &context, size: size)
-                    drawWeeklyLine(in: &context, size: size)
-                }
-                .frame(height: GlassTokens.historyGraphHeight - 22)
-                .allowsHitTesting(false)
-
-                HStack {
-                    ForEach(["7d", "6d", "5d", "4d", "3d", "2d", "1d", "Today"], id: \.self) { label in
-                        Text(label)
-                            .frame(maxWidth: .infinity)
-                    }
-                }
-                .font(.system(size: GlassTokens.popupMetaFontSize, weight: .medium))
-                .foregroundStyle(CodexTheme.dim)
+            HStack {
+                Text(axisStartLabel)
+                Spacer()
+                Text(axisMiddleLabel)
+                Spacer()
+                Text(axisEndLabel)
             }
+            .font(.system(size: GlassTokens.popupMetaFontSize - 2, weight: .medium))
+            .foregroundStyle(CodexTheme.dim)
         }
         .frame(height: GlassTokens.historyGraphHeight)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(
+            PopupUsageHistoryAccessibility.graphAccessibilityLabel(
+                fiveHourPoints: fiveHourPoints,
+                weeklyPoints: weeklyPoints
+            )
+        )
+        .accessibilityValue(
+            PopupUsageHistoryAccessibility.graphAccessibilityValue(
+                fiveHourPoints: fiveHourPoints,
+                weeklyPoints: weeklyPoints,
+                axisStartLabel: axisStartLabel,
+                axisEndLabel: axisEndLabel
+            )
+        )
+    }
+
+    private var chartHeight: CGFloat {
+        max(30, GlassTokens.historyGraphHeight - 12)
     }
 
     private func drawGrid(in context: inout GraphicsContext, size: CGSize) {
@@ -459,6 +498,47 @@ private struct MiniUsageHistoryGraph: View {
             with: .color(weeklyColor.opacity(0.86)),
             style: StrokeStyle(lineWidth: 1.8, lineCap: .round, lineJoin: .round)
         )
+    }
+}
+
+enum PopupUsageHistoryAccessibility {
+    static func graphAccessibilityLabel(
+        fiveHourPoints: [CodexUsageHistoryPoint],
+        weeklyPoints: [CodexUsageHistoryPoint]
+    ) -> String {
+        fiveHourPoints.isEmpty ? "Weekly usage history" : "5-hour and weekly usage history"
+    }
+
+    static func graphAccessibilityValue(
+        fiveHourPoints: [CodexUsageHistoryPoint],
+        weeklyPoints: [CodexUsageHistoryPoint],
+        axisStartLabel: String,
+        axisEndLabel: String
+    ) -> String {
+        let range = "\(axisStartLabel) to \(axisEndLabel)"
+        let summaries = [
+            seriesSummary(name: "5-hour", points: fiveHourPoints),
+            seriesSummary(name: "Weekly", points: weeklyPoints)
+        ].compactMap { $0 }
+
+        guard summaries.isEmpty == false else {
+            return "\(range). No usage data."
+        }
+
+        return ([range] + summaries).joined(separator: ". ") + "."
+    }
+
+    private static func seriesSummary(name: String, points: [CodexUsageHistoryPoint]) -> String? {
+        guard let latest = points.max(by: { $0.date < $1.date }),
+              let peak = points.max(by: { $0.usedPercent < $1.usedPercent }) else {
+            return nil
+        }
+
+        return "\(name) latest \(percentText(latest.usedPercent)), peak \(percentText(peak.usedPercent))"
+    }
+
+    private static func percentText(_ percent: Double) -> String {
+        "\(Int(percent.rounded()))%"
     }
 }
 

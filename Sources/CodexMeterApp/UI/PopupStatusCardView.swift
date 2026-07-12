@@ -7,43 +7,64 @@ struct PopupStatusCardView: View {
     @Bindable var model: CodexMenuBarModel
 
     var body: some View {
-        PopupPlainSection {
-            if let code = model.authDeviceCode {
+        if let code = model.authDeviceCode {
+            PopupPlainSection {
                 CodexDeviceCodeCallout(
                     code: code,
                     openSafari: { model.openAuthVerificationPage() },
                     copyCode: { model.copyAuthCode() },
                     cancel: { model.cancelPendingChatGPTSignIn() }
                 )
-            } else {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(alignment: .center, spacing: 8) {
-                        Text(model.statusCardTitle)
-                            .font(.system(size: GlassTokens.popupBodyFontSize, weight: .semibold))
-                            .foregroundStyle(statusTint)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.82)
+            }
+        } else {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .center, spacing: 8) {
+                    Text(model.statusCardTitle)
+                        .font(.system(size: GlassTokens.popupHeadlineFontSize, weight: .semibold))
+                        .foregroundStyle(statusTint)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.82)
 
-                        Spacer(minLength: 8)
+                    Spacer(minLength: 8)
 
-                        CodexStateBadge(kind: model.designStateBadgeKind)
-                    }
+                    CodexStateBadge(kind: model.designStateBadgeKind)
+                }
 
-                    Text(model.statusCardMessage)
-                        .font(.system(size: GlassTokens.popupMetaFontSize))
-                        .foregroundStyle(CodexTheme.muted)
-                        .lineLimit(3)
-                .fixedSize(horizontal: false, vertical: true)
+                Text(model.statusCardMessage)
+                    .font(.system(size: GlassTokens.popupBodyFontSize))
+                    .foregroundStyle(CodexTheme.muted)
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            actionRow
-                .padding(.top, 2)
-        }
-    }
+                if model.isRefreshing {
+                    PopupLoadingBar()
+                        .padding(.top, 1)
+                        .accessibilityLabel("Loading quota")
+                }
+
+                if shouldShowActionRow {
+                    actionRow
+                        .padding(.top, 1)
+                }
+            }
         }
     }
 
     private var statusTint: Color {
         model.designStateBadgeKind.tint
+    }
+
+    private var shouldShowActionRow: Bool {
+        if model.previewModeEnabled || model.lastError != nil {
+            return true
+        }
+        if model.isSignedIn == false {
+            return true
+        }
+        if model.snapshot == nil {
+            return model.isRefreshing == false
+        }
+        return false
     }
 
     @ViewBuilder
@@ -162,16 +183,7 @@ private struct PopupActionButton: View {
         let shape = RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
         switch tone {
         case .primary:
-            shape.fill(
-                LinearGradient(
-                    colors: [
-                        Color(red: 0.36, green: 0.60, blue: 1.0),
-                        Color(red: 0.12, green: 0.42, blue: 0.93)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
+            shape.fill(CodexTheme.accent)
         case .secondary:
             shape.fill(CodexTheme.control)
         }

@@ -56,6 +56,9 @@ extension CodexMenuBarModel {
         if let lastError {
             return userFacingStatusMessage(for: lastError)
         }
+        if isRefreshing, snapshot == nil, isSignedIn {
+            return "Reading current limits."
+        }
         return authStatusMessage
     }
 

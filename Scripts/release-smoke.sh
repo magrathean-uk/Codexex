@@ -44,8 +44,8 @@ require_file PRIVACY.md
 
 require_text "INFOPLIST_KEY_LSUIElement: YES" project.yml
 require_text "CodexexXPCService" project.yml
-require_count "Build Codexex Helper" 1 project.yml
-require_count "Embed Codexex Helper" 1 project.yml
+require_count "Build Codexex Helper" 2 project.yml
+require_count "Embed Codexex Helper" 2 project.yml
 require_text '$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/codexex-helper' project.yml
 require_text '$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/XPCServices/CodexexXPCService.xpc/Contents/Helpers/codexex-helper' project.yml
 require_text "protocolVersion" Sources/CodexMeterCore/CodexServiceContracts.swift

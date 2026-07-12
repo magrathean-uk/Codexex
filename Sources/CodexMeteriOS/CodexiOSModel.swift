@@ -4,6 +4,7 @@ import UIKit
 import CodexMeterCore
 
 enum CodexiOSLiveAccountState: Equatable {
+    case checking
     case signedOut
     case pendingSignIn
     case signedIn
@@ -34,7 +35,7 @@ final class CodexiOSModel {
     var usageHistory: [CodexUsageHistorySample] = []
     var isRefreshing = false
     var isSigningIn = false
-    var statusMessage = "Sign in with ChatGPT to read Codex usage on this device."
+    var statusMessage = "Checking saved account."
     var errorMessage: String?
     var deviceCode: String?
     var verificationURL: URL?
@@ -58,13 +59,18 @@ final class CodexiOSModel {
         self.openURLAction = openURLAction
         self.copyTextAction = copyTextAction
         self.historyStore = historyStore
+        let storedPreviewModeEnabled = defaults.bool(forKey: CodexiOSSettingsKeys.previewModeEnabled)
         hasCompletedOnboarding = defaults.bool(forKey: CodexiOSSettingsKeys.hasCompletedOnboarding)
-        previewModeEnabled = defaults.bool(forKey: CodexiOSSettingsKeys.previewModeEnabled)
-        liveAccountState = .signedOut
+        previewModeEnabled = storedPreviewModeEnabled
+        liveAccountState = storedPreviewModeEnabled ? .signedOut : .checking
     }
 
     var isSignedIn: Bool {
         liveAccountState == .signedIn
+    }
+
+    var isCheckingSavedAccount: Bool {
+        liveAccountState == .checking
     }
 
     var hasPendingSignIn: Bool {
@@ -92,6 +98,9 @@ final class CodexiOSModel {
         do {
             applySnapshotResponse(try await service.fetchSnapshot())
         } catch {
+            if liveAccountState == .checking {
+                liveAccountState = .signedOut
+            }
             applyError(message(for: error))
         }
     }
@@ -254,8 +263,11 @@ final class CodexiOSModel {
 
         if hasPendingSignIn, response.authMode == nil {
             liveAccountState = .pendingSignIn
+        } else if response.authMode == .chatGPT {
+            liveAccountState = .signedIn
+            completeOnboarding()
         } else {
-            liveAccountState = response.authMode == .chatGPT ? .signedIn : .signedOut
+            liveAccountState = .signedOut
         }
     }
 

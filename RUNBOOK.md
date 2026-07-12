@@ -1,5 +1,7 @@
 # Codexex Runbook
 
+Current release: `5.1` (`14`). Keep `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `project.yml`; regenerate the Xcode project after changing them.
+
 ## Architecture map
 
 - `Sources/CodexMeterCore/` owns quota models, formatting, binary lookup, and service contracts.
@@ -36,8 +38,18 @@ xcodegen generate --spec project.yml
 
 No standalone lint, format, typecheck, Makefile, Justfile, or GitHub Actions
 workflow was found in this checkout. Use builds/tests as the typecheck gate.
-The local Claude hook tries `swift-format format --in-place --recursive Sources/`
-when available, but it is not a documented release gate.
+
+## Codex hooks
+
+The project-local hook lives only in `.codex/hooks.json`. Codex loads it for a trusted project after the exact hook definition is reviewed with `/hooks`. Its `PreToolUse` matcher receives the canonical `apply_patch` payload on stdin and blocks direct edits below `.xcodeproj/`; change `project.yml` and regenerate instead.
+
+Optional companion installation targets the user layer:
+
+```bash
+Scripts/install-codexex-companions.sh
+```
+
+That script backs up `~/.codex/hooks.json` and `~/.codex/config.toml` before updating the named lifecycle events. Inspect those user-level files after installation because user and project hook sources are additive.
 
 ## Local Codex usage path
 
@@ -144,7 +156,7 @@ Direct `codex app-server` capture is excluded from normal shipping builds unless
 - Do not add alternate sign-in flows, browser scraping, or token extraction.
 - Update `project.yml` when target wiring changes; update helper scripts when helper packaging changes.
 - Do not hand-edit `CodexMeter.xcodeproj`; regenerate it from `project.yml`.
-- Keep `.codex/` as local agent state unless the task explicitly concerns Codex hooks.
+- Keep project hook policy in `.codex/hooks.json`; do not duplicate it in a project `.codex/config.toml` hook table.
 
 ## Done criteria for agent work
 

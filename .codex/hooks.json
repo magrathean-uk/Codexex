@@ -2,22 +2,13 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Edit|Write",
+        "matcher": "^apply_patch$",
         "hooks": [
           {
             "type": "command",
-            "command": "file=\"${CLAUDE_TOOL_INPUT_PATH:-}\"; if echo \"$file\" | grep -q '\\.xcodeproj/'; then echo \"BLOCKED: edit project.yml instead of .xcodeproj directly.\"; exit 2; fi"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" && swift-format format --in-place --recursive Sources/ 2>/dev/null || true"
+            "command": "/usr/bin/python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/pre_tool_use.py\"",
+            "timeout": 30,
+            "statusMessage": "Protecting generated Xcode files"
           }
         ]
       }

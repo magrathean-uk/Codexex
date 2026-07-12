@@ -6,72 +6,95 @@ import XCTest
 
 @MainActor
 final class PopupReferenceRenderTests: XCTestCase {
-    func testReferencePopupRendersNonBlackGlassFrame() throws {
+    func testReferencePopupRendersNonBlackGlassFrameInLightAndDark() throws {
         setenv("CODEXEX_REFERENCE_RENDER", "1", 1)
         defer { unsetenv("CODEXEX_REFERENCE_RENDER") }
 
-        let suiteName = "PopupReferenceRenderTests.\(UUID().uuidString)"
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
-        defaults.removePersistentDomain(forName: suiteName)
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-        let model = CodexMenuBarModel(settingsStore: CodexAppSettingsStore(defaults: defaults))
+        for appearanceMode in [CodexAppearanceMode.light, .dark] {
+            let suiteName = "PopupReferenceRenderTests.\(UUID().uuidString)"
+            let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+            defaults.removePersistentDomain(forName: suiteName)
+            defer { defaults.removePersistentDomain(forName: suiteName) }
+            let model = CodexMenuBarModel(settingsStore: CodexAppSettingsStore(defaults: defaults))
+            model.setAppearanceMode(appearanceMode)
 
-        let view = PopupRootView(
-            model: model,
-            displayMode: .settingsPreview,
-            reduceMotionOverride: true,
-            previewReferenceDate: Date(timeIntervalSince1970: 1_800_000_000)
-        )
-            .frame(width: GlassTokens.popupWidth, height: GlassTokens.popupMaxHeight)
-        let renderer = ImageRenderer(content: view)
-        renderer.proposedSize = ProposedViewSize(
-            width: GlassTokens.popupWidth,
-            height: GlassTokens.popupMaxHeight
-        )
-        renderer.scale = 2
-        let image = try XCTUnwrap(renderer.nsImage)
-        let tiffData = try XCTUnwrap(image.tiffRepresentation)
-        let bitmap = try XCTUnwrap(NSBitmapImageRep(data: tiffData))
+            let view = PopupRootView(
+                model: model,
+                displayMode: .settingsPreview,
+                reduceMotionOverride: true,
+                previewReferenceDate: Date(timeIntervalSince1970: 1_800_000_000)
+            )
+            let bitmap = try renderedBitmap(
+                for: view,
+                width: GlassTokens.popupWidth,
+                height: GlassTokens.popupMaxHeight
+            )
 
-        XCTAssertEqual(bitmap.size.width, GlassTokens.popupWidth, accuracy: 0.5)
-        XCTAssertEqual(bitmap.size.height, GlassTokens.popupMaxHeight, accuracy: 0.5)
+            XCTAssertEqual(bitmap.size.width, GlassTokens.popupWidth, accuracy: 0.5)
+            XCTAssertEqual(bitmap.size.height, GlassTokens.popupMaxHeight, accuracy: 0.5)
 
-        let sample = PixelSample(bitmap: bitmap)
-        XCTAssertGreaterThan(sample.nonBlackShare, 0.50)
-        XCTAssertGreaterThan(sample.brightGlassShare, 0.20)
+            let sample = PixelSample(bitmap: bitmap)
+            XCTAssertGreaterThan(sample.nonBlackShare, 0.50, "popup should render content in \(appearanceMode.title)")
+            XCTAssertGreaterThan(
+                sample.brightGlassShare,
+                appearanceMode == .light ? 0.20 : 0.01,
+                "popup should render readable glass/text highlights in \(appearanceMode.title)"
+            )
 
-        let outputDirectory = try XCTUnwrap(
-            FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
-        )
-        try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
-        let pngURL = outputDirectory.appendingPathComponent("codexex-reference-popup-\(UUID().uuidString).png")
-        defer { try? FileManager.default.removeItem(at: pngURL) }
-        let pngData = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
-        try pngData.write(to: pngURL, options: .atomic)
-        XCTAssertTrue(FileManager.default.fileExists(atPath: pngURL.path))
+            let outputDirectory = try XCTUnwrap(
+                FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
+            )
+            try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
+            let pngURL = outputDirectory.appendingPathComponent(
+                "codexex-reference-popup-\(appearanceMode.rawValue)-\(UUID().uuidString).png"
+            )
+            defer { try? FileManager.default.removeItem(at: pngURL) }
+            let pngData = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+            try pngData.write(to: pngURL, options: .atomic)
+            XCTAssertTrue(FileManager.default.fileExists(atPath: pngURL.path))
+        }
     }
 
-    func testHistoryModeSelectorShowsSelectedIndicatorInBothAppearances() throws {
+    func testHistoryModeSelectorRendersCompactCurrentModeInBothAppearances() throws {
         for colorScheme in [ColorScheme.light, .dark] {
-            let view = PopupHistoryModeSelector(historyMode: .dailyPeaks, onHistoryModeChange: { _ in })
-            .padding(14)
-            .background(CodexTheme.window)
-            .preferredColorScheme(colorScheme)
-            .frame(width: 200, height: 60)
+            for historyMode in PopupHistoryMode.allCases {
+                let view = PopupHistoryModeSelector(historyMode: historyMode, onHistoryModeChange: { _ in })
+                    .padding(10)
+                    .background(CodexTheme.window)
+                    .preferredColorScheme(colorScheme)
+                let hostingController = NSHostingController(rootView: view)
+                let fittingSize = hostingController.sizeThatFits(in: NSSize(width: 220, height: 44))
 
-            let renderer = ImageRenderer(content: view)
-            renderer.proposedSize = ProposedViewSize(width: 200, height: 60)
-            renderer.scale = 2
-            let image = try XCTUnwrap(renderer.nsImage, "selector render should produce an image for \(colorScheme)")
-            let tiffData = try XCTUnwrap(image.tiffRepresentation)
-            let bitmap = try XCTUnwrap(NSBitmapImageRep(data: tiffData))
-            let sample = PixelSample(bitmap: bitmap)
+                XCTAssertGreaterThanOrEqual(
+                    fittingSize.width,
+                    70,
+                    "history mode control should reserve width for \(historyMode.title) in \(colorScheme)"
+                )
+                XCTAssertLessThanOrEqual(
+                    fittingSize.width,
+                    128,
+                    "history mode control should fit as a compact menu-sized control for \(historyMode.title) in \(colorScheme)"
+                )
+                XCTAssertLessThanOrEqual(
+                    fittingSize.height,
+                    44,
+                    "history mode control should keep a compact height for \(historyMode.title) in \(colorScheme)"
+                )
 
-            XCTAssertGreaterThan(
-                sample.accentBluePixels,
-                20,
-                "selected history mode indicator should be visible for \(colorScheme)"
-            )
+                let bitmap = try renderedBitmap(for: view, width: 128, height: 44)
+                let sample = PixelSample(bitmap: bitmap)
+
+                XCTAssertGreaterThan(
+                    sample.labelAccentBluePixels,
+                    12,
+                    "current history mode label should be visible for \(historyMode.title) in \(colorScheme)"
+                )
+                XCTAssertGreaterThan(
+                    sample.accentBluePixels,
+                    sample.lowerAccentBluePixels,
+                    "selected history mode evidence should not be only a lower accent mark for \(historyMode.title) in \(colorScheme)"
+                )
+            }
         }
     }
 
@@ -92,14 +115,7 @@ final class PopupReferenceRenderTests: XCTestCase {
             reduceMotionOverride: true,
             previewReferenceDate: Date(timeIntervalSince1970: 1_800_000_000)
         )
-        .frame(width: GlassTokens.popupWidth, height: 260)
-
-        let renderer = ImageRenderer(content: view)
-        renderer.proposedSize = ProposedViewSize(width: GlassTokens.popupWidth, height: 260)
-        renderer.scale = 2
-        let image = try XCTUnwrap(renderer.nsImage)
-        let tiffData = try XCTUnwrap(image.tiffRepresentation)
-        let bitmap = try XCTUnwrap(NSBitmapImageRep(data: tiffData))
+        let bitmap = try renderedBitmap(for: view, width: GlassTokens.popupWidth, height: 260)
         let sample = PixelSample(bitmap: bitmap)
 
         XCTAssertGreaterThan(
@@ -109,27 +125,35 @@ final class PopupReferenceRenderTests: XCTestCase {
         )
     }
 
-    func testPopupRootReportsContentHeightInsteadOfMaxHeight() throws {
-        let suiteName = "PopupReferenceRenderTests.\(UUID().uuidString)"
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
-        defaults.removePersistentDomain(forName: suiteName)
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-        let model = CodexMenuBarModel(settingsStore: CodexAppSettingsStore(defaults: defaults))
-        model.enablePreviewMode()
+    func testPreviewModePopupFitsUnder600PointsInAllHistoryModes() throws {
+        for historyMode in PopupHistoryMode.allCases {
+            let suiteName = "PopupReferenceRenderTests.\(UUID().uuidString)"
+            let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+            defaults.removePersistentDomain(forName: suiteName)
+            defer { defaults.removePersistentDomain(forName: suiteName) }
+            let model = CodexMenuBarModel(settingsStore: CodexAppSettingsStore(defaults: defaults))
+            model.enablePreviewMode()
+            model.setDefaultHistoryMode(historyMode)
 
-        let view = PopupRootView(
-            model: model,
-            displayMode: .live,
-            reduceMotionOverride: true,
-            previewReferenceDate: Date(timeIntervalSince1970: 1_800_000_000)
-        )
-        let hostingController = NSHostingController(rootView: view)
-        let fittingSize = hostingController.sizeThatFits(
-            in: NSSize(width: GlassTokens.popupWidth, height: GlassTokens.popupMaxHeight)
-        )
+            let view = PopupRootView(
+                model: model,
+                displayMode: .live,
+                reduceMotionOverride: true,
+                previewReferenceDate: Date(timeIntervalSince1970: 1_800_000_000)
+            )
+            let hostingController = NSHostingController(rootView: view)
+            let fittingSize = hostingController.sizeThatFits(
+                in: NSSize(width: GlassTokens.popupWidth, height: GlassTokens.popupMaxHeight)
+            )
 
-        XCTAssertLessThan(fittingSize.height, GlassTokens.popupMaxHeight - 24)
-        XCTAssertGreaterThan(fittingSize.height, 360)
+            XCTAssertLessThan(
+                fittingSize.height,
+                540,
+                "Preview Mode popup should fit under 540pt in \(historyMode.title)"
+            )
+            XCTAssertGreaterThan(fittingSize.height, 320)
+            XCTAssertLessThan(fittingSize.height, GlassTokens.popupMaxHeight)
+        }
     }
 
     func testLivePopupFooterRendersVisibleActionRail() async throws {
@@ -151,13 +175,7 @@ final class PopupReferenceRenderTests: XCTestCase {
         let fittingSize = hostingController.sizeThatFits(
             in: NSSize(width: GlassTokens.popupWidth, height: GlassTokens.popupMaxHeight)
         )
-        let renderedView = view.frame(width: GlassTokens.popupWidth, height: fittingSize.height)
-        let renderer = ImageRenderer(content: renderedView)
-        renderer.proposedSize = ProposedViewSize(width: GlassTokens.popupWidth, height: fittingSize.height)
-        renderer.scale = 2
-        let image = try XCTUnwrap(renderer.nsImage)
-        let tiffData = try XCTUnwrap(image.tiffRepresentation)
-        let bitmap = try XCTUnwrap(NSBitmapImageRep(data: tiffData))
+        let bitmap = try renderedBitmap(for: view, width: GlassTokens.popupWidth, height: fittingSize.height)
         let sample = PixelSample(bitmap: bitmap)
 
         XCTAssertGreaterThan(
@@ -220,10 +238,26 @@ private struct RenderLocalUsageProvider: CodexLocalUsageProviding {
     }
 }
 
+@MainActor
+private func renderedBitmap<Content: View>(
+    for view: Content,
+    width: CGFloat,
+    height: CGFloat
+) throws -> NSBitmapImageRep {
+    let renderedView = view.frame(width: width, height: height)
+    let renderer = ImageRenderer(content: renderedView)
+    renderer.proposedSize = ProposedViewSize(width: width, height: height)
+    renderer.scale = 2
+    let image = try XCTUnwrap(renderer.nsImage)
+    let tiffData = try XCTUnwrap(image.tiffRepresentation)
+    return try XCTUnwrap(NSBitmapImageRep(data: tiffData))
+}
+
 private struct PixelSample {
     let nonBlackShare: Double
     let brightGlassShare: Double
     let accentBluePixels: Int
+    let labelAccentBluePixels: Int
     let lowerAccentBluePixels: Int
 
     init(bitmap: NSBitmapImageRep) {
@@ -232,9 +266,14 @@ private struct PixelSample {
         var nonBlack = 0
         var brightGlass = 0
         var accentBlue = 0
+        var labelAccentBlue = 0
         var lowerAccentBlue = 0
         var total = 0
         let step = 8
+        let labelBandXStart = Int(Double(width) * 0.24)
+        let labelBandXEnd = Int(Double(width) * 0.84)
+        let labelBandYStart = Int(Double(height) * 0.32)
+        let labelBandYEnd = Int(Double(height) * 0.68)
         let lowerBandStart = Int(Double(height) * 0.68)
 
         for y in 0..<height {
@@ -248,6 +287,12 @@ private struct PixelSample {
 
                 if blue > 0.65 && red < 0.45 && green < 0.78 && blue - red > 0.25 {
                     accentBlue += 1
+                    if x >= labelBandXStart,
+                       x <= labelBandXEnd,
+                       y >= labelBandYStart,
+                       y <= labelBandYEnd {
+                        labelAccentBlue += 1
+                    }
                     if y >= lowerBandStart {
                         lowerAccentBlue += 1
                     }
@@ -271,6 +316,7 @@ private struct PixelSample {
         nonBlackShare = Double(nonBlack) / denominator
         brightGlassShare = Double(brightGlass) / denominator
         accentBluePixels = accentBlue
+        labelAccentBluePixels = labelAccentBlue
         lowerAccentBluePixels = lowerAccentBlue
     }
 }

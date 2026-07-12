@@ -1,6 +1,6 @@
 # Codexex
 
-Codexex is a macOS menu bar app for viewing Codex quota state, reset windows, history, and forecast without turning into a full desktop dashboard.
+Codexex is a macOS menu bar app with an iPhone/iPad companion for viewing Codex quota state, reset windows, history, and forecast.
 
 Built by [Magrathean UK](https://magrathean.uk).
 
@@ -10,9 +10,12 @@ Built by [Magrathean UK](https://magrathean.uk).
 - [RUNBOOK.md](./RUNBOOK.md)
 - [PRIVACY.md](./PRIVACY.md)
 
+Current release: `5.1` (`14`). `project.yml` is the version and target source of truth.
+
 ## Product shape
 
-- Menu bar first. No dock-facing main window.
+- Menu bar first on macOS. No dock-facing main window.
+- Native iPhone/iPad companion using the shared quota contracts.
 - SwiftUI app content with a small AppKit shell for status item behavior.
 - `5H`, weekly, and 30-day history views, reset times, local history, and forecast.
 - Local Codex session usage: project/model/session burn, cache-read pressure, tool-loop and model-overkill signals.
@@ -25,12 +28,14 @@ Built by [Magrathean UK](https://magrathean.uk).
 
 - `Sources/CodexMeterCore/`: quota models, formatting, binary discovery, and service contracts.
 - `Sources/CodexMeterApp/`: app lifecycle, menu bar model, popup, settings, onboarding, and history UI.
+- `Sources/CodexMeteriOS/`: iPhone/iPad app shell, onboarding, settings, and quota presentation.
 - `Sources/CodexexXPCService/`: XPC service that brokers the helper process.
 - `Helper/CodexexHelper/`: Rust helper used for the OAuth device-code flow and quota reads.
 - `Scripts/`: helper build and embed scripts used by the Xcode target.
 - `AppStore/`: entitlements and App Store-facing bundle settings.
 - `Tests/`: XCTest coverage for both core logic and app behavior.
 - `fastlane/metadata/`: checked-in App Store text inputs.
+- `.codex/hooks.json`: trusted project-local Codex guard for generated Xcode files.
 - `Package.swift`: SwiftPM adapter for local development and package tests; `project.yml` remains the Xcode source of truth.
 
 ## Quick start
