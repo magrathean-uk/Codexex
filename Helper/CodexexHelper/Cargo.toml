@@ -10,10 +10,10 @@ internal-env-overrides = []
 anyhow = "1"
 base64 = "0.22"
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
-codex-app-server-protocol = { git = "https://github.com/openai/codex", rev = "be13f03c396b54b85b858bd023bf930b06164e33", package = "codex-app-server-protocol" }
-codex-backend-client = { git = "https://github.com/openai/codex", rev = "be13f03c396b54b85b858bd023bf930b06164e33", package = "codex-backend-client" }
-codex-client = { git = "https://github.com/openai/codex", rev = "be13f03c396b54b85b858bd023bf930b06164e33", package = "codex-client" }
-codex-login = { git = "https://github.com/openai/codex", rev = "be13f03c396b54b85b858bd023bf930b06164e33", package = "codex-login" }
+codex-app-server-protocol = { git = "https://github.com/openai/codex", rev = "3b948d9dd8d2e13a36e95a05efb6bb2288b801c4", package = "codex-app-server-protocol" }
+codex-backend-client = { git = "https://github.com/openai/codex", rev = "3b948d9dd8d2e13a36e95a05efb6bb2288b801c4", package = "codex-backend-client" }
+codex-client = { git = "https://github.com/openai/codex", rev = "3b948d9dd8d2e13a36e95a05efb6bb2288b801c4", package = "codex-client" }
+codex-login = { git = "https://github.com/openai/codex", rev = "3b948d9dd8d2e13a36e95a05efb6bb2288b801c4", package = "codex-login" }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

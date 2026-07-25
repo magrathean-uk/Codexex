@@ -154,7 +154,7 @@ fn fetch_snapshot_keeps_chatgpt_auth_when_rate_limit_fetch_fails() {
 
 #[test]
 #[serial]
-fn fetch_snapshot_returns_clear_no_quota_message_when_empty() {
+fn fetch_snapshot_tolerates_unknown_plan_type_when_no_quota_is_returned() {
     let _guard = EnvGuard::new();
     let temp_dir = TempDir::new().unwrap();
     let runtime = tokio::runtime::Builder::new_multi_thread()
@@ -172,7 +172,7 @@ fn fetch_snapshot_returns_clear_no_quota_message_when_empty() {
             .and(header("authorization", "Bearer access-token-123"))
             .and(header("chatgpt-account-id", "account-123"))
             .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-                "plan_type": "pro",
+                "plan_type": "future_plan",
                 "rate_limit": null,
                 "credits": null,
                 "additional_rate_limits": null
@@ -411,7 +411,7 @@ fn device_auth_flow_persists_login_and_fetches_live_snapshot() {
             .and(header("authorization", "Bearer access-token-123"))
             .and(header("chatgpt-account-id", "account-123"))
             .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-                "plan_type": "pro",
+                "plan_type": "prolite",
                 "rate_limit": {
                     "allowed": true,
                     "limit_reached": false,

@@ -1,6 +1,6 @@
 # Codexex Runbook
 
-Current release: `5.1` (`14`). Keep `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `project.yml`; regenerate the Xcode project after changing them.
+Current release: `5.1.1` (`16`). Keep `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `project.yml`; regenerate the Xcode project after changing them.
 
 ## Architecture map
 

@@ -10,7 +10,7 @@ Built by [Magrathean UK](https://magrathean.uk).
 - [RUNBOOK.md](./RUNBOOK.md)
 - [PRIVACY.md](./PRIVACY.md)
 
-Current release: `5.1` (`14`). `project.yml` is the version and target source of truth.
+Current release: `5.1.1` (`16`). `project.yml` is the version and target source of truth.
 
 ## Product shape
 

@@ -50,7 +50,7 @@ final class CodexRateLimitPayloadMapperTests: XCTestCase {
         let data = Data(
             """
             {
-              "plan_type": "pro",
+              "plan_type": "prolite",
               "rate_limit": {
                 "primary_window": {
                   "used_percent": 13,
@@ -92,7 +92,7 @@ final class CodexRateLimitPayloadMapperTests: XCTestCase {
             account: CodexAccount(authType: "chatGPT", email: "user@example.com", planType: nil)
         )
 
-        XCTAssertEqual(snapshot.account.planType, "PRO")
+        XCTAssertEqual(snapshot.account.planType, "PROLITE")
         XCTAssertEqual(snapshot.codexLimit?.fiveHourWindow?.usedPercentText, "13%")
         XCTAssertEqual(snapshot.codexLimit?.weeklyWindow?.usedPercentText, "70%")
         XCTAssertEqual(snapshot.codexLimit?.credits?.balance, "12.50")

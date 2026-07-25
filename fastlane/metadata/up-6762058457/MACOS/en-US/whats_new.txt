@@ -1,5 +1,4 @@
-Codexex 5.1 refines the menu bar experience:
+Codexex 5.1.1 improves quota refresh:
 
-- Design refinements across the popup and Settings.
-- Smoother, more reliable ChatGPT sign-in.
-- Reliability fixes for quota refresh and helper startup.
+- Supports new ChatGPT plan types.
+- Keeps new or unknown plan labels from blocking quota updates.
