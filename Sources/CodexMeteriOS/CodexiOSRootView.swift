@@ -241,7 +241,11 @@ struct CodexiOSRootView: View {
     }
 
     private func quotaCard(_ limit: CodexLimit) -> some View {
-        iOSCard {
+        let headline = CodexiOSQuotaPresentation.headline(
+            for: limit,
+            showFiveHour: showFiveHourPresentation
+        )
+        return iOSCard {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .firstTextBaseline, spacing: 12) {
                     Text(limit.displayName)
@@ -249,10 +253,7 @@ struct CodexiOSRootView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .lineLimit(2)
                     Spacer(minLength: 12)
-                    if let headline = CodexiOSQuotaPresentation.headline(
-                        for: limit,
-                        showFiveHour: showFiveHourPresentation
-                    ) {
+                    if let headline {
                         Text("\(headline.title) · \(headline.window.remainingPercentText) left")
                             .font(.system(size: 30, weight: .semibold).monospacedDigit())
                             .minimumScaleFactor(0.7)
@@ -275,7 +276,11 @@ struct CodexiOSRootView: View {
                         title: "5H",
                         window: fiveHour,
                         tint: tint(for: limit.bucket),
-                        identifier: quotaIdentifier(for: limit, suffix: "fiveHour")
+                        identifier: quotaIdentifier(for: limit, suffix: "fiveHour"),
+                        showsPercentage: CodexiOSQuotaPresentation.shouldShowRowPercentage(
+                            for: fiveHour,
+                            headline: headline
+                        )
                     )
                 }
                 if let weekly = CodexiOSQuotaPresentation.weeklyWindow(for: limit),
@@ -285,7 +290,11 @@ struct CodexiOSRootView: View {
                         title: "Weekly",
                         window: weekly,
                         tint: tint(for: limit.bucket),
-                        identifier: quotaIdentifier(for: limit, suffix: "weekly")
+                        identifier: quotaIdentifier(for: limit, suffix: "weekly"),
+                        showsPercentage: CodexiOSQuotaPresentation.shouldShowRowPercentage(
+                            for: weekly,
+                            headline: headline
+                        )
                     )
                 }
                 if let credits = CodexQuotaPresentationRules.visibleCredits(limit.credits) {
@@ -302,7 +311,8 @@ struct CodexiOSRootView: View {
         title: String,
         window: CodexQuotaWindow,
         tint: Color,
-        identifier: String
+        identifier: String,
+        showsPercentage: Bool
     ) -> some View {
         let reset = resetText(for: window)
         return VStack(alignment: .leading, spacing: 6) {
@@ -311,8 +321,10 @@ struct CodexiOSRootView: View {
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.secondary)
                 Spacer(minLength: 10)
-                Text(window.remainingPercentText)
-                    .font(.subheadline.weight(.semibold).monospacedDigit())
+                if showsPercentage {
+                    Text(window.remainingPercentText)
+                        .font(.subheadline.weight(.semibold).monospacedDigit())
+                }
                 Text(reset)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -324,7 +336,11 @@ struct CodexiOSRootView: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(title) quota")
-        .accessibilityValue("\(Int(window.remainingPercent.rounded())) percent remaining, \(reset)")
+        .accessibilityValue(
+            showsPercentage
+                ? "\(Int(window.remainingPercent.rounded())) percent remaining, \(reset)"
+                : reset
+        )
         .accessibilityIdentifier(identifier)
     }
 
@@ -421,6 +437,13 @@ struct CodexiOSQuotaHeadline: Equatable {
 }
 
 enum CodexiOSQuotaPresentation {
+    static func shouldShowRowPercentage(
+        for window: CodexQuotaWindow,
+        headline: CodexiOSQuotaHeadline?
+    ) -> Bool {
+        headline?.window != window
+    }
+
     static func headline(
         for limit: CodexLimit,
         showFiveHour: Bool

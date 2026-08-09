@@ -25,6 +25,22 @@ final class CodexiOSPresentationTests: XCTestCase {
         XCTAssertEqual(headline.window.usedPercent, 96)
     }
 
+    func testHeadlinePercentageIsNotRepeatedInMatchingRow() throws {
+        let limit = makeLimit(fiveHourUsed: 96, weeklyUsed: 28)
+        let headline = try XCTUnwrap(
+            CodexiOSQuotaPresentation.headline(for: limit, showFiveHour: true)
+        )
+        let fiveHour = try XCTUnwrap(CodexiOSQuotaPresentation.fiveHourWindow(for: limit))
+        let weekly = try XCTUnwrap(CodexiOSQuotaPresentation.weeklyWindow(for: limit))
+
+        XCTAssertFalse(
+            CodexiOSQuotaPresentation.shouldShowRowPercentage(for: fiveHour, headline: headline)
+        )
+        XCTAssertTrue(
+            CodexiOSQuotaPresentation.shouldShowRowPercentage(for: weekly, headline: headline)
+        )
+    }
+
     func testMissingWeeklyDoesNotLeakHiddenFiveHour() {
         let limit = CodexLimit(
             id: "codex",
