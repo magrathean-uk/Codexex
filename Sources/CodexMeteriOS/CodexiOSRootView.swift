@@ -9,7 +9,10 @@ struct CodexiOSRootView: View {
     @AppStorage(CodexiOSSettingsKeys.appearanceMode) private var appearanceMode = CodexiOSAppearanceMode.system.rawValue
     @AppStorage(CodexiOSSettingsKeys.defaultHistoryMode) private var defaultHistoryMode = CodexiOSHistoryMode.dailyPeaks.rawValue
     @AppStorage(CodexiOSSettingsKeys.showFiveHourPresentation) private var showFiveHourPresentation = false
+    @AppStorage(CodexiOSSettingsKeys.matrixThemeEnabled) private var matrixThemeEnabled = false
     @Bindable var model: CodexiOSModel
+    @State private var isShowingMatrixQuota = false
+    @State private var checkedMatrixThemeAtLaunch = false
 
     var body: some View {
         NavigationStack {
@@ -25,7 +28,15 @@ struct CodexiOSRootView: View {
             .background(CodexiOSTheme.background.ignoresSafeArea())
         }
         .preferredColorScheme(CodexiOSAppearanceMode(rawValue: appearanceMode)?.colorScheme)
-        .onAppear(perform: normalizeHistoryMode)
+        .onAppear {
+            normalizeHistoryMode()
+            guard checkedMatrixThemeAtLaunch == false else { return }
+            checkedMatrixThemeAtLaunch = true
+            isShowingMatrixQuota = matrixThemeEnabled
+        }
+        .fullScreenCover(isPresented: $isShowingMatrixQuota) {
+            CodexiOSMatrixQuotaView(model: model)
+        }
     }
 
     private var narrowLayout: some View {
@@ -152,7 +163,9 @@ struct CodexiOSRootView: View {
 
     private var settingsActionButton: some View {
         NavigationLink {
-            CodexiOSSettingsView(model: model)
+            CodexiOSSettingsView(model: model) {
+                isShowingMatrixQuota = true
+            }
         } label: {
             Label("Settings", systemImage: "gearshape")
         }

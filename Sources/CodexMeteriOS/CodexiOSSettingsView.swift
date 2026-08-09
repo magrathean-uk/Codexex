@@ -13,6 +13,7 @@ enum CodexiOSSettingsKeys {
     static let defaultHistoryMode = "ios.defaultHistoryMode"
     static let showPaceConfidence = "ios.showPaceConfidence"
     static let showFiveHourPresentation = "ios.showFiveHourPresentation"
+    static let matrixThemeEnabled = "ios.matrixThemeEnabled"
     static let summarySnoozeFingerprint = "ios.summarySnoozeFingerprint"
     static let summarySnoozeExpiresAt = "ios.summarySnoozeExpiresAt"
 
@@ -29,6 +30,7 @@ enum CodexiOSSettingsKeys {
         defaultHistoryMode,
         showPaceConfidence,
         showFiveHourPresentation,
+        matrixThemeEnabled,
         summarySnoozeFingerprint,
         summarySnoozeExpiresAt
     ]
@@ -108,13 +110,21 @@ struct CodexiOSSettingsView: View {
     @AppStorage(CodexiOSSettingsKeys.defaultHistoryMode) private var defaultHistoryMode = CodexiOSHistoryMode.dailyPeaks.rawValue
     @AppStorage(CodexiOSSettingsKeys.refreshIntervalSeconds) private var refreshIntervalSeconds = 300
     @AppStorage(CodexiOSSettingsKeys.showFiveHourPresentation) private var showFiveHourPresentation = false
+    @AppStorage(CodexiOSSettingsKeys.matrixThemeEnabled) private var matrixThemeEnabled = false
     @Bindable var model: CodexiOSModel
+    let onMatrixThemeEnabled: () -> Void
     @State private var isShowingResetConfirmation = false
+
+    init(model: CodexiOSModel, onMatrixThemeEnabled: @escaping () -> Void = {}) {
+        self.model = model
+        self.onMatrixThemeEnabled = onMatrixThemeEnabled
+    }
 
     var body: some View {
         Form {
             accountSection
             displaySection
+            experimentalSection
             refreshSection
             privacySection
             resetSection
@@ -127,6 +137,11 @@ struct CodexiOSSettingsView: View {
         .preferredColorScheme(CodexiOSAppearanceMode(rawValue: appearanceMode)?.colorScheme)
         .onChange(of: showFiveHourPresentation) { _, enabled in
             Task { await model.updateLiveActivityPresentation(showFiveHour: enabled) }
+        }
+        .onChange(of: matrixThemeEnabled) { _, enabled in
+            if enabled {
+                onMatrixThemeEnabled()
+            }
         }
         .confirmationDialog(
             "Reset Codexex?",
@@ -296,6 +311,17 @@ struct CodexiOSSettingsView: View {
             Text("Refresh")
         } footer: {
             Text("Default matches Mac: refresh every 5 minutes while the app is active.")
+        }
+    }
+
+    private var experimentalSection: some View {
+        Section {
+            Toggle("Matrix theme", isOn: $matrixThemeEnabled)
+                .accessibilityIdentifier("ios.settings.matrixTheme")
+        } header: {
+            Text("Experimental")
+        } footer: {
+            Text("Opens the fullscreen Matrix view. Turn it off in this setting to return to the standard theme.")
         }
     }
 

@@ -26,6 +26,7 @@
 		11FB5E69156BB0A8CB8C7ABA /* Bundle+CodexVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05CCE50FE148626A7EEABCA7 /* Bundle+CodexVersion.swift */; };
 		122B56E96EB97F6438A9580B /* CodexLocalConfigDoctor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C93F9E8D666046B633329ED /* CodexLocalConfigDoctor.swift */; };
 		1325D72972219D26D0B74E4E /* CodexQuotaSnapshotBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2763F8999C44DE7A51CB688F /* CodexQuotaSnapshotBuilder.swift */; };
+		137ADD0ED54B9BEAB08EC276 /* CodexiOSMatrixQuotaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 411B69AF5441D8514617C5B4 /* CodexiOSMatrixQuotaView.swift */; };
 		14552F1B2EEB7E4530B179B2 /* CodexRefreshCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC9E3D0D765146EDEEA25054 /* CodexRefreshCoordinator.swift */; };
 		17640F87C09FECBB553D5520 /* CodexAppLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E5F053505E884FBD559ACCC /* CodexAppLinks.swift */; };
 		181A3BEAEEE1855FF052F319 /* CodexHistoryRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEF19D5BC8BD43C5743F981C /* CodexHistoryRepository.swift */; };
@@ -44,6 +45,7 @@
 		2612BDEDDA88004D9176D78D /* GlassCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE2909B5F3DAB30B7BDCACD5 /* GlassCard.swift */; };
 		27A9B3C611933865DF8185D5 /* PopupPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7DC9461D5A89DDD41915EB /* PopupPresentation.swift */; };
 		2DD7F4B32FDD59E6D23C78E7 /* CodexMeterCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6869618B2897346A3AB60D26 /* CodexMeterCore.framework */; };
+		2E9FDA240C252B85DD619C6C /* CodexiOSMatrixSpeedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A092CDBC525B474DC8DEE8D4 /* CodexiOSMatrixSpeedTests.swift */; };
 		3345862044A399E80C2EAFC9 /* CodexMenuBarModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB02F9086358A6968D76E1F /* CodexMenuBarModel.swift */; };
 		33841CD2E70AFE0A22CB83AA /* CodexXPCRequestGuards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F4A03C91A093F6B25E2FE65 /* CodexXPCRequestGuards.swift */; };
 		3485B4D8947D184E1E4785A1 /* CodexQuotaSnapshotBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2763F8999C44DE7A51CB688F /* CodexQuotaSnapshotBuilder.swift */; };
@@ -375,6 +377,7 @@
 		3B7136BEC6127CE9C04C446E /* CodexMeteriOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CodexMeteriOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3DCB68BA3D1440CD077F896F /* CodexLocalUsageModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexLocalUsageModels.swift; sourceTree = "<group>"; };
 		410E8DD13157EB9F9DA4D77D /* CodexiOSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexiOSService.swift; sourceTree = "<group>"; };
+		411B69AF5441D8514617C5B4 /* CodexiOSMatrixQuotaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexiOSMatrixQuotaView.swift; sourceTree = "<group>"; };
 		4210E40BC9A4833AE97FD5A9 /* CodexAuthFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexAuthFlowTests.swift; sourceTree = "<group>"; };
 		45ECD99179170D7137CE6A6B /* PopupPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupPresentationTests.swift; sourceTree = "<group>"; };
 		49B4391C527FAE3FB893DF3A /* CodexiOSRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexiOSRootView.swift; sourceTree = "<group>"; };
@@ -413,6 +416,7 @@
 		9D4643340C8B906668F199F8 /* CodexAppResetter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexAppResetter.swift; sourceTree = "<group>"; };
 		9E5F053505E884FBD559ACCC /* CodexAppLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexAppLinks.swift; sourceTree = "<group>"; };
 		9F7CC244BD026232606AE671 /* CodexQuotaPresentationRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexQuotaPresentationRules.swift; sourceTree = "<group>"; };
+		A092CDBC525B474DC8DEE8D4 /* CodexiOSMatrixSpeedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexiOSMatrixSpeedTests.swift; sourceTree = "<group>"; };
 		A0CBAF74B8C68B66AEB0E1E1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A0F373CE46619902781235BE /* CodexPreviewData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexPreviewData.swift; sourceTree = "<group>"; };
 		A4722D98A17612B568ACEA0E /* CodexRefreshBackoffTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexRefreshBackoffTests.swift; sourceTree = "<group>"; };
@@ -655,6 +659,7 @@
 				A729D4E01BB7C27D032909ED /* CodexexiOSApp.swift */,
 				F71A43B620EED6061EFF23C8 /* CodexiOSAppResetter.swift */,
 				67971912B9EC671915157EBB /* CodexiOSLiveActivity.swift */,
+				411B69AF5441D8514617C5B4 /* CodexiOSMatrixQuotaView.swift */,
 				BDAD19C107E25B335856C22D /* CodexiOSModel.swift */,
 				09D48D6D0C2F5DFF9E8CD72F /* CodexiOSOnboardingView.swift */,
 				4BB908509411E7FBC4FAEBB8 /* CodexiOSPendingAuthRegistry.swift */,
@@ -764,6 +769,7 @@
 		D0C67F707AEA286BBCDC6643 /* CodexMeteriOSTests */ = {
 			isa = PBXGroup;
 			children = (
+				A092CDBC525B474DC8DEE8D4 /* CodexiOSMatrixSpeedTests.swift */,
 				C56D6F6EAAF8E18B5234FE95 /* CodexiOSModelTests.swift */,
 				2FF539D726E7F7A5B70AAF0A /* CodexiOSPendingAuthRegistryTests.swift */,
 				B99D28DCEF73F61E20CA25CA /* CodexiOSPresentationTests.swift */,
@@ -1276,6 +1282,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2E9FDA240C252B85DD619C6C /* CodexiOSMatrixSpeedTests.swift in Sources */,
 				AB2FE6A4B740DD6D70A380AF /* CodexiOSModelTests.swift in Sources */,
 				3A61571D317BE44CC8207644 /* CodexiOSPendingAuthRegistryTests.swift in Sources */,
 				1FB1CD389834B848B7FF7A63 /* CodexiOSPresentationTests.swift in Sources */,
@@ -1292,6 +1299,7 @@
 				1DE8CA42D34331DA5D73EB2D /* CodexexiOSApp.swift in Sources */,
 				F9130A4420C79C4986DAE766 /* CodexiOSAppResetter.swift in Sources */,
 				BA0E6FA856252F6B706A853A /* CodexiOSLiveActivity.swift in Sources */,
+				137ADD0ED54B9BEAB08EC276 /* CodexiOSMatrixQuotaView.swift in Sources */,
 				ECE1E26B378C4F8589E8B65B /* CodexiOSModel.swift in Sources */,
 				ADB34CDE2C32FD957D47CB0F /* CodexiOSOnboardingView.swift in Sources */,
 				A4E5978A3F0A80BE603B81C6 /* CodexiOSPendingAuthRegistry.swift in Sources */,
