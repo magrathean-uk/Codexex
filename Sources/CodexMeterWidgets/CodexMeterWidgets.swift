@@ -12,167 +12,105 @@ struct CodexMeterWidgets: WidgetBundle {
 struct CodexQuotaLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: CodexLiveActivityAttributes.self) { context in
-            QuotaLockScreen(
-                state: context.state,
-                isStale: context.isStale || context.state.isStale
-            )
-            .activityBackgroundTint(Color(uiColor: .systemBackground))
+            QuotaUsageView(state: context.state)
+                .activityBackgroundTint(Color(uiColor: .systemBackground))
         } dynamicIsland: { context in
-            let isStale = context.isStale || context.state.isStale
             return DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) {
-                    Label("Codex", systemImage: "gauge.with.dots.needle.50percent")
-                        .lineLimit(1)
-                }
-                DynamicIslandExpandedRegion(.trailing) {
-                    ViewThatFits(in: .horizontal) {
-                        Text("Weekly · \(context.state.weeklyPercentLeft)% left")
-                        Text("W · \(context.state.weeklyPercentLeft)%")
-                    }
-                    .monospacedDigit()
-                    .lineLimit(1)
-                }
                 DynamicIslandExpandedRegion(.bottom) {
-                    QuotaLockScreen(state: context.state, isStale: isStale)
+                    QuotaUsageView(state: context.state)
                 }
             } compactLeading: {
-                Image(
-                    systemName: isStale
-                        ? "exclamationmark.triangle.fill"
-                        : "gauge.with.dots.needle.50percent"
-                )
-                .accessibilityLabel(
-                    isStale
-                        ? "Codex quota needs a foreground refresh"
-                        : "Codex quota"
-                )
+                ActivityIcon(size: 16)
+                    .accessibilityLabel("Codexex Usage")
             } compactTrailing: {
                 Text("\(context.state.weeklyPercentLeft)%")
                     .monospacedDigit()
-                    .accessibilityLabel("Weekly \(context.state.weeklyPercentLeft) percent left")
+                    .accessibilityLabel("\(context.state.weeklyPercentLeft)% left of weekly usage")
             } minimal: {
-                Text(isStale ? "!" : "\(context.state.weeklyPercentLeft)%")
-                    .monospacedDigit()
-                    .accessibilityLabel(
-                        isStale
-                            ? "Codex quota needs a foreground refresh"
-                            : "Weekly \(context.state.weeklyPercentLeft) percent left"
-                    )
+                ActivityIcon(size: 16)
+                    .accessibilityLabel("Codexex Usage")
             }
             .keylineTint(.accentColor)
         }
     }
 }
 
-private struct QuotaLockScreen: View {
+private struct QuotaUsageView: View {
     let state: CodexLiveActivityAttributes.ContentState
-    let isStale: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            VStack(alignment: .leading, spacing: 2) {
-                Label("Codex", systemImage: "gauge.with.dots.needle.50percent")
+        VStack(alignment: .leading, spacing: 11) {
+            HStack(alignment: .center, spacing: 10) {
+                ActivityIcon(size: 28)
+                Text("Codexex Usage")
+                    .font(.headline.weight(.semibold))
                     .lineLimit(1)
-                headlineText
+                    .minimumScaleFactor(0.82)
             }
+
+            Text("\(state.weeklyPercentLeft)% left of weekly usage")
+                .font(.subheadline.weight(.medium))
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
 
             ProgressView(value: state.weeklyUsedFraction)
                 .tint(.accentColor)
+                .frame(height: 8)
                 .accessibilityHidden(true)
-
-            narrowDetails
-
-            if isStale {
-                Label("Needs foreground refresh", systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
-            }
         }
         .fontDesign(.rounded)
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Codex quota")
-        .accessibilityValue(accessibilitySummary)
+        .accessibilityLabel("Codexex Usage")
+        .accessibilityValue("\(state.weeklyPercentLeft)% left of weekly usage")
     }
+}
 
-    private var narrowDetails: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            resetLabel("Weekly", state.weeklyResetAt)
-            if let fiveHourPercentLeft = state.fiveHourPercentLeft {
-                resetLabel("5H · \(fiveHourPercentLeft)% left", state.fiveHourResetAt)
+private struct ActivityIcon: View {
+    let size: CGFloat
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: size * 0.22, style: .continuous)
+                .fill(Color(red: 0.10, green: 0.14, blue: 0.25))
+
+            HStack(spacing: size * 0.045) {
+                Capsule()
+                    .fill(Color(red: 0.15, green: 0.42, blue: 1.0))
+                    .frame(width: size * 0.28, height: size * 0.14)
+                Capsule()
+                    .fill(Color(red: 0.20, green: 0.78, blue: 0.84))
+                    .frame(width: size * 0.35, height: size * 0.14)
+                Circle()
+                    .fill(Color(red: 1.0, green: 0.53, blue: 0.05))
+                    .frame(width: size * 0.14, height: size * 0.14)
             }
-        }
-        .font(.caption)
-        .foregroundStyle(.secondary)
-        .lineLimit(1)
-        .minimumScaleFactor(0.68)
-    }
+            .padding(.horizontal, size * 0.12)
 
-    private var headlineText: some View {
-        Text("Weekly · \(state.weeklyPercentLeft)% left")
-            .font(.headline)
-            .monospacedDigit()
-            .lineLimit(1)
-            .minimumScaleFactor(0.62)
-    }
-
-    @ViewBuilder
-    private func resetLabel(_ title: String, _ date: Date?) -> some View {
-        if let date {
-            Text("\(title) resets \(date, style: .relative)")
-                .monospacedDigit()
-                .lineLimit(1)
-        } else {
-            Text("\(title) reset unavailable")
-                .lineLimit(1)
+            RoundedRectangle(cornerRadius: size * 0.22, style: .continuous)
+                .stroke(.white.opacity(0.18), lineWidth: max(0.5, size * 0.025))
         }
-    }
-
-    private var accessibilitySummary: String {
-        var parts = [
-            "Weekly \(state.weeklyPercentLeft) percent left",
-            accessibilityReset("Weekly", state.weeklyResetAt)
-        ]
-        if let fiveHourPercentLeft = state.fiveHourPercentLeft {
-            parts.append("5-hour \(fiveHourPercentLeft) percent left")
-            parts.append(accessibilityReset("5-hour", state.fiveHourResetAt))
-        }
-        if isStale {
-            parts.append("Needs foreground refresh")
-        }
-        return parts.joined(separator: ". ")
-    }
-
-    private func accessibilityReset(_ title: String, _ date: Date?) -> String {
-        guard let date else { return "\(title) reset unavailable" }
-        return "\(title) resets \(date.formatted(date: .abbreviated, time: .shortened))"
+        .frame(width: size, height: size)
     }
 }
 
 private let previewAttributes = CodexLiveActivityAttributes()
-private let previewReset = Date(timeIntervalSince1970: 1_800_025_200)
 private let previewNormal = CodexLiveActivityAttributes.ContentState(
     weeklyPercentLeft: 68,
     weeklyUsedFraction: 0.32,
-    weeklyResetAt: previewReset,
+    weeklyResetAt: nil,
     fiveHourPercentLeft: nil,
     fiveHourResetAt: nil,
-    isStale: false
-)
-private let previewFiveHour = CodexLiveActivityAttributes.ContentState(
-    weeklyPercentLeft: 68,
-    weeklyUsedFraction: 0.32,
-    weeklyResetAt: previewReset,
-    fiveHourPercentLeft: 42,
-    fiveHourResetAt: previewReset.addingTimeInterval(-72_000),
     isStale: false
 )
 private let previewStale = CodexLiveActivityAttributes.ContentState(
     weeklyPercentLeft: 68,
     weeklyUsedFraction: 0.32,
-    weeklyResetAt: previewReset,
-    fiveHourPercentLeft: 42,
-    fiveHourResetAt: previewReset.addingTimeInterval(-72_000),
+    weeklyResetAt: nil,
+    fiveHourPercentLeft: nil,
+    fiveHourResetAt: nil,
     isStale: true
 )
 
@@ -180,7 +118,6 @@ private let previewStale = CodexLiveActivityAttributes.ContentState(
     CodexQuotaLiveActivity()
 } contentStates: {
     previewNormal
-    previewFiveHour
     previewStale
 }
 
@@ -188,7 +125,6 @@ private let previewStale = CodexLiveActivityAttributes.ContentState(
     CodexQuotaLiveActivity()
 } contentStates: {
     previewNormal
-    previewFiveHour
     previewStale
 }
 
@@ -207,6 +143,6 @@ private let previewStale = CodexLiveActivityAttributes.ContentState(
 }
 
 #Preview("System stale layout") {
-    QuotaLockScreen(state: previewNormal, isStale: true)
+    QuotaUsageView(state: previewNormal)
         .padding()
 }
