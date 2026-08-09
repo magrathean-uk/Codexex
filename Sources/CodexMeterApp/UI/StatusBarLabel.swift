@@ -40,9 +40,10 @@ struct StatusBarLabel: View {
         showWeekly: Bool,
         insights: CodexUsageInsights?
     ) -> String {
+        let usesOpenAILogo = usesOpenAILogo(showFiveHour: showFiveHour, showWeekly: showWeekly)
         guard let snapshot else {
             let fiveHour = showFiveHour ? (hasError ? "5H --" : "5H …") : nil
-            let weekly = showWeekly ? (hasError ? "W --" : "W …") : nil
+            let weekly = showWeekly ? (hasError ? (usesOpenAILogo ? "--" : "W --") : (usesOpenAILogo ? "…" : "W …")) : nil
             return [fiveHour, weekly].compactMap { $0 }.joined(separator: " ")
         }
 
@@ -50,7 +51,11 @@ struct StatusBarLabel: View {
         let fiveHour = codexLimit?.fiveHourWindow
         let weekly = codexLimit?.weeklyWindow
 
-        if displayMode == .pace, let title = paceTitle(insights: insights, weekly: weekly) {
+        if displayMode == .pace, let title = paceTitle(
+            insights: insights,
+            weekly: weekly,
+            usesOpenAILogo: usesOpenAILogo
+        ) {
             return title
         }
 
@@ -66,9 +71,10 @@ struct StatusBarLabel: View {
 
         if showWeekly {
             if let codexWeek = weekly {
-                pieces.append("W \(percentText(for: codexWeek, displayMode: displayMode))")
+                let percent = percentText(for: codexWeek, displayMode: displayMode)
+                pieces.append(usesOpenAILogo ? percent : "W \(percent)")
             } else {
-                pieces.append("W --")
+                pieces.append(usesOpenAILogo ? "--" : "W --")
             }
         }
 
@@ -79,7 +85,8 @@ struct StatusBarLabel: View {
         isRefreshing: Bool,
         hasError: Bool,
         isStale: Bool,
-        severity: CodexQuotaSeverity?
+        severity: CodexQuotaSeverity?,
+        showOpenAILogo: Bool = false
     ) -> NSImage? {
         if isRefreshing {
             return NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: nil)
@@ -94,6 +101,9 @@ struct StatusBarLabel: View {
             image?.isTemplate = true
             return image
         }
+        if showOpenAILogo {
+            return openAILogoImage()
+        }
         guard let severity else { return nil }
         let size = NSSize(width: 8, height: 8)
         let image = NSImage(size: size)
@@ -103,6 +113,10 @@ struct StatusBarLabel: View {
         image.unlockFocus()
         image.isTemplate = false
         return image
+    }
+
+    static func usesOpenAILogo(showFiveHour: Bool, showWeekly: Bool) -> Bool {
+        showFiveHour == false && showWeekly
     }
 
     private var labelText: String {
@@ -131,17 +145,29 @@ struct StatusBarLabel: View {
 
     private static func paceTitle(
         insights: CodexUsageInsights?,
-        weekly: CodexQuotaWindow?
+        weekly: CodexQuotaWindow?,
+        usesOpenAILogo: Bool
     ) -> String? {
+        let prefix = usesOpenAILogo ? "" : "W "
         guard let forecast = insights?.weeklyPace else { return nil }
         if let current = forecast.currentPercent,
            let projected = forecast.projectedPercentAtReset {
-            return "W \(Int(current.rounded()))%->\(Int(projected.rounded()))%"
+            return "\(prefix)\(Int(current.rounded()))%->\(Int(projected.rounded()))%"
         }
         if let weekly {
-            return "W \(weekly.usedPercentText) \(forecast.confidence.label)"
+            return "\(prefix)\(weekly.usedPercentText) \(forecast.confidence.label)"
         }
         return forecast.confidence.label
+    }
+
+    private static func openAILogoImage() -> NSImage? {
+        guard let source = NSImage(named: NSImage.Name("OpenAILogo")),
+              let image = source.copy() as? NSImage else {
+            return nil
+        }
+        image.size = NSSize(width: 14, height: 14)
+        image.isTemplate = true
+        return image
     }
 
     private static func dotColor(for severity: CodexQuotaSeverity) -> Color {

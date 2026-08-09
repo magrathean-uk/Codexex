@@ -8,11 +8,16 @@ struct CodexStatusItemViewState: Equatable {
     let hasError: Bool
     let isStale: Bool
     let severity: CodexQuotaSeverity?
+    let showsOpenAILogo: Bool
     let shouldDim: Bool
 
     @MainActor
     init(model: CodexMenuBarModel) {
         hasError = model.lastError != nil
+        showsOpenAILogo = StatusBarLabel.usesOpenAILogo(
+            showFiveHour: model.showFiveHourInMenubar,
+            showWeekly: model.showWeeklyInMenubar
+        )
         title = StatusBarLabel.makeTitle(
             snapshot: model.snapshot,
             isRefreshing: model.isRefreshing,

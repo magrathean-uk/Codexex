@@ -1,1 +1,1 @@
-Track Codex usage, local session burn, forecasts, and Preview Mode from the Mac menu bar.
+Track weekly Codex usage, local session burn, forecasts, and Preview Mode from the Mac menu bar.

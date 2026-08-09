@@ -1,4 +1,4 @@
-Codexex 5.1.1 improves quota refresh:
+Codexex 5.2.0 adds a focused usage view:
 
-- Supports new ChatGPT plan types.
-- Keeps new or unknown plan labels from blocking quota updates.
+- Live Activity shows weekly percentage left and progress on the Lock Screen and Dynamic Island.
+- The optional 5-hour window is off by default for a clearer weekly view.

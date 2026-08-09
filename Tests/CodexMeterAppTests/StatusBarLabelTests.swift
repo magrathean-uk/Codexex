@@ -33,6 +33,21 @@ final class StatusBarLabelTests: XCTestCase {
         XCTAssertEqual(title, "5H 87% W 30%")
     }
 
+    func testWeeklyOnlyMenuBarUsesTheOpenAILogoSlot() {
+        let title = StatusBarLabel.makeTitle(
+            snapshot: makeSnapshot(),
+            isRefreshing: false,
+            hasError: false,
+            displayMode: .remaining,
+            showFiveHour: false,
+            showWeekly: true,
+            insights: nil
+        )
+
+        XCTAssertEqual(title, "30%")
+        XCTAssertTrue(StatusBarLabel.usesOpenAILogo(showFiveHour: false, showWeekly: true))
+    }
+
     func testMenuBarPaceModeShowsWeeklyProjection() {
         let title = StatusBarLabel.makeTitle(
             snapshot: makeSnapshot(),
@@ -66,6 +81,41 @@ final class StatusBarLabelTests: XCTestCase {
         )
 
         XCTAssertEqual(title, "W 70%->89%")
+    }
+
+    func testWeeklyOnlyPaceMenuBarUsesTheOpenAILogoSlot() {
+        let title = StatusBarLabel.makeTitle(
+            snapshot: makeSnapshot(),
+            isRefreshing: false,
+            hasError: false,
+            displayMode: .pace,
+            showFiveHour: false,
+            showWeekly: true,
+            insights: CodexUsageInsights(
+                weeklyPace: CodexUsageForecast(
+                    message: "Projected 89% by reset",
+                    tone: .caution,
+                    confidence: .volatile,
+                    currentPercent: 70,
+                    projectedPercentAtReset: 89,
+                    paceVariancePercent: -4
+                ),
+                fiveHourPressure: CodexUsageInsightRow(
+                    title: "5-hour pressure",
+                    message: "13% used",
+                    detail: nil,
+                    tone: .safe
+                ),
+                recentPeaks: CodexUsageInsightRow(
+                    title: "Recent peaks",
+                    message: "5H 13% · W 70%",
+                    detail: nil,
+                    tone: .safe
+                )
+            )
+        )
+
+        XCTAssertEqual(title, "70%->89%")
     }
 
     func testNormalMenuBarImageUsesSeverityDot() {

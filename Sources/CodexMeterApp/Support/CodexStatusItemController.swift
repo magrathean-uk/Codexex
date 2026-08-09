@@ -370,7 +370,8 @@ final class CodexStatusItemController: NSObject {
             isRefreshing: state.isRefreshing,
             hasError: state.hasError,
             isStale: state.isStale,
-            severity: state.severity
+            severity: state.severity,
+            showOpenAILogo: state.showsOpenAILogo
         )
         button?.imagePosition = .imageLeading
         button?.alphaValue = state.shouldDim ? 0.55 : 1
