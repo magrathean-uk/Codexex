@@ -127,44 +127,37 @@ private struct PopupActionButton: View {
         case secondary
     }
 
-    @Environment(\.isEnabled) private var isEnabled
     let title: String
     let tone: Tone
     let action: () -> Void
 
     var body: some View {
+        Group {
+            switch tone {
+            case .primary:
+                controlButton
+                    .buttonStyle(.borderedProminent)
+                    .tint(CodexTheme.accent)
+            case .secondary:
+                controlButton
+                    .buttonStyle(.bordered)
+                    .tint(CodexTheme.text)
+            }
+        }
+        .buttonBorderShape(.roundedRectangle(radius: GlassTokens.pillRadius))
+        .controlSize(.regular)
+        .frame(minWidth: minimumWidth, minHeight: GlassTokens.pillHeight)
+        .accessibilityLabel(title)
+    }
+
+    private var controlButton: some View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.86)
                 .allowsTightening(true)
-                .padding(.horizontal, 12)
-                .frame(minWidth: minimumWidth)
-                .frame(height: GlassTokens.pillHeight)
-                .background {
-                    buttonBackground
-                }
-                .overlay {
-                    if tone == .secondary {
-                        RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
-                            .strokeBorder(CodexTheme.hairlineStrong, lineWidth: 1)
-                    }
-                }
-                .opacity(isEnabled ? 1 : 0.72)
-        }
-        .buttonStyle(.plain)
-        .foregroundColor(foreground)
-        .disabled(isEnabled == false)
-        .accessibilityLabel(title)
-    }
-
-    private var foreground: Color {
-        switch tone {
-        case .primary:
-            return .white
-        case .secondary:
-            return CodexTheme.text
+                .padding(.horizontal, 4)
         }
     }
 
@@ -177,15 +170,5 @@ private struct PopupActionButton: View {
         }
     }
 
-    @ViewBuilder
-    private var buttonBackground: some View {
-        let shape = RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
-        switch tone {
-        case .primary:
-            shape.fill(CodexTheme.accent)
-        case .secondary:
-            shape.fill(CodexTheme.control)
-        }
-    }
 }
 #endif

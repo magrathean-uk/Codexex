@@ -292,8 +292,6 @@ private struct PopupFooterControl: View {
         case secondary
     }
 
-    @Environment(\.isEnabled) private var isEnabled
-    @State private var isHovered = false
     let title: String
     let systemImage: String
     let tone: Tone
@@ -302,6 +300,31 @@ private struct PopupFooterControl: View {
     let action: () -> Void
 
     var body: some View {
+        Group {
+            switch tone {
+            case .primary:
+                controlButton
+                    .buttonStyle(.borderedProminent)
+                    .tint(CodexTheme.accent)
+            case .secondary:
+                controlButton
+                    .buttonStyle(.bordered)
+                    .tint(CodexTheme.text)
+            }
+        }
+        .buttonBorderShape(.roundedRectangle(radius: GlassTokens.pillRadius))
+        .controlSize(.regular)
+        .frame(minWidth: minimumWidth)
+        .frame(minHeight: GlassTokens.pillHeight)
+        .contentShape(RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous))
+        .accessibilityLabel(title)
+        .accessibilityIdentifier(accessibilityIdentifier)
+        .transaction { transaction in
+            transaction.disablesAnimations = false
+        }
+    }
+
+    private var controlButton: some View {
         Button(action: action) {
             Label {
                 Text(title)
@@ -318,56 +341,12 @@ private struct PopupFooterControl: View {
             .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
             .labelStyle(.titleAndIcon)
         }
-        .buttonStyle(.plain)
-        .foregroundColor(foreground)
-        .padding(.horizontal, 12)
-        .frame(minWidth: minimumWidth)
-        .frame(height: GlassTokens.pillHeight)
-        .background {
-            buttonBackground
-        }
-        .overlay {
-            if tone == .secondary {
-                RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
-                    .strokeBorder(CodexTheme.hairlineStrong, lineWidth: 1)
-            }
-        }
-        .opacity(isEnabled ? 1 : 0.72)
-        .contentShape(RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous))
-        .onHover { hovering in
-            isHovered = hovering
-        }
-        .accessibilityLabel(title)
-        .accessibilityIdentifier(accessibilityIdentifier)
-        .transaction { transaction in
-            transaction.disablesAnimations = false
-        }
     }
 
     private var minimumWidth: CGFloat {
         92
     }
 
-    private var foreground: Color {
-        switch tone {
-        case .primary:
-            return .white
-        case .secondary:
-            return CodexTheme.text
-        }
-    }
-
-    @ViewBuilder
-    private var buttonBackground: some View {
-        let shape = RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
-        switch tone {
-        case .primary:
-            shape.fill(CodexTheme.accent)
-            .opacity(isHovered && isEnabled ? 0.90 : 1)
-        case .secondary:
-            shape.fill(isHovered && isEnabled ? CodexTheme.control.opacity(0.88) : CodexTheme.control)
-        }
-    }
 }
 
 struct PopupSpinningRefreshIcon: View {
