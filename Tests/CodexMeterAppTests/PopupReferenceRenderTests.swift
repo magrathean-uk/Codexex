@@ -115,7 +115,7 @@ final class PopupReferenceRenderTests: XCTestCase {
             reduceMotionOverride: true,
             previewReferenceDate: Date(timeIntervalSince1970: 1_800_000_000)
         )
-        let bitmap = try renderedBitmap(for: view, width: GlassTokens.popupWidth, height: 260)
+        let bitmap = try windowRenderedBitmap(for: view, width: GlassTokens.popupWidth, height: 260)
         let sample = PixelSample(bitmap: bitmap)
 
         XCTAssertGreaterThan(
@@ -175,7 +175,7 @@ final class PopupReferenceRenderTests: XCTestCase {
         let fittingSize = hostingController.sizeThatFits(
             in: NSSize(width: GlassTokens.popupWidth, height: GlassTokens.popupMaxHeight)
         )
-        let bitmap = try renderedBitmap(for: view, width: GlassTokens.popupWidth, height: fittingSize.height)
+        let bitmap = try windowRenderedBitmap(for: view, width: GlassTokens.popupWidth, height: fittingSize.height)
         let sample = PixelSample(bitmap: bitmap)
 
         if let outputPath = ProcessInfo.processInfo.environment["CODEXEX_FOOTER_RENDER_OUTPUT"] {
@@ -192,6 +192,43 @@ final class PopupReferenceRenderTests: XCTestCase {
             sample.footerPrimaryAccentBluePixels,
             300,
             "live popup footer should keep the Refresh control visible in its right-side footer slot"
+        )
+    }
+
+    func testWindowHostedPopupFooterRendersVisibleActionRail() async throws {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let model = CodexMenuBarModel(
+            service: RenderSuccessfulService(now: now),
+            localUsageProvider: RenderLocalUsageProvider()
+        )
+        await model.refreshNow(manual: true)
+
+        let view = PopupRootView(
+            model: model,
+            displayMode: .live,
+            reduceMotionOverride: true,
+            previewReferenceDate: now
+        )
+        let hostingController = NSHostingController(rootView: view)
+        let fittingSize = hostingController.sizeThatFits(
+            in: NSSize(width: GlassTokens.popupWidth, height: GlassTokens.popupMaxHeight)
+        )
+        let bitmap = try windowRenderedBitmap(
+            for: view,
+            width: GlassTokens.popupWidth,
+            height: fittingSize.height
+        )
+        let sample = PixelSample(bitmap: bitmap)
+
+        if let outputPath = ProcessInfo.processInfo.environment["CODEXEX_WINDOW_FOOTER_RENDER_OUTPUT"] {
+            let pngData = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+            try pngData.write(to: URL(fileURLWithPath: outputPath), options: .atomic)
+        }
+
+        XCTAssertGreaterThan(
+            sample.footerPrimaryAccentBluePixels,
+            300,
+            "window-hosted popup should draw the Refresh control in the footer"
         )
     }
 }
@@ -261,6 +298,38 @@ private func renderedBitmap<Content: View>(
     let image = try XCTUnwrap(renderer.nsImage)
     let tiffData = try XCTUnwrap(image.tiffRepresentation)
     return try XCTUnwrap(NSBitmapImageRep(data: tiffData))
+}
+
+@MainActor
+private func windowRenderedBitmap<Content: View>(
+    for view: Content,
+    width: CGFloat,
+    height: CGFloat
+) throws -> NSBitmapImageRep {
+    let hostingView = NSHostingView(rootView: view.frame(width: width, height: height))
+    hostingView.frame = NSRect(x: 0, y: 0, width: width, height: height)
+
+    let panel = NSPanel(
+        contentRect: hostingView.frame,
+        styleMask: [.borderless],
+        backing: .buffered,
+        defer: false
+    )
+    panel.isReleasedWhenClosed = false
+    panel.contentView = hostingView
+    panel.orderFrontRegardless()
+    defer {
+        panel.orderOut(nil)
+        panel.contentView = nil
+    }
+
+    hostingView.layoutSubtreeIfNeeded()
+    panel.displayIfNeeded()
+    RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+    let bitmap = try XCTUnwrap(hostingView.bitmapImageRepForCachingDisplay(in: hostingView.bounds))
+    hostingView.cacheDisplay(in: hostingView.bounds, to: bitmap)
+    return bitmap
 }
 
 private struct PixelSample {

@@ -123,7 +123,6 @@ struct PopupRootView: View {
                 title: model.isRefreshing ? "Refreshing" : "Refresh",
                 systemImage: "arrow.clockwise",
                 tone: .primary,
-                isAnimating: model.isRefreshing,
                 accessibilityIdentifier: "mac.popup.refresh"
             ) {
                 guard model.isRefreshing == false else { return }
@@ -293,114 +292,23 @@ private struct PopupFooterControl: View {
     }
 
     @Environment(\.isEnabled) private var isEnabled
-    @State private var isHovered = false
     let title: String
     let systemImage: String
     let tone: Tone
-    var isAnimating = false
     let accessibilityIdentifier: String
     let action: () -> Void
 
     var body: some View {
-        HStack(spacing: 6) {
-            if isAnimating {
-                PopupSpinningRefreshIcon(systemImage: systemImage)
-            } else {
-                Image(systemName: systemImage)
-                    .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
-                    .imageScale(.small)
-            }
-
-            Text(title)
-                .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.86)
-                .allowsTightening(true)
-        }
-        .foregroundStyle(foreground)
-        .padding(.horizontal, 12)
-        .frame(minWidth: minimumWidth)
-        .frame(height: GlassTokens.pillHeight)
-        .background(buttonBackground)
-        .overlay(buttonBorder)
-        .opacity(isEnabled ? 1 : 0.55)
-        .contentShape(RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous))
-        .onTapGesture { performAction() }
-        .onHover { isHovered = $0 }
-        .focusable(isEnabled)
-        .onKeyPress(.return) { handleKeyPress() }
-        .onKeyPress(.space) { handleKeyPress() }
-        .accessibilityElement()
-        .accessibilityAddTraits(.isButton)
-        .accessibilityLabel(title)
-        .accessibilityIdentifier(accessibilityIdentifier)
-        .accessibilityAction { performAction() }
-        .transaction { transaction in
-            transaction.disablesAnimations = false
-        }
-    }
-
-    private var foreground: Color {
-        tone == .primary ? .white : CodexTheme.text
-    }
-
-    private var buttonBackground: some View {
-        RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
-            .fill(backgroundColor)
-    }
-
-    private var buttonBorder: some View {
-        RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
-            .strokeBorder(
-                tone == .secondary ? CodexTheme.hairlineStrong : .clear,
-                lineWidth: 1
-            )
-    }
-
-    private var backgroundColor: Color {
-        switch tone {
-        case .primary:
-            return CodexTheme.accent.opacity(isHovered && isEnabled ? 0.88 : 1)
-        case .secondary:
-            return CodexTheme.control.opacity(isHovered && isEnabled ? 0.82 : 1)
-        }
-    }
-
-    private func performAction() {
-        guard isEnabled else { return }
-        action()
-    }
-
-    private func handleKeyPress() -> KeyPress.Result {
-        guard isEnabled else { return .ignored }
-        action()
-        return .handled
-    }
-
-    private var minimumWidth: CGFloat {
-        92
-    }
-}
-
-struct PopupSpinningRefreshIcon: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var isActive = false
-    let systemImage: String
-
-    var body: some View {
-        Image(systemName: systemImage)
-            .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
-            .imageScale(.small)
-            .rotationEffect(.degrees(isActive && reduceMotion == false ? 360 : 0))
-            .onAppear {
-                guard reduceMotion == false else { return }
-                isActive = true
-            }
-            .animation(
-                reduceMotion ? nil : .linear(duration: 0.85).repeatForever(autoreverses: false),
-                value: isActive
-            )
-            .accessibilityHidden(true)
+        PopupAppKitButton(
+            title: title,
+            systemImage: systemImage,
+            tone: tone == .primary ? .primary : .secondary,
+            minimumWidth: 92,
+            accessibilityIdentifier: accessibilityIdentifier,
+            isEnabled: isEnabled,
+            action: action
+        )
+        .frame(minWidth: 92, minHeight: GlassTokens.pillHeight)
     }
 }
 

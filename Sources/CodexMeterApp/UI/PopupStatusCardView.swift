@@ -128,71 +128,21 @@ private struct PopupActionButton: View {
     }
 
     @Environment(\.isEnabled) private var isEnabled
-    @State private var isHovered = false
     let title: String
     let tone: Tone
     let action: () -> Void
 
     var body: some View {
-        Text(title)
-            .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
-            .foregroundStyle(foreground)
-            .lineLimit(1)
-            .minimumScaleFactor(0.86)
-            .allowsTightening(true)
-            .padding(.horizontal, 12)
-            .frame(minWidth: minimumWidth)
-            .frame(height: GlassTokens.pillHeight)
-            .background(buttonBackground)
-            .overlay(buttonBorder)
-            .opacity(isEnabled ? 1 : 0.55)
-            .contentShape(RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous))
-            .onTapGesture { performAction() }
-            .onHover { isHovered = $0 }
-            .focusable(isEnabled)
-            .onKeyPress(.return) { handleKeyPress() }
-            .onKeyPress(.space) { handleKeyPress() }
-            .accessibilityElement()
-            .accessibilityAddTraits(.isButton)
-            .accessibilityLabel(title)
-            .accessibilityAction { performAction() }
-    }
-
-    private var foreground: Color {
-        tone == .primary ? .white : CodexTheme.text
-    }
-
-    private var buttonBackground: some View {
-        RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
-            .fill(backgroundColor)
-    }
-
-    private var buttonBorder: some View {
-        RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
-            .strokeBorder(
-                tone == .secondary ? CodexTheme.hairlineStrong : .clear,
-                lineWidth: 1
-            )
-    }
-
-    private var backgroundColor: Color {
-        switch tone {
-        case .primary:
-            return CodexTheme.accent.opacity(isHovered && isEnabled ? 0.88 : 1)
-        case .secondary:
-            return CodexTheme.control.opacity(isHovered && isEnabled ? 0.82 : 1)
-        }
-    }
-
-    private func performAction() {
-        guard isEnabled else { return }
-        action()
-    }
-
-    private func handleKeyPress() -> KeyPress.Result {
-        guard isEnabled else { return .ignored }
-        action()
-        return .handled
+        PopupAppKitButton(
+            title: title,
+            systemImage: nil,
+            tone: tone == .primary ? .primary : .secondary,
+            minimumWidth: minimumWidth,
+            accessibilityIdentifier: nil,
+            isEnabled: isEnabled,
+            action: action
+        )
+        .frame(minWidth: minimumWidth, minHeight: GlassTokens.pillHeight)
     }
 
     private var minimumWidth: CGFloat {
