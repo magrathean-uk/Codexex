@@ -1,4 +1,4 @@
-Codexex 5.2.0 makes the menu bar clearer:
+Codexex 6.0.0 makes the menu bar clearer:
 
 - Weekly-only mode now uses the OpenAI mark with the quota percentage.
 - Turning on the optional main Codex 5-hour window restores the familiar `5H` and `W` labels; Spark stays visible.

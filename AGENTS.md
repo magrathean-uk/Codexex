@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Current release: `5.2.0` (`18`) for macOS and iOS/iPadOS.
+Current release: `6.0.0` (`19`) for macOS and iOS/iPadOS.
 
 Read in this order:
 

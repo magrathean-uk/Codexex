@@ -59,11 +59,11 @@ require_text "com.apple.security.inherit" AppStore/CodexexHelper.entitlements
 require_text "ChatGPT/OpenAI sign-in" PRIVACY.md
 require_text "Paid packaging" RUNBOOK.md
 require_text "paid-upfront App Store pricing" RUNBOOK.md
-require_text "MARKETING_VERSION: 5.2.0" project.yml
-require_text "CURRENT_PROJECT_VERSION: 18" project.yml
+require_text "MARKETING_VERSION: 6.0.0" project.yml
+require_text "CURRENT_PROJECT_VERSION: 19" project.yml
 require_text "OpenAILogo" Sources/CodexMeterApp/UI/StatusBarLabel.swift
-require_text "Codexex 5.2.0" fastlane/metadata/up-6762058457/IOS/en-US/whats_new.txt
-require_text "Codexex 5.2.0" fastlane/metadata/up-6762058457/MACOS/en-US/whats_new.txt
+require_text "Codexex 6.0.0" fastlane/metadata/up-6762058457/IOS/en-US/whats_new.txt
+require_text "Codexex 6.0.0" fastlane/metadata/up-6762058457/MACOS/en-US/whats_new.txt
 
 bash Scripts/check-codexex-companions.sh
 
