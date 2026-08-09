@@ -1628,6 +1628,7 @@
 		5F26DCC85570FAD13E7548F8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
 				INFOPLIST_FILE = Sources/CodexMeterWidgets/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1637,7 +1638,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.magrathean.CodexexApp.widgets;
 				PRODUCT_NAME = CodexMeterWidgets;
 				SDKROOT = iphoneos;
-				SKIP_INSTALL = NO;
+				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -1746,6 +1747,7 @@
 		B96FA38B40819768732842ED /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
 				INFOPLIST_FILE = Sources/CodexMeterWidgets/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1755,7 +1757,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.magrathean.CodexexApp.widgets;
 				PRODUCT_NAME = CodexMeterWidgets;
 				SDKROOT = iphoneos;
-				SKIP_INSTALL = NO;
+				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;

@@ -167,7 +167,7 @@ enum CodexAppSettings {
     static var autoRefreshEnabled: Bool {
         get {
             if UserDefaults.standard.object(forKey: Key.autoRefreshEnabled) == nil {
-                return false
+                return true
             }
             return UserDefaults.standard.bool(forKey: Key.autoRefreshEnabled)
         }
@@ -258,7 +258,7 @@ enum CodexAppSettings {
     static var showFiveHourInMenubar: Bool {
         get {
             if UserDefaults.standard.object(forKey: Key.showFiveHourInMenubar) == nil {
-                return true
+                return false
             }
             return UserDefaults.standard.bool(forKey: Key.showFiveHourInMenubar)
         }

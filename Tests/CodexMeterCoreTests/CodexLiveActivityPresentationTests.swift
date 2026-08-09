@@ -21,4 +21,27 @@ final class CodexLiveActivityPresentationTests: XCTestCase {
         XCTAssertEqual(CodexLiveActivityPresentation.staleDate(capturedAt: date, cadence: 30), date.addingTimeInterval(300))
         XCTAssertEqual(CodexLiveActivityPresentation.staleDate(capturedAt: date, cadence: 600), date.addingTimeInterval(1_200))
     }
+
+    func testLifecyclePolicyDeduplicatesUpdatesAndEnds() {
+        XCTAssertEqual(
+            CodexLiveActivityLifecyclePolicy.action(authorizationAllowed: true, existingIDs: [], explicitStart: false, shouldEnd: false),
+            .none
+        )
+        XCTAssertEqual(
+            CodexLiveActivityLifecyclePolicy.action(authorizationAllowed: true, existingIDs: [], explicitStart: true, shouldEnd: false),
+            .start
+        )
+        XCTAssertEqual(
+            CodexLiveActivityLifecyclePolicy.action(authorizationAllowed: true, existingIDs: ["same", "duplicate"], explicitStart: true, shouldEnd: false),
+            .update(id: "same")
+        )
+        XCTAssertEqual(
+            CodexLiveActivityLifecyclePolicy.action(authorizationAllowed: true, existingIDs: ["same"], explicitStart: false, shouldEnd: true),
+            .end(ids: ["same"])
+        )
+        XCTAssertEqual(
+            CodexLiveActivityLifecyclePolicy.action(authorizationAllowed: false, existingIDs: [], explicitStart: true, shouldEnd: false),
+            .unavailable
+        )
+    }
 }

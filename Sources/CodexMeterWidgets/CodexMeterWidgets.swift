@@ -1,9 +1,6 @@
-import ActivityKit
 import SwiftUI
 import WidgetKit
 import CodexMeterCore
-
-extension CodexLiveActivityAttributes: ActivityAttributes {}
 
 @main
 struct CodexMeterWidgets: WidgetBundle {
@@ -14,8 +11,7 @@ struct CodexQuotaLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: CodexLiveActivityAttributes.self) { context in
             QuotaLockScreen(state: context.state)
-                .activityBackgroundTint(.clear)
-                .widgetURL(URL(string: "codexex://quota"))
+                .activityBackgroundTint(.black.opacity(0.18))
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) { Label("Codex", systemImage: "gauge.with.dots.needle.50percent") }
@@ -28,7 +24,6 @@ struct CodexQuotaLiveActivity: Widget {
             } minimal: {
                 Text("\(context.state.weeklyPercentLeft)%").monospacedDigit()
             }
-            .widgetURL(URL(string: "codexex://quota"))
             .keylineTint(.accentColor)
         }
     }
@@ -60,6 +55,8 @@ private struct QuotaLockScreen: View {
         }
         .fontDesign(.rounded)
         .accessibilityElement(children: .combine)
+        .accessibilityLabel("Codex weekly quota")
+        .accessibilityValue("\(state.weeklyPercentLeft)% left")
     }
 
     @ViewBuilder private func resetLabel(_ title: String, _ date: Date?) -> some View {

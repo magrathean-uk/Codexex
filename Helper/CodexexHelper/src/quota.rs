@@ -1,6 +1,6 @@
 use anyhow::Result;
 use codex_backend_client::Client as BackendClient;
-use codex_login::{AuthCredentialsStoreMode, AuthManager};
+use codex_login::{AuthCredentialsStoreMode, AuthKeyringBackendKind, AuthManager};
 use serde::Serialize;
 use tokio::runtime::Builder;
 
@@ -74,7 +74,12 @@ pub fn fetch_snapshot() -> Result<HelperResponse> {
 }
 
 async fn fetch_snapshot_payload() -> Result<ServiceSnapshotPayload> {
-    let auth_manager = AuthManager::shared(state::codex_home()?, false, AuthCredentialsStoreMode::File);
+    let http_client_factory = state::http_client_factory();
+    let auth_manager = AuthManager::shared(
+        state::codex_home()?, false, AuthCredentialsStoreMode::File, None,
+        Some(state::chatgpt_base_url()), AuthKeyringBackendKind::default(),
+        state::auth_route_config(),
+    ).await;
     let Some(auth) = auth_manager.auth().await else {
         return Ok(ServiceSnapshotPayload {
             auth_mode: None,
@@ -91,7 +96,7 @@ async fn fetch_snapshot_payload() -> Result<ServiceSnapshotPayload> {
         });
     }
 
-    let client = BackendClient::from_auth(state::chatgpt_base_url(), &auth)?;
+    let client = BackendClient::from_auth(state::chatgpt_base_url(), &auth, http_client_factory);
     let rate_limits = match client.get_rate_limits_many().await {
         Ok(rate_limits) if rate_limits.is_empty() == false => rate_limits,
         Ok(_) => {

@@ -133,7 +133,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.magrathean.CodexexApp.widgets
         PRODUCT_NAME: CodexMeterWidgets
         INFOPLIST_FILE: Sources/CodexMeterWidgets/Info.plist
-        SKIP_INSTALL: NO
+        SKIP_INSTALL: YES
+        APPLICATION_EXTENSION_API_ONLY: YES
 
   CodexexXPCService:
     type: xpc-service

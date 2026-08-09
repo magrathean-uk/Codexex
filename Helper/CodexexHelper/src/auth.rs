@@ -3,7 +3,7 @@ use chrono::Utc;
 use codex_protocol::auth::AuthMode;
 use codex_client::build_reqwest_client_with_custom_ca;
 use codex_login::{
-    AuthCredentialsStoreMode, AuthDotJson, TokenData, logout, save_auth,
+    AuthCredentialsStoreMode, AuthDotJson, AuthKeyringBackendKind, TokenData, logout, save_auth,
 };
 use codex_login::token_data::parse_chatgpt_jwt_claims;
 use reqwest::StatusCode;
@@ -124,7 +124,7 @@ pub fn poll_device_auth(flow_id: &str) -> Result<HelperResponse> {
 
 pub fn sign_out() -> Result<HelperResponse> {
     let codex_home = state::codex_home()?;
-    let _ = logout(&codex_home, AuthCredentialsStoreMode::File)?;
+    let _ = logout(&codex_home, AuthCredentialsStoreMode::File, AuthKeyringBackendKind::default())?;
     flow_registry::clear_all();
     Ok(HelperResponse::SignedOut)
 }
@@ -253,8 +253,11 @@ fn persist_tokens(opts: &codex_login::ServerOptions, tokens: TokenExchangeResp) 
         openai_api_key: None,
         tokens: Some(token_data),
         last_refresh: Some(Utc::now()),
+        agent_identity: None,
+        personal_access_token: None,
+        bedrock_api_key: None,
     };
-    save_auth(&opts.codex_home, &auth, AuthCredentialsStoreMode::File)
+    save_auth(&opts.codex_home, &auth, AuthCredentialsStoreMode::File, AuthKeyringBackendKind::default())
         .context("failed to persist approved ChatGPT login")?;
     harden_helper_state_permissions(&opts.codex_home)?;
     Ok(())

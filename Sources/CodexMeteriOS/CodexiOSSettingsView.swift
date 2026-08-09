@@ -219,11 +219,17 @@ struct CodexiOSSettingsView: View {
         Section {
             Toggle("Show Spark", isOn: $showSpark)
             Toggle("Show 5-hour window", isOn: $showFiveHourPresentation)
-            if model.isSignedIn {
+            if model.isSignedIn || model.previewModeEnabled {
                 Button(CodexiOSLiveActivity.isRunning ? "Stop Live Activity" : "Start Live Activity") {
                     Task { if CodexiOSLiveActivity.isRunning { await model.stopLiveActivity() } else { await model.startLiveActivity() } }
                 }
                 .frame(minHeight: 44)
+                .accessibilityIdentifier("liveActivityToggle")
+                if CodexiOSLiveActivity.isAvailable == false {
+                    Text("Live Activities are unavailable on this device.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
             Toggle("Show Usage History", isOn: $showHistory)
 

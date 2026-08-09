@@ -10,6 +10,6 @@ staging_binary="$staging_dir/codexex-helper"
 mkdir -p "$cargo_target_dir" "$staging_dir"
 
 cd "$helper_dir"
-CARGO_TARGET_DIR="$cargo_target_dir" cargo build --release --locked
+env -u MACOSX_DEPLOYMENT_TARGET CARGO_TARGET_DIR="$cargo_target_dir" cargo build --release --locked
 cp "$cargo_target_dir/release/codexex-helper" "$staging_binary"
 chmod 755 "$staging_binary"

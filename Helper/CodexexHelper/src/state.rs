@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
-use codex_login::{AuthCredentialsStoreMode, CLIENT_ID, ServerOptions};
+use codex_client::{HttpClientFactory, OutboundProxyPolicy};
+use codex_login::{AuthCredentialsStoreMode, AuthKeyringBackendKind, AuthRouteConfig, CLIENT_ID, ServerOptions};
 use std::fs;
 use std::path::PathBuf;
 
@@ -42,12 +43,22 @@ pub fn chatgpt_base_url() -> String {
         .unwrap_or_else(|| DEFAULT_CHATGPT_BASE_URL.to_string())
 }
 
+pub fn http_client_factory() -> HttpClientFactory {
+    HttpClientFactory::new(OutboundProxyPolicy::ReqwestDefault)
+}
+
+pub fn auth_route_config() -> AuthRouteConfig {
+    AuthRouteConfig::from_http_client_factory(http_client_factory())
+}
+
 pub fn server_options() -> Result<ServerOptions> {
     let mut opts = ServerOptions::new(
         codex_home()?,
         CLIENT_ID.to_string(),
         /*forced_chatgpt_workspace_id*/ None,
         AuthCredentialsStoreMode::File,
+        AuthKeyringBackendKind::default(),
+        auth_route_config(),
     );
     if let Some(issuer) = development_env_var(ISSUER_ENV) {
         opts.issuer = issuer;

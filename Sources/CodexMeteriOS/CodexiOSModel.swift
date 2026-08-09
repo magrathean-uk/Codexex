@@ -102,6 +102,7 @@ final class CodexiOSModel {
                 liveAccountState = .signedOut
             }
             applyError(message(for: error))
+            await markLiveActivityStale()
         }
     }
 
@@ -260,8 +261,6 @@ final class CodexiOSModel {
             return
         }
 
-        snapshot = nil
-        lastUpdatedAt = nil
         errorMessage = response.errorMessage
         statusMessage = response.errorMessage ?? "No quota data yet."
 
@@ -270,18 +269,22 @@ final class CodexiOSModel {
         } else if response.authMode == .chatGPT {
             liveAccountState = .signedIn
             completeOnboarding()
+            Task { await markLiveActivityStale() }
         } else {
+            snapshot = nil
+            lastUpdatedAt = nil
             liveAccountState = .signedOut
+            Task { await CodexiOSLiveActivity.stop() }
         }
     }
 
     func startLiveActivity() async {
-        guard isSignedIn, let snapshot else { applyError("Sign in and refresh quota before starting Live Activity."); return }
+        guard (isSignedIn || previewModeEnabled), let snapshot else { applyError("Sign in and refresh quota before starting Live Activity."); return }
         let cadence = Double(max(defaults.object(forKey: CodexiOSSettingsKeys.refreshIntervalSeconds) as? Int ?? 300, 300))
         let showFiveHour = defaults.object(forKey: CodexiOSSettingsKeys.showFiveHourPresentation) as? Bool ?? false
         do {
             try await CodexiOSLiveActivity.start(snapshot: snapshot, showFiveHour: showFiveHour, cadence: cadence)
-            statusMessage = "Live Activity started. It updates during foreground refreshes."
+            statusMessage = CodexiOSLiveActivity.isAvailable ? "Live Activity started. It updates during foreground refreshes." : "Live Activities are unavailable on this device."
         } catch { applyError(message(for: error)) }
     }
 
@@ -291,7 +294,7 @@ final class CodexiOSModel {
     }
 
     func updateLiveActivityPresentation(showFiveHour: Bool) async {
-        guard isSignedIn, let snapshot else { return }
+        guard (isSignedIn || previewModeEnabled), let snapshot else { return }
         let cadence = Double(max(defaults.object(forKey: CodexiOSSettingsKeys.refreshIntervalSeconds) as? Int ?? 300, 300))
         await CodexiOSLiveActivity.update(snapshot: snapshot, showFiveHour: showFiveHour, cadence: cadence)
     }
@@ -312,6 +315,13 @@ final class CodexiOSModel {
     private func applyError(_ message: String) {
         errorMessage = message
         statusMessage = message
+    }
+
+    private func markLiveActivityStale() async {
+        guard let snapshot else { return }
+        let cadence = Double(max(defaults.object(forKey: CodexiOSSettingsKeys.refreshIntervalSeconds) as? Int ?? 300, 300))
+        let showFiveHour = defaults.object(forKey: CodexiOSSettingsKeys.showFiveHourPresentation) as? Bool ?? false
+        await CodexiOSLiveActivity.markStale(snapshot: snapshot, showFiveHour: showFiveHour, cadence: cadence)
     }
 
     private func clearPendingSignIn() {
