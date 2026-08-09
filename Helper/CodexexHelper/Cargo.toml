@@ -10,10 +10,10 @@ internal-env-overrides = []
 anyhow = "1"
 base64 = "0.22"
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
-codex-app-server-protocol = { git = "https://github.com/openai/codex", rev = "3b948d9dd8d2e13a36e95a05efb6bb2288b801c4", package = "codex-app-server-protocol" }
-codex-backend-client = { git = "https://github.com/openai/codex", rev = "3b948d9dd8d2e13a36e95a05efb6bb2288b801c4", package = "codex-backend-client" }
-codex-client = { git = "https://github.com/openai/codex", rev = "3b948d9dd8d2e13a36e95a05efb6bb2288b801c4", package = "codex-client" }
-codex-login = { git = "https://github.com/openai/codex", rev = "3b948d9dd8d2e13a36e95a05efb6bb2288b801c4", package = "codex-login" }
+codex-protocol = { git = "https://github.com/openai/codex", rev = "be6e8eac029b183056b7e4402879f15d2c85f61b", package = "codex-protocol" }
+codex-backend-client = { git = "https://github.com/openai/codex", rev = "be6e8eac029b183056b7e4402879f15d2c85f61b", package = "codex-backend-client" }
+codex-client = { git = "https://github.com/openai/codex", rev = "be6e8eac029b183056b7e4402879f15d2c85f61b", package = "codex-client" }
+codex-login = { git = "https://github.com/openai/codex", rev = "be6e8eac029b183056b7e4402879f15d2c85f61b", package = "codex-login" }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -29,5 +29,5 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 wiremock = "0.6"
 
 [patch.crates-io]
-tokio-tungstenite = { git = "https://github.com/openai-oss-forks/tokio-tungstenite", rev = "132f5b39c862e3a970f731d709608b3e6276d5f6" }
-tungstenite = { git = "https://github.com/openai-oss-forks/tungstenite-rs", rev = "9200079d3b54a1ff51072e24d81fd354f085156f" }
+tokio-tungstenite = { git = "https://github.com/openai-oss-forks/tokio-tungstenite", rev = "0e5b2d73aa18dd9f0a50ee9ff199d5aef7594186" }
+tungstenite = { git = "https://github.com/openai-oss-forks/tungstenite-rs", rev = "4fffad30fe373adbdcffab9545e9e9bf4f2fc19f" }

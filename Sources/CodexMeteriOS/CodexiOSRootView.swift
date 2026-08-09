@@ -8,6 +8,7 @@ struct CodexiOSRootView: View {
     @AppStorage(CodexiOSSettingsKeys.resetDisplayStyle) private var resetDisplayStyle = CodexiOSResetDisplayStyle.relative.rawValue
     @AppStorage(CodexiOSSettingsKeys.appearanceMode) private var appearanceMode = CodexiOSAppearanceMode.system.rawValue
     @AppStorage(CodexiOSSettingsKeys.defaultHistoryMode) private var defaultHistoryMode = CodexiOSHistoryMode.dailyPeaks.rawValue
+    @AppStorage(CodexiOSSettingsKeys.showFiveHourPresentation) private var showFiveHourPresentation = false
     @Bindable var model: CodexiOSModel
 
     var body: some View {
@@ -253,7 +254,7 @@ struct CodexiOSRootView: View {
                     }
                 }
 
-                if let fiveHour = limit.fiveHourWindow {
+                if showFiveHourPresentation, let fiveHour = limit.fiveHourWindow {
                     quotaRow(title: "5H", window: fiveHour, tint: tint(for: limit.bucket))
                 }
                 if let weekly = limit.weeklyWindow, weekly != limit.fiveHourWindow {
@@ -305,6 +306,7 @@ struct CodexiOSRootView: View {
             CodexiOSHistoryCard(
                 samples: model.usageHistory,
                 mode: selectedHistoryMode,
+                showFiveHour: showFiveHourPresentation,
                 onModeChange: { defaultHistoryMode = $0.rawValue }
             )
         }
@@ -347,7 +349,7 @@ struct CodexiOSRootView: View {
     }
 
     private func headlineWindow(for limit: CodexLimit) -> CodexQuotaWindow? {
-        [limit.fiveHourWindow, limit.weeklyWindow]
+        [limit.weeklyWindow, showFiveHourPresentation ? limit.fiveHourWindow : nil]
             .compactMap { $0 }
             .min { $0.remainingPercent < $1.remainingPercent }
     }
@@ -378,10 +380,11 @@ struct CodexiOSRootView: View {
 private struct CodexiOSHistoryCard: View {
     let samples: [CodexUsageHistorySample]
     let mode: CodexiOSHistoryMode
+    let showFiveHour: Bool
     let onModeChange: (CodexiOSHistoryMode) -> Void
 
     private var fiveHourPoints: [CodexUsageHistoryPoint] {
-        points(for: .fiveHour)
+        showFiveHour ? points(for: .fiveHour) : []
     }
 
     private var weeklyPoints: [CodexUsageHistoryPoint] {

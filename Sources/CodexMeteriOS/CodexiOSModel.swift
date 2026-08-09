@@ -197,6 +197,7 @@ final class CodexiOSModel {
             errorMessage = nil
             clearPendingSignIn()
             liveAccountState = .signedOut
+            await CodexiOSLiveActivity.stop()
             statusMessage = "Signed out."
         } catch {
             applyError(message(for: error))
@@ -253,6 +254,9 @@ final class CodexiOSModel {
             Task {
                 self.usageHistory = await self.historyStore.append(snapshot: snapshot)
             }
+            let cadence = Double(max(defaults.object(forKey: CodexiOSSettingsKeys.refreshIntervalSeconds) as? Int ?? 300, 300))
+            let showFiveHour = defaults.object(forKey: CodexiOSSettingsKeys.showFiveHourPresentation) as? Bool ?? false
+            Task { await CodexiOSLiveActivity.update(snapshot: snapshot, showFiveHour: showFiveHour, cadence: cadence) }
             return
         }
 
@@ -269,6 +273,27 @@ final class CodexiOSModel {
         } else {
             liveAccountState = .signedOut
         }
+    }
+
+    func startLiveActivity() async {
+        guard isSignedIn, let snapshot else { applyError("Sign in and refresh quota before starting Live Activity."); return }
+        let cadence = Double(max(defaults.object(forKey: CodexiOSSettingsKeys.refreshIntervalSeconds) as? Int ?? 300, 300))
+        let showFiveHour = defaults.object(forKey: CodexiOSSettingsKeys.showFiveHourPresentation) as? Bool ?? false
+        do {
+            try await CodexiOSLiveActivity.start(snapshot: snapshot, showFiveHour: showFiveHour, cadence: cadence)
+            statusMessage = "Live Activity started. It updates during foreground refreshes."
+        } catch { applyError(message(for: error)) }
+    }
+
+    func stopLiveActivity() async {
+        await CodexiOSLiveActivity.stop()
+        statusMessage = "Live Activity stopped."
+    }
+
+    func updateLiveActivityPresentation(showFiveHour: Bool) async {
+        guard isSignedIn, let snapshot else { return }
+        let cadence = Double(max(defaults.object(forKey: CodexiOSSettingsKeys.refreshIntervalSeconds) as? Int ?? 300, 300))
+        await CodexiOSLiveActivity.update(snapshot: snapshot, showFiveHour: showFiveHour, cadence: cadence)
     }
 
     func snoozeSummary(_ summary: PopupSummaryPresentation) {

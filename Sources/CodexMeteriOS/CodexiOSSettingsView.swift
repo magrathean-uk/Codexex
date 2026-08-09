@@ -12,6 +12,7 @@ enum CodexiOSSettingsKeys {
     static let appearanceMode = "ios.appearanceMode"
     static let defaultHistoryMode = "ios.defaultHistoryMode"
     static let showPaceConfidence = "ios.showPaceConfidence"
+    static let showFiveHourPresentation = "ios.showFiveHourPresentation"
     static let summarySnoozeFingerprint = "ios.summarySnoozeFingerprint"
     static let summarySnoozeExpiresAt = "ios.summarySnoozeExpiresAt"
 
@@ -27,6 +28,7 @@ enum CodexiOSSettingsKeys {
         appearanceMode,
         defaultHistoryMode,
         showPaceConfidence,
+        showFiveHourPresentation,
         summarySnoozeFingerprint,
         summarySnoozeExpiresAt
     ]
@@ -105,6 +107,7 @@ struct CodexiOSSettingsView: View {
     @AppStorage(CodexiOSSettingsKeys.appearanceMode) private var appearanceMode = CodexiOSAppearanceMode.system.rawValue
     @AppStorage(CodexiOSSettingsKeys.defaultHistoryMode) private var defaultHistoryMode = CodexiOSHistoryMode.dailyPeaks.rawValue
     @AppStorage(CodexiOSSettingsKeys.refreshIntervalSeconds) private var refreshIntervalSeconds = 300
+    @AppStorage(CodexiOSSettingsKeys.showFiveHourPresentation) private var showFiveHourPresentation = false
     @Bindable var model: CodexiOSModel
     @State private var isShowingResetConfirmation = false
 
@@ -122,6 +125,9 @@ struct CodexiOSSettingsView: View {
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
         .preferredColorScheme(CodexiOSAppearanceMode(rawValue: appearanceMode)?.colorScheme)
+        .onChange(of: showFiveHourPresentation) { _, enabled in
+            Task { await model.updateLiveActivityPresentation(showFiveHour: enabled) }
+        }
         .confirmationDialog(
             "Reset Codexex?",
             isPresented: $isShowingResetConfirmation,
@@ -212,6 +218,13 @@ struct CodexiOSSettingsView: View {
     private var displaySection: some View {
         Section {
             Toggle("Show Spark", isOn: $showSpark)
+            Toggle("Show 5-hour window", isOn: $showFiveHourPresentation)
+            if model.isSignedIn {
+                Button(CodexiOSLiveActivity.isRunning ? "Stop Live Activity" : "Start Live Activity") {
+                    Task { if CodexiOSLiveActivity.isRunning { await model.stopLiveActivity() } else { await model.startLiveActivity() } }
+                }
+                .frame(minHeight: 44)
+            }
             Toggle("Show Usage History", isOn: $showHistory)
 
             Picker("Reset Times", selection: $resetDisplayStyle) {
@@ -234,7 +247,7 @@ struct CodexiOSSettingsView: View {
         } header: {
             Text("Display")
         } footer: {
-            Text("Keep the home screen focused. These only change what is visible.")
+            Text("5-hour presentation controls rows, headlines, history, and Live Activity. Live Activity updates on foreground refreshes only.")
         }
     }
 

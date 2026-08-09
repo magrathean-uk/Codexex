@@ -93,6 +93,13 @@ xcodebuild -project CodexMeter.xcodeproj \
 The iOS target is wired through the `CodexMeteriOS` scheme in `project.yml`.
 Pick an installed simulator destination before running iOS tests.
 
+## iOS Live Activity
+
+Live Activity starts explicitly from iOS Settings after a valid foreground quota
+refresh. It updates only after later foreground refreshes and ends on Stop or
+sign-out. Codexex has no APNs backend, so unattended continuous updates are not
+claimed; the activity uses its stale date when refreshes stop.
+
 ## Helper and XPC flow
 
 - Prebuild script: `Scripts/build-codexex-helper.sh`

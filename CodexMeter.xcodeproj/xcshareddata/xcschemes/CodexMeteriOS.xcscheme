@@ -29,6 +29,20 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "F510DE2F9D5132ABCCFBB89E"
+               BuildableName = "CodexMeterWidgets.appex"
+               BlueprintName = "CodexMeterWidgets"
+               ReferencedContainer = "container:CodexMeter.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "020196355A81BE664A68010B"
                BuildableName = "CodexMeteriOS.app"
                BlueprintName = "CodexMeteriOS"
