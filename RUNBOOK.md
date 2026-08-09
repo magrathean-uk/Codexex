@@ -1,6 +1,6 @@
 # Codexex Runbook
 
-Current release: `5.2.0` (`17`). Keep `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `project.yml`; regenerate the Xcode project after changing them.
+Current release: `5.2.0` (`18`). Keep `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `project.yml`; regenerate the Xcode project after changing them.
 
 ## Architecture map
 
@@ -103,9 +103,10 @@ fetched ChatGPT account quota, not Mac-only local session-log token burn.
 
 ## Menu bar presentation
 
-Fresh installs keep the optional 5-hour window off. In that compact weekly
-mode, the macOS status item uses the OpenAI mark followed by the weekly value.
-Turning the 5-hour window back on restores the explicit `5H` and `W` labels.
+Fresh installs keep the optional main Codex 5-hour window off. In that compact
+weekly mode, the macOS status item uses the OpenAI mark followed by the weekly
+value. Spark 5-hour data stays visible. Turning the main Codex 5-hour window
+back on restores the explicit `5H` and `W` labels.
 
 ## Helper and XPC flow
 

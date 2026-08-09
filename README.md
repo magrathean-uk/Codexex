@@ -10,12 +10,12 @@ Built by [Magrathean UK](https://magrathean.uk).
 - [RUNBOOK.md](./RUNBOOK.md)
 - [PRIVACY.md](./PRIVACY.md)
 
-Current release: `5.2.0` (`17`). `project.yml` is the version and target source of truth.
+Current release: `5.2.0` (`18`). `project.yml` is the version and target source of truth.
 
 ## Product shape
 
 - Menu bar first on macOS. No dock-facing main window.
-- Compact weekly menu-bar mode uses the OpenAI mark plus the weekly percentage; enabling the optional 5-hour window restores `5H` and `W` labels.
+- Compact weekly menu-bar mode uses the OpenAI mark plus the weekly percentage; enabling the optional main Codex 5-hour window restores `5H` and `W` labels. Spark 5-hour data stays visible.
 - Native iPhone/iPad companion using the shared quota contracts.
 - On-demand, stale-aware iPhone Live Activity for the last foreground quota refresh.
 - SwiftUI app content with a small AppKit shell for status item behavior.

@@ -51,7 +51,10 @@ struct LimitCardView: View {
         PopupPresentation.visibleWindowRows(
             for: limit,
             includeInactive: limit.bucket == .spark,
-            showFiveHour: showFiveHour
+            showFiveHour: PopupPresentation.shouldShowFiveHour(
+                for: limit,
+                userEnabled: showFiveHour
+            )
         )
     }
 

@@ -125,6 +125,10 @@ struct PopupSummaryPresentation: Equatable {
 }
 
 enum PopupPresentation {
+    static func shouldShowFiveHour(for limit: CodexLimit, userEnabled: Bool) -> Bool {
+        userEnabled || limit.bucket == .spark
+    }
+
     static func historyLegendValue(for forecast: CodexUsageForecast) -> String {
         guard let currentPercent = forecast.currentPercent else {
             return forecast.confidence.label

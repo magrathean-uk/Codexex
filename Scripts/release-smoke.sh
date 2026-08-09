@@ -60,7 +60,7 @@ require_text "ChatGPT/OpenAI sign-in" PRIVACY.md
 require_text "Paid packaging" RUNBOOK.md
 require_text "paid-upfront App Store pricing" RUNBOOK.md
 require_text "MARKETING_VERSION: 5.2.0" project.yml
-require_text "CURRENT_PROJECT_VERSION: 17" project.yml
+require_text "CURRENT_PROJECT_VERSION: 18" project.yml
 require_text "OpenAILogo" Sources/CodexMeterApp/UI/StatusBarLabel.swift
 require_text "Codexex 5.2.0" fastlane/metadata/up-6762058457/IOS/en-US/whats_new.txt
 require_text "Codexex 5.2.0" fastlane/metadata/up-6762058457/MACOS/en-US/whats_new.txt

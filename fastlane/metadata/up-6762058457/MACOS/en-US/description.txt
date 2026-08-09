@@ -1,8 +1,8 @@
 Codexex is a native macOS menu bar utility for tracking Codex usage at a glance.
 
-It shows weekly usage, an optional 5-hour window, reset timing, Peaks/Cycle/Month history views, a weekly pace marker, local Codex session burn, and forecast details so you can see whether you are on track or likely to go over the plan.
+It shows weekly usage, an optional main Codex 5-hour window, reset timing, Peaks/Cycle/Month history views, a weekly pace marker, local Codex session burn, and forecast details so you can see whether you are on track or likely to go over the plan. Spark 5-hour data stays visible.
 
-The compact default menu-bar view uses the OpenAI mark and your weekly percentage. Turn the optional 5-hour window on to restore explicit 5-hour and weekly labels.
+The compact default menu-bar view uses the OpenAI mark and your weekly percentage. Turn the optional main Codex 5-hour window on to restore explicit 5-hour and weekly labels.
 
 Codexex keeps the menu bar popup and Settings focused on a clean, readable native Mac experience.
 

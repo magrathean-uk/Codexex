@@ -439,7 +439,7 @@ struct SettingsRootView: View {
     private var menuBarSection: some View {
         SettingsListGroup(
             title: "Quota presentation",
-            footer: "5-hour visibility applies app-wide. Weekly visibility is menu-bar only."
+            footer: "5-hour visibility controls main Codex usage. Spark remains visible. Weekly visibility is menu-bar only."
         ) {
             SettingsListRow(title: "Mode", detail: "Menu bar usage, remaining quota, or weekly pace.") {
                 CodexSegmentedControl(selection: Binding(
@@ -454,15 +454,15 @@ struct SettingsRootView: View {
             }
 
             SettingsListRow(
-                title: "Show 5-hour window",
-                detail: "Menu bar, popup, summaries, and history."
+                title: "Show Codex 5-hour window",
+                detail: "Main Codex menu bar, popup, summaries, and history. Spark stays visible."
             ) {
                 CodexSwitch(
                     isOn: Binding(
                         get: { model.showFiveHourInMenubar },
                         set: { model.setShowFiveHourInMenubar($0) }
                     ),
-                    accessibilityLabel: "Show 5-hour window"
+                    accessibilityLabel: "Show Codex 5-hour window"
                 )
                 .accessibilityIdentifier("mac.settings.showFiveHour")
             }
@@ -834,7 +834,7 @@ private enum SettingsRowIconName {
             return "waveform.path.ecg"
         case "Mode":
             return "menubar.rectangle"
-        case "Show 5-hour window":
+        case "Show Codex 5-hour window":
             return "clock"
         case "Weekly window":
             return "calendar"

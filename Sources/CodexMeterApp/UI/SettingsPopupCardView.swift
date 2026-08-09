@@ -49,15 +49,15 @@ struct SettingsPopupCardView: View {
                 .foregroundStyle(.primary)
 
             SettingsToggleRow(
-                title: "Show 5-hour window",
-                detail: "Show 5H in the menu bar, popup, summaries, and history.",
+                title: "Show Codex 5-hour window",
+                detail: "Show main Codex 5H in the menu bar, popup, summaries, and history. Spark stays visible.",
                 isOn: Binding(
                     get: { model.showFiveHourInMenubar },
                     set: { model.setShowFiveHourInMenubar($0) }
                 )
             )
             .accessibilityIdentifier("mac.settings.showFiveHour")
-            .accessibilityLabel("Show 5-hour window")
+            .accessibilityLabel("Show Codex 5-hour window")
             .accessibilityValue(model.showFiveHourInMenubar ? "On" : "Off")
 
             SettingsToggleRow(

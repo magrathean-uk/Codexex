@@ -51,6 +51,26 @@ final class PopupPresentationTests: XCTestCase {
         XCTAssertEqual(rows.map { Int($0.window.usedPercent) }, [0, 13])
     }
 
+    func testSparkFiveHourStaysVisibleWhenMainCodexFiveHourIsDisabled() {
+        let spark = makeLimit(
+            id: "spark",
+            name: "Codex Spark",
+            bucket: .spark,
+            fiveHour: 12,
+            weekly: 60
+        )
+        let codex = makeLimit(
+            id: "codex",
+            name: "Codex",
+            bucket: .codex,
+            fiveHour: 12,
+            weekly: 60
+        )
+
+        XCTAssertTrue(PopupPresentation.shouldShowFiveHour(for: spark, userEnabled: false))
+        XCTAssertFalse(PopupPresentation.shouldShowFiveHour(for: codex, userEnabled: false))
+    }
+
     func testFiveHourVisibilityFiltersRowsAndHeadline() {
         let limit = makeLimit(
             id: "codex",
