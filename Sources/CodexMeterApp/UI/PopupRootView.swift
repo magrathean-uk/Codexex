@@ -303,24 +303,23 @@ private struct PopupFooterControl: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 6) {
+            Label {
+                Text(title)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.86)
+                    .allowsTightening(true)
+            } icon: {
                 if isAnimating {
                     PopupSpinningRefreshIcon(systemImage: systemImage)
                 } else {
                     Image(systemName: systemImage)
-                        .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
-                        .imageScale(.small)
                 }
-
-                Text(title)
-                    .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
-                    .allowsTightening(true)
             }
+            .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
+            .labelStyle(.titleAndIcon)
         }
         .buttonStyle(.plain)
-        .foregroundStyle(foreground)
+        .foregroundColor(foreground)
         .padding(.horizontal, 12)
         .frame(minWidth: minimumWidth)
         .frame(height: GlassTokens.pillHeight)
@@ -338,7 +337,6 @@ private struct PopupFooterControl: View {
         .onHover { hovering in
             isHovered = hovering
         }
-        .unredacted()
         .accessibilityLabel(title)
         .accessibilityIdentifier(accessibilityIdentifier)
         .transaction { transaction in

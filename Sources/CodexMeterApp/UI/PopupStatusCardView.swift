@@ -136,9 +136,8 @@ private struct PopupActionButton: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
-                .foregroundStyle(foreground)
                 .lineLimit(1)
-                .minimumScaleFactor(0.82)
+                .minimumScaleFactor(0.86)
                 .allowsTightening(true)
                 .padding(.horizontal, 12)
                 .frame(minWidth: minimumWidth)
@@ -153,9 +152,9 @@ private struct PopupActionButton: View {
                     }
                 }
                 .opacity(isEnabled ? 1 : 0.72)
-                .unredacted()
         }
         .buttonStyle(.plain)
+        .foregroundColor(foreground)
         .disabled(isEnabled == false)
         .accessibilityLabel(title)
     }
