@@ -126,6 +126,8 @@ targets:
     platform: iOS
     sources:
       - path: Sources/CodexMeterWidgets
+    resources:
+      - path: Sources/CodexMeterWidgets/Resources/icon-1024.png
     dependencies:
       - target: CodexMeterCoreiOS
     settings:

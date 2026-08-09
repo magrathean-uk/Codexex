@@ -72,27 +72,19 @@ private struct ActivityIcon: View {
     let size: CGFloat
 
     var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: size * 0.22, style: .continuous)
-                .fill(Color(red: 0.10, green: 0.14, blue: 0.25))
-
-            HStack(spacing: size * 0.045) {
-                Capsule()
-                    .fill(Color(red: 0.15, green: 0.42, blue: 1.0))
-                    .frame(width: size * 0.28, height: size * 0.14)
-                Capsule()
-                    .fill(Color(red: 0.20, green: 0.78, blue: 0.84))
-                    .frame(width: size * 0.35, height: size * 0.14)
-                Circle()
-                    .fill(Color(red: 1.0, green: 0.53, blue: 0.05))
-                    .frame(width: size * 0.14, height: size * 0.14)
+        Group {
+            if let path = Bundle.main.path(forResource: "icon-1024", ofType: "png"),
+               let image = UIImage(contentsOfFile: path),
+               let icon = image.preparingThumbnail(of: CGSize(width: size * 3, height: size * 3)) {
+                Image(uiImage: icon)
+                    .widgetAccentedRenderingMode(.fullColor)
+                    .scaleEffect(1.0 / 3.0)
+            } else {
+                Color.clear
             }
-            .padding(.horizontal, size * 0.12)
-
-            RoundedRectangle(cornerRadius: size * 0.22, style: .continuous)
-                .stroke(.white.opacity(0.18), lineWidth: max(0.5, size * 0.025))
         }
-        .frame(width: size, height: size)
+            .frame(width: size, height: size)
+            .clipShape(RoundedRectangle(cornerRadius: size * 0.22, style: .continuous))
     }
 }
 
