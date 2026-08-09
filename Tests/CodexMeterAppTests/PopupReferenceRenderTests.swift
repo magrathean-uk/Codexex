@@ -178,10 +178,20 @@ final class PopupReferenceRenderTests: XCTestCase {
         let bitmap = try renderedBitmap(for: view, width: GlassTokens.popupWidth, height: fittingSize.height)
         let sample = PixelSample(bitmap: bitmap)
 
+        if let outputPath = ProcessInfo.processInfo.environment["CODEXEX_FOOTER_RENDER_OUTPUT"] {
+            let pngData = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+            try pngData.write(to: URL(fileURLWithPath: outputPath), options: .atomic)
+        }
+
         XCTAssertGreaterThan(
             sample.lowerAccentBluePixels,
             300,
             "live popup footer should render a visible primary Refresh action near the bottom edge"
+        )
+        XCTAssertGreaterThan(
+            sample.footerPrimaryAccentBluePixels,
+            300,
+            "live popup footer should keep the Refresh control visible in its right-side footer slot"
         )
     }
 }
@@ -259,6 +269,7 @@ private struct PixelSample {
     let accentBluePixels: Int
     let labelAccentBluePixels: Int
     let lowerAccentBluePixels: Int
+    let footerPrimaryAccentBluePixels: Int
 
     init(bitmap: NSBitmapImageRep) {
         let width = bitmap.pixelsWide
@@ -268,6 +279,7 @@ private struct PixelSample {
         var accentBlue = 0
         var labelAccentBlue = 0
         var lowerAccentBlue = 0
+        var footerPrimaryAccentBlue = 0
         var total = 0
         let step = 8
         let labelBandXStart = Int(Double(width) * 0.24)
@@ -275,6 +287,8 @@ private struct PixelSample {
         let labelBandYStart = Int(Double(height) * 0.32)
         let labelBandYEnd = Int(Double(height) * 0.68)
         let lowerBandStart = Int(Double(height) * 0.68)
+        let footerBandXStart = Int(Double(width) * 0.65)
+        let footerBandYStart = Int(Double(height) * 0.84)
 
         for y in 0..<height {
             for x in 0..<width {
@@ -295,6 +309,9 @@ private struct PixelSample {
                     }
                     if y >= lowerBandStart {
                         lowerAccentBlue += 1
+                    }
+                    if x >= footerBandXStart, y >= footerBandYStart {
+                        footerPrimaryAccentBlue += 1
                     }
                 }
 
@@ -318,5 +335,6 @@ private struct PixelSample {
         accentBluePixels = accentBlue
         labelAccentBluePixels = labelAccentBlue
         lowerAccentBluePixels = lowerAccentBlue
+        footerPrimaryAccentBluePixels = footerPrimaryAccentBlue
     }
 }

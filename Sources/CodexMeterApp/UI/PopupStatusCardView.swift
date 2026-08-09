@@ -127,38 +127,72 @@ private struct PopupActionButton: View {
         case secondary
     }
 
+    @Environment(\.isEnabled) private var isEnabled
+    @State private var isHovered = false
     let title: String
     let tone: Tone
     let action: () -> Void
 
     var body: some View {
-        Group {
-            switch tone {
-            case .primary:
-                controlButton
-                    .buttonStyle(.borderedProminent)
-                    .tint(CodexTheme.accent)
-            case .secondary:
-                controlButton
-                    .buttonStyle(.bordered)
-                    .tint(CodexTheme.text)
-            }
-        }
-        .buttonBorderShape(.roundedRectangle(radius: GlassTokens.pillRadius))
-        .controlSize(.regular)
-        .frame(minWidth: minimumWidth, minHeight: GlassTokens.pillHeight)
-        .accessibilityLabel(title)
+        Text(title)
+            .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
+            .foregroundStyle(foreground)
+            .lineLimit(1)
+            .minimumScaleFactor(0.86)
+            .allowsTightening(true)
+            .padding(.horizontal, 12)
+            .frame(minWidth: minimumWidth)
+            .frame(height: GlassTokens.pillHeight)
+            .background(buttonBackground)
+            .overlay(buttonBorder)
+            .opacity(isEnabled ? 1 : 0.55)
+            .contentShape(RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous))
+            .onTapGesture { performAction() }
+            .onHover { isHovered = $0 }
+            .focusable(isEnabled)
+            .onKeyPress(.return) { handleKeyPress() }
+            .onKeyPress(.space) { handleKeyPress() }
+            .accessibilityElement()
+            .accessibilityAddTraits(.isButton)
+            .accessibilityLabel(title)
+            .accessibilityAction { performAction() }
     }
 
-    private var controlButton: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.86)
-                .allowsTightening(true)
-                .padding(.horizontal, 4)
+    private var foreground: Color {
+        tone == .primary ? .white : CodexTheme.text
+    }
+
+    private var buttonBackground: some View {
+        RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
+            .fill(backgroundColor)
+    }
+
+    private var buttonBorder: some View {
+        RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
+            .strokeBorder(
+                tone == .secondary ? CodexTheme.hairlineStrong : .clear,
+                lineWidth: 1
+            )
+    }
+
+    private var backgroundColor: Color {
+        switch tone {
+        case .primary:
+            return CodexTheme.accent.opacity(isHovered && isEnabled ? 0.88 : 1)
+        case .secondary:
+            return CodexTheme.control.opacity(isHovered && isEnabled ? 0.82 : 1)
         }
+    }
+
+    private func performAction() {
+        guard isEnabled else { return }
+        action()
+    }
+
+    private func handleKeyPress() -> KeyPress.Result {
+        guard isEnabled else { return .ignored }
+        action()
+        return .handled
     }
 
     private var minimumWidth: CGFloat {
@@ -169,6 +203,5 @@ private struct PopupActionButton: View {
             return 86
         }
     }
-
 }
 #endif

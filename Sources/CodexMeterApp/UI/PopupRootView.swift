@@ -292,6 +292,8 @@ private struct PopupFooterControl: View {
         case secondary
     }
 
+    @Environment(\.isEnabled) private var isEnabled
+    @State private var isHovered = false
     let title: String
     let systemImage: String
     let tone: Tone
@@ -300,53 +302,84 @@ private struct PopupFooterControl: View {
     let action: () -> Void
 
     var body: some View {
-        Group {
-            switch tone {
-            case .primary:
-                controlButton
-                    .buttonStyle(.borderedProminent)
-                    .tint(CodexTheme.accent)
-            case .secondary:
-                controlButton
-                    .buttonStyle(.bordered)
-                    .tint(CodexTheme.text)
+        HStack(spacing: 6) {
+            if isAnimating {
+                PopupSpinningRefreshIcon(systemImage: systemImage)
+            } else {
+                Image(systemName: systemImage)
+                    .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
+                    .imageScale(.small)
             }
+
+            Text(title)
+                .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.86)
+                .allowsTightening(true)
         }
-        .buttonBorderShape(.roundedRectangle(radius: GlassTokens.pillRadius))
-        .controlSize(.regular)
+        .foregroundStyle(foreground)
+        .padding(.horizontal, 12)
         .frame(minWidth: minimumWidth)
-        .frame(minHeight: GlassTokens.pillHeight)
+        .frame(height: GlassTokens.pillHeight)
+        .background(buttonBackground)
+        .overlay(buttonBorder)
+        .opacity(isEnabled ? 1 : 0.55)
         .contentShape(RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous))
+        .onTapGesture { performAction() }
+        .onHover { isHovered = $0 }
+        .focusable(isEnabled)
+        .onKeyPress(.return) { handleKeyPress() }
+        .onKeyPress(.space) { handleKeyPress() }
+        .accessibilityElement()
+        .accessibilityAddTraits(.isButton)
         .accessibilityLabel(title)
         .accessibilityIdentifier(accessibilityIdentifier)
+        .accessibilityAction { performAction() }
         .transaction { transaction in
             transaction.disablesAnimations = false
         }
     }
 
-    private var controlButton: some View {
-        Button(action: action) {
-            Label {
-                Text(title)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.86)
-                    .allowsTightening(true)
-            } icon: {
-                if isAnimating {
-                    PopupSpinningRefreshIcon(systemImage: systemImage)
-                } else {
-                    Image(systemName: systemImage)
-                }
-            }
-            .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
-            .labelStyle(.titleAndIcon)
+    private var foreground: Color {
+        tone == .primary ? .white : CodexTheme.text
+    }
+
+    private var buttonBackground: some View {
+        RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
+            .fill(backgroundColor)
+    }
+
+    private var buttonBorder: some View {
+        RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
+            .strokeBorder(
+                tone == .secondary ? CodexTheme.hairlineStrong : .clear,
+                lineWidth: 1
+            )
+    }
+
+    private var backgroundColor: Color {
+        switch tone {
+        case .primary:
+            return CodexTheme.accent.opacity(isHovered && isEnabled ? 0.88 : 1)
+        case .secondary:
+            return CodexTheme.control.opacity(isHovered && isEnabled ? 0.82 : 1)
         }
+    }
+
+    private func performAction() {
+        guard isEnabled else { return }
+        action()
+    }
+
+    private func handleKeyPress() -> KeyPress.Result {
+        guard isEnabled else { return .ignored }
+        action()
+        return .handled
     }
 
     private var minimumWidth: CGFloat {
         92
     }
-
 }
 
 struct PopupSpinningRefreshIcon: View {
