@@ -98,7 +98,8 @@ Pick an installed simulator destination before running iOS tests.
 Live Activity starts explicitly from iOS Settings after a valid foreground quota
 refresh. It updates only after later foreground refreshes and ends on Stop or
 sign-out. Codexex has no APNs backend, so unattended continuous updates are not
-claimed; the activity uses its stale date when refreshes stop.
+claimed; the activity uses its stale date when refreshes stop. It shows the last
+fetched ChatGPT account quota, not Mac-only local session-log token burn.
 
 ## Helper and XPC flow
 

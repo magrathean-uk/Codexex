@@ -157,6 +157,7 @@ struct CodexiOSRootView: View {
             Label("Settings", systemImage: "gearshape")
         }
         .buttonStyle(CodexiOSTopButtonStyle())
+        .accessibilityIdentifier("ios.dashboard.settings")
     }
 
     private var refreshActionButton: some View {
@@ -175,6 +176,7 @@ struct CodexiOSRootView: View {
         }
         .buttonStyle(CodexiOSTopButtonStyle())
         .disabled(model.isRefreshing)
+        .accessibilityIdentifier("ios.dashboard.refresh")
     }
 
     @ViewBuilder
@@ -247,18 +249,44 @@ struct CodexiOSRootView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .lineLimit(2)
                     Spacer(minLength: 12)
-                    if let headline = headlineWindow(for: limit) {
-                        Text(headline.remainingPercentText)
-                            .font(.system(size: 36, weight: .semibold).monospacedDigit())
+                    if let headline = CodexiOSQuotaPresentation.headline(
+                        for: limit,
+                        showFiveHour: showFiveHourPresentation
+                    ) {
+                        Text("\(headline.title) · \(headline.window.remainingPercentText) left")
+                            .font(.system(size: 30, weight: .semibold).monospacedDigit())
                             .minimumScaleFactor(0.7)
+                            .lineLimit(1)
+                            .accessibilityLabel("Codex quota")
+                            .accessibilityValue("\(headline.title), \(Int(headline.window.remainingPercent.rounded())) percent remaining")
+                            .accessibilityIdentifier(quotaIdentifier(for: limit, suffix: "headline"))
+                    } else {
+                        Text("Weekly unavailable")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .accessibilityLabel("Weekly quota unavailable")
+                            .accessibilityIdentifier(quotaIdentifier(for: limit, suffix: "headline"))
                     }
                 }
 
-                if showFiveHourPresentation, let fiveHour = limit.fiveHourWindow {
-                    quotaRow(title: "5H", window: fiveHour, tint: tint(for: limit.bucket))
+                if showFiveHourPresentation,
+                   let fiveHour = CodexiOSQuotaPresentation.fiveHourWindow(for: limit) {
+                    quotaRow(
+                        title: "5H",
+                        window: fiveHour,
+                        tint: tint(for: limit.bucket),
+                        identifier: quotaIdentifier(for: limit, suffix: "fiveHour")
+                    )
                 }
-                if let weekly = limit.weeklyWindow, weekly != limit.fiveHourWindow {
-                    quotaRow(title: "Weekly", window: weekly, tint: tint(for: limit.bucket))
+                if let weekly = CodexiOSQuotaPresentation.weeklyWindow(for: limit),
+                   showFiveHourPresentation == false
+                       || weekly != CodexiOSQuotaPresentation.fiveHourWindow(for: limit) {
+                    quotaRow(
+                        title: "Weekly",
+                        window: weekly,
+                        tint: tint(for: limit.bucket),
+                        identifier: quotaIdentifier(for: limit, suffix: "weekly")
+                    )
                 }
                 if let credits = CodexQuotaPresentationRules.visibleCredits(limit.credits) {
                     Text("Credits: \(credits.displayText)")
@@ -270,8 +298,14 @@ struct CodexiOSRootView: View {
         }
     }
 
-    private func quotaRow(title: String, window: CodexQuotaWindow, tint: Color) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+    private func quotaRow(
+        title: String,
+        window: CodexQuotaWindow,
+        tint: Color,
+        identifier: String
+    ) -> some View {
+        let reset = resetText(for: window)
+        return VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text(title)
                     .font(.subheadline.weight(.medium))
@@ -279,14 +313,19 @@ struct CodexiOSRootView: View {
                 Spacer(minLength: 10)
                 Text(window.remainingPercentText)
                     .font(.subheadline.weight(.semibold).monospacedDigit())
-                Text(resetText(for: window))
+                Text(reset)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)
             }
             CodexiOSQuotaBar(progress: window.remainingPercent / 100, tint: tint)
+                .accessibilityHidden(true)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(title) quota")
+        .accessibilityValue("\(Int(window.remainingPercent.rounded())) percent remaining, \(reset)")
+        .accessibilityIdentifier(identifier)
     }
 
     private func resetText(for window: CodexQuotaWindow) -> String {
@@ -310,6 +349,11 @@ struct CodexiOSRootView: View {
                 onModeChange: { defaultHistoryMode = $0.rawValue }
             )
         }
+    }
+
+    private func quotaIdentifier(for limit: CodexLimit, suffix: String) -> String {
+        let bucket = limit.bucket == .codex ? "codex" : limit.id
+        return "ios.dashboard.\(bucket).\(suffix)"
     }
 
     private var selectedHistoryMode: CodexiOSHistoryMode {
@@ -348,12 +392,6 @@ struct CodexiOSRootView: View {
         }
     }
 
-    private func headlineWindow(for limit: CodexLimit) -> CodexQuotaWindow? {
-        [limit.weeklyWindow, showFiveHourPresentation ? limit.fiveHourWindow : nil]
-            .compactMap { $0 }
-            .min { $0.remainingPercent < $1.remainingPercent }
-    }
-
     private func tint(for bucket: CodexLimitBucket) -> Color {
         bucket == .spark ? CodexiOSTheme.tertiary : CodexiOSTheme.secondary
     }
@@ -374,6 +412,58 @@ struct CodexiOSRootView: View {
     private func iOSCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         content()
             .codexiOSGlassCard()
+    }
+}
+
+struct CodexiOSQuotaHeadline: Equatable {
+    let title: String
+    let window: CodexQuotaWindow
+}
+
+enum CodexiOSQuotaPresentation {
+    static func headline(
+        for limit: CodexLimit,
+        showFiveHour: Bool
+    ) -> CodexiOSQuotaHeadline? {
+        var candidates: [CodexiOSQuotaHeadline] = []
+        if let weekly = weeklyWindow(for: limit) {
+            candidates.append(.init(title: "Weekly", window: weekly))
+        }
+        if showFiveHour, let fiveHour = fiveHourWindow(for: limit) {
+            candidates.append(.init(title: "5H", window: fiveHour))
+        }
+        return candidates.min { lhs, rhs in
+            lhs.window.remainingPercent < rhs.window.remainingPercent
+        }
+    }
+
+    static func weeklyWindow(for limit: CodexLimit) -> CodexQuotaWindow? {
+        exactWindow(
+            for: limit,
+            durationMinutes: 10_080,
+            untaggedFallback: limit.secondary ?? limit.primary
+        )
+    }
+
+    static func fiveHourWindow(for limit: CodexLimit) -> CodexQuotaWindow? {
+        exactWindow(
+            for: limit,
+            durationMinutes: 300,
+            untaggedFallback: limit.primary ?? limit.secondary
+        )
+    }
+
+    private static func exactWindow(
+        for limit: CodexLimit,
+        durationMinutes: Int,
+        untaggedFallback: CodexQuotaWindow?
+    ) -> CodexQuotaWindow? {
+        let candidates = [limit.primary, limit.secondary].compactMap { $0 }
+        if let exact = candidates.first(where: { $0.windowDurationMinutes == durationMinutes }) {
+            return exact
+        }
+        guard candidates.allSatisfy({ $0.windowDurationMinutes == nil }) else { return nil }
+        return untaggedFallback
     }
 }
 
@@ -419,7 +509,9 @@ private struct CodexiOSHistoryCard: View {
         case .dailyPeaks:
             CodexiOSHistoryGraph(fiveHourPoints: fiveHourPoints, weeklyPoints: weeklyPoints)
             FlowLayout(spacing: 8) {
-                chip("5H", PopupPresentation.historyLegendValue(for: fiveHourForecast))
+                if showFiveHour {
+                    chip("5H", PopupPresentation.historyLegendValue(for: fiveHourForecast))
+                }
                 chip("Weekly", PopupPresentation.historyLegendValue(for: weeklyForecast))
             }
         case .monthly:
@@ -513,7 +605,10 @@ private struct CodexiOSHistoryGraph: View {
             drawLine(in: &context, size: size)
         }
         .frame(height: 58)
-        .accessibilityLabel("Usage history graph")
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Usage history")
+        .accessibilityValue(accessibilitySummary)
+        .accessibilityIdentifier("ios.dashboard.history.graph")
     }
 
     private func drawBars(in context: inout GraphicsContext, size: CGSize) {
@@ -547,6 +642,27 @@ private struct CodexiOSHistoryGraph: View {
         }
         context.stroke(path, with: .color(CodexiOSTheme.secondary), style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
     }
+
+    private var accessibilitySummary: String {
+        [
+            seriesSummary(name: "Weekly", points: weeklyPoints),
+            fiveHourPoints.isEmpty ? nil : seriesSummary(name: "5-hour", points: fiveHourPoints)
+        ]
+        .compactMap { $0 }
+        .joined(separator: ". ")
+    }
+
+    private func seriesSummary(name: String, points: [CodexUsageHistoryPoint]) -> String {
+        guard let latest = points.last else { return "\(name) data unavailable" }
+        let peak = points.map(\.usedPercent).max() ?? latest.usedPercent
+        let range: String
+        if let first = points.first, first.date != latest.date {
+            range = "\(first.date.formatted(date: .abbreviated, time: .omitted)) to \(latest.date.formatted(date: .abbreviated, time: .omitted))"
+        } else {
+            range = latest.date.formatted(date: .abbreviated, time: .omitted)
+        }
+        return "\(name) latest \(Int(latest.usedPercent.rounded())) percent, peak \(Int(peak.rounded())) percent, \(range)"
+    }
 }
 
 enum CodexiOSTheme {
@@ -578,7 +694,7 @@ enum CodexiOSTheme {
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
-    static let card = surface.opacity(0.88)
+    static let card = surface
     static let inset = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
             ? UIColor.white.withAlphaComponent(0.07)
@@ -630,7 +746,7 @@ struct CodexiOSTopButtonStyle: ButtonStyle {
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(isEnabled ? Color.primary : Color.secondary)
             .padding(.horizontal, 13)
-            .frame(minHeight: 38)
+            .frame(minHeight: 44)
             .scaleEffect(configuration.isPressed && reduceMotion == false ? 0.98 : 1)
             .background(CodexiOSTheme.card.opacity(configuration.isPressed ? 0.72 : 1), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             .overlay {
@@ -676,7 +792,7 @@ private struct CodexiOSModeTabButton: View {
                 .font(.subheadline.weight(isSelected ? .semibold : .medium))
                 .foregroundStyle(isSelected ? Color.primary : Color.secondary)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
+                .frame(minHeight: 44)
         }
         .buttonStyle(.plain)
         .background(selectionBackground)

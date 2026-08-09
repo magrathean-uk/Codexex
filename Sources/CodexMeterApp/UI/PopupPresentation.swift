@@ -136,7 +136,8 @@ enum PopupPresentation {
         snapshot: CodexSnapshot?,
         insights: CodexUsageInsights?,
         previewModeEnabled: Bool,
-        hasRefreshIssue: Bool
+        hasRefreshIssue: Bool,
+        showFiveHour: Bool
     ) -> PopupSummaryPresentation? {
         guard snapshot != nil, let insights else { return nil }
 
@@ -158,7 +159,9 @@ enum PopupPresentation {
         }
 
         let weeklySeverity = CodexQuotaSeverity.from(weekly.tone)
-        let fiveHourSeverity = CodexQuotaSeverity.from(insights.fiveHourPressure.tone)
+        let fiveHourSeverity = showFiveHour
+            ? CodexQuotaSeverity.from(insights.fiveHourPressure.tone)
+            : .tooEarly
         let severity = fiveHourSeverity.rawValue > weeklySeverity.rawValue
             ? fiveHourSeverity
             : weeklySeverity
@@ -256,7 +259,8 @@ enum PopupPresentation {
 
     static func visibleWindowRows(
         for limit: CodexLimit,
-        includeInactive: Bool = false
+        includeInactive: Bool = false,
+        showFiveHour: Bool
     ) -> [(title: String, window: CodexQuotaWindow)] {
         let candidates: [(String, CodexQuotaWindow?)] = [
             ("5H", limit.primary),
@@ -264,7 +268,11 @@ enum PopupPresentation {
         ]
         var unique: [CodexQuotaWindow] = []
         let rows = candidates.compactMap { title, window -> (String, CodexQuotaWindow)? in
-            guard let window, unique.contains(window) == false else { return nil }
+            guard let window,
+                  showFiveHour || isFiveHourWindow(window, fallbackTitle: title) == false,
+                  unique.contains(window) == false else {
+                return nil
+            }
             unique.append(window)
             return (resolvedWindowTitle(fallback: title, window: window), window)
         }
@@ -274,11 +282,23 @@ enum PopupPresentation {
         return activeRows.isEmpty ? rows.prefix(1).map { $0 } : activeRows
     }
 
-    static func headlineWindow(for limit: CodexLimit) -> CodexQuotaWindow? {
-        let windows = [limit.fiveHourWindow, limit.weeklyWindow].compactMap { $0 }
-        return windows.min { lhs, rhs in
+    static func headlineWindow(
+        for limit: CodexLimit,
+        showFiveHour: Bool
+    ) -> CodexQuotaWindow? {
+        visibleWindowRows(
+            for: limit,
+            includeInactive: true,
+            showFiveHour: showFiveHour
+        )
+        .map(\.window)
+        .min { lhs, rhs in
             lhs.remainingPercent < rhs.remainingPercent
-        } ?? limit.primary ?? limit.secondary
+        }
+    }
+
+    static func visibleHistorySeries(showFiveHour: Bool) -> [CodexUsageHistorySeries] {
+        showFiveHour ? [.fiveHour, .weekly] : [.weekly]
     }
 
     static func quotaRemainingText(for window: CodexQuotaWindow) -> String {
@@ -301,6 +321,16 @@ enum PopupPresentation {
             return window.windowText
         }
         return fallback
+    }
+
+    private static func isFiveHourWindow(
+        _ window: CodexQuotaWindow,
+        fallbackTitle: String
+    ) -> Bool {
+        guard let duration = window.windowDurationMinutes else {
+            return fallbackTitle == "5H"
+        }
+        return duration == 300
     }
 
     private static func weeklySupporting(

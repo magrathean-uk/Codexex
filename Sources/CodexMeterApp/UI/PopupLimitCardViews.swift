@@ -6,6 +6,7 @@ struct LimitCardView: View {
     let presentation: PopupLimitPresentation
     let resetDisplayStyle: CodexResetDisplayStyle
     let displayMode: CodexMenuBarDisplayMode
+    let showFiveHour: Bool
 
     private var limit: CodexLimit { presentation.limit }
     private var headlineFont: Font {
@@ -49,7 +50,8 @@ struct LimitCardView: View {
     private var visibleWindows: [(title: String, window: CodexQuotaWindow)] {
         PopupPresentation.visibleWindowRows(
             for: limit,
-            includeInactive: limit.bucket == .spark
+            includeInactive: limit.bucket == .spark,
+            showFiveHour: showFiveHour
         )
     }
 
@@ -92,6 +94,7 @@ struct LimitCardView: View {
                 value: "\(windowValueText(for: window)) \(windowValueLabel), \(resetText)"
             )
         }
+        .accessibilityIdentifier(windowAccessibilityIdentifier(for: title))
     }
 
     private func windowValueText(for window: CodexQuotaWindow) -> String {
@@ -119,6 +122,15 @@ struct LimitCardView: View {
         case .remaining:
             return "remaining"
         }
+    }
+
+    private func windowAccessibilityIdentifier(for title: String) -> String {
+        let windowName = switch title {
+        case "5H": "fiveHour"
+        case "Weekly": "weekly"
+        default: "quota"
+        }
+        return "mac.popup.\(limit.bucket.rawValue).\(windowName)"
     }
 }
 

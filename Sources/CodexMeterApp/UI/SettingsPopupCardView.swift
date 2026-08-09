@@ -44,20 +44,24 @@ struct SettingsPopupCardView: View {
 
             Divider()
 
-            Text("Menu bar")
+            Text("Quota presentation")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
 
             SettingsToggleRow(
-                title: "Show 5H",
+                title: "Show 5-hour window",
+                detail: "Show 5H in the menu bar, popup, summaries, and history.",
                 isOn: Binding(
                     get: { model.showFiveHourInMenubar },
                     set: { model.setShowFiveHourInMenubar($0) }
                 )
             )
+            .accessibilityIdentifier("mac.settings.showFiveHour")
+            .accessibilityLabel("Show 5-hour window")
+            .accessibilityValue(model.showFiveHourInMenubar ? "On" : "Off")
 
             SettingsToggleRow(
-                title: "Show W",
+                title: "Show weekly in menu bar",
                 isOn: Binding(
                     get: { model.showWeeklyInMenubar },
                     set: { model.setShowWeeklyInMenubar($0) }

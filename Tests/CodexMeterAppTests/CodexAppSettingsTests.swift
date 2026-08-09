@@ -4,6 +4,7 @@ import XCTest
 final class CodexAppSettingsTests: XCTestCase {
     override func setUp() {
         super.setUp()
+        UserDefaults.standard.removeObject(forKey: "codexex.showFiveHourInMenubar")
         UserDefaults.standard.removeObject(forKey: "codexex.showSparkEnabled")
         UserDefaults.standard.removeObject(forKey: "codexex.showHistoryChartEnabled")
         UserDefaults.standard.removeObject(forKey: "codexex.defaultHistoryMode")
@@ -19,12 +20,14 @@ final class CodexAppSettingsTests: XCTestCase {
         UserDefaults.standard.removeObject(forKey: "codexex.quotaNotificationFingerprints")
     }
 
-    func testNewPopupSettingsDefaultOn() {
+    func testPopupSettingsDefaults() {
         let store = CodexAppSettingsStore(defaults: makeDefaults())
         let snapshot = store.snapshot()
 
+        XCTAssertTrue(snapshot.autoRefreshEnabled)
         XCTAssertTrue(snapshot.showSparkEnabled)
         XCTAssertTrue(snapshot.showHistoryChartEnabled)
+        XCTAssertFalse(snapshot.showFiveHourInMenubar)
         XCTAssertEqual(snapshot.defaultHistoryMode, .dailyPeaks)
         XCTAssertTrue(snapshot.showPaceConfidence)
         XCTAssertFalse(snapshot.hideIdleSecondaryLimits)
@@ -36,10 +39,12 @@ final class CodexAppSettingsTests: XCTestCase {
     }
 
     func testNewPopupSettingsPersist() {
-        let store = CodexAppSettingsStore(defaults: makeDefaults())
+        let defaults = makeDefaults()
+        let store = CodexAppSettingsStore(defaults: defaults)
 
         store.setShowSparkEnabled(false)
         store.setShowHistoryChartEnabled(false)
+        store.setShowFiveHourInMenubar(true)
         store.setDefaultHistoryMode(.monthly)
         store.setShowPaceConfidence(false)
         store.setHideIdleSecondaryLimits(true)
@@ -49,11 +54,13 @@ final class CodexAppSettingsTests: XCTestCase {
         let snapshot = store.snapshot()
         XCTAssertFalse(snapshot.showSparkEnabled)
         XCTAssertFalse(snapshot.showHistoryChartEnabled)
+        XCTAssertTrue(snapshot.showFiveHourInMenubar)
         XCTAssertEqual(snapshot.defaultHistoryMode, .monthly)
         XCTAssertFalse(snapshot.showPaceConfidence)
         XCTAssertTrue(snapshot.hideIdleSecondaryLimits)
         XCTAssertEqual(snapshot.menuBarDisplayMode, .pace)
         XCTAssertEqual(snapshot.resetDisplayStyle, .absolute)
+        XCTAssertTrue(CodexAppSettingsStore(defaults: defaults).snapshot().showFiveHourInMenubar)
     }
 
     func testQuotaNotificationSettingsPersistAndClear() {
@@ -130,6 +137,7 @@ final class CodexAppSettingsTests: XCTestCase {
 
         defaults.set(true, forKey: "codexex.previewModeEnabled")
         defaults.set("pace", forKey: "codexex.menuBarDisplayMode")
+        defaults.set(true, forKey: "codexex.showFiveHourInMenubar")
 
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("CodexexResetTests-\(UUID().uuidString)", isDirectory: true)
@@ -144,6 +152,8 @@ final class CodexAppSettingsTests: XCTestCase {
 
         XCTAssertNil(defaults.object(forKey: "codexex.previewModeEnabled"))
         XCTAssertNil(defaults.object(forKey: "codexex.menuBarDisplayMode"))
+        XCTAssertNil(defaults.object(forKey: "codexex.showFiveHourInMenubar"))
+        XCTAssertFalse(CodexAppSettingsStore(defaults: defaults).snapshot().showFiveHourInMenubar)
         XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
     }
 

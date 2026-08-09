@@ -12,8 +12,68 @@ final class CodexLiveActivityPresentationTests: XCTestCase {
         let shown = try XCTUnwrap(CodexLiveActivityPresentation.state(snapshot: snapshot, showFiveHour: true))
         XCTAssertEqual(shown.weeklyPercentLeft, 68)
         XCTAssertEqual(shown.fiveHourPercentLeft, 32)
-        XCTAssertLessThan(try JSONEncoder().encode(shown).count, 4_096)
-        XCTAssertNil(CodexLiveActivityPresentation.state(snapshot: snapshot, showFiveHour: false)?.fiveHourPercentLeft)
+        let payloadSize = try JSONEncoder().encode(CodexLiveActivityAttributes()).count
+            + JSONEncoder().encode(shown).count
+        XCTAssertLessThan(payloadSize, 4_096)
+
+        let hidden = try XCTUnwrap(
+            CodexLiveActivityPresentation.state(snapshot: snapshot, showFiveHour: false)
+        )
+        XCTAssertNil(hidden.fiveHourPercentLeft)
+        XCTAssertNil(hidden.fiveHourResetAt)
+    }
+
+    func testTaggedFiveHourNeverSubstitutesForMissingWeeklyWindow() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let snapshot = CodexSnapshot(
+            capturedAt: now,
+            executablePath: "local",
+            account: .init(authType: "chatgpt", email: nil, planType: nil),
+            limits: [
+                .init(
+                    id: "codex",
+                    rawLimitName: nil,
+                    bucket: .codex,
+                    primary: .init(
+                        usedPercent: 68,
+                        windowDurationMinutes: 300,
+                        resetsAt: now
+                    ),
+                    secondary: nil
+                )
+            ]
+        )
+
+        XCTAssertNil(
+            CodexLiveActivityPresentation.state(snapshot: snapshot, showFiveHour: false)
+        )
+        XCTAssertNil(
+            CodexLiveActivityPresentation.state(snapshot: snapshot, showFiveHour: true)
+        )
+    }
+
+    func testLegacyUntaggedWindowsPreservePrimaryFiveHourAndSecondaryWeeklyRoles() throws {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let snapshot = CodexSnapshot(
+            capturedAt: now,
+            executablePath: "local",
+            account: .init(authType: "chatgpt", email: nil, planType: nil),
+            limits: [
+                .init(
+                    id: "codex",
+                    rawLimitName: nil,
+                    bucket: .codex,
+                    primary: .init(usedPercent: 25, windowDurationMinutes: nil, resetsAt: now),
+                    secondary: .init(usedPercent: 40, windowDurationMinutes: nil, resetsAt: now)
+                )
+            ]
+        )
+
+        let state = try XCTUnwrap(
+            CodexLiveActivityPresentation.state(snapshot: snapshot, showFiveHour: true)
+        )
+        XCTAssertEqual(state.weeklyPercentLeft, 60)
+        XCTAssertEqual(state.fiveHourPercentLeft, 75)
     }
 
     func testStaleDateUsesAtLeastFiveMinutes() {
@@ -22,26 +82,23 @@ final class CodexLiveActivityPresentationTests: XCTestCase {
         XCTAssertEqual(CodexLiveActivityPresentation.staleDate(capturedAt: date, cadence: 600), date.addingTimeInterval(1_200))
     }
 
-    func testLifecyclePolicyDeduplicatesUpdatesAndEnds() {
+    func testRecoveryPlanKeepsFirstAndEndsEveryDuplicate() {
         XCTAssertEqual(
-            CodexLiveActivityLifecyclePolicy.action(authorizationAllowed: true, existingIDs: [], explicitStart: false, shouldEnd: false),
-            .none
+            CodexLiveActivityLifecyclePolicy.recoveryPlan(existingIDs: []),
+            CodexLiveActivityRecoveryPlan(primaryID: nil, duplicateIDs: [])
         )
         XCTAssertEqual(
-            CodexLiveActivityLifecyclePolicy.action(authorizationAllowed: true, existingIDs: [], explicitStart: true, shouldEnd: false),
-            .start
+            CodexLiveActivityLifecyclePolicy.recoveryPlan(existingIDs: ["same"]),
+            CodexLiveActivityRecoveryPlan(primaryID: "same", duplicateIDs: [])
         )
         XCTAssertEqual(
-            CodexLiveActivityLifecyclePolicy.action(authorizationAllowed: true, existingIDs: ["same", "duplicate"], explicitStart: true, shouldEnd: false),
-            .update(id: "same")
-        )
-        XCTAssertEqual(
-            CodexLiveActivityLifecyclePolicy.action(authorizationAllowed: true, existingIDs: ["same"], explicitStart: false, shouldEnd: true),
-            .end(ids: ["same"])
-        )
-        XCTAssertEqual(
-            CodexLiveActivityLifecyclePolicy.action(authorizationAllowed: false, existingIDs: [], explicitStart: true, shouldEnd: false),
-            .unavailable
+            CodexLiveActivityLifecyclePolicy.recoveryPlan(
+                existingIDs: ["same", "duplicate-1", "duplicate-2"]
+            ),
+            CodexLiveActivityRecoveryPlan(
+                primaryID: "same",
+                duplicateIDs: ["duplicate-1", "duplicate-2"]
+            )
         )
     }
 }

@@ -43,11 +43,67 @@ final class PopupPresentationTests: XCTestCase {
     func testSparkShowsInactiveFiveHourBesideWeekly() {
         let rows = PopupPresentation.visibleWindowRows(
             for: makeLimit(id: "spark", name: "Codex Spark", bucket: .spark, fiveHour: 0, weekly: 13),
-            includeInactive: true
+            includeInactive: true,
+            showFiveHour: true
         )
 
         XCTAssertEqual(rows.map(\.title), ["5H", "Weekly"])
         XCTAssertEqual(rows.map { Int($0.window.usedPercent) }, [0, 13])
+    }
+
+    func testFiveHourVisibilityFiltersRowsAndHeadline() {
+        let limit = makeLimit(
+            id: "codex",
+            name: "Codex",
+            bucket: .codex,
+            fiveHour: 92,
+            weekly: 45
+        )
+
+        let shownRows = PopupPresentation.visibleWindowRows(
+            for: limit,
+            includeInactive: true,
+            showFiveHour: true
+        )
+        let hiddenRows = PopupPresentation.visibleWindowRows(
+            for: limit,
+            includeInactive: true,
+            showFiveHour: false
+        )
+
+        XCTAssertEqual(shownRows.map(\.title), ["5H", "Weekly"])
+        XCTAssertEqual(hiddenRows.map(\.title), ["Weekly"])
+        XCTAssertEqual(
+            PopupPresentation.headlineWindow(for: limit, showFiveHour: true)?.remainingPercentText,
+            "8%"
+        )
+        XCTAssertEqual(
+            PopupPresentation.headlineWindow(for: limit, showFiveHour: false)?.remainingPercentText,
+            "55%"
+        )
+    }
+
+    func testHiddenFiveHourDoesNotBecomeWeeklyFallback() {
+        let limit = CodexLimit(
+            id: "codex",
+            rawLimitName: "Codex",
+            bucket: .codex,
+            primary: CodexQuotaWindow(
+                usedPercent: 72,
+                windowDurationMinutes: 300,
+                resetsAt: Date(timeIntervalSince1970: 1_800_000_000)
+            ),
+            secondary: nil
+        )
+
+        XCTAssertTrue(
+            PopupPresentation.visibleWindowRows(
+                for: limit,
+                includeInactive: true,
+                showFiveHour: false
+            ).isEmpty
+        )
+        XCTAssertNil(PopupPresentation.headlineWindow(for: limit, showFiveHour: false))
     }
 
     func testQuotaWindowDisplayUsesRemainingPercentLikeAccountPage() {
@@ -65,8 +121,8 @@ final class PopupPresentationTests: XCTestCase {
         let codex = makeLimit(id: "codex", name: "Codex", bucket: .codex, fiveHour: 100, weekly: 45)
         let spark = makeLimit(id: "spark", name: "Codex Spark", bucket: .spark, fiveHour: 0, weekly: 64)
 
-        XCTAssertEqual(PopupPresentation.headlineWindow(for: codex)?.remainingPercentText, "0%")
-        XCTAssertEqual(PopupPresentation.headlineWindow(for: spark)?.remainingPercentText, "36%")
+        XCTAssertEqual(PopupPresentation.headlineWindow(for: codex, showFiveHour: true)?.remainingPercentText, "0%")
+        XCTAssertEqual(PopupPresentation.headlineWindow(for: spark, showFiveHour: true)?.remainingPercentText, "36%")
     }
 
     func testZeroAndUnlimitedCreditsStayHidden() {
@@ -139,7 +195,8 @@ final class PopupPresentationTests: XCTestCase {
                 )
             ),
             previewModeEnabled: false,
-            hasRefreshIssue: false
+            hasRefreshIssue: false,
+            showFiveHour: true
         )
 
         XCTAssertEqual(summary?.severity, .tooEarly)
@@ -175,10 +232,39 @@ final class PopupPresentationTests: XCTestCase {
                 )
             ),
             previewModeEnabled: false,
-            hasRefreshIssue: false
+            hasRefreshIssue: false,
+            showFiveHour: true
         )
 
         XCTAssertEqual(summary?.severity, .risk)
+        XCTAssertEqual(summary?.supportingLabel, "5-hour pressure")
+    }
+
+    func testSummaryIgnoresFiveHourPressureWhenHidden() {
+        let summary = PopupPresentation.summary(
+            snapshot: makeSnapshot(),
+            insights: makeFiveHourPressureInsights(),
+            previewModeEnabled: false,
+            hasRefreshIssue: false,
+            showFiveHour: false
+        )
+
+        XCTAssertEqual(summary?.severity, .safe)
+        XCTAssertEqual(summary?.message, "You are on track for this cycle.")
+        XCTAssertEqual(summary?.supportingLabel, "Weekly forecast")
+    }
+
+    func testSummaryRestoresFiveHourPressureWhenEnabled() {
+        let summary = PopupPresentation.summary(
+            snapshot: makeSnapshot(),
+            insights: makeFiveHourPressureInsights(),
+            previewModeEnabled: false,
+            hasRefreshIssue: false,
+            showFiveHour: true
+        )
+
+        XCTAssertEqual(summary?.severity, .risk)
+        XCTAssertEqual(summary?.message, "Short-term pressure is unusually high.")
         XCTAssertEqual(summary?.supportingLabel, "5-hour pressure")
     }
 
@@ -213,7 +299,8 @@ final class PopupPresentationTests: XCTestCase {
                 )
             ),
             previewModeEnabled: false,
-            hasRefreshIssue: false
+            hasRefreshIssue: false,
+            showFiveHour: true
         )
 
         XCTAssertEqual(summary?.supportingLabel, "Weekly forecast")
@@ -265,7 +352,8 @@ final class PopupPresentationTests: XCTestCase {
                 )
             ),
             previewModeEnabled: false,
-            hasRefreshIssue: false
+            hasRefreshIssue: false,
+            showFiveHour: true
         )
 
         XCTAssertEqual(summary?.severity, .safe)
@@ -283,6 +371,14 @@ final class PopupPresentationTests: XCTestCase {
         )
 
         XCTAssertEqual(PopupPresentation.historyLegendValue(for: forecast), "91%")
+    }
+
+    func testHistorySeriesHideAndRestoreFiveHour() {
+        let hidden = PopupPresentation.visibleHistorySeries(showFiveHour: false).map(historySeriesName)
+        let shown = PopupPresentation.visibleHistorySeries(showFiveHour: true).map(historySeriesName)
+
+        XCTAssertEqual(hidden, ["Weekly"])
+        XCTAssertEqual(shown, ["5H", "Weekly"])
     }
 
     func testHistoryGraphBarsAreBottomAligned() {
@@ -389,6 +485,41 @@ final class PopupPresentationTests: XCTestCase {
             ),
             limits: [makeLimit(id: "codex", name: "Codex", bucket: .codex, fiveHour: 12, weekly: 41)]
         )
+    }
+
+    private func makeFiveHourPressureInsights() -> CodexUsageInsights {
+        CodexUsageInsights(
+            weeklyPace: CodexUsageForecast(
+                message: "Projected 62% by reset",
+                tone: .safe,
+                confidence: .stable,
+                currentPercent: 41,
+                projectedPercentAtReset: 62,
+                paceVariancePercent: -4,
+                sampleCount: 6,
+                resetAt: Date(timeIntervalSince1970: 1_800_000_000),
+                detail: "4% under pace · 6 samples"
+            ),
+            fiveHourPressure: CodexUsageInsightRow(
+                title: "5-hour pressure",
+                message: "88% used",
+                detail: "resets in 2h",
+                tone: .danger
+            ),
+            recentPeaks: CodexUsageInsightRow(
+                title: "Recent peaks",
+                message: "5H 88% · W 63%",
+                detail: "Last 24h / 7d",
+                tone: .danger
+            )
+        )
+    }
+
+    private func historySeriesName(_ series: CodexUsageHistorySeries) -> String {
+        switch series {
+        case .fiveHour: "5H"
+        case .weekly: "Weekly"
+        }
     }
 
     private func makeHistoryPoint(id: String, date: Date, usedPercent: Double) -> CodexUsageHistoryPoint {

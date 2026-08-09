@@ -1,3 +1,4 @@
+#[cfg(any(debug_assertions, test, feature = "internal-env-overrides"))]
 use std::env;
 
 pub(crate) fn development_env_var(name: &str) -> Option<String> {

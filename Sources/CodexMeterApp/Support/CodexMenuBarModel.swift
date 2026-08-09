@@ -133,7 +133,8 @@ final class CodexMenuBarModel {
             snapshot: snapshot,
             insights: usageInsights,
             previewModeEnabled: previewModeEnabled,
-            hasRefreshIssue: dashboard.lastError != nil
+            hasRefreshIssue: dashboard.lastError != nil,
+            showFiveHour: showFiveHourInMenubar
         )
         return CodexLocalIntelligence.popupSummary(
             insights: usageInsights,

@@ -16,6 +16,7 @@ Current release: `5.1.1` (`16`). `project.yml` is the version and target source 
 
 - Menu bar first on macOS. No dock-facing main window.
 - Native iPhone/iPad companion using the shared quota contracts.
+- On-demand, stale-aware iPhone Live Activity for the last foreground quota refresh.
 - SwiftUI app content with a small AppKit shell for status item behavior.
 - `5H`, weekly, and 30-day history views, reset times, local history, and forecast.
 - Local Codex session usage: project/model/session burn, cache-read pressure, tool-loop and model-overkill signals.

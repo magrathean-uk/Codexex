@@ -14,7 +14,7 @@ struct UsageHistoryCardView: View {
     private let weeklyPoints: [CodexUsageHistoryPoint]
     private let currentCycleFiveHourPoints: [CodexUsageHistoryPoint]
     private let currentCycleWeeklyPoints: [CodexUsageHistoryPoint]
-    private let fiveHourForecast: CodexUsageForecast
+    private let fiveHourForecast: CodexUsageForecast?
     private let weeklyForecast: CodexUsageForecast
     private let monthlyHistory: CodexMonthlyUsageHistory?
 
@@ -23,6 +23,7 @@ struct UsageHistoryCardView: View {
         showsChart: Bool,
         historyMode: PopupHistoryMode,
         showPaceConfidence: Bool,
+        showFiveHour: Bool,
         resetDisplayStyle: CodexResetDisplayStyle,
         onHistoryModeChange: @escaping (PopupHistoryMode) -> Void
     ) {
@@ -32,11 +33,22 @@ struct UsageHistoryCardView: View {
         self.showPaceConfidence = showPaceConfidence
         self.resetDisplayStyle = resetDisplayStyle
         self.onHistoryModeChange = onHistoryModeChange
-        self.fiveHourPoints = CodexUsageHistoryAnalytics.points(from: samples, series: .fiveHour)
+        let visibleSeries = PopupPresentation.visibleHistorySeries(showFiveHour: showFiveHour)
+        let includesFiveHour = visibleSeries.contains { series in
+            if case .fiveHour = series { return true }
+            return false
+        }
+        self.fiveHourPoints = includesFiveHour
+            ? CodexUsageHistoryAnalytics.points(from: samples, series: .fiveHour)
+            : []
         self.weeklyPoints = CodexUsageHistoryAnalytics.points(from: samples, series: .weekly)
-        self.currentCycleFiveHourPoints = CodexUsageHistoryAnalytics.currentCyclePoints(from: samples, series: .fiveHour)
+        self.currentCycleFiveHourPoints = includesFiveHour
+            ? CodexUsageHistoryAnalytics.currentCyclePoints(from: samples, series: .fiveHour)
+            : []
         self.currentCycleWeeklyPoints = CodexUsageHistoryAnalytics.currentCyclePoints(from: samples, series: .weekly)
-        self.fiveHourForecast = CodexUsageHistoryAnalytics.forecast(from: samples, series: .fiveHour)
+        self.fiveHourForecast = includesFiveHour
+            ? CodexUsageHistoryAnalytics.forecast(from: samples, series: .fiveHour)
+            : nil
         self.weeklyForecast = CodexUsageHistoryAnalytics.forecast(from: samples, series: .weekly)
         self.monthlyHistory = CodexUsageHistoryAnalytics.monthlyHistory(from: samples, series: .weekly)
     }
@@ -191,11 +203,13 @@ struct UsageHistoryCardView: View {
                 }
 
                 HStack(spacing: 8) {
-                    legendItem(
-                        label: "5H",
-                        value: PopupPresentation.historyLegendValue(for: fiveHourForecast),
-                        color: limitAccentColor(for: .codex)
-                    )
+                    if let fiveHourForecast {
+                        legendItem(
+                            label: "5H",
+                            value: PopupPresentation.historyLegendValue(for: fiveHourForecast),
+                            color: limitAccentColor(for: .codex)
+                        )
+                    }
                     legendItem(
                         label: "Weekly",
                         value: PopupPresentation.historyLegendValue(for: weeklyForecast),
@@ -424,6 +438,7 @@ private struct MiniUsageHistoryGraph: View {
                 axisEndLabel: axisEndLabel
             )
         )
+        .accessibilityIdentifier("mac.popup.history.graph")
     }
 
     private var chartHeight: CGFloat {

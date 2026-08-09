@@ -1,8 +1,10 @@
 use base64::Engine;
 use chrono::Utc;
-use codex_app_server_protocol::AuthMode;
+use codex_protocol::auth::AuthMode;
 use codex_login::token_data::parse_chatgpt_jwt_claims;
-use codex_login::{save_auth, AuthCredentialsStoreMode, AuthDotJson, TokenData};
+use codex_login::{
+    save_auth, AuthCredentialsStoreMode, AuthDotJson, AuthKeyringBackendKind, TokenData,
+};
 use codexex_helper::{
     auth,
     protocol,
@@ -507,9 +509,18 @@ fn persist_chatgpt_auth(codex_home: &std::path::Path) {
             account_id: Some("account-123".to_string()),
         }),
         last_refresh: Some(Utc::now()),
+        agent_identity: None,
+        personal_access_token: None,
+        bedrock_api_key: None,
     };
 
-    save_auth(codex_home, &auth, AuthCredentialsStoreMode::File).unwrap();
+    save_auth(
+        codex_home,
+        &auth,
+        AuthCredentialsStoreMode::File,
+        AuthKeyringBackendKind::default(),
+    )
+    .unwrap();
 }
 
 struct EnvGuard;

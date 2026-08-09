@@ -328,7 +328,7 @@ struct SettingsRootView: View {
                     CodexSwitch(isOn: Binding(
                         get: { model.launchAtLoginEnabled },
                         set: { model.setLaunchAtLoginEnabled($0) }
-                    ))
+                    ), accessibilityLabel: "Launch at login")
                 }
             }
 
@@ -340,7 +340,7 @@ struct SettingsRootView: View {
                     CodexSwitch(isOn: Binding(
                         get: { model.autoRefreshEnabled },
                         set: { model.setAutoRefreshEnabled($0) }
-                    ))
+                    ), accessibilityLabel: "Auto-refresh")
                 }
 
                 SettingsListRow(title: "Interval") {
@@ -391,15 +391,27 @@ struct SettingsRootView: View {
             footer: "Choose which sections appear in the menu bar popup."
         ) {
             SettingsListRow(title: "Spark", detail: "Show the secondary Spark meter.") {
-                CodexSwitch(isOn: Binding(get: { model.showSparkEnabled }, set: { model.setShowSparkEnabled($0) }))
+                CodexSwitch(
+                    isOn: Binding(get: { model.showSparkEnabled }, set: { model.setShowSparkEnabled($0) }),
+                    accessibilityLabel: "Show Spark"
+                )
             }
 
             SettingsListRow(title: "Usage history") {
-                CodexSwitch(isOn: Binding(get: { model.showHistoryEnabled }, set: { model.setShowHistoryEnabled($0) }))
+                CodexSwitch(
+                    isOn: Binding(get: { model.showHistoryEnabled }, set: { model.setShowHistoryEnabled($0) }),
+                    accessibilityLabel: "Show usage history"
+                )
             }
 
             SettingsListRow(title: "History chart", detail: "Bars and trend line inside usage history.", isLast: true) {
-                CodexSwitch(isOn: Binding(get: { model.showHistoryChartEnabled }, set: { model.setShowHistoryChartEnabled($0) }))
+                CodexSwitch(
+                    isOn: Binding(
+                        get: { model.showHistoryChartEnabled },
+                        set: { model.setShowHistoryChartEnabled($0) }
+                    ),
+                    accessibilityLabel: "Show history chart"
+                )
                     .disabled(model.showHistoryEnabled == false)
             }
         }
@@ -426,10 +438,10 @@ struct SettingsRootView: View {
 
     private var menuBarSection: some View {
         SettingsListGroup(
-            title: "Menu bar meters",
-            footer: "What stays visible in the menu bar at all times."
+            title: "Quota presentation",
+            footer: "5-hour visibility applies app-wide. Weekly visibility is menu-bar only."
         ) {
-            SettingsListRow(title: "Mode", detail: "Show usage, remaining quota, or weekly pace.") {
+            SettingsListRow(title: "Mode", detail: "Menu bar usage, remaining quota, or weekly pace.") {
                 CodexSegmentedControl(selection: Binding(
                     get: { model.menuBarDisplayMode },
                     set: { model.setMenuBarDisplayMode($0) }
@@ -441,12 +453,28 @@ struct SettingsRootView: View {
                 .frame(width: 174, height: SettingsControlMetrics.controlHeight)
             }
 
-            SettingsListRow(title: "5-hour window") {
-                CodexSwitch(isOn: Binding(get: { model.showFiveHourInMenubar }, set: { model.setShowFiveHourInMenubar($0) }))
+            SettingsListRow(
+                title: "Show 5-hour window",
+                detail: "Menu bar, popup, summaries, and history."
+            ) {
+                CodexSwitch(
+                    isOn: Binding(
+                        get: { model.showFiveHourInMenubar },
+                        set: { model.setShowFiveHourInMenubar($0) }
+                    ),
+                    accessibilityLabel: "Show 5-hour window"
+                )
+                .accessibilityIdentifier("mac.settings.showFiveHour")
             }
 
             SettingsListRow(title: "Weekly window") {
-                CodexSwitch(isOn: Binding(get: { model.showWeeklyInMenubar }, set: { model.setShowWeeklyInMenubar($0) }))
+                CodexSwitch(
+                    isOn: Binding(
+                        get: { model.showWeeklyInMenubar },
+                        set: { model.setShowWeeklyInMenubar($0) }
+                    ),
+                    accessibilityLabel: "Show weekly window"
+                )
             }
 
             SettingsListRow(title: "Reset times", detail: "Choose countdown or clock time.", isLast: true) {
@@ -468,18 +496,27 @@ struct SettingsRootView: View {
             footer: "Early estimate uses prior cycles. Stable uses current weekly pace. ML tuned starts after one month with enough data. Volatile appears when the projection swings."
         ) {
             SettingsListRow(title: "Pace confidence", detail: "Show Early, Stable, ML tuned, or Volatile labels.") {
-                CodexSwitch(isOn: Binding(get: { model.showPaceConfidence }, set: { model.setShowPaceConfidence($0) }))
+                CodexSwitch(
+                    isOn: Binding(get: { model.showPaceConfidence }, set: { model.setShowPaceConfidence($0) }),
+                    accessibilityLabel: "Show pace confidence"
+                )
             }
 
             SettingsListRow(title: "Quota notifications", detail: "Opt-in alerts for 5H pressure, reset, and weekly risk.") {
                 CodexSwitch(isOn: Binding(
                     get: { model.quotaNotificationsEnabled },
                     set: { model.setQuotaNotificationsEnabled($0) }
-                ))
+                ), accessibilityLabel: "Quota notifications")
             }
 
             SettingsListRow(title: "Hide idle limits", detail: "Collapse secondary limits when inactive.") {
-                CodexSwitch(isOn: Binding(get: { model.hideIdleSecondaryLimits }, set: { model.setHideIdleSecondaryLimits($0) }))
+                CodexSwitch(
+                    isOn: Binding(
+                        get: { model.hideIdleSecondaryLimits },
+                        set: { model.setHideIdleSecondaryLimits($0) }
+                    ),
+                    accessibilityLabel: "Hide idle limits"
+                )
             }
 
             SettingsListRow(title: "History default", isLast: true) {
@@ -797,7 +834,7 @@ private enum SettingsRowIconName {
             return "waveform.path.ecg"
         case "Mode":
             return "menubar.rectangle"
-        case "5-hour window":
+        case "Show 5-hour window":
             return "clock"
         case "Weekly window":
             return "calendar"
@@ -895,6 +932,7 @@ private struct SettingsDeviceCodeCallout: View {
 
 private struct CodexSwitch: View {
     @Binding var isOn: Bool
+    let accessibilityLabel: String
     @Environment(\.isEnabled) private var isEnabled
 
     var body: some View {
@@ -919,6 +957,9 @@ private struct CodexSwitch: View {
         }
         .buttonStyle(.plain)
         .opacity(isEnabled ? 1 : 0.45)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityValue(isOn ? "On" : "Off")
     }
 }
 

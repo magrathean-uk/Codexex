@@ -89,6 +89,7 @@ struct PopupRootView: View {
                     showsChart: model.showHistoryChartEnabled,
                     historyMode: model.defaultHistoryMode,
                     showPaceConfidence: model.showPaceConfidence,
+                    showFiveHour: model.showFiveHourInMenubar,
                     resetDisplayStyle: model.resetDisplayStyle,
                     onHistoryModeChange: { model.setDefaultHistoryMode($0) }
                 )
@@ -98,7 +99,12 @@ struct PopupRootView: View {
 
     private var footer: some View {
         HStack(spacing: 10) {
-            PopupFooterControl(title: "Settings", systemImage: "gearshape", tone: .secondary) {
+            PopupFooterControl(
+                title: "Settings",
+                systemImage: "gearshape",
+                tone: .secondary,
+                accessibilityIdentifier: "mac.popup.settings"
+            ) {
                 onOpenSettings()
             }
 
@@ -117,7 +123,8 @@ struct PopupRootView: View {
                 title: model.isRefreshing ? "Refreshing" : "Refresh",
                 systemImage: "arrow.clockwise",
                 tone: .primary,
-                isAnimating: model.isRefreshing
+                isAnimating: model.isRefreshing,
+                accessibilityIdentifier: "mac.popup.refresh"
             ) {
                 guard model.isRefreshing == false else { return }
                 Task { await model.refreshNow(manual: true) }
@@ -177,7 +184,8 @@ struct PopupRootView: View {
             LimitCardView(
                 presentation: presentation,
                 resetDisplayStyle: model.resetDisplayStyle,
-                displayMode: model.menuBarDisplayMode
+                displayMode: model.menuBarDisplayMode,
+                showFiveHour: model.showFiveHourInMenubar
             )
         }
     }
@@ -238,7 +246,8 @@ struct PopupRootView: View {
             snapshot: presentedSnapshot,
             insights: presentedInsights,
             previewModeEnabled: displayMode == .live && model.previewModeEnabled,
-            hasRefreshIssue: displayMode == .live && model.lastError != nil
+            hasRefreshIssue: displayMode == .live && model.lastError != nil,
+            showFiveHour: model.showFiveHourInMenubar
         )
         let summary = CodexLocalIntelligence.popupSummary(
             insights: presentedInsights,
@@ -289,24 +298,28 @@ private struct PopupFooterControl: View {
     let systemImage: String
     let tone: Tone
     var isAnimating = false
+    let accessibilityIdentifier: String
     let action: () -> Void
 
     var body: some View {
-        HStack(spacing: 6) {
-            if isAnimating {
-                PopupSpinningRefreshIcon(systemImage: systemImage)
-            } else {
-                Image(systemName: systemImage)
-                    .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
-                    .imageScale(.small)
-            }
+        Button(action: action) {
+            HStack(spacing: 6) {
+                if isAnimating {
+                    PopupSpinningRefreshIcon(systemImage: systemImage)
+                } else {
+                    Image(systemName: systemImage)
+                        .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
+                        .imageScale(.small)
+                }
 
-            Text(title)
-                .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.82)
-                .allowsTightening(true)
+                Text(title)
+                    .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                    .allowsTightening(true)
+            }
         }
+        .buttonStyle(.plain)
         .foregroundStyle(foreground)
         .padding(.horizontal, 12)
         .frame(minWidth: minimumWidth)
@@ -325,14 +338,9 @@ private struct PopupFooterControl: View {
         .onHover { hovering in
             isHovered = hovering
         }
-        .onTapGesture {
-            guard isEnabled else { return }
-            action()
-        }
         .unredacted()
-        .accessibilityElement()
         .accessibilityLabel(title)
-        .accessibilityAddTraits(.isButton)
+        .accessibilityIdentifier(accessibilityIdentifier)
         .transaction { transaction in
             transaction.disablesAnimations = false
         }

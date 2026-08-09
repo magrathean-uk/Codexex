@@ -28,6 +28,7 @@ final class CodexiOSModel {
     private let openURLAction: CodexiOSOpenURLAction
     private let copyTextAction: CodexiOSCopyTextAction
     private let historyStore: CodexUsageHistoryStore
+    private let liveActivityManager: any CodexiOSLiveActivityManaging
 
     var hasCompletedOnboarding: Bool
     var previewModeEnabled: Bool
@@ -41,12 +42,22 @@ final class CodexiOSModel {
     var verificationURL: URL?
     var flowID: String?
     var lastUpdatedAt: Date?
+    private(set) var hasCheckedLiveActivityAvailability = false
+    private(set) var isLiveActivityAvailable = false
+    private(set) var isLiveActivityRunning = false
+    private(set) var isLiveActivityTransitioning = false
+    private(set) var isLiveActivityStale = false
+    private(set) var liveActivityID: String?
     private(set) var liveAccountState: CodexiOSLiveAccountState
+
+    private var liveActivityGeneration = 0
+    private var liveActivityOperationCount = 0
 
     init(
         service: any CodexiOSServiceProtocol = CodexiOSService(),
         defaults: UserDefaults = .standard,
         historyStore: CodexUsageHistoryStore = CodexUsageHistoryStore(),
+        liveActivityManager: any CodexiOSLiveActivityManaging = CodexiOSLiveActivity(),
         openURLAction: @escaping CodexiOSOpenURLAction = { url in
             await UIApplication.shared.open(url)
         },
@@ -59,6 +70,9 @@ final class CodexiOSModel {
         self.openURLAction = openURLAction
         self.copyTextAction = copyTextAction
         self.historyStore = historyStore
+        self.liveActivityManager = CodexiOSLiveActivitySerialManager(
+            manager: liveActivityManager
+        )
         let storedPreviewModeEnabled = defaults.bool(forKey: CodexiOSSettingsKeys.previewModeEnabled)
         hasCompletedOnboarding = defaults.bool(forKey: CodexiOSSettingsKeys.hasCompletedOnboarding)
         previewModeEnabled = storedPreviewModeEnabled
@@ -78,9 +92,11 @@ final class CodexiOSModel {
     }
 
     func start() async {
+        await recoverLiveActivity()
         usageHistory = await historyStore.load()
         if previewModeEnabled {
             applyPreviewSnapshot()
+            await updateLiveActivity(with: snapshot)
             return
         }
         await refresh()
@@ -90,13 +106,14 @@ final class CodexiOSModel {
         guard isRefreshing == false else { return }
         guard previewModeEnabled == false else {
             applyPreviewSnapshot()
+            await updateLiveActivity(with: snapshot)
             return
         }
         isRefreshing = true
         defer { isRefreshing = false }
 
         do {
-            applySnapshotResponse(try await service.fetchSnapshot())
+            await applySnapshotResponse(try await service.fetchSnapshot())
         } catch {
             if liveAccountState == .checking {
                 liveAccountState = .signedOut
@@ -191,14 +208,15 @@ final class CodexiOSModel {
     }
 
     func signOut() async {
+        invalidateLiveActivityOperations()
+        liveAccountState = .signedOut
+        snapshot = nil
+        lastUpdatedAt = nil
+        clearPendingSignIn()
+        await stopLiveActivity(announce: false)
         do {
             try await service.signOut()
-            snapshot = nil
-            lastUpdatedAt = nil
             errorMessage = nil
-            clearPendingSignIn()
-            liveAccountState = .signedOut
-            await CodexiOSLiveActivity.stop()
             statusMessage = "Signed out."
         } catch {
             applyError(message(for: error))
@@ -212,6 +230,7 @@ final class CodexiOSModel {
     }
 
     func enablePreviewMode() {
+        invalidateLiveActivityOperations()
         previewModeEnabled = true
         defaults.set(true, forKey: CodexiOSSettingsKeys.previewModeEnabled)
         completeOnboarding()
@@ -220,17 +239,29 @@ final class CodexiOSModel {
         errorMessage = nil
         clearPendingSignIn()
         liveAccountState = .signedOut
+        Task { [weak self] in
+            guard let self else { return }
+            await self.updateLiveActivity(with: self.snapshot)
+        }
     }
 
     func disablePreviewMode() {
         guard previewModeEnabled else { return }
+        invalidateLiveActivityOperations()
         previewModeEnabled = false
         defaults.set(false, forKey: CodexiOSSettingsKeys.previewModeEnabled)
         snapshot = nil
         lastUpdatedAt = nil
         liveAccountState = .signedOut
         statusMessage = "Preview mode off."
-        Task { await refresh() }
+        beginLiveActivityOperation()
+        Task { [weak self] in
+            guard let self else { return }
+            defer { self.endLiveActivityOperation() }
+            await self.stopLiveActivity(announce: false)
+            guard self.previewModeEnabled == false else { return }
+            await self.refresh()
+        }
     }
 
     private func applyPreviewSnapshot() {
@@ -243,7 +274,7 @@ final class CodexiOSModel {
         liveAccountState = .signedOut
     }
 
-    private func applySnapshotResponse(_ response: CodexServiceSnapshotResponse) {
+    private func applySnapshotResponse(_ response: CodexServiceSnapshotResponse) async {
         if let snapshot = response.snapshot {
             self.snapshot = snapshot
             lastUpdatedAt = snapshot.capturedAt
@@ -252,12 +283,8 @@ final class CodexiOSModel {
             clearPendingSignIn()
             liveAccountState = .signedIn
             completeOnboarding()
-            Task {
-                self.usageHistory = await self.historyStore.append(snapshot: snapshot)
-            }
-            let cadence = Double(max(defaults.object(forKey: CodexiOSSettingsKeys.refreshIntervalSeconds) as? Int ?? 300, 300))
-            let showFiveHour = defaults.object(forKey: CodexiOSSettingsKeys.showFiveHourPresentation) as? Bool ?? false
-            Task { await CodexiOSLiveActivity.update(snapshot: snapshot, showFiveHour: showFiveHour, cadence: cadence) }
+            usageHistory = await historyStore.append(snapshot: snapshot)
+            await updateLiveActivity(with: snapshot)
             return
         }
 
@@ -269,34 +296,76 @@ final class CodexiOSModel {
         } else if response.authMode == .chatGPT {
             liveAccountState = .signedIn
             completeOnboarding()
-            Task { await markLiveActivityStale() }
+            await markLiveActivityStale()
         } else {
             snapshot = nil
             lastUpdatedAt = nil
             liveAccountState = .signedOut
-            Task { await CodexiOSLiveActivity.stop() }
+            invalidateLiveActivityOperations()
+            await stopLiveActivity(announce: false)
         }
     }
 
     func startLiveActivity() async {
+        guard isLiveActivityTransitioning == false else { return }
         guard (isSignedIn || previewModeEnabled), let snapshot else { applyError("Sign in and refresh quota before starting Live Activity."); return }
-        let cadence = Double(max(defaults.object(forKey: CodexiOSSettingsKeys.refreshIntervalSeconds) as? Int ?? 300, 300))
-        let showFiveHour = defaults.object(forKey: CodexiOSSettingsKeys.showFiveHourPresentation) as? Bool ?? false
+        let generation = liveActivityGeneration
+        beginLiveActivityOperation()
+        defer { endLiveActivityOperation() }
         do {
-            try await CodexiOSLiveActivity.start(snapshot: snapshot, showFiveHour: showFiveHour, cadence: cadence)
-            statusMessage = CodexiOSLiveActivity.isAvailable ? "Live Activity started. It updates during foreground refreshes." : "Live Activities are unavailable on this device."
+            let state = try await liveActivityManager.start(
+                snapshot: snapshot,
+                showFiveHour: showFiveHourInPresentation,
+                cadence: liveActivityCadence
+            )
+            guard generation == liveActivityGeneration,
+                  isSignedIn || previewModeEnabled else {
+                _ = await liveActivityManager.stop()
+                return
+            }
+            applyLiveActivityState(state)
+            isLiveActivityStale = false
+            errorMessage = nil
+            statusMessage = state.isRunning
+                ? "Live Activity started. It updates during foreground refreshes."
+                : "Live Activities are unavailable on this device."
         } catch { applyError(message(for: error)) }
     }
 
-    func stopLiveActivity() async {
-        await CodexiOSLiveActivity.stop()
-        statusMessage = "Live Activity stopped."
+    func stopLiveActivity(announce: Bool = true) async {
+        let generation = liveActivityGeneration
+        beginLiveActivityOperation()
+        defer { endLiveActivityOperation() }
+        let state = await liveActivityManager.stop()
+        guard generation == liveActivityGeneration else { return }
+        applyLiveActivityState(state)
+        isLiveActivityStale = false
+        if announce {
+            statusMessage = "Live Activity stopped."
+        }
     }
 
     func updateLiveActivityPresentation(showFiveHour: Bool) async {
         guard (isSignedIn || previewModeEnabled), let snapshot else { return }
-        let cadence = Double(max(defaults.object(forKey: CodexiOSSettingsKeys.refreshIntervalSeconds) as? Int ?? 300, 300))
-        await CodexiOSLiveActivity.update(snapshot: snapshot, showFiveHour: showFiveHour, cadence: cadence)
+        let generation = liveActivityGeneration
+        beginLiveActivityOperation()
+        defer { endLiveActivityOperation() }
+        let state: CodexiOSLiveActivityRuntimeState
+        if isLiveActivityStale {
+            state = await liveActivityManager.markStale(
+                snapshot: snapshot,
+                showFiveHour: showFiveHour,
+                cadence: liveActivityCadence
+            )
+        } else {
+            state = await liveActivityManager.update(
+                snapshot: snapshot,
+                showFiveHour: showFiveHour,
+                cadence: liveActivityCadence
+            )
+        }
+        guard generation == liveActivityGeneration else { return }
+        applyLiveActivityState(state)
     }
 
     func snoozeSummary(_ summary: PopupSummaryPresentation) {
@@ -319,9 +388,70 @@ final class CodexiOSModel {
 
     private func markLiveActivityStale() async {
         guard let snapshot else { return }
-        let cadence = Double(max(defaults.object(forKey: CodexiOSSettingsKeys.refreshIntervalSeconds) as? Int ?? 300, 300))
-        let showFiveHour = defaults.object(forKey: CodexiOSSettingsKeys.showFiveHourPresentation) as? Bool ?? false
-        await CodexiOSLiveActivity.markStale(snapshot: snapshot, showFiveHour: showFiveHour, cadence: cadence)
+        let generation = liveActivityGeneration
+        beginLiveActivityOperation()
+        defer { endLiveActivityOperation() }
+        let state = await liveActivityManager.markStale(
+                snapshot: snapshot,
+                showFiveHour: showFiveHourInPresentation,
+                cadence: liveActivityCadence
+        )
+        guard generation == liveActivityGeneration else { return }
+        applyLiveActivityState(state)
+        isLiveActivityStale = true
+    }
+
+    private func recoverLiveActivity() async {
+        applyLiveActivityState(await liveActivityManager.recover())
+    }
+
+    private func updateLiveActivity(with snapshot: CodexSnapshot?) async {
+        guard let snapshot else { return }
+        let generation = liveActivityGeneration
+        beginLiveActivityOperation()
+        defer { endLiveActivityOperation() }
+        let state = await liveActivityManager.update(
+                snapshot: snapshot,
+                showFiveHour: showFiveHourInPresentation,
+                cadence: liveActivityCadence
+        )
+        guard generation == liveActivityGeneration else { return }
+        applyLiveActivityState(state)
+        isLiveActivityStale = false
+    }
+
+    private func invalidateLiveActivityOperations() {
+        liveActivityGeneration &+= 1
+    }
+
+    private func beginLiveActivityOperation() {
+        liveActivityOperationCount += 1
+        isLiveActivityTransitioning = true
+    }
+
+    private func endLiveActivityOperation() {
+        liveActivityOperationCount = max(0, liveActivityOperationCount - 1)
+        isLiveActivityTransitioning = liveActivityOperationCount > 0
+    }
+
+    private func applyLiveActivityState(_ state: CodexiOSLiveActivityRuntimeState) {
+        hasCheckedLiveActivityAvailability = true
+        isLiveActivityAvailable = state.isAvailable
+        isLiveActivityRunning = state.isRunning
+        liveActivityID = state.activityID
+    }
+
+    private var liveActivityCadence: TimeInterval {
+        Double(
+            max(
+                defaults.object(forKey: CodexiOSSettingsKeys.refreshIntervalSeconds) as? Int ?? 300,
+                300
+            )
+        )
+    }
+
+    private var showFiveHourInPresentation: Bool {
+        defaults.object(forKey: CodexiOSSettingsKeys.showFiveHourPresentation) as? Bool ?? false
     }
 
     private func clearPendingSignIn() {

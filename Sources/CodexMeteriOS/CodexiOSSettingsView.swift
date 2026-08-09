@@ -134,7 +134,10 @@ struct CodexiOSSettingsView: View {
             titleVisibility: .visible
         ) {
             Button("Reset App", role: .destructive) {
-                CodexiOSAppResetter.resetAndClose()
+                Task {
+                    await model.stopLiveActivity(announce: false)
+                    CodexiOSAppResetter.resetAndClose()
+                }
             }
             Button("Cancel", role: .cancel) {}
         } message: {
@@ -219,13 +222,34 @@ struct CodexiOSSettingsView: View {
         Section {
             Toggle("Show Spark", isOn: $showSpark)
             Toggle("Show 5-hour window", isOn: $showFiveHourPresentation)
+                .accessibilityIdentifier("ios.settings.showFiveHour")
             if model.isSignedIn || model.previewModeEnabled {
-                Button(CodexiOSLiveActivity.isRunning ? "Stop Live Activity" : "Start Live Activity") {
-                    Task { if CodexiOSLiveActivity.isRunning { await model.stopLiveActivity() } else { await model.startLiveActivity() } }
+                Button(model.isLiveActivityRunning ? "Stop Live Activity" : "Start Live Activity") {
+                    Task {
+                        if model.isLiveActivityRunning {
+                            await model.stopLiveActivity()
+                        } else {
+                            await model.startLiveActivity()
+                        }
+                    }
                 }
                 .frame(minHeight: 44)
-                .accessibilityIdentifier("liveActivityToggle")
-                if CodexiOSLiveActivity.isAvailable == false {
+                .disabled(
+                    model.isLiveActivityTransitioning
+                        || (model.isLiveActivityRunning == false
+                            && (model.hasCheckedLiveActivityAvailability == false || model.isLiveActivityAvailable == false))
+                )
+                .accessibilityIdentifier("ios.settings.liveActivity")
+                .accessibilityValue(
+                    model.isLiveActivityTransitioning
+                        ? "Updating"
+                        : (model.isLiveActivityRunning
+                            ? "On"
+                            : (model.hasCheckedLiveActivityAvailability && model.isLiveActivityAvailable == false
+                                ? "Unavailable"
+                                : "Off"))
+                )
+                if model.hasCheckedLiveActivityAvailability, model.isLiveActivityAvailable == false {
                     Text("Live Activities are unavailable on this device.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -301,6 +325,7 @@ struct CodexiOSSettingsView: View {
             Button("Reset App", role: .destructive) {
                 isShowingResetConfirmation = true
             }
+            .accessibilityIdentifier("ios.settings.reset")
         } footer: {
             Text("Deletes sign-in, settings, preview state, and local data. The app closes when done.")
         }
