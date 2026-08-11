@@ -107,19 +107,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.magrathean.CodexexApp
         TARGETED_DEVICE_FAMILY: "1,2"
         ASSETCATALOG_COMPILER_APPICON_NAME: iOSAppIcon
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: Codexex
-        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
-        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
-        INFOPLIST_KEY_NSSupportsLiveActivities: YES
-        INFOPLIST_KEY_UILaunchStoryboardName: LaunchScreen
-        INFOPLIST_KEY_UISupportedInterfaceOrientations:
-          - UIInterfaceOrientationPortrait
-        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad:
-          - UIInterfaceOrientationPortrait
-          - UIInterfaceOrientationPortraitUpsideDown
-          - UIInterfaceOrientationLandscapeLeft
-          - UIInterfaceOrientationLandscapeRight
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Sources/CodexMeteriOS/Info.plist
 
   CodexMeterWidgets:
     type: app-extension

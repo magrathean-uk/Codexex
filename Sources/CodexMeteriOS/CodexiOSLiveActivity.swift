@@ -22,9 +22,9 @@ enum CodexiOSLiveActivityError: LocalizedError {
 
 protocol CodexiOSLiveActivityManaging: Sendable {
     func recover() async -> CodexiOSLiveActivityRuntimeState
-    func start(snapshot: CodexSnapshot, showFiveHour: Bool, cadence: TimeInterval) async throws -> CodexiOSLiveActivityRuntimeState
-    func update(snapshot: CodexSnapshot, showFiveHour: Bool, cadence: TimeInterval) async -> CodexiOSLiveActivityRuntimeState
-    func markStale(snapshot: CodexSnapshot, showFiveHour: Bool, cadence: TimeInterval) async -> CodexiOSLiveActivityRuntimeState
+    func start(snapshot: CodexSnapshot, showFiveHour: Bool, showUsedQuota: Bool, cadence: TimeInterval) async throws -> CodexiOSLiveActivityRuntimeState
+    func update(snapshot: CodexSnapshot, showFiveHour: Bool, showUsedQuota: Bool, cadence: TimeInterval) async -> CodexiOSLiveActivityRuntimeState
+    func markStale(snapshot: CodexSnapshot, showFiveHour: Bool, showUsedQuota: Bool, cadence: TimeInterval) async -> CodexiOSLiveActivityRuntimeState
     func stop() async -> CodexiOSLiveActivityRuntimeState
 }
 
@@ -48,6 +48,7 @@ actor CodexiOSLiveActivitySerialManager: CodexiOSLiveActivityManaging {
     func start(
         snapshot: CodexSnapshot,
         showFiveHour: Bool,
+        showUsedQuota: Bool,
         cadence: TimeInterval
     ) async throws -> CodexiOSLiveActivityRuntimeState {
         await acquire()
@@ -55,6 +56,7 @@ actor CodexiOSLiveActivitySerialManager: CodexiOSLiveActivityManaging {
         return try await manager.start(
             snapshot: snapshot,
             showFiveHour: showFiveHour,
+            showUsedQuota: showUsedQuota,
             cadence: cadence
         )
     }
@@ -62,6 +64,7 @@ actor CodexiOSLiveActivitySerialManager: CodexiOSLiveActivityManaging {
     func update(
         snapshot: CodexSnapshot,
         showFiveHour: Bool,
+        showUsedQuota: Bool,
         cadence: TimeInterval
     ) async -> CodexiOSLiveActivityRuntimeState {
         await acquire()
@@ -69,6 +72,7 @@ actor CodexiOSLiveActivitySerialManager: CodexiOSLiveActivityManaging {
         return await manager.update(
             snapshot: snapshot,
             showFiveHour: showFiveHour,
+            showUsedQuota: showUsedQuota,
             cadence: cadence
         )
     }
@@ -76,6 +80,7 @@ actor CodexiOSLiveActivitySerialManager: CodexiOSLiveActivityManaging {
     func markStale(
         snapshot: CodexSnapshot,
         showFiveHour: Bool,
+        showUsedQuota: Bool,
         cadence: TimeInterval
     ) async -> CodexiOSLiveActivityRuntimeState {
         await acquire()
@@ -83,6 +88,7 @@ actor CodexiOSLiveActivitySerialManager: CodexiOSLiveActivityManaging {
         return await manager.markStale(
             snapshot: snapshot,
             showFiveHour: showFiveHour,
+            showUsedQuota: showUsedQuota,
             cadence: cadence
         )
     }
@@ -135,11 +141,13 @@ struct CodexiOSLiveActivity: CodexiOSLiveActivityManaging, Sendable {
     func start(
         snapshot: CodexSnapshot,
         showFiveHour: Bool,
+        showUsedQuota: Bool,
         cadence: TimeInterval
     ) async throws -> CodexiOSLiveActivityRuntimeState {
         guard let state = CodexLiveActivityPresentation.state(
             snapshot: snapshot,
-            showFiveHour: showFiveHour
+            showFiveHour: showFiveHour,
+            showUsedQuota: showUsedQuota
         ) else {
             throw CodexiOSLiveActivityError.missingWeeklyQuota
         }
@@ -163,11 +171,13 @@ struct CodexiOSLiveActivity: CodexiOSLiveActivityManaging, Sendable {
     func update(
         snapshot: CodexSnapshot,
         showFiveHour: Bool,
+        showUsedQuota: Bool,
         cadence: TimeInterval
     ) async -> CodexiOSLiveActivityRuntimeState {
         await updateContent(
             snapshot: snapshot,
             showFiveHour: showFiveHour,
+            showUsedQuota: showUsedQuota,
             cadence: cadence,
             stale: false
         )
@@ -176,11 +186,13 @@ struct CodexiOSLiveActivity: CodexiOSLiveActivityManaging, Sendable {
     func markStale(
         snapshot: CodexSnapshot,
         showFiveHour: Bool,
+        showUsedQuota: Bool,
         cadence: TimeInterval
     ) async -> CodexiOSLiveActivityRuntimeState {
         await updateContent(
             snapshot: snapshot,
             showFiveHour: showFiveHour,
+            showUsedQuota: showUsedQuota,
             cadence: cadence,
             stale: true
         )
@@ -199,12 +211,14 @@ struct CodexiOSLiveActivity: CodexiOSLiveActivityManaging, Sendable {
     private func updateContent(
         snapshot: CodexSnapshot,
         showFiveHour: Bool,
+        showUsedQuota: Bool,
         cadence: TimeInterval,
         stale: Bool
     ) async -> CodexiOSLiveActivityRuntimeState {
         guard let state = CodexLiveActivityPresentation.state(
             snapshot: snapshot,
             showFiveHour: showFiveHour,
+            showUsedQuota: showUsedQuota,
             stale: stale
         ) else {
             return await stop()

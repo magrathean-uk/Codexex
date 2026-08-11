@@ -46,6 +46,7 @@
 		27A9B3C611933865DF8185D5 /* PopupPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7DC9461D5A89DDD41915EB /* PopupPresentation.swift */; };
 		2DD7F4B32FDD59E6D23C78E7 /* CodexMeterCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6869618B2897346A3AB60D26 /* CodexMeterCore.framework */; };
 		2E9FDA240C252B85DD619C6C /* CodexiOSMatrixSpeedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A092CDBC525B474DC8DEE8D4 /* CodexiOSMatrixSpeedTests.swift */; };
+		32B46407E8879120A0236062 /* CodexiOSBackgroundRefreshTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EA9608437403B5F6BEC1FC2 /* CodexiOSBackgroundRefreshTests.swift */; };
 		3345862044A399E80C2EAFC9 /* CodexMenuBarModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB02F9086358A6968D76E1F /* CodexMenuBarModel.swift */; };
 		33841CD2E70AFE0A22CB83AA /* CodexXPCRequestGuards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F4A03C91A093F6B25E2FE65 /* CodexXPCRequestGuards.swift */; };
 		3485B4D8947D184E1E4785A1 /* CodexQuotaSnapshotBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2763F8999C44DE7A51CB688F /* CodexQuotaSnapshotBuilder.swift */; };
@@ -108,6 +109,7 @@
 		970A3CB0C7B63B028585167D /* CodexAllowedHosts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3469C8A35F6C28E5EE7E6A5A /* CodexAllowedHosts.swift */; };
 		99ABB6DAC94055696EE03C1D /* CodexUsageInsightsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED32CC566DD1E354396E4024 /* CodexUsageInsightsTests.swift */; };
 		9A4D02C4FBEBAF3542616A75 /* CodexBinaryLocatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6295BEFAAD3C4835D1687CFA /* CodexBinaryLocatorTests.swift */; };
+		9ADA0C62958EF9E8F0B4A5FD /* CodexiOSBackgroundRefresh.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98CDEDA4610A0BA8199A8E61 /* CodexiOSBackgroundRefresh.swift */; };
 		9B84CC609C813BD6753FD295 /* CodexRateLimitPayloadMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B0FE703A7C9226E39929552 /* CodexRateLimitPayloadMapperTests.swift */; };
 		9E0455EA692C494496954E90 /* CodexDesignToneAdditions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67C9F733631C82380A528E06 /* CodexDesignToneAdditions.swift */; };
 		A017AD1316030F6B5913A786 /* CodexAllowedHosts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3469C8A35F6C28E5EE7E6A5A /* CodexAllowedHosts.swift */; };
@@ -356,6 +358,7 @@
 		2532C9697CC6730FC45790DE /* CodexDeviceAuthCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexDeviceAuthCoordinator.swift; sourceTree = "<group>"; };
 		2763F8999C44DE7A51CB688F /* CodexQuotaSnapshotBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexQuotaSnapshotBuilder.swift; sourceTree = "<group>"; };
 		276FBBA17CA2600B367DBC25 /* CodexServiceContracts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexServiceContracts.swift; sourceTree = "<group>"; };
+		282EC3F8E6C7DB689A97C36D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		288B30A983334DB695B1EA43 /* CodexSummarySnoozeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexSummarySnoozeTests.swift; sourceTree = "<group>"; };
 		28B7443C1DFA45611DC9D51A /* CodexXPCClientIdentityRequirementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexXPCClientIdentityRequirementTests.swift; sourceTree = "<group>"; };
 		28C8C0A190E2CBBFBD0F5242 /* CodexFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexFormatting.swift; sourceTree = "<group>"; };
@@ -412,9 +415,11 @@
 		86EB3FCD60DEA0CD7A63464A /* CodexXPCClientIdentityRequirement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexXPCClientIdentityRequirement.swift; sourceTree = "<group>"; };
 		8E6C164A4C2C1BB0E5FC686D /* CodexLocalUsageCardPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexLocalUsageCardPolicyTests.swift; sourceTree = "<group>"; };
 		8E944DBB615061BEA8E462D9 /* PopupLimitCardViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupLimitCardViews.swift; sourceTree = "<group>"; };
+		98CDEDA4610A0BA8199A8E61 /* CodexiOSBackgroundRefresh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexiOSBackgroundRefresh.swift; sourceTree = "<group>"; };
 		9AADE08E274111411DA1BFE4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9D4643340C8B906668F199F8 /* CodexAppResetter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexAppResetter.swift; sourceTree = "<group>"; };
 		9E5F053505E884FBD559ACCC /* CodexAppLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexAppLinks.swift; sourceTree = "<group>"; };
+		9EA9608437403B5F6BEC1FC2 /* CodexiOSBackgroundRefreshTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexiOSBackgroundRefreshTests.swift; sourceTree = "<group>"; };
 		9F7CC244BD026232606AE671 /* CodexQuotaPresentationRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexQuotaPresentationRules.swift; sourceTree = "<group>"; };
 		A092CDBC525B474DC8DEE8D4 /* CodexiOSMatrixSpeedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexiOSMatrixSpeedTests.swift; sourceTree = "<group>"; };
 		A0CBAF74B8C68B66AEB0E1E1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -658,6 +663,7 @@
 			children = (
 				A729D4E01BB7C27D032909ED /* CodexexiOSApp.swift */,
 				F71A43B620EED6061EFF23C8 /* CodexiOSAppResetter.swift */,
+				98CDEDA4610A0BA8199A8E61 /* CodexiOSBackgroundRefresh.swift */,
 				67971912B9EC671915157EBB /* CodexiOSLiveActivity.swift */,
 				411B69AF5441D8514617C5B4 /* CodexiOSMatrixQuotaView.swift */,
 				BDAD19C107E25B335856C22D /* CodexiOSModel.swift */,
@@ -668,6 +674,7 @@
 				410E8DD13157EB9F9DA4D77D /* CodexiOSService.swift */,
 				0E38C10501C5C72133474E3D /* CodexiOSSettingsView.swift */,
 				30FA00E5AFF9B1C21950BAC4 /* CodexiOSShellView.swift */,
+				282EC3F8E6C7DB689A97C36D /* Info.plist */,
 				B4B18F174DC46CE37BD5F200 /* LaunchScreen.storyboard */,
 			);
 			name = CodexMeteriOS;
@@ -769,6 +776,7 @@
 		D0C67F707AEA286BBCDC6643 /* CodexMeteriOSTests */ = {
 			isa = PBXGroup;
 			children = (
+				9EA9608437403B5F6BEC1FC2 /* CodexiOSBackgroundRefreshTests.swift */,
 				A092CDBC525B474DC8DEE8D4 /* CodexiOSMatrixSpeedTests.swift */,
 				C56D6F6EAAF8E18B5234FE95 /* CodexiOSModelTests.swift */,
 				2FF539D726E7F7A5B70AAF0A /* CodexiOSPendingAuthRegistryTests.swift */,
@@ -1282,6 +1290,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				32B46407E8879120A0236062 /* CodexiOSBackgroundRefreshTests.swift in Sources */,
 				2E9FDA240C252B85DD619C6C /* CodexiOSMatrixSpeedTests.swift in Sources */,
 				AB2FE6A4B740DD6D70A380AF /* CodexiOSModelTests.swift in Sources */,
 				3A61571D317BE44CC8207644 /* CodexiOSPendingAuthRegistryTests.swift in Sources */,
@@ -1298,6 +1307,7 @@
 				63E99B528A8DBD3AC0D72413 /* CodexUsageHistoryStore.swift in Sources */,
 				1DE8CA42D34331DA5D73EB2D /* CodexexiOSApp.swift in Sources */,
 				F9130A4420C79C4986DAE766 /* CodexiOSAppResetter.swift in Sources */,
+				9ADA0C62958EF9E8F0B4A5FD /* CodexiOSBackgroundRefresh.swift in Sources */,
 				BA0E6FA856252F6B706A853A /* CodexiOSLiveActivity.swift in Sources */,
 				137ADD0ED54B9BEAB08EC276 /* CodexiOSMatrixQuotaView.swift in Sources */,
 				ECE1E26B378C4F8589E8B65B /* CodexiOSModel.swift in Sources */,
@@ -1499,21 +1509,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = iOSAppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Codexex;
-				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
-				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = (
-					UIInterfaceOrientationPortrait,
-				);
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = (
-					UIInterfaceOrientationPortrait,
-					UIInterfaceOrientationPortraitUpsideDown,
-					UIInterfaceOrientationLandscapeLeft,
-					UIInterfaceOrientationLandscapeRight,
-				);
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Sources/CodexMeteriOS/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1546,21 +1543,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = iOSAppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Codexex;
-				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
-				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = (
-					UIInterfaceOrientationPortrait,
-				);
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = (
-					UIInterfaceOrientationPortrait,
-					UIInterfaceOrientationPortraitUpsideDown,
-					UIInterfaceOrientationLandscapeLeft,
-					UIInterfaceOrientationLandscapeRight,
-				);
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Sources/CodexMeteriOS/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

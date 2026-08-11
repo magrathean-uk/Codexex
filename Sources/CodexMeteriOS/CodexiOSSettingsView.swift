@@ -13,6 +13,7 @@ enum CodexiOSSettingsKeys {
     static let defaultHistoryMode = "ios.defaultHistoryMode"
     static let showPaceConfidence = "ios.showPaceConfidence"
     static let showFiveHourPresentation = "ios.showFiveHourPresentation"
+    static let showUsedQuota = "ios.showUsedQuota"
     static let matrixThemeEnabled = "ios.matrixThemeEnabled"
     static let summarySnoozeFingerprint = "ios.summarySnoozeFingerprint"
     static let summarySnoozeExpiresAt = "ios.summarySnoozeExpiresAt"
@@ -30,10 +31,16 @@ enum CodexiOSSettingsKeys {
         defaultHistoryMode,
         showPaceConfidence,
         showFiveHourPresentation,
+        showUsedQuota,
         matrixThemeEnabled,
         summarySnoozeFingerprint,
         summarySnoozeExpiresAt
     ]
+}
+
+enum CodexiOSLegalLinks {
+    static let privacyPolicy = URL(string: "https://codexex.eu/privacy/")!
+    static let termsOfService = URL(string: "https://codexex.eu/terms/")!
 }
 
 enum CodexiOSResetDisplayStyle: String, CaseIterable, Identifiable {
@@ -110,10 +117,12 @@ struct CodexiOSSettingsView: View {
     @AppStorage(CodexiOSSettingsKeys.defaultHistoryMode) private var defaultHistoryMode = CodexiOSHistoryMode.dailyPeaks.rawValue
     @AppStorage(CodexiOSSettingsKeys.refreshIntervalSeconds) private var refreshIntervalSeconds = 300
     @AppStorage(CodexiOSSettingsKeys.showFiveHourPresentation) private var showFiveHourPresentation = false
+    @AppStorage(CodexiOSSettingsKeys.showUsedQuota) private var showUsedQuota = false
     @AppStorage(CodexiOSSettingsKeys.matrixThemeEnabled) private var matrixThemeEnabled = false
     @Bindable var model: CodexiOSModel
     let onMatrixThemeEnabled: () -> Void
     @State private var isShowingResetConfirmation = false
+    @State private var isShowingLiveActivityStartWarning = false
 
     init(model: CodexiOSModel, onMatrixThemeEnabled: @escaping () -> Void = {}) {
         self.model = model
@@ -123,20 +132,34 @@ struct CodexiOSSettingsView: View {
     var body: some View {
         Form {
             accountSection
+            quotaPresentationSection
+            liveActivitySection
             displaySection
-            experimentalSection
             refreshSection
             privacySection
             resetSection
         }
         .scrollContentBackground(.hidden)
         .background(CodexiOSTheme.background.ignoresSafeArea())
-        .tint(CodexiOSTheme.secondary)
+        .tint(.green)
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
         .preferredColorScheme(CodexiOSAppearanceMode(rawValue: appearanceMode)?.colorScheme)
         .onChange(of: showFiveHourPresentation) { _, enabled in
-            Task { await model.updateLiveActivityPresentation(showFiveHour: enabled) }
+            Task {
+                await model.updateLiveActivityPresentation(
+                    showFiveHour: enabled,
+                    showUsedQuota: showUsedQuota
+                )
+            }
+        }
+        .onChange(of: showUsedQuota) { _, enabled in
+            Task {
+                await model.updateLiveActivityPresentation(
+                    showFiveHour: showFiveHourPresentation,
+                    showUsedQuota: enabled
+                )
+            }
         }
         .onChange(of: matrixThemeEnabled) { _, enabled in
             if enabled {
@@ -157,6 +180,17 @@ struct CodexiOSSettingsView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This deletes sign-in, settings, preview state, and local data. Codexex will close after reset.")
+        }
+        .alert(
+            "Keep Codexex running",
+            isPresented: $isShowingLiveActivityStartWarning
+        ) {
+            Button("Not now", role: .cancel) {}
+            Button("Start Live Activity") {
+                Task { await model.startLiveActivity() }
+            }
+        } message: {
+            Text("Codexex refreshes this on your phone when iOS allows it. Please do not manually close it from the app switcher.")
         }
     }
 
@@ -238,39 +272,9 @@ struct CodexiOSSettingsView: View {
             Toggle("Show Spark", isOn: $showSpark)
             Toggle("Show 5-hour window", isOn: $showFiveHourPresentation)
                 .accessibilityIdentifier("ios.settings.showFiveHour")
-            if model.isSignedIn || model.previewModeEnabled {
-                Button(model.isLiveActivityRunning ? "Stop Live Activity" : "Start Live Activity") {
-                    Task {
-                        if model.isLiveActivityRunning {
-                            await model.stopLiveActivity()
-                        } else {
-                            await model.startLiveActivity()
-                        }
-                    }
-                }
-                .frame(minHeight: 44)
-                .disabled(
-                    model.isLiveActivityTransitioning
-                        || (model.isLiveActivityRunning == false
-                            && (model.hasCheckedLiveActivityAvailability == false || model.isLiveActivityAvailable == false))
-                )
-                .accessibilityIdentifier("ios.settings.liveActivity")
-                .accessibilityValue(
-                    model.isLiveActivityTransitioning
-                        ? "Updating"
-                        : (model.isLiveActivityRunning
-                            ? "On"
-                            : (model.hasCheckedLiveActivityAvailability && model.isLiveActivityAvailable == false
-                                ? "Unavailable"
-                                : "Off"))
-                )
-                if model.hasCheckedLiveActivityAvailability, model.isLiveActivityAvailable == false {
-                    Text("Live Activities are unavailable on this device.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
             Toggle("Show Usage History", isOn: $showHistory)
+            Toggle("Matrix theme", isOn: $matrixThemeEnabled)
+                .accessibilityIdentifier("ios.settings.matrixTheme")
 
             Picker("Reset Times", selection: $resetDisplayStyle) {
                 ForEach(CodexiOSResetDisplayStyle.allCases) { style in
@@ -292,8 +296,64 @@ struct CodexiOSSettingsView: View {
         } header: {
             Text("Display")
         } footer: {
-            Text("5-hour presentation controls rows, headlines, history, and Live Activity. Live Activity updates on foreground refreshes only.")
+            Text("Matrix theme opens the fullscreen Matrix view. 5-hour presentation controls rows, headlines, history, and Live Activity.")
         }
+    }
+
+    private var quotaPresentationSection: some View {
+        Section {
+            Toggle("Show used quota", isOn: $showUsedQuota)
+                .accessibilityIdentifier("ios.settings.showUsedQuota")
+        } header: {
+            Text("Quota")
+        } footer: {
+            Text("Show usage instead of quota left.")
+        }
+    }
+
+    @ViewBuilder
+    private var liveActivitySection: some View {
+        if model.isSignedIn || model.previewModeEnabled {
+            Section {
+                Button {
+                    if model.isLiveActivityRunning {
+                        Task { await model.stopLiveActivity() }
+                    } else {
+                        isShowingLiveActivityStartWarning = true
+                    }
+                } label: {
+                    Label(
+                        model.isLiveActivityRunning ? "Stop Live Activity" : "Start Live Activity",
+                        systemImage: model.isLiveActivityRunning ? "stop.circle" : "waveform"
+                    )
+                }
+                .disabled(
+                    model.isLiveActivityTransitioning
+                        || (model.isLiveActivityRunning == false
+                            && (model.hasCheckedLiveActivityAvailability == false || model.isLiveActivityAvailable == false))
+                )
+                .accessibilityIdentifier("ios.settings.liveActivity")
+                .accessibilityValue(liveActivityAccessibilityValue)
+
+                if model.hasCheckedLiveActivityAvailability, model.isLiveActivityAvailable == false {
+                    Text("Live Activities are unavailable on this device.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } header: {
+                Text("Live Activity")
+            } footer: {
+                Text("Shows the selected quota display on the Lock Screen and Dynamic Island. Refresh timing is decided by iOS.")
+            }
+        }
+    }
+
+    private var liveActivityAccessibilityValue: String {
+        if model.isLiveActivityTransitioning { return "Updating" }
+        if model.isLiveActivityRunning { return "On" }
+        return model.hasCheckedLiveActivityAvailability && model.isLiveActivityAvailable == false
+            ? "Unavailable"
+            : "Off"
     }
 
     private var refreshSection: some View {
@@ -314,36 +374,37 @@ struct CodexiOSSettingsView: View {
         }
     }
 
-    private var experimentalSection: some View {
+    private var privacySection: some View {
         Section {
-            Toggle("Matrix theme", isOn: $matrixThemeEnabled)
-                .accessibilityIdentifier("ios.settings.matrixTheme")
+            Link(destination: CodexiOSLegalLinks.privacyPolicy) {
+                externalLinkRow(title: "Privacy Policy")
+            }
+            .accessibilityIdentifier("ios.settings.privacyPolicy")
+
+            Link(destination: CodexiOSLegalLinks.termsOfService) {
+                externalLinkRow(title: "Terms of Service")
+            }
+            .accessibilityIdentifier("ios.settings.termsOfService")
         } header: {
-            Text("Experimental")
-        } footer: {
-            Text("Opens the fullscreen Matrix view. Turn it off in this setting to return to the standard theme.")
+            Text("Privacy")
         }
     }
 
-    private var privacySection: some View {
-        Section {
-            LabeledContent("Data Flow") {
-                Text("On device")
-                    .foregroundStyle(.secondary)
-            }
-            LabeledContent("Cookies") {
-                Text("Not used")
-                    .foregroundStyle(.secondary)
-            }
-            LabeledContent("Storage") {
-                Text("Keychain")
-                    .foregroundStyle(.secondary)
-            }
-        } header: {
-            Text("Privacy")
-        } footer: {
-            Text("Quota reads stay on this device. Local Codex session-log burn is Mac-only.")
+    private func externalLinkRow(title: LocalizedStringKey) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "globe")
+                .foregroundStyle(.secondary)
+                .frame(width: 20)
+            Text(title)
+                .foregroundStyle(.primary)
+            Spacer()
+            Image(systemName: "arrow.up.right")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(.tertiary)
+                .frame(width: 14, height: 14)
         }
+        .frame(minHeight: 44)
+        .contentShape(Rectangle())
     }
 
     private var resetSection: some View {

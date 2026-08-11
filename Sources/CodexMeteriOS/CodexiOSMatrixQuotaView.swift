@@ -1,74 +1,84 @@
 import CoreMotion
-import Observation
 import SwiftUI
 import CodexMeterCore
 
 @MainActor
-@Observable
 final class CodexiOSMatrixMotion {
     private let manager = CMMotionManager()
 
-    var horizontal = 0.0
-    var vertical = 0.0
-    var isAvailable = false
-
     func start() {
-        guard manager.isDeviceMotionAvailable else {
-            isAvailable = false
-            return
-        }
+        guard manager.isDeviceMotionAvailable, manager.isDeviceMotionActive == false else { return }
 
-        isAvailable = true
-        manager.deviceMotionUpdateInterval = 1.0 / 30.0
-        manager.startDeviceMotionUpdates(using: .xArbitraryZVertical, to: .main) { [weak self] motion, _ in
-            guard let self, let gravity = motion?.gravity else { return }
-            horizontal = clamp(gravity.x * 1.55, lower: -1, upper: 1)
-            vertical = clamp((gravity.y + 0.35) * 1.35, lower: -1, upper: 1)
-        }
+        manager.deviceMotionUpdateInterval = matrixMotionSamplingInterval
+        manager.startDeviceMotionUpdates(using: .xArbitraryZVertical)
     }
 
     func stop() {
         manager.stopDeviceMotionUpdates()
     }
+
+    func currentTilt() -> (horizontal: Double, vertical: Double) {
+        guard let gravity = manager.deviceMotion?.gravity else { return (0, 0) }
+        return (
+            matrixHorizontalTilt(for: gravity.x),
+            clamp((gravity.y + 0.35) * 1.35, lower: -1, upper: 1)
+        )
+    }
 }
 
 struct CodexiOSMatrixQuotaView: View {
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     @Bindable var model: CodexiOSModel
+    let onOpenSettings: () -> Void
     @State private var motion = CodexiOSMatrixMotion()
-    @State private var speedMultiplier = 1.0
-    @State private var dragStartSpeed = 1.0
+    @AppStorage(CodexiOSSettingsKeys.showUsedQuota) private var showUsedQuota = false
+    @State private var speedMultiplier = matrixDefaultSpeedMultiplier
+    @State private var dragStartSpeed = matrixDefaultSpeedMultiplier
+    @State private var density = matrixDefaultDensity
+    @State private var dragStartDensity = matrixDefaultDensity
 
-    private var weeklyRemaining: Double? {
+    private var weeklyWindow: CodexQuotaWindow? {
         guard let snapshot = model.snapshot else { return nil }
         guard let limit = CodexQuotaPresentationRules.orderedLimits(snapshot.limits).first(where: { $0.bucket == .codex }) else {
             return nil
         }
-        return CodexiOSQuotaPresentation.weeklyWindow(for: limit)?.remainingPercent
+        return CodexiOSQuotaPresentation.weeklyWindow(for: limit)
+    }
+
+    private var weeklyPercent: Double? {
+        weeklyWindow.map { CodexiOSQuotaDisplay.percent(for: $0, showUsedQuota: showUsedQuota) }
     }
 
     private var percentText: String {
-        guard let weeklyRemaining else { return "--" }
-        return "\(Int(weeklyRemaining.rounded()))"
+        guard let weeklyPercent else { return "--" }
+        return "\(Int(weeklyPercent.rounded()))"
+    }
+
+    private var isAnimationActive: Bool {
+        reduceMotion == false && scenePhase == .active
     }
 
     var body: some View {
         GeometryReader { proxy in
             ZStack {
-                Color.black
-                    .ignoresSafeArea()
-
-                TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
-                    Canvas { context, size in
+                TimelineView(
+                    .animation(
+                        minimumInterval: matrixRenderInterval,
+                        paused: isAnimationActive == false
+                    )
+                ) { timeline in
+                    Canvas(opaque: true, colorMode: .nonLinear, rendersAsynchronously: true) { context, size in
+                        let tilt = isAnimationActive ? motion.currentTilt() : (0.0, 0.0)
                         drawMatrix(
                             context: &context,
                             size: size,
                             date: timeline.date,
-                            remaining: weeklyRemaining,
-                            horizontalTilt: motion.horizontal,
-                            verticalTilt: motion.vertical,
+                            fillPercent: weeklyPercent,
+                            horizontalTilt: tilt.0,
+                            verticalTilt: tilt.1,
                             speedMultiplier: speedMultiplier,
+                            density: density,
                             reduceMotion: reduceMotion
                         )
                     }
@@ -77,13 +87,21 @@ struct CodexiOSMatrixQuotaView: View {
                     .gesture(
                         DragGesture(minimumDistance: 4)
                             .onChanged { value in
-                                speedMultiplier = matrixSpeedMultiplier(
-                                    from: dragStartSpeed,
-                                    verticalTranslation: value.translation.height
-                                )
+                                if abs(value.translation.width) > abs(value.translation.height) {
+                                    density = matrixDensity(
+                                        from: dragStartDensity,
+                                        horizontalTranslation: value.translation.width
+                                    )
+                                } else {
+                                    speedMultiplier = matrixSpeedMultiplier(
+                                        from: dragStartSpeed,
+                                        verticalTranslation: value.translation.height
+                                    )
+                                }
                             }
                             .onEnded { _ in
                                 dragStartSpeed = speedMultiplier
+                                dragStartDensity = density
                             }
                     )
                 }
@@ -91,7 +109,7 @@ struct CodexiOSMatrixQuotaView: View {
                 VStack(spacing: 0) {
                     HStack {
                         Button {
-                            dismiss()
+                            onOpenSettings()
                         } label: {
                             Image(systemName: "gearshape")
                                 .font(.system(size: 17, weight: .medium))
@@ -121,8 +139,22 @@ struct CodexiOSMatrixQuotaView: View {
                             .foregroundStyle(Color(red: 0.64, green: 1, blue: 0.68))
                             .shadow(color: .green.opacity(0.85), radius: 18)
                     }
+                    .background {
+                        Capsule(style: .continuous)
+                            .fill(.ultraThinMaterial.opacity(0.15))
+                            .overlay {
+                                Capsule(style: .continuous)
+                                    .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                            }
+                            .padding(.horizontal, -18)
+                            .padding(.vertical, -10)
+                    }
                     .accessibilityElement(children: .combine)
-                    .accessibilityLabel(weeklyRemaining.map { "\(Int($0.rounded())) percent remaining" } ?? "Weekly quota unavailable")
+                    .accessibilityLabel(
+                        weeklyWindow.map {
+                            CodexiOSQuotaDisplay.accessibilityValue(for: $0, showUsedQuota: showUsedQuota)
+                        } ?? "Weekly quota unavailable"
+                    )
                     .padding(.top, 50)
 
                     Spacer()
@@ -131,8 +163,12 @@ struct CodexiOSMatrixQuotaView: View {
         }
         .ignoresSafeArea()
         .preferredColorScheme(.dark)
-        .task {
-            motion.start()
+        .task(id: isAnimationActive) {
+            if isAnimationActive {
+                motion.start()
+            } else {
+                motion.stop()
+            }
         }
         .onDisappear {
             motion.stop()
@@ -144,74 +180,79 @@ private func drawMatrix(
     context: inout GraphicsContext,
     size: CGSize,
     date: Date,
-    remaining: Double?,
+    fillPercent: Double?,
     horizontalTilt: Double,
     verticalTilt: Double,
     speedMultiplier: Double,
+    density: Double,
     reduceMotion: Bool
 ) {
-    guard let remaining else { return }
+    context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(.black))
+
+    guard let fillPercent else { return }
 
     let time = reduceMotion ? 0 : date.timeIntervalSinceReferenceDate
-    let clampedRemaining = clamp(remaining, lower: 0, upper: 100)
-    let baseSurface = size.height * (1 - clampedRemaining / 100)
-    let columnCount = max(24, Int(size.width / 13))
-    let columnWidth = size.width / CGFloat(columnCount)
-    let fontSize = max(10, min(14, size.width / 30))
-    let lineHeight = fontSize * 1.3
-    let glyphs = Array("アカサタナハマヤラワ0123456789ABCDEF<>[]{}")
+    let clampedFillPercent = clamp(fillPercent, lower: 0, upper: 100)
+    let baseSurface = size.height * (1 - clampedFillPercent / 100)
+    let fontSize = max(13, min(17, size.width / 26))
+    let lineHeight = fontSize * 1.4
+    let maximumColumnCount = max(1, Int(size.width / (fontSize * 1.2)))
+    let columnCount = matrixColumnCount(maximum: maximumColumnCount, density: density)
+    let columnWidth = columnCount > 0 ? size.width / CGFloat(columnCount) : 0
+    let rowCount = Int(ceil(size.height / lineHeight)) + 2
+    let wave = matrixWaterLine(
+        size: size,
+        baseSurface: baseSurface,
+        time: time,
+        horizontalTilt: horizontalTilt,
+        verticalTilt: verticalTilt,
+        reduceMotion: reduceMotion
+    )
+    let waterClip = matrixWaterFill(
+        size: size,
+        baseSurface: baseSurface,
+        time: time,
+        horizontalTilt: horizontalTilt,
+        verticalTilt: verticalTilt,
+        reduceMotion: reduceMotion
+    )
+
+    var glyphContext = context
+    glyphContext.clip(to: waterClip)
 
     for column in 0..<columnCount {
-        let x = (CGFloat(column) + 0.45) * columnWidth
-        let xRatio = CGFloat(column) / CGFloat(max(1, columnCount - 1))
-        let phase = Double(column) * 0.61
-        let surface = baseSurface
-            + (reduceMotion ? 0 : sin(time * 1.35 + phase) * 3.5)
-            + horizontalTilt * (xRatio - 0.5) * size.width * 0.115
-            + verticalTilt * 8
-        let travel = max(size.height - surface + 70, 120)
-        let speed = (260 + seeded(Double(column) * 0.7) * 420) * speedMultiplier
-        let offset = ((time * speed + phase * travel).truncatingRemainder(dividingBy: travel + 80)) - 50
-        let rowCount = Int((size.height - surface) / lineHeight) + 10
+        let x = (CGFloat(column) + 0.5) * columnWidth
+        let trackLength = 8 + Int(seeded(Double(column) * 1.7) * 8)
+        let trackGap = matrixTrackGapRows(trackLength: trackLength, density: density)
+        let patternLength = trackLength + trackGap
+        let rowsTravelled = time / matrixGIFDropInterval * speedMultiplier
+            + seeded(Double(column) * 0.7) * Double(patternLength)
+        let completedRows = Int(rowsTravelled.rounded(.down))
+        let rowOffset = CGFloat(rowsTravelled - floor(rowsTravelled)) * lineHeight
 
-        for row in 0..<rowCount {
-            let y = surface + offset + CGFloat(row) * lineHeight
-            guard y > surface - fontSize, y < size.height + fontSize else { continue }
+        for row in -1...rowCount {
+            let patternRow = positiveModulo(row - completedRows, by: patternLength)
+            guard patternRow >= trackGap else { continue }
 
-            let distance = max(0, min(1, (y - surface) / max(1, size.height - surface)))
-            let flicker = 0.88 + sin(time * 2.4 + phase + Double(row)) * 0.10
-            let lead = !reduceMotion && (Int(time * (4 + speedMultiplier * 4)) + column * 3) % max(7, rowCount) == row
-            let opacity = min(0.98, max(0.08, (0.78 - distance * 0.52) * flicker * (lead ? 1.5 : 1)))
-            let glyphIndex = abs(column * 31 + row * 17 + (reduceMotion ? 0 : Int(time * (4 + speedMultiplier * 8)))) % glyphs.count
-            let glyph = String(glyphs[glyphIndex])
+            let trackRow = patternRow - trackGap
+            let y = CGFloat(row) * lineHeight + rowOffset
+            let distance = Double(trackRow) / Double(max(1, trackLength - 1))
+            let isLead = trackRow == trackLength - 1
+            let isGlow = trackRow >= trackLength - 3
+            let opacity = min(0.98, max(0.10, (0.28 + distance * 0.70) * (isGlow ? 1 : 0.78)))
+            let glyphIndex = positiveModulo(column * 31 + (row - completedRows) * 17, by: matrixGlyphs.count)
 
-            context.draw(
-                Text(glyph)
-                    .font(.system(size: fontSize, weight: .medium, design: .monospaced))
+            glyphContext.draw(
+                Text(matrixGlyphs[glyphIndex])
+                    .font(matrixGlyphFont(size: fontSize))
                     .foregroundStyle(
-                        lead
+                        isLead
                             ? Color(red: 0.9, green: 1, blue: 0.92).opacity(opacity)
                             : Color(red: 0.03, green: 0.94, blue: 0.16).opacity(opacity)
                     ),
                 at: CGPoint(x: x, y: y),
                 anchor: .topLeading
             )
-        }
-    }
-
-    var wave = Path()
-    let samples = 36
-    for sample in 0...samples {
-        let xRatio = CGFloat(sample) / CGFloat(samples)
-        let x = xRatio * size.width
-        let y = baseSurface
-            + (reduceMotion ? 0 : sin(time * 1.35 + Double(sample) * 0.42) * 3.5)
-            + horizontalTilt * (xRatio - 0.5) * size.width * 0.115
-            + verticalTilt * 8
-        if sample == 0 {
-            wave.move(to: CGPoint(x: x, y: y))
-        } else {
-            wave.addLine(to: CGPoint(x: x, y: y))
         }
     }
 
@@ -237,9 +278,112 @@ private func seeded(_ value: Double) -> Double {
     return raw - floor(raw)
 }
 
+private func matrixWaterLine(
+    size: CGSize,
+    baseSurface: CGFloat,
+    time: TimeInterval,
+    horizontalTilt: Double,
+    verticalTilt: Double,
+    reduceMotion: Bool
+) -> Path {
+    var wave = Path()
+    let samples = 36
+    for sample in 0...samples {
+        let xRatio = CGFloat(sample) / CGFloat(samples)
+        let x = xRatio * size.width
+        let y = matrixSurfaceY(
+            xRatio: xRatio,
+            size: size,
+            baseSurface: baseSurface,
+            time: time,
+            horizontalTilt: horizontalTilt,
+            verticalTilt: verticalTilt,
+            reduceMotion: reduceMotion
+        )
+        if sample == 0 {
+            wave.move(to: CGPoint(x: x, y: y))
+        } else {
+            wave.addLine(to: CGPoint(x: x, y: y))
+        }
+    }
+    return wave
+}
+
+private func matrixWaterFill(
+    size: CGSize,
+    baseSurface: CGFloat,
+    time: TimeInterval,
+    horizontalTilt: Double,
+    verticalTilt: Double,
+    reduceMotion: Bool
+) -> Path {
+    var fill = matrixWaterLine(
+        size: size,
+        baseSurface: baseSurface,
+        time: time,
+        horizontalTilt: horizontalTilt,
+        verticalTilt: verticalTilt,
+        reduceMotion: reduceMotion
+    )
+    fill.addLine(to: CGPoint(x: size.width, y: size.height))
+    fill.addLine(to: CGPoint(x: 0, y: size.height))
+    fill.closeSubpath()
+    return fill
+}
+
+private func matrixSurfaceY(
+    xRatio: CGFloat,
+    size: CGSize,
+    baseSurface: CGFloat,
+    time: TimeInterval,
+    horizontalTilt: Double,
+    verticalTilt: Double,
+    reduceMotion: Bool
+) -> CGFloat {
+    baseSurface
+        + (reduceMotion ? 0 : sin(time * 1.35 + Double(xRatio) * 8) * matrixWaveAmplitude)
+        + horizontalTilt * (xRatio - 0.5) * size.width * 0.115
+        + verticalTilt * 8
+}
+
+private func matrixGlyphFont(size: CGFloat) -> Font {
+    .system(size: size, weight: .medium, design: .monospaced)
+}
+
 func matrixSpeedMultiplier(from start: Double, verticalTranslation: CGFloat) -> Double {
     clamp(start - Double(verticalTranslation / 240) * 0.5, lower: 0.5, upper: 1)
 }
+
+func matrixDensity(from start: Double, horizontalTranslation: CGFloat) -> Double {
+    clamp(start + Double(horizontalTranslation / 260), lower: 0, upper: 1)
+}
+
+func matrixHorizontalTilt(for gravityX: Double) -> Double {
+    clamp(-gravityX * 1.55, lower: -1, upper: 1)
+}
+
+func matrixColumnCount(maximum: Int, density: Double) -> Int {
+    guard density > 0 else { return 0 }
+    return max(1, Int((Double(maximum) * clamp(density, lower: 0, upper: 1)).rounded(.up)))
+}
+
+func matrixTrackGapRows(trackLength: Int, density: Double) -> Int {
+    Int((Double(max(0, trackLength - 2)) * (1 - clamp(density, lower: 0, upper: 1))).rounded())
+}
+
+private func positiveModulo(_ value: Int, by modulus: Int) -> Int {
+    let remainder = value % modulus
+    return remainder >= 0 ? remainder : remainder + modulus
+}
+
+private let matrixGlyphs = Array("アカサタナハマヤラワ0123456789ABCDEF<>[]{}").map(String.init)
+let matrixDefaultSpeedMultiplier = 1.0
+let matrixDefaultDensity = 0.5
+let matrixDisplayFPS = 120.0
+let matrixRenderInterval = 1.0 / matrixDisplayFPS
+let matrixMotionSamplingInterval = 1.0 / 30.0
+let matrixGIFDropInterval = 0.15
+let matrixWaveAmplitude = 6.5
 
 private func clamp(_ value: Double, lower: Double, upper: Double) -> Double {
     min(upper, max(lower, value))

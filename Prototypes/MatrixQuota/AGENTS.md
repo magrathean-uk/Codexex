@@ -13,8 +13,13 @@ When implementing from a selected generated mock, treat that image as the source
 ## Matrix Theme Decisions
 
 - The Matrix page contains only the live percentage, the code-fill surface, and one Settings button.
-- Settings owns one switch named `Matrix theme`; enabling it presents the page, and disabling it returns to the normal theme.
-- Code rain is crisp, medium-weight, and starts at its 100% maximum. A hidden vertical drag ranges from 50% on pull-down to 100% on pull-up; phone tilt moves the code surface. iPhone remains portrait-only; iPad permits landscape.
+- Settings > Display owns `Matrix theme` and `Show used quota` switches. Matrix theme persists through navigation; the gear opens Settings and a back action returns to Matrix while the switch remains on. Disabling Matrix theme returns to the normal theme.
+- Settings uses green native toggles. `Show used quota` is its own `Quota` section immediately after `Account`. Privacy contains only `Privacy Policy` and `Terms of Service` globe/external-link rows, linking to Codexex pages.
+- Live Activity has its own section directly after `Quota`, with a standard-height start/stop row. The same start/stop action lives on the normal dashboard. `Show used quota` immediately updates a running Live Activity's content state, so its Lock Screen/Dynamic Island text and progress switch together between remaining and used quota.
+- Show used quota defaults off: a 9% balance reads `9% left`; on, it reads `91% used` and inverts the standard quota fill and Matrix code-fill surface. This never reverses Matrix rain: every track starts above the device's top edge and falls downward.
+- Code rain follows the supplied GIF and track model: sparse medium-weight finite columns, stable glyphs, a white leading head at the bottom of every track, and green fading tails above it. Tracks fall down one character every 0.15 seconds at the default GIF-calibrated speed. The display uses an adaptive 120fps SwiftUI animation schedule, while gyro data samples at 30fps without triggering SwiftUI redraws. A hidden vertical drag ranges from 50% on pull-down to 100% on pull-up. A hidden horizontal drag maps left to 0% density and right to 100%; at 100% every safe grid cell below the waterline is filled, without glyph overlap. Phone tilt moves the code surface: horizontal gyro is inverted so a left tilt shifts water left. The water wave uses a 6.5pt amplitude. iPhone remains portrait-only; iPad permits landscape.
+- Battery: one display-owned render clock. Read the latest gyro sample while rendering; never trigger extra SwiftUI redraws for motion. Pause code and gyro whenever inactive or Reduce Motion is on. Canvas paints opaque black and presents asynchronously.
+- The Matrix percentage is always legible on a 15% ultra-thin-material frosted capsule with a near-invisible white edge.
 
 ## Editing Boundary
 

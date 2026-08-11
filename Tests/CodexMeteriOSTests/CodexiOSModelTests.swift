@@ -527,6 +527,62 @@ final class CodexiOSModelTests: XCTestCase {
         XCTAssertEqual(calls, [.markStale(showFiveHour: true)])
     }
 
+    func testUsedQuotaPresentationUpdatesRunningLiveActivityImmediately() async {
+        let defaults = makeDefaults()
+        defaults.set(true, forKey: CodexiOSSettingsKeys.previewModeEnabled)
+        let liveActivity = StubCodexiOSLiveActivityManager(
+            state: .init(isAvailable: true, activityID: "existing")
+        )
+        let model = CodexiOSModel(
+            service: StubCodexiOSService(),
+            defaults: defaults,
+            liveActivityManager: liveActivity,
+            openURLAction: { _ in },
+            copyTextAction: { _ in }
+        )
+        await model.start()
+        await liveActivity.resetCalls()
+
+        await model.updateLiveActivityPresentation(showFiveHour: false, showUsedQuota: true)
+
+        XCTAssertTrue(model.isLiveActivityRunning)
+        let calls = await liveActivity.recordedCalls()
+        let showUsedQuotaValues = await liveActivity.recordedShowUsedQuota()
+        XCTAssertEqual(calls, [.update(showFiveHour: false)])
+        XCTAssertEqual(showUsedQuotaValues, [true])
+    }
+
+    func testBackgroundRefreshUpdatesRecoveredLiveActivity() async {
+        let service = StubCodexiOSService(
+            fetchHandler: {
+                CodexServiceSnapshotResponse(
+                    authMode: .chatGPT,
+                    snapshot: CodexiOSPreviewData.snapshot(),
+                    errorMessage: nil
+                )
+            }
+        )
+        let liveActivity = StubCodexiOSLiveActivityManager(
+            state: .init(isAvailable: true, activityID: "existing")
+        )
+        let model = CodexiOSModel(
+            service: service,
+            defaults: makeDefaults(),
+            liveActivityManager: liveActivity,
+            openURLAction: { _ in },
+            copyTextAction: { _ in }
+        )
+
+        let didRefresh = await model.refreshLiveActivityInBackground()
+        let fetchCount = await service.fetchCallCount()
+        let calls = await liveActivity.recordedCalls()
+
+        XCTAssertTrue(didRefresh)
+        XCTAssertEqual(fetchCount, 1)
+        XCTAssertEqual(calls, [.recover, .update(showFiveHour: false)])
+        XCTAssertTrue(model.isLiveActivityRunning)
+    }
+
     func testResetLocalDataClearsIOSSettings() {
         let defaults = makeDefaults()
         defaults.set(true, forKey: CodexiOSSettingsKeys.hasCompletedOnboarding)
@@ -561,6 +617,7 @@ actor StubCodexiOSLiveActivityManager: CodexiOSLiveActivityManaging {
     private let startState: CodexiOSLiveActivityRuntimeState
     private let startDelay: Duration?
     private var calls: [Call] = []
+    private var showUsedQuotaValues: [Bool] = []
 
     init(
         state: CodexiOSLiveActivityRuntimeState,
@@ -580,9 +637,11 @@ actor StubCodexiOSLiveActivityManager: CodexiOSLiveActivityManaging {
     func start(
         snapshot: CodexSnapshot,
         showFiveHour: Bool,
+        showUsedQuota: Bool,
         cadence: TimeInterval
     ) async throws -> CodexiOSLiveActivityRuntimeState {
         calls.append(.start(showFiveHour: showFiveHour))
+        showUsedQuotaValues.append(showUsedQuota)
         if let startDelay {
             try? await Task.sleep(for: startDelay)
         }
@@ -593,18 +652,22 @@ actor StubCodexiOSLiveActivityManager: CodexiOSLiveActivityManaging {
     func update(
         snapshot: CodexSnapshot,
         showFiveHour: Bool,
+        showUsedQuota: Bool,
         cadence: TimeInterval
     ) async -> CodexiOSLiveActivityRuntimeState {
         calls.append(.update(showFiveHour: showFiveHour))
+        showUsedQuotaValues.append(showUsedQuota)
         return state
     }
 
     func markStale(
         snapshot: CodexSnapshot,
         showFiveHour: Bool,
+        showUsedQuota: Bool,
         cadence: TimeInterval
     ) async -> CodexiOSLiveActivityRuntimeState {
         calls.append(.markStale(showFiveHour: showFiveHour))
+        showUsedQuotaValues.append(showUsedQuota)
         return state
     }
 
@@ -619,10 +682,15 @@ actor StubCodexiOSLiveActivityManager: CodexiOSLiveActivityManaging {
 
     func resetCalls() {
         calls = []
+        showUsedQuotaValues = []
     }
 
     func recordedCalls() -> [Call] {
         calls
+    }
+
+    func recordedShowUsedQuota() -> [Bool] {
+        showUsedQuotaValues
     }
 }
 

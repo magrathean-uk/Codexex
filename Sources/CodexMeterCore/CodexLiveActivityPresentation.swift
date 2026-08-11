@@ -13,14 +13,40 @@ public struct CodexLiveActivityAttributes: Codable, Hashable, Sendable {
         public let fiveHourPercentLeft: Int?
         public let fiveHourResetAt: Date?
         public let isStale: Bool
+        /// Optional for decoding Live Activities created before the display-mode setting existed.
+        public let showsUsedQuota: Bool?
 
-        public init(weeklyPercentLeft: Int, weeklyUsedFraction: Double, weeklyResetAt: Date?, fiveHourPercentLeft: Int?, fiveHourResetAt: Date?, isStale: Bool) {
+        public var displaysUsedQuota: Bool { showsUsedQuota ?? false }
+
+        public var displayedWeeklyPercent: Int {
+            displaysUsedQuota ? max(0, min(100, 100 - weeklyPercentLeft)) : weeklyPercentLeft
+        }
+
+        public var displayedWeeklyFraction: Double {
+            let used = max(0, min(1, weeklyUsedFraction))
+            return displaysUsedQuota ? used : 1 - used
+        }
+
+        public var weeklyDisplayDescription: String {
+            "\(displayedWeeklyPercent)% \(displaysUsedQuota ? "used" : "left") of weekly quota"
+        }
+
+        public init(
+            weeklyPercentLeft: Int,
+            weeklyUsedFraction: Double,
+            weeklyResetAt: Date?,
+            fiveHourPercentLeft: Int?,
+            fiveHourResetAt: Date?,
+            isStale: Bool,
+            showsUsedQuota: Bool = false
+        ) {
             self.weeklyPercentLeft = weeklyPercentLeft
             self.weeklyUsedFraction = weeklyUsedFraction
             self.weeklyResetAt = weeklyResetAt
             self.fiveHourPercentLeft = fiveHourPercentLeft
             self.fiveHourResetAt = fiveHourResetAt
             self.isStale = isStale
+            self.showsUsedQuota = showsUsedQuota
         }
     }
 
@@ -33,7 +59,14 @@ extension CodexLiveActivityAttributes: ActivityAttributes {}
 #endif
 
 public enum CodexLiveActivityPresentation {
-    public static func state(snapshot: CodexSnapshot, showFiveHour: Bool, stale: Bool = false) -> CodexLiveActivityAttributes.ContentState? {
+    public static let minimumStaleInterval: TimeInterval = 30 * 60
+
+    public static func state(
+        snapshot: CodexSnapshot,
+        showFiveHour: Bool,
+        showUsedQuota: Bool = false,
+        stale: Bool = false
+    ) -> CodexLiveActivityAttributes.ContentState? {
         guard let limit = snapshot.codexLimit,
               let weekly = exactWindow(minutes: 10_080, in: limit)
                 ?? legacyUntaggedWeeklyWindow(in: limit) else {
@@ -48,12 +81,13 @@ public enum CodexLiveActivityPresentation {
             weeklyResetAt: weekly.resetsAt,
             fiveHourPercentLeft: fiveHour.map { Int($0.remainingPercent.rounded()) },
             fiveHourResetAt: fiveHour?.resetsAt,
-            isStale: stale
+            isStale: stale,
+            showsUsedQuota: showUsedQuota
         )
     }
 
     public static func staleDate(capturedAt: Date, cadence: TimeInterval) -> Date {
-        capturedAt.addingTimeInterval(max(cadence * 2, 300))
+        capturedAt.addingTimeInterval(max(cadence * 2, minimumStaleInterval))
     }
 
     private static func exactWindow(minutes: Int, in limit: CodexLimit) -> CodexQuotaWindow? {

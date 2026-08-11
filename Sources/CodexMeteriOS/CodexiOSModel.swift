@@ -209,6 +209,7 @@ final class CodexiOSModel {
 
     func signOut() async {
         invalidateLiveActivityOperations()
+        CodexiOSBackgroundRefresh.cancel()
         liveAccountState = .signedOut
         snapshot = nil
         lastUpdatedAt = nil
@@ -316,6 +317,7 @@ final class CodexiOSModel {
             let state = try await liveActivityManager.start(
                 snapshot: snapshot,
                 showFiveHour: showFiveHourInPresentation,
+                showUsedQuota: showUsedQuotaInPresentation,
                 cadence: liveActivityCadence
             )
             guard generation == liveActivityGeneration,
@@ -327,8 +329,9 @@ final class CodexiOSModel {
             isLiveActivityStale = false
             errorMessage = nil
             statusMessage = state.isRunning
-                ? "Live Activity started. It updates during foreground refreshes."
+                ? "Live Activity started. It refreshes on-device when iOS allows it."
                 : "Live Activities are unavailable on this device."
+            scheduleBackgroundLiveActivityRefreshIfNeeded()
         } catch { applyError(message(for: error)) }
     }
 
@@ -343,9 +346,17 @@ final class CodexiOSModel {
         if announce {
             statusMessage = "Live Activity stopped."
         }
+        CodexiOSBackgroundRefresh.cancel()
     }
 
     func updateLiveActivityPresentation(showFiveHour: Bool) async {
+        await updateLiveActivityPresentation(
+            showFiveHour: showFiveHour,
+            showUsedQuota: showUsedQuotaInPresentation
+        )
+    }
+
+    func updateLiveActivityPresentation(showFiveHour: Bool, showUsedQuota: Bool) async {
         guard (isSignedIn || previewModeEnabled), let snapshot else { return }
         let generation = liveActivityGeneration
         beginLiveActivityOperation()
@@ -355,22 +366,36 @@ final class CodexiOSModel {
             state = await liveActivityManager.markStale(
                 snapshot: snapshot,
                 showFiveHour: showFiveHour,
+                showUsedQuota: showUsedQuota,
                 cadence: liveActivityCadence
             )
         } else {
             state = await liveActivityManager.update(
                 snapshot: snapshot,
                 showFiveHour: showFiveHour,
+                showUsedQuota: showUsedQuota,
                 cadence: liveActivityCadence
             )
         }
         guard generation == liveActivityGeneration else { return }
         applyLiveActivityState(state)
+        scheduleBackgroundLiveActivityRefreshIfNeeded()
     }
 
     func snoozeSummary(_ summary: PopupSummaryPresentation) {
         defaults.set(CodexSummarySnooze.fingerprint(for: summary), forKey: CodexiOSSettingsKeys.summarySnoozeFingerprint)
         defaults.set(CodexSummarySnooze.expiryDate(snapshot: snapshot), forKey: CodexiOSSettingsKeys.summarySnoozeExpiresAt)
+    }
+
+    func refreshLiveActivityInBackground() async -> Bool {
+        await recoverLiveActivity()
+        guard isLiveActivityRunning, previewModeEnabled == false else {
+            CodexiOSBackgroundRefresh.cancel()
+            return true
+        }
+
+        await refresh()
+        return Task.isCancelled == false && errorMessage == nil && isLiveActivityStale == false
     }
 
     func isSummarySnoozed(_ summary: PopupSummaryPresentation) -> Bool {
@@ -394,11 +419,13 @@ final class CodexiOSModel {
         let state = await liveActivityManager.markStale(
                 snapshot: snapshot,
                 showFiveHour: showFiveHourInPresentation,
+                showUsedQuota: showUsedQuotaInPresentation,
                 cadence: liveActivityCadence
         )
         guard generation == liveActivityGeneration else { return }
         applyLiveActivityState(state)
         isLiveActivityStale = true
+        scheduleBackgroundLiveActivityRefreshIfNeeded()
     }
 
     private func recoverLiveActivity() async {
@@ -413,11 +440,13 @@ final class CodexiOSModel {
         let state = await liveActivityManager.update(
                 snapshot: snapshot,
                 showFiveHour: showFiveHourInPresentation,
+                showUsedQuota: showUsedQuotaInPresentation,
                 cadence: liveActivityCadence
         )
         guard generation == liveActivityGeneration else { return }
         applyLiveActivityState(state)
         isLiveActivityStale = false
+        scheduleBackgroundLiveActivityRefreshIfNeeded()
     }
 
     private func invalidateLiveActivityOperations() {
@@ -452,6 +481,15 @@ final class CodexiOSModel {
 
     private var showFiveHourInPresentation: Bool {
         defaults.object(forKey: CodexiOSSettingsKeys.showFiveHourPresentation) as? Bool ?? false
+    }
+
+    private var showUsedQuotaInPresentation: Bool {
+        defaults.object(forKey: CodexiOSSettingsKeys.showUsedQuota) as? Bool ?? false
+    }
+
+    private func scheduleBackgroundLiveActivityRefreshIfNeeded() {
+        guard isLiveActivityRunning, previewModeEnabled == false else { return }
+        CodexiOSBackgroundRefresh.schedule(cadence: liveActivityCadence)
     }
 
     private func clearPendingSignIn() {

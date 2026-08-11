@@ -23,9 +23,9 @@ struct CodexQuotaLiveActivity: Widget {
                 ActivityIcon(size: 16)
                     .accessibilityLabel("Codexex Usage")
             } compactTrailing: {
-                Text("\(context.state.weeklyPercentLeft)%")
+                Text("\(context.state.displayedWeeklyPercent)%")
                     .monospacedDigit()
-                    .accessibilityLabel("\(context.state.weeklyPercentLeft)% left of weekly usage")
+                    .accessibilityLabel(context.state.weeklyDisplayDescription)
             } minimal: {
                 ActivityIcon(size: 16)
                     .accessibilityLabel("Codexex Usage")
@@ -48,13 +48,13 @@ private struct QuotaUsageView: View {
                     .minimumScaleFactor(0.82)
             }
 
-            Text("\(state.weeklyPercentLeft)% left of weekly usage")
+            Text(state.weeklyDisplayDescription)
                 .font(.subheadline.weight(.medium))
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.78)
 
-            ProgressView(value: state.weeklyUsedFraction)
+            ProgressView(value: state.displayedWeeklyFraction)
                 .tint(.accentColor)
                 .frame(height: 8)
                 .accessibilityHidden(true)
@@ -64,7 +64,7 @@ private struct QuotaUsageView: View {
         .padding(.vertical, 14)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Codexex Usage")
-        .accessibilityValue("\(state.weeklyPercentLeft)% left of weekly usage")
+        .accessibilityValue(state.weeklyDisplayDescription)
     }
 }
 
