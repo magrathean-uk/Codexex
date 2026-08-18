@@ -27,7 +27,7 @@ Rules:
 - Keep release text in `fastlane/metadata/` and privacy text in `PRIVACY.md`; do not grow extra review-note markdown.
 - For Figma-driven UI work: use SwiftUI only, use project tokens/components, do not paste Tailwind styles, fetch Figma context and a screenshot before implementation, and reuse provided Figma assets when present.
 - Do not edit `CodexMeter.xcodeproj` directly; update `project.yml` and run `xcodegen generate --spec project.yml`.
-- `.codex/hooks.json` is the checked-in project hook surface. It receives Codex hook JSON on stdin and blocks direct `apply_patch` edits under `.xcodeproj/`. Review changed project hooks with `/hooks` before expecting them to run.
+- No project-local Codex hook is installed. Do not add one for generated Xcode files; edit `project.yml` and regenerate instead.
 
 ## Commands
 

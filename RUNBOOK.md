@@ -39,10 +39,6 @@ xcodegen generate --spec project.yml
 No standalone lint, format, typecheck, Makefile, Justfile, or GitHub Actions
 workflow was found in this checkout. Use builds/tests as the typecheck gate.
 
-## Codex hooks
-
-The project-local hook lives only in `.codex/hooks.json`. Codex loads it for a trusted project after the exact hook definition is reviewed with `/hooks`. Its `PreToolUse` matcher receives the canonical `apply_patch` payload on stdin and blocks direct edits below `.xcodeproj/`; change `project.yml` and regenerate instead.
-
 Optional companion installation targets the user layer:
 
 ```bash
@@ -173,7 +169,7 @@ Direct `codex app-server` capture is excluded from normal shipping builds unless
 - Do not add alternate sign-in flows, browser scraping, or token extraction.
 - Update `project.yml` when target wiring changes; update helper scripts when helper packaging changes.
 - Do not hand-edit `CodexMeter.xcodeproj`; regenerate it from `project.yml`.
-- Keep project hook policy in `.codex/hooks.json`; do not duplicate it in a project `.codex/config.toml` hook table.
+- Do not add project-local Codex hooks; keep generated Xcode protection in the documented `project.yml` workflow.
 
 ## Done criteria for agent work
 

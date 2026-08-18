@@ -37,7 +37,6 @@ Current release: `6.0.0` (`19`). `project.yml` is the version and target source 
 - `AppStore/`: entitlements and App Store-facing bundle settings.
 - `Tests/`: XCTest coverage for both core logic and app behavior.
 - `fastlane/metadata/`: checked-in App Store text inputs.
-- `.codex/hooks.json`: trusted project-local Codex guard for generated Xcode files.
 - `Package.swift`: SwiftPM adapter for local development and package tests; `project.yml` remains the Xcode source of truth.
 
 ## Quick start
