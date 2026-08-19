@@ -16,3 +16,4 @@ jobs:
         with:
           command: check
           arguments: --all-features
+          manifest-path: Helper/CodexexHelper/Cargo.toml
