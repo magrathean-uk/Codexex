@@ -12,8 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: EmbarkStudios/cargo-deny-action@v2
-        with:
-          command: check
-          arguments: --all-features
-          manifest-path: Helper/CodexexHelper/Cargo.toml
+      - name: Install cargo-deny
+        run: |
+          curl -sSL https://github.com/EmbarkStudios/cargo-deny/releases/download/0.16.4/cargo-deny-0.16.4-x86_64-unknown-linux-musl.tar.gz | tar -xz --strip-components=1
+          sudo mv cargo-deny /usr/local/bin/
+      - name: Run cargo-deny check
+        run: |
+          cargo-deny --manifest-path Helper/CodexexHelper/Cargo.toml check
