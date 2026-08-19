@@ -18,4 +18,4 @@ jobs:
           sudo mv cargo-deny /usr/local/bin/
       - name: Run cargo-deny check
         run: |
-          cargo-deny --manifest-path Helper/CodexexHelper/Cargo.toml check
+          cargo-deny --manifest-path Helper/CodexexHelper/Cargo.toml check licenses bans sources
