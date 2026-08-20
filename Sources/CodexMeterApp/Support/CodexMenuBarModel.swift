@@ -564,7 +564,7 @@ final class CodexMenuBarModel {
         let hasPendingDeviceCode = authSession.currentDeviceCode != nil
         dashboard.snapshot = nil
         dashboard.lastUpdatedAt = nil
-        dashboard.setError(response.errorMessage)
+        dashboard.setError(response.authMode == .chatGPT ? response.errorMessage : nil)
 
         if CodexAuthFlow.shouldPreservePendingDeviceCode(
             response: response,

@@ -98,40 +98,48 @@ struct PopupRootView: View {
     }
 
     private var footer: some View {
-        HStack(spacing: 10) {
-            PopupFooterControl(
-                title: "Settings",
-                systemImage: "gearshape",
-                tone: .secondary,
-                accessibilityIdentifier: "mac.popup.settings"
-            ) {
-                onOpenSettings()
-            }
-
-            Spacer(minLength: 12)
-
+        VStack(alignment: .trailing, spacing: 6) {
             if let lastUpdatedAt = presentedLastUpdatedAt {
                 Text(updatedText(for: lastUpdatedAt))
                     .font(.system(size: GlassTokens.popupMetaFontSize))
                     .foregroundStyle(CodexTheme.dim)
                     .lineLimit(1)
-                    .frame(minWidth: 104, alignment: .trailing)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
                     .allowsHitTesting(false)
             }
 
-            PopupFooterControl(
-                title: model.isRefreshing ? "Refreshing" : "Refresh",
-                systemImage: "arrow.clockwise",
-                tone: .primary,
-                accessibilityIdentifier: "mac.popup.refresh"
-            ) {
-                guard model.isRefreshing == false else { return }
-                Task { await model.refreshNow(manual: true) }
+            HStack(spacing: 8) {
+                PopupFooterControl(
+                    title: "Settings",
+                    systemImage: "gearshape",
+                    tone: .secondary,
+                    accessibilityIdentifier: "mac.popup.settings"
+                ) {
+                    onOpenSettings()
+                }
+
+                PopupFooterControl(
+                    title: model.isRefreshing ? "Refreshing" : "Refresh",
+                    systemImage: "arrow.clockwise",
+                    tone: usesMonochromeRecoveryControls ? .secondary : .primary,
+                    accessibilityIdentifier: "mac.popup.refresh"
+                ) {
+                    guard model.isRefreshing == false else { return }
+                    Task { await model.refreshNow(manual: true) }
+                }
+                .disabled(model.isRefreshing)
             }
-            .disabled(model.isRefreshing)
+            .frame(maxWidth: .infinity)
         }
         .padding(.top, 2)
-        .frame(maxWidth: .infinity, minHeight: GlassTokens.pillHeight, alignment: .center)
+        .frame(maxWidth: .infinity, alignment: .trailing)
+    }
+
+    private var usesMonochromeRecoveryControls: Bool {
+        guard displayMode == .live, presentedSnapshot == nil else { return false }
+        return model.lastError != nil || (
+            model.hasResolvedAuthState && model.isSignedIn == false
+        )
     }
 
     private func updatedText(for date: Date) -> String {
@@ -308,7 +316,7 @@ private struct PopupFooterControl: View {
             isEnabled: isEnabled,
             action: action
         )
-        .frame(minWidth: 92, minHeight: GlassTokens.pillHeight)
+        .frame(maxWidth: .infinity, minHeight: GlassTokens.pillHeight)
     }
 }
 

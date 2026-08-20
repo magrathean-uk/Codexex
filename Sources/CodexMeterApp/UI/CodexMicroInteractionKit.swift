@@ -5,6 +5,7 @@ enum CodexStateBadgeKind: Equatable {
     case live
     case preview
     case waiting
+    case signedOut
     case stale
     case error
 
@@ -13,6 +14,7 @@ enum CodexStateBadgeKind: Equatable {
         case .live: return "Live"
         case .preview: return "Preview"
         case .waiting: return "Waiting"
+        case .signedOut: return "Signed Out"
         case .stale: return "Stale"
         case .error: return "Issue"
         }
@@ -23,6 +25,7 @@ enum CodexStateBadgeKind: Equatable {
         case .live: return "checkmark.circle.fill"
         case .preview: return "wand.and.stars"
         case .waiting: return "clock.fill"
+        case .signedOut: return "person.crop.circle.badge.xmark"
         case .stale: return "exclamationmark.clock.fill"
         case .error: return "exclamationmark.triangle.fill"
         }
@@ -33,6 +36,7 @@ enum CodexStateBadgeKind: Equatable {
         case .live: return CodexTheme.success
         case .preview: return CodexTheme.accent2
         case .waiting: return CodexTheme.amber
+        case .signedOut: return CodexTheme.muted
         case .stale: return CodexTheme.amber
         case .error: return CodexTheme.danger
         }

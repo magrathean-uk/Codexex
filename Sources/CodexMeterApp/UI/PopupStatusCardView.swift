@@ -55,16 +55,12 @@ struct PopupStatusCardView: View {
     }
 
     private var shouldShowActionRow: Bool {
-        if model.previewModeEnabled || model.lastError != nil {
-            return true
-        }
-        if model.isSignedIn == false {
-            return true
-        }
-        if model.snapshot == nil {
-            return model.isRefreshing == false
-        }
-        return false
+        model.previewModeEnabled || (
+            model.isSignedIn == false
+                && model.hasResolvedAuthState
+                && model.authDeviceCode == nil
+                && model.isSigningIn == false
+        )
     }
 
     @ViewBuilder
@@ -81,37 +77,13 @@ struct PopupStatusCardView: View {
                 }
                 .disabled(model.isRefreshing)
             }
-        } else if model.lastError != nil || (model.snapshot == nil && model.hasResolvedAuthState == false) {
-            HStack(spacing: 8) {
-                PopupActionButton(title: model.isRefreshing ? "Refreshing" : "Refresh", tone: .primary) {
-                    Task { await model.refreshNow(manual: true) }
-                }
-                .keyboardShortcut(.defaultAction)
-                .disabled(model.isRefreshing)
-
-                PopupActionButton(title: "Sample Data", tone: .secondary) {
-                    model.enablePreviewMode()
-                }
-            }
         } else if model.isSignedIn == false {
             HStack(spacing: 8) {
-                PopupActionButton(title: "Sign In", tone: .primary) {
+                PopupActionButton(title: "Sign In", tone: .secondary) {
                     model.startChatGPTSignIn()
                 }
                 .keyboardShortcut(.defaultAction)
                 .disabled(model.canStartChatGPTSignIn == false)
-
-                PopupActionButton(title: "Sample Data", tone: .secondary) {
-                    model.enablePreviewMode()
-                }
-            }
-        } else if model.snapshot == nil {
-            HStack(spacing: 8) {
-                PopupActionButton(title: model.isRefreshing ? "Refreshing" : "Refresh", tone: .primary) {
-                    Task { await model.refreshNow(manual: true) }
-                }
-                .keyboardShortcut(.defaultAction)
-                .disabled(model.isRefreshing)
 
                 PopupActionButton(title: "Sample Data", tone: .secondary) {
                     model.enablePreviewMode()
@@ -137,21 +109,12 @@ private struct PopupActionButton: View {
             title: title,
             systemImage: nil,
             tone: tone == .primary ? .primary : .secondary,
-            minimumWidth: minimumWidth,
+            minimumWidth: 92,
             accessibilityIdentifier: nil,
             isEnabled: isEnabled,
             action: action
         )
-        .frame(minWidth: minimumWidth, minHeight: GlassTokens.pillHeight)
-    }
-
-    private var minimumWidth: CGFloat {
-        switch tone {
-        case .primary:
-            return 76
-        case .secondary:
-            return 86
-        }
+        .frame(maxWidth: .infinity, minHeight: GlassTokens.pillHeight)
     }
 }
 #endif

@@ -12,6 +12,13 @@ enum CodexDesignToneAdditions {
 extension CodexMenuBarModel {
     var designStateBadgeKind: CodexStateBadgeKind {
         if previewModeEnabled { return .preview }
+        if lastError == nil,
+           isSignedIn == false,
+           hasResolvedAuthState,
+           authDeviceCode == nil,
+           isSigningIn == false {
+            return .signedOut
+        }
         if lastError != nil { return snapshot == nil ? .error : .stale }
         if authDeviceCode != nil || isSigningIn { return .waiting }
         if isDataStale { return .stale }

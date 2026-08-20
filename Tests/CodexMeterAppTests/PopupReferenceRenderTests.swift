@@ -118,10 +118,71 @@ final class PopupReferenceRenderTests: XCTestCase {
         let bitmap = try windowRenderedBitmap(for: view, width: GlassTokens.popupWidth, height: 260)
         let sample = PixelSample(bitmap: bitmap)
 
-        XCTAssertGreaterThan(
+        XCTAssertLessThan(
             sample.accentBluePixels,
-            300,
-            "failure popup should render a visible primary Refresh action"
+            50,
+            "failure popup recovery actions should stay monochrome"
+        )
+
+        let buttons = hostedButtonSnapshots(
+            for: view,
+            width: GlassTokens.popupWidth,
+            height: 260
+        )
+        XCTAssertEqual(buttons.map(\.title).sorted(), ["Refresh", "Settings"])
+        XCTAssertEqual(buttons.filter { $0.title == "Refresh" }.count, 1)
+        XCTAssertEqual(
+            try XCTUnwrap(buttons.map(\.width).max()),
+            try XCTUnwrap(buttons.map(\.width).min()),
+            accuracy: 0.5
+        )
+    }
+
+    func testSignedOutPopupUsesOneRefreshAndEqualActionWidths() async throws {
+        let model = CodexMenuBarModel(
+            service: RenderSignedOutService(),
+            localUsageProvider: RenderLocalUsageProvider()
+        )
+
+        await model.refreshNow(manual: true)
+
+        let view = PopupRootView(
+            model: model,
+            displayMode: .live,
+            reduceMotionOverride: true,
+            previewReferenceDate: Date(timeIntervalSince1970: 1_800_000_000)
+        )
+        let hostingController = NSHostingController(rootView: view)
+        let fittingSize = hostingController.sizeThatFits(
+            in: NSSize(width: GlassTokens.popupWidth, height: GlassTokens.popupMaxHeight)
+        )
+        let buttons = hostedButtonSnapshots(
+            for: view,
+            width: GlassTokens.popupWidth,
+            height: fittingSize.height
+        )
+        let bitmap = try windowRenderedBitmap(
+            for: view,
+            width: GlassTokens.popupWidth,
+            height: fittingSize.height
+        )
+        let sample = PixelSample(bitmap: bitmap)
+
+        if let outputPath = ProcessInfo.processInfo.environment["CODEXEX_SIGNED_OUT_RENDER_OUTPUT"] {
+            let pngData = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+            try pngData.write(to: URL(fileURLWithPath: outputPath), options: .atomic)
+        }
+
+        XCTAssertEqual(buttons.map(\.title).sorted(), ["Refresh", "Sample Data", "Settings", "Sign In"])
+        XCTAssertEqual(buttons.filter { $0.title == "Refresh" }.count, 1)
+        XCTAssertLessThan(sample.accentBluePixels, 50)
+
+        let widths = buttons.map(\.width)
+        XCTAssertEqual(widths.count, 4)
+        XCTAssertEqual(
+            try XCTUnwrap(widths.max()),
+            try XCTUnwrap(widths.min()),
+            accuracy: 0.5
         )
     }
 
@@ -279,6 +340,28 @@ private struct RenderFailingService: CodexServiceClient {
     }
 }
 
+private struct RenderSignedOutService: CodexServiceClient {
+    func fetchSnapshotResponse() async throws -> CodexServiceSnapshotResponse {
+        CodexServiceSnapshotResponse(
+            authMode: nil,
+            snapshot: nil,
+            errorMessage: "Not signed in. Use the button below."
+        )
+    }
+
+    func beginChatGPTSignIn() async throws -> CodexDeviceAuthStart {
+        throw NSError(domain: "RenderSignedOutService", code: 1)
+    }
+
+    func completeChatGPTSignIn(flowID: String) async throws -> CodexDeviceAuthPollResult {
+        throw NSError(domain: "RenderSignedOutService", code: 2)
+    }
+
+    func signOut() async throws {
+        throw NSError(domain: "RenderSignedOutService", code: 3)
+    }
+}
+
 private struct RenderLocalUsageProvider: CodexLocalUsageProviding {
     func fetchLocalUsageSummary() async -> CodexLocalUsageSummary? {
         nil
@@ -330,6 +413,49 @@ private func windowRenderedBitmap<Content: View>(
     let bitmap = try XCTUnwrap(hostingView.bitmapImageRepForCachingDisplay(in: hostingView.bounds))
     hostingView.cacheDisplay(in: hostingView.bounds, to: bitmap)
     return bitmap
+}
+
+private struct HostedButtonSnapshot {
+    let title: String
+    let width: CGFloat
+}
+
+@MainActor
+private func hostedButtonSnapshots<Content: View>(
+    for view: Content,
+    width: CGFloat,
+    height: CGFloat
+) -> [HostedButtonSnapshot] {
+    let hostingView = NSHostingView(rootView: view.frame(width: width, height: height))
+    hostingView.frame = NSRect(x: 0, y: 0, width: width, height: height)
+
+    let panel = NSPanel(
+        contentRect: hostingView.frame,
+        styleMask: [.borderless],
+        backing: .buffered,
+        defer: false
+    )
+    panel.isReleasedWhenClosed = false
+    panel.contentView = hostingView
+    panel.orderFrontRegardless()
+    defer {
+        panel.orderOut(nil)
+        panel.contentView = nil
+    }
+
+    hostingView.layoutSubtreeIfNeeded()
+    panel.displayIfNeeded()
+    RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+    return popupButtonControls(in: hostingView).map {
+        HostedButtonSnapshot(title: $0.controlTitle, width: $0.bounds.width)
+    }
+}
+
+@MainActor
+private func popupButtonControls(in view: NSView) -> [PopupAppKitButtonControl] {
+    let current = (view as? PopupAppKitButtonControl).map { [$0] } ?? []
+    return current + view.subviews.flatMap(popupButtonControls(in:))
 }
 
 private struct PixelSample {

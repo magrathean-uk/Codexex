@@ -21,6 +21,19 @@ final class CodexMenuBarModelAuthRestoreTests: XCTestCase {
         XCTAssertEqual(model.authStatusMessage, "Ready.")
     }
 
+    func testSignedOutResponseIsAccountStateInsteadOfRefreshError() async {
+        let model = testModel(service: SignedOutService())
+
+        await model.refreshNow()
+
+        XCTAssertTrue(model.hasResolvedAuthState)
+        XCTAssertFalse(model.isSignedIn)
+        XCTAssertNil(model.lastError)
+        XCTAssertEqual(model.statusCardTitle, "Sign in required")
+        XCTAssertEqual(model.statusCardMessage, "Not signed in. Use the button below.")
+        XCTAssertEqual(model.designStateBadgeKind, .signedOut)
+    }
+
     func testPreviewModeWithSampleQuotaStartsOnSafeSummary() {
         let model = testModel(service: FailingService())
 
@@ -412,6 +425,28 @@ private func makeLocalUsageSummary() -> CodexLocalUsageSummary {
 private struct FailingService: CodexServiceClient {
     func fetchSnapshotResponse() async throws -> CodexServiceSnapshotResponse {
         throw NSError(domain: "Test", code: 1, userInfo: [NSLocalizedDescriptionKey: "network down"])
+    }
+
+    func beginChatGPTSignIn() async throws -> CodexDeviceAuthStart {
+        throw UnusedTestServiceCallError()
+    }
+
+    func completeChatGPTSignIn(flowID: String) async throws -> CodexDeviceAuthPollResult {
+        throw UnusedTestServiceCallError()
+    }
+
+    func signOut() async throws {
+        throw UnusedTestServiceCallError()
+    }
+}
+
+private struct SignedOutService: CodexServiceClient {
+    func fetchSnapshotResponse() async throws -> CodexServiceSnapshotResponse {
+        CodexServiceSnapshotResponse(
+            authMode: nil,
+            snapshot: nil,
+            errorMessage: "Not signed in. Use the button below."
+        )
     }
 
     func beginChatGPTSignIn() async throws -> CodexDeviceAuthStart {
