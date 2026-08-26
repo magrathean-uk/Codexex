@@ -2,12 +2,22 @@
 import Foundation
 
 extension CodexMenuBarModel {
+    var localUsageSettingsDetail: String {
+        let path = codexSessionsPath ?? "~/.codex/sessions"
+        if let summary = localUsageSummary {
+            return "\(path) · \(summary.coverage.label)"
+        }
+        return "\(path) · \(localUsageLoadState.statusText)"
+    }
+
     var canStartChatGPTSignIn: Bool {
-        isSigningIn == false && !(hasResolvedAuthState == false && isRefreshing)
+        isAuthBusy == false
+            && authFlowID == nil
+            && !(hasResolvedAuthState == false && isRefreshing)
     }
 
     var canCheckPendingChatGPTSignIn: Bool {
-        authFlowID != nil && previewModeEnabled == false && isSigningIn == false
+        authFlowID != nil && previewModeEnabled == false && isAuthBusy == false
     }
 
     var shouldShowStatusCard: Bool {
@@ -27,6 +37,9 @@ extension CodexMenuBarModel {
         }
         if authDeviceCode != nil {
             return isSigningIn ? "Waiting for approval" : "Finish sign-in"
+        }
+        if isSigningOut {
+            return "Signing out"
         }
         if isSigningIn {
             return "Signing in"
@@ -69,6 +82,9 @@ extension CodexMenuBarModel {
         if authDeviceCode != nil {
             return isSigningIn ? "Waiting for approval" : "Open Safari"
         }
+        if isSigningOut {
+            return "Signing out"
+        }
         if isSigningIn {
             return "Signing in"
         }
@@ -96,6 +112,9 @@ extension CodexMenuBarModel {
             }
             return "Code \(deviceCode) · Open Safari, approve sign-in, then check status here."
         }
+        if isSigningOut {
+            return "Finishing account sign-out."
+        }
         if isSigningIn {
             return "Requesting a device code from ChatGPT."
         }
@@ -109,10 +128,6 @@ extension CodexMenuBarModel {
             return "Sign in to load quota."
         }
         return nil
-    }
-
-    func cancelPendingChatGPTSignIn() {
-        clearAuthCode()
     }
 
     private func userFacingStatusMessage(for error: String) -> String {

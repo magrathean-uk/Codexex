@@ -3,22 +3,32 @@ import Foundation
 import CodexMeterCore
 
 @objc protocol CodexXPCServiceProtocol {
-    func fetchSnapshot(reply: @escaping (Data?, String?) -> Void)
-    func beginChatGPTSignIn(reply: @escaping (Data?, String?) -> Void)
-    func completeChatGPTSignIn(flowID: String, reply: @escaping (Data?, String?) -> Void)
-    func signOut(reply: @escaping (String?) -> Void)
-    func cancelPendingOperations(reply: @escaping () -> Void)
+    func fetchSnapshot(reply: @escaping @Sendable (Data?, String?) -> Void)
+    func beginChatGPTSignIn(reply: @escaping @Sendable (Data?, String?) -> Void)
+    func completeChatGPTSignIn(flowID: String, reply: @escaping @Sendable (Data?, String?) -> Void)
+    func cancelChatGPTSignIn(flowID: String, reply: @escaping @Sendable (String?) -> Void)
+    func signOut(reply: @escaping @Sendable (String?) -> Void)
+    func cancelPendingOperations(reply: @escaping @Sendable () -> Void)
 }
 
 protocol CodexServiceClient: Sendable {
     func fetchSnapshotResponse() async throws -> CodexServiceSnapshotResponse
     func beginChatGPTSignIn() async throws -> CodexDeviceAuthStart
     func completeChatGPTSignIn(flowID: String) async throws -> CodexDeviceAuthPollResult
+    func cancelChatGPTSignIn(flowID: String) async throws
     func signOut() async throws
     func cancelPendingOperations()
 }
 
 extension CodexServiceClient {
+    func cancelChatGPTSignIn(flowID: String) async throws {
+        throw NSError(
+            domain: "CodexServiceClient",
+            code: 1,
+            userInfo: [NSLocalizedDescriptionKey: "Cancelling pending sign-in is unavailable."]
+        )
+    }
+
     func cancelPendingOperations() {}
 }
 
@@ -52,6 +62,12 @@ final class CodexXPCClient: CodexServiceClient, @unchecked Sendable {
         return try Self.decoder.decode(CodexDeviceAuthPollResult.self, from: data)
     }
 
+    func cancelChatGPTSignIn(flowID: String) async throws {
+        try await errorOnlyReply { service, reply in
+            service.cancelChatGPTSignIn(flowID: flowID, reply: reply)
+        }
+    }
+
     func signOut() async throws {
         try await errorOnlyReply { service, reply in
             service.signOut(reply: reply)
@@ -61,17 +77,17 @@ final class CodexXPCClient: CodexServiceClient, @unchecked Sendable {
     func cancelPendingOperations() {
         queue.async { [weak self] in
             guard let self else { return }
-            let invalidate: () -> Void = { [weak self] in
-                self?.invalidateConnection()
-            }
             guard let service = self.connection?.remoteObjectProxyWithErrorHandler({ error in
                 CodexLog.helper.error("xpc cancel failed message=\(error.localizedDescription, privacy: .public)")
-                invalidate()
+                self.invalidateConnection()
             }) as? CodexXPCServiceProtocol else {
-                invalidate()
+                self.invalidateConnection()
                 return
             }
-            service.cancelPendingOperations(reply: invalidate)
+            // Keep the XPC connection alive. The service serializes this reset
+            // before later sends; invalidating here could tear down a request
+            // that was queued immediately after cancellation.
+            service.cancelPendingOperations(reply: {})
         }
     }
 

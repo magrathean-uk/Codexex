@@ -31,6 +31,36 @@ public struct CodexLiveActivityAttributes: Codable, Hashable, Sendable {
             "\(displayedWeeklyPercent)% \(displaysUsedQuota ? "used" : "left") of weekly quota"
         }
 
+        public var displayedFiveHourPercent: Int? {
+            fiveHourPercentLeft.map { percentLeft in
+                displaysUsedQuota ? max(0, min(100, 100 - percentLeft)) : max(0, min(100, percentLeft))
+            }
+        }
+
+        public var fiveHourDisplayDescription: String? {
+            displayedFiveHourPercent.map {
+                "\($0)% \(displaysUsedQuota ? "used" : "left") of 5-hour quota"
+            }
+        }
+
+        public var freshnessDescription: String {
+            isStale ? "Update needed" : "Up to date"
+        }
+
+        public var accessibilityDescription: String {
+            accessibilityDescription(isStale: isStale)
+        }
+
+        public func accessibilityDescription(isStale resolvedIsStale: Bool) -> String {
+            [
+                weeklyDisplayDescription,
+                fiveHourDisplayDescription,
+                resolvedIsStale ? "Update needed" : "Up to date"
+            ]
+                .compactMap { $0 }
+                .joined(separator: ". ")
+        }
+
         public init(
             weeklyPercentLeft: Int,
             weeklyUsedFraction: Double,
@@ -60,6 +90,13 @@ extension CodexLiveActivityAttributes: ActivityAttributes {}
 
 public enum CodexLiveActivityPresentation {
     public static let minimumStaleInterval: TimeInterval = 30 * 60
+
+    public static func resolvedStaleness(
+        systemIsStale: Bool,
+        contentStateIsStale: Bool
+    ) -> Bool {
+        systemIsStale || contentStateIsStale
+    }
 
     public static func state(
         snapshot: CodexSnapshot,

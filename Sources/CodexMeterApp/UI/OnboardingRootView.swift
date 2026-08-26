@@ -49,7 +49,7 @@ struct OnboardingRootView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
-                .disabled(model.isSigningIn)
+                .disabled(model.canStartChatGPTSignIn == false)
 
                 Divider()
 
@@ -82,13 +82,14 @@ struct OnboardingRootView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .keyboardShortcut(.defaultAction)
-                    .disabled(model.authVerificationURL == nil)
+                    .disabled(model.authVerificationURL == nil || model.isCancellingPendingSignIn)
 
                     Button("Copy Code") {
                         NSPasteboard.general.clearContents()
                         NSPasteboard.general.setString(code, forType: .string)
                     }
                     .buttonStyle(.bordered)
+                    .disabled(model.isCancellingPendingSignIn)
 
                     Button("Check Status") {
                         model.checkPendingChatGPTSignIn()
@@ -96,24 +97,25 @@ struct OnboardingRootView: View {
                     .buttonStyle(.bordered)
                     .disabled(model.canCheckPendingChatGPTSignIn == false)
 
-                    Button("Cancel") {
+                    Button(model.isCancellingPendingSignIn ? "Cancelling…" : "Cancel") {
                         model.cancelPendingChatGPTSignIn()
                     }
                     .buttonStyle(.bordered)
+                    .disabled(model.isCancellingPendingSignIn)
                 }
             }
         }
     }
 
     private var messageText: String? {
+        if let lastError = model.lastError {
+            return lastError
+        }
         if model.authDeviceCode != nil {
             if model.isSigningIn {
                 return "Waiting for approval from Safari."
             }
             return "Copy the code, approve sign-in in Safari, then check status here."
-        }
-        if model.lastError != nil {
-            return model.lastError
         }
         return nil
     }

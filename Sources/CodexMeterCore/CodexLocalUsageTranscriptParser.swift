@@ -6,49 +6,69 @@ public enum CodexLocalUsageTranscriptParser {
             return []
         }
 
-        var state = ParseState(sourcePath: sourcePath)
+        var state = CodexLocalUsageParserState()
         var entries: [CodexLocalUsageEntry] = []
-        var lineNumber = 0
         text.enumerateLines { line, _ in
-            lineNumber += 1
-            if let entry = state.consume(lineData: Data(line.utf8), lineNumber: lineNumber) {
+            if let entry = consume(
+                lineData: Data(line.utf8),
+                sourcePath: sourcePath,
+                state: &state
+            ) {
                 entries.append(entry)
             }
         }
         return entries
     }
+
+    static func consume(
+        lineData: Data,
+        sourcePath: String,
+        state: inout CodexLocalUsageParserState
+    ) -> CodexLocalUsageEntry? {
+        state.parsedLineCount += 1
+        return state.consume(
+            lineData: lineData,
+            sourcePath: sourcePath,
+            lineNumber: state.parsedLineCount
+        )
+    }
 }
 
-private struct ParseState {
-    let sourcePath: String
-    var sessionID: String?
-    var cwd: String?
-    var model: String?
-    var turnID: String?
-    var commandCountsByTurn: [String: Int] = [:]
-
-    mutating func consume(lineData: Data, lineNumber: Int) -> CodexLocalUsageEntry? {
-        guard let raw = try? decoder.decode(RawLine.self, from: lineData) else {
+private extension CodexLocalUsageParserState {
+    mutating func consume(
+        lineData: Data,
+        sourcePath: String,
+        lineNumber: Int
+    ) -> CodexLocalUsageEntry? {
+        guard let raw = try? JSONDecoder().decode(RawLine.self, from: lineData) else {
             return nil
         }
 
         if raw.type == "session_meta" {
-            sessionID = raw.payload.id?.nilIfEmpty ?? sessionID
-            cwd = raw.payload.cwd?.nilIfEmpty ?? cwd
+            sessionID = raw.payload.id?.boundedNonEmpty(maxCharacters: 512) ?? sessionID
+            projectPath = raw.payload.cwd?.boundedNonEmpty(maxCharacters: 1_024) ?? projectPath
             return nil
         }
 
         if raw.type == "turn_context" {
-            turnID = raw.payload.turnID?.nilIfEmpty ?? turnID
-            cwd = raw.payload.cwd?.nilIfEmpty ?? cwd
-            model = raw.payload.model?.nilIfEmpty ?? model
+            let nextTurnID = raw.payload.turnID?.boundedNonEmpty(maxCharacters: 512) ?? turnID
+            if nextTurnID != turnID {
+                currentTurnCommandCount = 0
+            }
+            turnID = nextTurnID
+            projectPath = raw.payload.cwd?.boundedNonEmpty(maxCharacters: 1_024) ?? projectPath
+            model = raw.payload.model?.boundedNonEmpty(maxCharacters: 256) ?? model
             return nil
         }
 
         if raw.payload.type == "exec_command_end",
-           let currentTurn = raw.payload.turnID?.nilIfEmpty ?? turnID {
-            commandCountsByTurn[currentTurn, default: 0] += 1
-            cwd = raw.payload.cwd?.nilIfEmpty ?? cwd
+           let currentTurn = raw.payload.turnID?.boundedNonEmpty(maxCharacters: 512) ?? turnID {
+            if currentTurn != turnID {
+                turnID = currentTurn
+                currentTurnCommandCount = 0
+            }
+            currentTurnCommandCount = codexSaturatingNonnegativeAdd(currentTurnCommandCount, 1)
+            projectPath = raw.payload.cwd?.boundedNonEmpty(maxCharacters: 1_024) ?? projectPath
             return nil
         }
 
@@ -59,17 +79,17 @@ private struct ParseState {
             return nil
         }
 
-        let entryTurnID = raw.payload.turnID?.nilIfEmpty ?? turnID
-        let entrySessionID = raw.payload.sessionID?.nilIfEmpty
+        let entryTurnID = raw.payload.turnID?.boundedNonEmpty(maxCharacters: 512) ?? turnID
+        let entrySessionID = raw.payload.sessionID?.boundedNonEmpty(maxCharacters: 512)
             ?? sessionID
             ?? sessionIDFromSourcePath(sourcePath)
             ?? "\(sourcePath)#\(lineNumber)"
-        let entryProjectPath = raw.payload.cwd?.nilIfEmpty ?? cwd
-        let entryModel = raw.payload.model?.nilIfEmpty ?? model ?? "unknown"
-        let commandCount = entryTurnID.flatMap { commandCountsByTurn[$0] } ?? 0
+        let entryProjectPath = raw.payload.cwd?.boundedNonEmpty(maxCharacters: 1_024) ?? projectPath
+        let entryModel = raw.payload.model?.boundedNonEmpty(maxCharacters: 256) ?? model ?? "unknown"
+        let commandCount = entryTurnID == turnID ? currentTurnCommandCount : 0
         let contextWindowPercent = raw.payload.info?.modelContextWindow.flatMap { window -> Double? in
             guard window > 0 else { return nil }
-            return min(100, (Double(usage.totalTokens ?? 0) / Double(window)) * 100)
+            return min(100, (Double(usage.tokens.totalTokens) / Double(window)) * 100)
         }
 
         let rawRateLimits = raw.payload.rateLimits ?? raw.rateLimits
@@ -95,7 +115,7 @@ private struct ParseState {
     private func sessionIDFromSourcePath(_ sourcePath: String) -> String? {
         let last = URL(fileURLWithPath: sourcePath).lastPathComponent
         guard last.hasSuffix(".jsonl") else { return nil }
-        return String(last.dropLast(".jsonl".count)).nilIfEmpty
+        return String(last.dropLast(".jsonl".count)).boundedNonEmpty(maxCharacters: 512)
     }
 
     private func parseDate(_ value: String?) -> Date? {
@@ -109,11 +129,6 @@ private struct ParseState {
         return plainISO8601.date(from: value)
     }
 
-    private let decoder: JSONDecoder = {
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .useDefaultKeys
-        return decoder
-    }()
 }
 
 private struct RawLine: Decodable {
@@ -204,7 +219,7 @@ private struct RawTokenUsage: Decodable {
     var tokens: CodexLocalTokenUsage {
         let output = outputTokens ?? 0
         let input = inputTokens ?? 0
-        let total = totalTokens ?? (input + output)
+        let total = totalTokens ?? codexSaturatingNonnegativeAdd(input, output)
         return CodexLocalTokenUsage(
             inputTokens: input,
             cachedInputTokens: cachedInputTokens ?? 0,
@@ -232,7 +247,7 @@ private struct RawRateLimits: Decodable {
         CodexLocalRateLimits(
             primary: primary?.summary,
             secondary: secondary?.summary,
-            planType: planType,
+            planType: planType?.boundedNonEmpty(maxCharacters: 128),
             contextWindowPercent: contextWindowPercent
         )
     }
@@ -265,8 +280,9 @@ private struct RawRateLimitWindow: Decodable {
 }
 
 private extension String {
-    var nilIfEmpty: String? {
+    func boundedNonEmpty(maxCharacters: Int) -> String? {
         let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? nil : trimmed
+        guard trimmed.isEmpty == false, trimmed.count <= maxCharacters else { return nil }
+        return trimmed
     }
 }

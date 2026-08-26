@@ -146,7 +146,9 @@ enum PopupPresentation {
         guard snapshot != nil, let insights else { return nil }
 
         let weekly = insights.weeklyPace
-        let refreshAction: PopupSummaryAction? = hasRefreshIssue ? .refresh : nil
+        // Refresh belongs to the pinned footer. Keeping one owner prevents
+        // duplicate recovery actions when a stale snapshot also has an error.
+        let refreshAction: PopupSummaryAction? = nil
 
         if weekly.confidence == .tooEarly || weekly.confidence == .learning {
             return PopupSummaryPresentation(

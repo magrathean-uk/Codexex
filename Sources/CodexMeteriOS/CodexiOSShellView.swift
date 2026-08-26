@@ -61,7 +61,7 @@ struct CodexiOSShellView: View {
         while Task.isCancelled == false {
             try? await Task.sleep(for: .seconds(Double(max(refreshIntervalSeconds, 300))))
             guard Task.isCancelled == false else { return }
-            if scenePhase == .active, model.isSignedIn {
+            if scenePhase == .active, model.canAutoRefresh {
                 await model.refresh()
             }
         }

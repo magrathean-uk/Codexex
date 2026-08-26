@@ -114,6 +114,17 @@ final class CodexAppSettingsTests: XCTestCase {
         XCTAssertEqual(store.snapshot().codexSessionsPath, "/Users/me/.codex/sessions")
     }
 
+    func testStaleCodexSessionsBookmarkRequiresFolderSelectionAgain() {
+        CodexAppSettings.codexSessionsBookmark = Data([1, 2, 3])
+
+        let resolved = CodexAppSettings.codexSessionsSecurityScopedURL { _, isStale in
+            isStale = true
+            return URL(fileURLWithPath: "/tmp/stale-sessions", isDirectory: true)
+        }
+
+        XCTAssertNil(resolved)
+    }
+
     func testSummarySnoozeSettingsPersistAndClear() {
         let store = CodexAppSettingsStore(defaults: makeDefaults())
         let expiresAt = Date(timeIntervalSince1970: 1_800_000_000)
@@ -155,6 +166,43 @@ final class CodexAppSettingsTests: XCTestCase {
         XCTAssertNil(defaults.object(forKey: "codexex.showFiveHourInMenubar"))
         XCTAssertFalse(CodexAppSettingsStore(defaults: defaults).snapshot().showFiveHourInMenubar)
         XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
+    }
+
+    @MainActor
+    func testResetDoesNotQuitWhenLaunchAtLoginCannotBeDisabled() {
+        var didTerminate = false
+
+        let result = CodexAppResetter.resetAndQuit(
+            disableLaunchAtLogin: {
+                CodexLaunchAtLoginChangeResult(isEnabled: true, errorMessage: "permission denied")
+            },
+            resetData: { .success },
+            terminate: { didTerminate = true }
+        )
+
+        XCTAssertFalse(result.succeeded)
+        XCTAssertFalse(didTerminate)
+        XCTAssertTrue(result.message.contains("Launch at login is still enabled"))
+        XCTAssertTrue(result.message.contains("permission denied"))
+    }
+
+    func testResetReportsApplicationSupportDeletionFailure() throws {
+        let defaults = makeDefaults()
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: "CodexexResetFailure-\(UUID().uuidString)", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let result = CodexAppResetter.resetLocalData(
+            defaults: defaults,
+            applicationSupportURL: directory,
+            bundleIdentifier: nil,
+            removeItem: { _ in throw CocoaError(.fileWriteNoPermission) }
+        )
+
+        XCTAssertFalse(result.succeeded)
+        XCTAssertTrue(result.message.contains("Application data could not be deleted"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: directory.path))
     }
 
     private func makeDefaults() -> UserDefaults {

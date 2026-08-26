@@ -1,6 +1,22 @@
 import Foundation
 import CodexMeterCore
 
+enum CodexLocalUsageLoadState: Sendable, Equatable {
+    case idle
+    case loading
+    case available
+    case unavailable(String)
+
+    var statusText: String {
+        switch self {
+        case .idle: return "Not checked"
+        case .loading: return "Indexing local sessions"
+        case .available: return "Available"
+        case .unavailable(let message): return message
+        }
+    }
+}
+
 struct CodexDashboardState {
     var snapshot: CodexSnapshot?
     var isRefreshing = false
@@ -9,6 +25,7 @@ struct CodexDashboardState {
     var usageHistory: [CodexUsageHistorySample] = []
     var usageInsights: CodexUsageInsights?
     var localUsageSummary: CodexLocalUsageSummary?
+    var localUsageLoadState: CodexLocalUsageLoadState = .idle
 
     mutating func setHistory(_ history: [CodexUsageHistorySample], now: Date = Date()) {
         usageHistory = history
@@ -20,8 +37,18 @@ struct CodexDashboardState {
         usageInsights = state.insights
     }
 
-    mutating func applyLocalUsageSummary(_ summary: CodexLocalUsageSummary?) {
-        localUsageSummary = summary
+    mutating func beginLocalUsageLoad() {
+        localUsageLoadState = .loading
+    }
+
+    mutating func applyLocalUsageResult(_ result: CodexLocalUsageFetchResult) {
+        switch result {
+        case .available(let summary):
+            localUsageSummary = summary
+            localUsageLoadState = .available
+        case .unavailable(let message):
+            localUsageLoadState = .unavailable(message)
+        }
     }
 
     mutating func applySnapshot(_ snapshot: CodexSnapshot, history: [CodexUsageHistorySample]) {
@@ -40,14 +67,21 @@ struct CodexDashboardState {
         usageInsights = historyState.insights
     }
 
-    mutating func clearSnapshot(keepHistory: Bool = true, now: Date = Date()) {
+    mutating func clearSnapshot(
+        keepHistory: Bool = true,
+        keepLocalUsage: Bool = true,
+        now: Date = Date()
+    ) {
         snapshot = nil
         lastUpdatedAt = nil
         lastError = nil
         if keepHistory == false {
             usageHistory = []
         }
-        localUsageSummary = nil
+        if keepLocalUsage == false {
+            localUsageSummary = nil
+            localUsageLoadState = .idle
+        }
         refreshInsights(now: now)
     }
 
@@ -60,6 +94,7 @@ struct CodexDashboardState {
         snapshot = CodexPreviewData.snapshot(now: now)
         usageHistory = CodexPreviewData.history(now: now)
         localUsageSummary = CodexPreviewData.localUsageSummary(now: now)
+        localUsageLoadState = .available
         lastUpdatedAt = now
         lastError = nil
         refreshInsights(now: now)

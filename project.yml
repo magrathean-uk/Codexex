@@ -64,13 +64,17 @@ targets:
     preBuildScripts:
       - name: Build Codexex Helper
         inputFiles:
+          - $(PROJECT_DIR)/Scripts/build-codexex-helper.sh
           - $(PROJECT_DIR)/Helper/CodexexHelper/Cargo.toml
           - $(PROJECT_DIR)/Helper/CodexexHelper/Cargo.lock
           - $(PROJECT_DIR)/Helper/CodexexHelper/src/auth.rs
+          - $(PROJECT_DIR)/Helper/CodexexHelper/src/flow_registry.rs
           - $(PROJECT_DIR)/Helper/CodexexHelper/src/lib.rs
           - $(PROJECT_DIR)/Helper/CodexexHelper/src/main.rs
           - $(PROJECT_DIR)/Helper/CodexexHelper/src/protocol.rs
           - $(PROJECT_DIR)/Helper/CodexexHelper/src/quota.rs
+          - $(PROJECT_DIR)/Helper/CodexexHelper/src/release_environment_gating.rs
+          - $(PROJECT_DIR)/Helper/CodexexHelper/src/secure_file_permissions.rs
           - $(PROJECT_DIR)/Helper/CodexexHelper/src/state.rs
         outputFiles:
           - $(DERIVED_FILE_DIR)/codexex-helper/codexex-helper
@@ -79,6 +83,7 @@ targets:
     postBuildScripts:
       - name: Embed Codexex Helper
         inputFiles:
+          - $(PROJECT_DIR)/Scripts/embed-codexex-helper.sh
           - $(DERIVED_FILE_DIR)/codexex-helper/codexex-helper
           - $(PROJECT_DIR)/AppStore/CodexexHelper.entitlements
           - $(PROJECT_DIR)/AppStore/CodexexXPCService.entitlements
@@ -138,13 +143,17 @@ targets:
     preBuildScripts:
       - name: Build Codexex Helper
         inputFiles:
+          - $(PROJECT_DIR)/Scripts/build-codexex-helper.sh
           - $(PROJECT_DIR)/Helper/CodexexHelper/Cargo.toml
           - $(PROJECT_DIR)/Helper/CodexexHelper/Cargo.lock
           - $(PROJECT_DIR)/Helper/CodexexHelper/src/auth.rs
+          - $(PROJECT_DIR)/Helper/CodexexHelper/src/flow_registry.rs
           - $(PROJECT_DIR)/Helper/CodexexHelper/src/lib.rs
           - $(PROJECT_DIR)/Helper/CodexexHelper/src/main.rs
           - $(PROJECT_DIR)/Helper/CodexexHelper/src/protocol.rs
           - $(PROJECT_DIR)/Helper/CodexexHelper/src/quota.rs
+          - $(PROJECT_DIR)/Helper/CodexexHelper/src/release_environment_gating.rs
+          - $(PROJECT_DIR)/Helper/CodexexHelper/src/secure_file_permissions.rs
           - $(PROJECT_DIR)/Helper/CodexexHelper/src/state.rs
         outputFiles:
           - $(DERIVED_FILE_DIR)/codexex-helper/codexex-helper
@@ -153,6 +162,7 @@ targets:
     postBuildScripts:
       - name: Embed Codexex Helper
         inputFiles:
+          - $(PROJECT_DIR)/Scripts/embed-codexex-helper.sh
           - $(DERIVED_FILE_DIR)/codexex-helper/codexex-helper
           - $(PROJECT_DIR)/AppStore/CodexexHelper.entitlements
         outputFiles:
@@ -198,6 +208,22 @@ targets:
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Codexex.app/Contents/MacOS/Codexex"
         BUNDLE_LOADER: "$(TEST_HOST)"
 
+  CodexexXPCServiceTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests/CodexexXPCServiceTests
+      - path: Sources/CodexexXPCService/CodexHelperProcess.swift
+      - path: Sources/CodexexXPCService/CodexHelperSession.swift
+      - path: Sources/CodexexXPCService/CodexXPCRequestGuards.swift
+      - path: Sources/CodexexXPCService/CodexXPCService.swift
+    dependencies:
+      - target: CodexMeterCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.magrathean.CodexexApp.CodexexXPCServiceTests
+        GENERATE_INFOPLIST_FILE: YES
+
   CodexMeteriOSTests:
     type: bundle.unit-test
     platform: iOS
@@ -224,6 +250,7 @@ schemes:
       targets:
         - CodexMeterCoreTests
         - CodexMeterAppTests
+        - CodexexXPCServiceTests
       gatherCoverageData: true
 
   CodexMeteriOS:

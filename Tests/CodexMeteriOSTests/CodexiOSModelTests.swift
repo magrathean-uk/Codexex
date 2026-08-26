@@ -19,7 +19,7 @@ final class CodexiOSModelTests: XCTestCase {
         let model = CodexiOSModel(
             service: StubCodexiOSService(),
             defaults: makeDefaults(),
-            openURLAction: { _ in },
+            openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
 
@@ -27,6 +27,46 @@ final class CodexiOSModelTests: XCTestCase {
         XCTAssertFalse(model.isSignedIn)
         XCTAssertNil(model.snapshot)
         XCTAssertEqual(model.statusMessage, "Checking saved account.")
+    }
+
+    func testStoredPreviewModeIsSeededBeforeAsynchronousStart() {
+        let defaults = makeDefaults()
+        defaults.set(true, forKey: CodexiOSSettingsKeys.hasCompletedOnboarding)
+        defaults.set(true, forKey: CodexiOSSettingsKeys.previewModeEnabled)
+
+        let model = CodexiOSModel(
+            service: StubCodexiOSService(),
+            defaults: defaults,
+            openURLAction: { _ in true },
+            copyTextAction: { _ in }
+        )
+
+        XCTAssertTrue(model.previewModeEnabled)
+        XCTAssertNotNil(model.snapshot)
+        XCTAssertNotNil(model.lastUpdatedAt)
+        XCTAssertFalse(model.usageHistory.isEmpty)
+        XCTAssertEqual(model.statusMessage, "Preview mode is active.")
+    }
+
+    func testExpiredPendingSignInOnLaunchReturnsToSignedOutRecovery() async {
+        let service = StubCodexiOSService(
+            recoverHandler: { throw CodexiOSError.signInExpired }
+        )
+        let model = CodexiOSModel(
+            service: service,
+            defaults: makeDefaults(),
+            openURLAction: { _ in true },
+            copyTextAction: { _ in }
+        )
+
+        await model.start()
+        let fetchCount = await service.fetchCallCount()
+
+        XCTAssertEqual(model.liveAccountState, .signedOut)
+        XCTAssertNil(model.errorMessage)
+        XCTAssertFalse(model.canAutoRefresh)
+        XCTAssertEqual(model.statusMessage, "Sign-in code expired. Start again.")
+        XCTAssertEqual(fetchCount, 0)
     }
 
     func testSignedInLaunchCompletesWithoutSignedOutInterimState() async {
@@ -39,7 +79,7 @@ final class CodexiOSModelTests: XCTestCase {
         let model = CodexiOSModel(
             service: service,
             defaults: defaults,
-            openURLAction: { _ in },
+            openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
 
@@ -63,7 +103,7 @@ final class CodexiOSModelTests: XCTestCase {
         let model = CodexiOSModel(
             service: service,
             defaults: makeDefaults(),
-            openURLAction: { _ in },
+            openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
 
@@ -73,7 +113,7 @@ final class CodexiOSModelTests: XCTestCase {
         XCTAssertFalse(model.isSignedIn)
         XCTAssertFalse(model.hasCompletedOnboarding)
         XCTAssertNil(model.snapshot)
-        XCTAssertEqual(model.statusMessage, "Not signed in.")
+        XCTAssertEqual(model.statusMessage, "Sign in with ChatGPT to read your Codex quota.")
     }
 
     func testPreviewModeSkipsLiveRefreshOnStart() async {
@@ -86,7 +126,7 @@ final class CodexiOSModelTests: XCTestCase {
         let model = CodexiOSModel(
             service: service,
             defaults: defaults,
-            openURLAction: { _ in },
+            openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
 
@@ -122,6 +162,7 @@ final class CodexiOSModelTests: XCTestCase {
             defaults: makeDefaults(),
             openURLAction: { url in
                 await recorder.record(url)
+                return true
             },
             copyTextAction: { text in
                 copyRecorder.record(text)
@@ -133,13 +174,13 @@ final class CodexiOSModelTests: XCTestCase {
         let copiedValues = copyRecorder.values
         XCTAssertTrue(model.hasPendingSignIn)
         XCTAssertEqual(model.deviceCode, "ABCD-1234")
-        XCTAssertEqual(copiedValues, ["ABCD-1234"])
-        XCTAssertEqual(model.statusMessage, "Device code copied. Paste it in Safari.")
-        XCTAssertEqual(openedURLs, [])
+        XCTAssertEqual(copiedValues, [])
+        XCTAssertEqual(model.statusMessage, "Safari opened. Enter the device code to continue.")
+        XCTAssertEqual(openedURLs, [url])
 
         await model.openSignInPage()
         let openedSignInURLs = await recorder.urls()
-        XCTAssertEqual(openedSignInURLs, [url])
+        XCTAssertEqual(openedSignInURLs, [url, url])
 
         await model.handleSceneDidBecomeActive(
             autoCheckSignInOnReturn: true,
@@ -168,7 +209,7 @@ final class CodexiOSModelTests: XCTestCase {
         let model = CodexiOSModel(
             service: service,
             defaults: defaults,
-            openURLAction: { _ in },
+            openURLAction: { _ in true },
             copyTextAction: { text in
                 copyRecorder.record(text)
             }
@@ -181,8 +222,8 @@ final class CodexiOSModelTests: XCTestCase {
         XCTAssertFalse(model.previewModeEnabled)
         XCTAssertTrue(model.hasPendingSignIn)
         XCTAssertEqual(model.deviceCode, "WXYZ-9876")
-        XCTAssertEqual(copyRecorder.values, ["WXYZ-9876"])
-        XCTAssertEqual(model.statusMessage, "Device code copied. Paste it in Safari.")
+        XCTAssertEqual(copyRecorder.values, [])
+        XCTAssertEqual(model.statusMessage, "Safari opened. Enter the device code to continue.")
     }
 
     func testRefreshUsesAuthModeInsteadOfStatusText() async {
@@ -198,13 +239,14 @@ final class CodexiOSModelTests: XCTestCase {
         let model = CodexiOSModel(
             service: service,
             defaults: makeDefaults(),
-            openURLAction: { _ in },
+            openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
 
         await model.refresh()
 
-        XCTAssertTrue(model.isSignedIn)
+        XCTAssertFalse(model.isSignedIn)
+        XCTAssertEqual(model.liveAccountState, .unavailable)
         XCTAssertEqual(model.statusMessage, "OpenAI is rate-limiting requests. Try again soon.")
         XCTAssertTrue(model.hasCompletedOnboarding)
         XCTAssertNil(model.snapshot)
@@ -219,7 +261,7 @@ final class CodexiOSModelTests: XCTestCase {
         let model = CodexiOSModel(
             service: service,
             defaults: makeDefaults(),
-            openURLAction: { _ in },
+            openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
 
@@ -240,7 +282,7 @@ final class CodexiOSModelTests: XCTestCase {
             service: StubCodexiOSService(),
             defaults: defaults,
             liveActivityManager: liveActivity,
-            openURLAction: { _ in },
+            openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
 
@@ -276,7 +318,7 @@ final class CodexiOSModelTests: XCTestCase {
             service: StubCodexiOSService(),
             defaults: defaults,
             liveActivityManager: liveActivity,
-            openURLAction: { _ in },
+            openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
         await model.start()
@@ -304,7 +346,7 @@ final class CodexiOSModelTests: XCTestCase {
             service: StubCodexiOSService(),
             defaults: defaults,
             liveActivityManager: liveActivity,
-            openURLAction: { _ in },
+            openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
         await model.start()
@@ -345,7 +387,7 @@ final class CodexiOSModelTests: XCTestCase {
             service: service,
             defaults: makeDefaults(),
             liveActivityManager: liveActivity,
-            openURLAction: { _ in },
+            openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
 
@@ -367,7 +409,7 @@ final class CodexiOSModelTests: XCTestCase {
             }),
             defaults: makeDefaults(),
             liveActivityManager: liveActivity,
-            openURLAction: { _ in },
+            openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
         let lastGood = CodexiOSPreviewData.snapshot()
@@ -396,7 +438,7 @@ final class CodexiOSModelTests: XCTestCase {
             }),
             defaults: makeDefaults(),
             liveActivityManager: liveActivity,
-            openURLAction: { _ in },
+            openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
         model.snapshot = CodexiOSPreviewData.snapshot()
@@ -419,7 +461,7 @@ final class CodexiOSModelTests: XCTestCase {
             }),
             defaults: makeDefaults(),
             liveActivityManager: liveActivity,
-            openURLAction: { _ in },
+            openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
 
@@ -443,7 +485,7 @@ final class CodexiOSModelTests: XCTestCase {
             service: StubCodexiOSService(),
             defaults: defaults,
             liveActivityManager: liveActivity,
-            openURLAction: { _ in },
+            openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
         await model.start()
@@ -478,7 +520,7 @@ final class CodexiOSModelTests: XCTestCase {
             service: StubCodexiOSService(),
             defaults: defaults,
             liveActivityManager: liveActivity,
-            openURLAction: { _ in },
+            openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
         await model.start()
@@ -496,6 +538,38 @@ final class CodexiOSModelTests: XCTestCase {
         XCTAssertEqual(calls.first, .stop)
     }
 
+    func testDisablingPreviewRestoresPersistedHistoryInsteadOfLeavingSamples() async throws {
+        let fileManager = FileManager.default
+        let root = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let fileURL = root.appendingPathComponent("usage-history.json")
+        defer { try? fileManager.removeItem(at: root) }
+        let history = CodexUsageHistoryStore(fileURL: fileURL)
+        let realSnapshot = makeHistorySnapshot(capturedAt: Date(), usedPercent: 21)
+        _ = await history.append(snapshot: realSnapshot)
+        let defaults = makeDefaults()
+        defaults.set(true, forKey: CodexiOSSettingsKeys.previewModeEnabled)
+        let model = CodexiOSModel(
+            service: StubCodexiOSService(),
+            defaults: defaults,
+            historyStore: history,
+            liveActivityManager: StubCodexiOSLiveActivityManager(
+                state: .init(isAvailable: true, activityID: nil)
+            ),
+            openURLAction: { _ in true },
+            copyTextAction: { _ in }
+        )
+        await model.start()
+        XCTAssertGreaterThan(model.usageHistory.count, 1)
+
+        model.disablePreviewMode()
+        while model.isLiveActivityTransitioning {
+            await Task.yield()
+        }
+
+        XCTAssertEqual(model.usageHistory.count, 1)
+        XCTAssertEqual(model.usageHistory.first?.fiveHour?.usedPercent, 21)
+    }
+
     func testStaleActivityStaysStaleWhenFiveHourPresentationChanges() async {
         let defaults = makeDefaults()
         let sequence = FetchSequence([
@@ -511,7 +585,7 @@ final class CodexiOSModelTests: XCTestCase {
             }),
             defaults: defaults,
             liveActivityManager: liveActivity,
-            openURLAction: { _ in },
+            openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
         await model.start()
@@ -537,7 +611,7 @@ final class CodexiOSModelTests: XCTestCase {
             service: StubCodexiOSService(),
             defaults: defaults,
             liveActivityManager: liveActivity,
-            openURLAction: { _ in },
+            openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
         await model.start()
@@ -569,7 +643,7 @@ final class CodexiOSModelTests: XCTestCase {
             service: service,
             defaults: makeDefaults(),
             liveActivityManager: liveActivity,
-            openURLAction: { _ in },
+            openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
 
@@ -583,17 +657,599 @@ final class CodexiOSModelTests: XCTestCase {
         XCTAssertTrue(model.isLiveActivityRunning)
     }
 
-    func testResetLocalDataClearsIOSSettings() {
+    func testResetLocalDataClearsIOSSettings() throws {
         let defaults = makeDefaults()
         defaults.set(true, forKey: CodexiOSSettingsKeys.hasCompletedOnboarding)
         defaults.set(true, forKey: CodexiOSSettingsKeys.previewModeEnabled)
         defaults.set(600, forKey: CodexiOSSettingsKeys.refreshIntervalSeconds)
 
-        CodexiOSAppResetter.resetLocalData(defaults: defaults, clearTokens: {})
+        try CodexiOSAppResetter.resetLocalData(
+            defaults: defaults,
+            clearTokens: {},
+            clearPendingAuth: {},
+            clearHistory: {}
+        )
 
         XCTAssertNil(defaults.object(forKey: CodexiOSSettingsKeys.hasCompletedOnboarding))
         XCTAssertNil(defaults.object(forKey: CodexiOSSettingsKeys.previewModeEnabled))
         XCTAssertNil(defaults.object(forKey: CodexiOSSettingsKeys.refreshIntervalSeconds))
+    }
+
+    func testTypedAuthExpiryRequiresSignInWithoutShowingNetworkError() async {
+        let model = CodexiOSModel(
+            service: StubCodexiOSService(outcomeHandler: {
+                .authExpired("Sign-in expired. Sign in again.")
+            }),
+            defaults: makeDefaults(),
+            openURLAction: { _ in true },
+            copyTextAction: { _ in }
+        )
+
+        await model.refresh()
+
+        XCTAssertEqual(model.liveAccountState, .authExpired)
+        XCTAssertNil(model.errorMessage)
+        XCTAssertEqual(model.statusMessage, "Sign-in expired. Sign in again.")
+        XCTAssertNil(model.snapshot)
+    }
+
+    func testUnavailableOutcomeKeepsLastGoodSnapshotAndRetryDate() async {
+        let lastGood = CodexiOSPreviewData.snapshot()
+        let retryAt = Date().addingTimeInterval(120)
+        let model = CodexiOSModel(
+            service: StubCodexiOSService(outcomeHandler: {
+                .unavailable(
+                    message: "OpenAI is rate-limiting requests. Try again soon.",
+                    hasStoredCredentials: true,
+                    retry: .init(retryAfter: retryAt, isTransient: true)
+                )
+            }),
+            defaults: makeDefaults(),
+            openURLAction: { _ in true },
+            copyTextAction: { _ in }
+        )
+        model.snapshot = lastGood
+
+        await model.refresh()
+
+        XCTAssertEqual(model.liveAccountState, .unavailable)
+        XCTAssertEqual(model.snapshot, lastGood)
+        XCTAssertEqual(model.retryAvailableAt, retryAt)
+        XCTAssertTrue(model.hasCompletedOnboarding)
+        XCTAssertTrue(model.canAutoRefresh)
+    }
+
+    func testSignOutWinsOverDelayedRefresh() async {
+        let gate = SnapshotFetchGate()
+        let service = StubCodexiOSService(fetchHandler: {
+            await gate.wait()
+        })
+        let model = CodexiOSModel(
+            service: service,
+            defaults: makeDefaults(),
+            openURLAction: { _ in true },
+            copyTextAction: { _ in }
+        )
+
+        let refresh = Task { @MainActor in await model.refresh() }
+        while await service.fetchCallCount() == 0 { await Task.yield() }
+        await model.signOut()
+        await gate.release(snapshot: CodexiOSPreviewData.snapshot())
+        await refresh.value
+        let signOutCount = await service.signOutCallCount()
+
+        XCTAssertEqual(model.liveAccountState, .signedOut)
+        XCTAssertNil(model.snapshot)
+        XCTAssertEqual(signOutCount, 1)
+    }
+
+    func testPreviewWinsOverDelayedRefresh() async {
+        let gate = SnapshotFetchGate()
+        let service = StubCodexiOSService(fetchHandler: {
+            await gate.wait()
+        })
+        let model = CodexiOSModel(
+            service: service,
+            defaults: makeDefaults(),
+            openURLAction: { _ in true },
+            copyTextAction: { _ in }
+        )
+
+        let refresh = Task { @MainActor in await model.refresh() }
+        while await service.fetchCallCount() == 0 { await Task.yield() }
+        model.enablePreviewMode()
+        let preview = model.snapshot
+        await gate.release(snapshot: CodexiOSPreviewData.snapshot(now: Date().addingTimeInterval(5_000)))
+        await refresh.value
+
+        XCTAssertTrue(model.previewModeEnabled)
+        XCTAssertEqual(model.snapshot, preview)
+    }
+
+    func testStartRecoversPersistedPendingSignIn() async {
+        let auth = CodexiOSDeviceAuthStart(
+            flowID: String(repeating: "f", count: 43),
+            verificationURL: CodexiOSService.verificationURL,
+            userCode: "ABCD-1234"
+        )
+        let service = StubCodexiOSService(
+            pollHandler: { _ in .pending("Still waiting.") },
+            recoverHandler: { auth }
+        )
+        let model = CodexiOSModel(
+            service: service,
+            defaults: makeDefaults(),
+            openURLAction: { _ in
+                XCTFail("Recovered sign-in must not open Safari without a tap.")
+                return false
+            },
+            copyTextAction: { _ in XCTFail("Recovered sign-in must not copy automatically.") }
+        )
+
+        await model.start()
+        let pollCount = await service.pollCallCount()
+
+        XCTAssertTrue(model.hasPendingSignIn)
+        XCTAssertEqual(model.deviceCode, "ABCD-1234")
+        XCTAssertEqual(pollCount, 1)
+    }
+
+    func testCancelSignInClearsPendingUIAndSecureFlow() async {
+        let service = StubCodexiOSService()
+        let model = CodexiOSModel(
+            service: service,
+            defaults: makeDefaults(),
+            openURLAction: { _ in true },
+            copyTextAction: { _ in }
+        )
+        await model.beginSignIn()
+
+        await model.cancelSignIn()
+        let cancelCount = await service.cancelCallCount()
+
+        XCTAssertEqual(model.liveAccountState, .signedOut)
+        XCTAssertNil(model.flowID)
+        XCTAssertNil(model.deviceCode)
+        XCTAssertEqual(cancelCount, 1)
+    }
+
+    func testCopyIsOnlyPerformedByExplicitCopyAction() async {
+        let copyRecorder = CopyRecorder()
+        let model = CodexiOSModel(
+            service: StubCodexiOSService(),
+            defaults: makeDefaults(),
+            openURLAction: { _ in true },
+            copyTextAction: { copyRecorder.record($0) }
+        )
+
+        await model.beginSignIn()
+        XCTAssertTrue(copyRecorder.values.isEmpty)
+
+        model.copyCode()
+        XCTAssertEqual(copyRecorder.values, ["CODE-0000"])
+    }
+
+    func testFailedSafariOpenKeepsPendingSignInAndShowsManualRecovery() async {
+        let copyRecorder = CopyRecorder()
+        let model = CodexiOSModel(
+            service: StubCodexiOSService(),
+            defaults: makeDefaults(),
+            openURLAction: { _ in false },
+            copyTextAction: { copyRecorder.record($0) }
+        )
+
+        await model.beginSignIn()
+
+        XCTAssertTrue(model.hasPendingSignIn)
+        XCTAssertNil(model.errorMessage)
+        XCTAssertEqual(
+            model.statusMessage,
+            "Could not open Safari. Copy the code, then open auth.openai.com/codex/device manually."
+        )
+        XCTAssertTrue(copyRecorder.values.isEmpty)
+
+        model.copyCode()
+        XCTAssertEqual(copyRecorder.values, ["CODE-0000"])
+    }
+
+    func testStartIsIdempotentAcrossConcurrentAndRepeatedCalls() async {
+        let service = StubCodexiOSService()
+        let liveActivity = StubCodexiOSLiveActivityManager(
+            state: .init(isAvailable: true, activityID: nil)
+        )
+        let model = CodexiOSModel(
+            service: service,
+            defaults: makeDefaults(),
+            liveActivityManager: liveActivity,
+            openURLAction: { _ in true },
+            copyTextAction: { _ in }
+        )
+
+        let first = Task { @MainActor in await model.start() }
+        let second = Task { @MainActor in await model.start() }
+        await first.value
+        await second.value
+        await model.start()
+
+        let fetchCount = await service.fetchCallCount()
+        let calls = await liveActivity.recordedCalls()
+        XCTAssertEqual(fetchCount, 1)
+        XCTAssertEqual(calls.filter { $0 == .recover }.count, 1)
+    }
+
+    func testPreviewWinsOverSuspendedStartupRecovery() async {
+        let recoverGate = LiveActivityCallGate()
+        let updateGate = LiveActivityCallGate()
+        let liveActivity = StubCodexiOSLiveActivityManager(
+            state: .init(isAvailable: true, activityID: "recovered"),
+            recoverGate: recoverGate,
+            updateGate: updateGate,
+            updateState: .init(isAvailable: true, activityID: nil)
+        )
+        let service = StubCodexiOSService(
+            recoverHandler: {
+                CodexiOSDeviceAuthStart(
+                    flowID: String(repeating: "f", count: 43),
+                    verificationURL: CodexiOSService.verificationURL,
+                    userCode: "ABCD-1234"
+                )
+            }
+        )
+        let model = CodexiOSModel(
+            service: service,
+            defaults: makeDefaults(),
+            liveActivityManager: liveActivity,
+            openURLAction: { _ in true },
+            copyTextAction: { _ in }
+        )
+
+        let start = Task { @MainActor in await model.start() }
+        while await liveActivity.recordedCalls().contains(.recover) == false {
+            await Task.yield()
+        }
+        model.enablePreviewMode()
+        let previewSnapshot = model.snapshot
+        await recoverGate.release()
+        while await liveActivity.recordedCalls().contains(.update(showFiveHour: false)) == false {
+            await Task.yield()
+        }
+        await start.value
+        let pollCount = await service.pollCallCount()
+
+        XCTAssertTrue(model.previewModeEnabled)
+        XCTAssertEqual(model.snapshot, previewSnapshot)
+        XCTAssertFalse(model.hasPendingSignIn)
+        XCTAssertFalse(model.isLiveActivityRunning)
+        XCTAssertEqual(pollCount, 0)
+
+        await updateGate.release()
+        while model.isLiveActivityTransitioning {
+            await Task.yield()
+        }
+    }
+
+    func testModelsUseOneProcessHistoryWriterByDefault() {
+        let first = CodexiOSModel(
+            service: StubCodexiOSService(),
+            defaults: makeDefaults(),
+            openURLAction: { _ in true },
+            copyTextAction: { _ in }
+        )
+        let second = CodexiOSModel(
+            service: StubCodexiOSService(),
+            defaults: makeDefaults(),
+            openURLAction: { _ in true },
+            copyTextAction: { _ in }
+        )
+
+        XCTAssertTrue(first.historyStore === second.historyStore)
+    }
+
+    func testModelsUseOneProcessLiveActivityCoordinatorByDefault() {
+        let first = CodexiOSModel(
+            service: StubCodexiOSService(),
+            defaults: makeDefaults(),
+            openURLAction: { _ in true },
+            copyTextAction: { _ in }
+        )
+        let second = CodexiOSModel(
+            service: StubCodexiOSService(),
+            defaults: makeDefaults(),
+            openURLAction: { _ in true },
+            copyTextAction: { _ in }
+        )
+
+        let firstCoordinator = first.liveActivityManager as? CodexiOSLiveActivitySerialManager
+        let secondCoordinator = second.liveActivityManager as? CodexiOSLiveActivitySerialManager
+        guard let firstCoordinator, let secondCoordinator else {
+            return XCTFail("Expected the process-shared serial coordinator")
+        }
+        XCTAssertTrue(firstCoordinator === secondCoordinator)
+    }
+
+    func testTwoModelsQueueLiveActivityRecoveryThroughSharedCoordinator() async {
+        let recoverGate = LiveActivityCallGate()
+        let underlying = StubCodexiOSLiveActivityManager(
+            state: .init(isAvailable: true, activityID: "existing"),
+            recoverGate: recoverGate
+        )
+        let coordinator = CodexiOSLiveActivitySerialManager(manager: underlying)
+        let first = CodexiOSModel(
+            service: StubCodexiOSService(),
+            defaults: makeDefaults(),
+            liveActivityCoordinator: coordinator,
+            openURLAction: { _ in true },
+            copyTextAction: { _ in }
+        )
+        let second = CodexiOSModel(
+            service: StubCodexiOSService(),
+            defaults: makeDefaults(),
+            liveActivityCoordinator: coordinator,
+            openURLAction: { _ in true },
+            copyTextAction: { _ in }
+        )
+
+        let firstStart = Task { @MainActor in await first.start() }
+        while await underlying.recordedCalls().filter({ $0 == .recover }).count != 1 {
+            await Task.yield()
+        }
+        let secondStart = Task { @MainActor in await second.start() }
+        while await coordinator.queuedOperationCount() == 0 {
+            await Task.yield()
+        }
+
+        let callsBeforeRelease = await underlying.recordedCalls()
+        XCTAssertEqual(callsBeforeRelease.filter { $0 == .recover }.count, 1)
+        await recoverGate.release()
+        await firstStart.value
+        await secondStart.value
+        let callsAfterRelease = await underlying.recordedCalls()
+        XCTAssertEqual(callsAfterRelease.filter { $0 == .recover }.count, 2)
+    }
+
+    func testOlderBackgroundCompletionCannotOverwriteNewerForegroundLiveActivity() async {
+        let now = Date()
+        let older = CodexiOSPreviewData.snapshot(now: now)
+        let newer = CodexiOSPreviewData.snapshot(now: now.addingTimeInterval(30))
+        let backgroundGate = SnapshotFetchGate()
+        let underlying = StubCodexiOSLiveActivityManager(
+            state: .init(isAvailable: true, activityID: "existing")
+        )
+        let coordinator = CodexiOSLiveActivitySerialManager(manager: underlying)
+        let background = CodexiOSModel(
+            service: StubCodexiOSService(fetchHandler: { await backgroundGate.wait() }),
+            defaults: makeDefaults(),
+            liveActivityCoordinator: coordinator,
+            openURLAction: { _ in true },
+            copyTextAction: { _ in }
+        )
+        let foreground = CodexiOSModel(
+            service: StubCodexiOSService(outcomeHandler: { .loaded(newer) }),
+            defaults: makeDefaults(),
+            liveActivityCoordinator: coordinator,
+            openURLAction: { _ in true },
+            copyTextAction: { _ in }
+        )
+
+        let backgroundRefresh = Task { @MainActor in
+            await background.refreshLiveActivityInBackground()
+        }
+        while await underlying.recordedCalls().contains(.recover) == false {
+            await Task.yield()
+        }
+        await foreground.refresh()
+        await backgroundGate.release(snapshot: older)
+        _ = await backgroundRefresh.value
+
+        let calls = await underlying.recordedCalls()
+        XCTAssertEqual(calls.filter { $0 == .update(showFiveHour: false) }.count, 1)
+        XCTAssertEqual(calls.last, .recover)
+    }
+
+    func testStoppingLiveActivityStartsNewSnapshotOrderingEpoch() async throws {
+        let now = Date()
+        let newer = CodexiOSPreviewData.snapshot(now: now.addingTimeInterval(30))
+        let olderNewLifecycle = CodexiOSPreviewData.snapshot(now: now)
+        let underlying = StubCodexiOSLiveActivityManager(
+            state: .init(isAvailable: true, activityID: "old"),
+            startState: .init(isAvailable: true, activityID: "new")
+        )
+        let coordinator = CodexiOSLiveActivitySerialManager(manager: underlying)
+
+        _ = await coordinator.update(
+            snapshot: newer,
+            showFiveHour: false,
+            showUsedQuota: false,
+            cadence: 300
+        )
+        _ = await coordinator.stop()
+        let restarted = try await coordinator.start(
+            snapshot: olderNewLifecycle,
+            showFiveHour: false,
+            showUsedQuota: false,
+            cadence: 300
+        )
+
+        XCTAssertEqual(restarted.activityID, "new")
+        let calls = await underlying.recordedCalls()
+        XCTAssertEqual(calls, [.update(showFiveHour: false), .stop, .start(showFiveHour: false)])
+    }
+
+    func testCancelledQueuedLiveActivityUpdateDoesNotReachActivityKitManager() async {
+        let recoverGate = LiveActivityCallGate()
+        let underlying = StubCodexiOSLiveActivityManager(
+            state: .init(isAvailable: true, activityID: "existing"),
+            recoverGate: recoverGate
+        )
+        let coordinator = CodexiOSLiveActivitySerialManager(manager: underlying)
+        let snapshot = CodexiOSPreviewData.snapshot()
+
+        let recover = Task { @Sendable in await coordinator.recover() }
+        while await underlying.recordedCalls().contains(.recover) == false {
+            await Task.yield()
+        }
+        let update = Task { @Sendable in
+            await coordinator.update(
+                snapshot: snapshot,
+                showFiveHour: false,
+                showUsedQuota: false,
+                cadence: 300
+            )
+        }
+        while await coordinator.queuedOperationCount() == 0 {
+            await Task.yield()
+        }
+        update.cancel()
+        await recoverGate.release()
+        _ = await recover.value
+        _ = await update.value
+
+        let calls = await underlying.recordedCalls()
+        XCTAssertEqual(calls, [.recover])
+    }
+
+    func testForegroundAndBackgroundModelsPreserveConcurrentHistorySamples() async throws {
+        let fileManager = FileManager.default
+        let root = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let fileURL = root.appendingPathComponent("usage-history.json")
+        defer { try? fileManager.removeItem(at: root) }
+        let history = CodexUsageHistoryStore(fileURL: fileURL)
+        let now = Date()
+        let foregroundSnapshot = makeHistorySnapshot(capturedAt: now, usedPercent: 21)
+        let backgroundSnapshot = makeHistorySnapshot(capturedAt: now.addingTimeInterval(1), usedPercent: 67)
+        let foreground = CodexiOSModel(
+            service: StubCodexiOSService(outcomeHandler: { .loaded(foregroundSnapshot) }),
+            defaults: makeDefaults(),
+            historyStore: history,
+            liveActivityManager: StubCodexiOSLiveActivityManager(
+                state: .init(isAvailable: true, activityID: nil)
+            ),
+            openURLAction: { _ in true },
+            copyTextAction: { _ in }
+        )
+        let background = CodexiOSModel(
+            service: StubCodexiOSService(outcomeHandler: { .loaded(backgroundSnapshot) }),
+            defaults: makeDefaults(),
+            historyStore: history,
+            liveActivityManager: StubCodexiOSLiveActivityManager(
+                state: .init(isAvailable: true, activityID: "running")
+            ),
+            openURLAction: { _ in true },
+            copyTextAction: { _ in }
+        )
+
+        async let foregroundRefresh: Void = foreground.refresh()
+        async let backgroundRefresh: Bool = background.refreshLiveActivityInBackground()
+        _ = await (foregroundRefresh, backgroundRefresh)
+
+        let samples = await history.load(now: now.addingTimeInterval(2))
+        XCTAssertEqual(Set(samples.compactMap { $0.fiveHour?.usedPercent }), Set([21, 67]))
+    }
+
+    func testSignOutCanBeRetriedAfterPartialCredentialDeletionFailure() async {
+        let attempts = FailingFirstSignOut()
+        let service = StubCodexiOSService(
+            outcomeHandler: { .loaded(CodexiOSPreviewData.snapshot()) },
+            signOutHandler: { try await attempts.run() }
+        )
+        let model = CodexiOSModel(
+            service: service,
+            defaults: makeDefaults(),
+            openURLAction: { _ in true },
+            copyTextAction: { _ in }
+        )
+        await model.refresh()
+
+        await model.signOut()
+        XCTAssertEqual(model.liveAccountState, .unavailable)
+        XCTAssertNotNil(model.errorMessage)
+        XCTAssertFalse(model.canAutoRefresh)
+
+        await model.signOut()
+        let signOutCount = await service.signOutCallCount()
+        XCTAssertEqual(model.liveAccountState, .signedOut)
+        XCTAssertNil(model.errorMessage)
+        XCTAssertEqual(signOutCount, 2)
+    }
+
+    func testBackgroundFailureAlwaysSubmitsNextRefresh() async {
+        let scheduler = StubBackgroundRefreshScheduler()
+        let liveActivity = StubCodexiOSLiveActivityManager(
+            state: .init(isAvailable: true, activityID: "running")
+        )
+        let model = CodexiOSModel(
+            service: StubCodexiOSService(fetchHandler: {
+                throw CodexiOSError.requestFailed(500)
+            }),
+            defaults: makeDefaults(),
+            liveActivityManager: liveActivity,
+            backgroundRefreshScheduler: scheduler,
+            openURLAction: { _ in true },
+            copyTextAction: { _ in }
+        )
+
+        let success = await model.refreshLiveActivityInBackground()
+
+        XCTAssertFalse(success)
+        XCTAssertEqual(scheduler.scheduledCadences.count, 1)
+        XCTAssertEqual(scheduler.scheduledCadences.last, 300)
+    }
+
+    func testResetClearsDefaultsHistoryAndCredentialsWithoutExiting() async throws {
+        let fileManager = FileManager.default
+        let root = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let fileURL = root.appendingPathComponent("usage-history.json")
+        defer { try? fileManager.removeItem(at: root) }
+        let history = CodexUsageHistoryStore(fileURL: fileURL)
+        _ = await history.append(snapshot: CodexiOSPreviewData.snapshot(), now: Date())
+        let defaults = makeDefaults()
+        defaults.set(true, forKey: CodexiOSSettingsKeys.hasCompletedOnboarding)
+        let service = StubCodexiOSService()
+        let model = CodexiOSModel(
+            service: service,
+            defaults: defaults,
+            historyStore: history,
+            openURLAction: { _ in true },
+            copyTextAction: { _ in }
+        )
+
+        await model.resetApp()
+        let signOutCount = await service.signOutCallCount()
+
+        XCTAssertEqual(signOutCount, 1)
+        XCTAssertFalse(fileManager.fileExists(atPath: fileURL.path))
+        XCTAssertNil(defaults.object(forKey: CodexiOSSettingsKeys.hasCompletedOnboarding))
+        XCTAssertEqual(model.liveAccountState, .signedOut)
+        XCTAssertFalse(model.hasCompletedOnboarding)
+        XCTAssertNil(model.errorMessage)
+    }
+
+    func testResetSurfacesCredentialDeletionFailureButStillClearsOtherData() async throws {
+        let fileManager = FileManager.default
+        let root = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let fileURL = root.appendingPathComponent("usage-history.json")
+        defer { try? fileManager.removeItem(at: root) }
+        let history = CodexUsageHistoryStore(fileURL: fileURL)
+        _ = await history.append(snapshot: CodexiOSPreviewData.snapshot(), now: Date())
+        let defaults = makeDefaults()
+        defaults.set(true, forKey: CodexiOSSettingsKeys.hasCompletedOnboarding)
+        let model = CodexiOSModel(
+            service: StubCodexiOSService(signOutHandler: {
+                throw CodexiOSError.secureStoreFailure("Keychain deletion failed.")
+            }),
+            defaults: defaults,
+            historyStore: history,
+            openURLAction: { _ in true },
+            copyTextAction: { _ in }
+        )
+
+        await model.resetApp()
+
+        XCTAssertEqual(model.liveAccountState, .unavailable)
+        XCTAssertEqual(model.errorMessage, "Some local data could not be deleted. Keychain deletion failed.")
+        XCTAssertFalse(fileManager.fileExists(atPath: fileURL.path))
+        XCTAssertNil(defaults.object(forKey: CodexiOSSettingsKeys.hasCompletedOnboarding))
+        XCTAssertTrue(model.hasCompletedOnboarding)
     }
 
     private func makeDefaults() -> UserDefaults {
@@ -601,6 +1257,99 @@ final class CodexiOSModelTests: XCTestCase {
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
         return defaults
+    }
+
+    private func makeHistorySnapshot(capturedAt: Date, usedPercent: Double) -> CodexSnapshot {
+        CodexSnapshot(
+            capturedAt: capturedAt,
+            executablePath: "Codexex iOS Tests",
+            account: CodexAccount(authType: "chatgpt", email: nil, planType: "pro"),
+            limits: [
+                CodexLimit(
+                    id: "codex",
+                    rawLimitName: "Codex",
+                    bucket: .codex,
+                    primary: CodexQuotaWindow(
+                        usedPercent: usedPercent,
+                        windowDurationMinutes: 300,
+                        resetsAt: nil
+                    ),
+                    secondary: CodexQuotaWindow(
+                        usedPercent: usedPercent,
+                        windowDurationMinutes: 10_080,
+                        resetsAt: nil
+                    )
+                )
+            ]
+        )
+    }
+}
+
+actor SnapshotFetchGate {
+    private var continuation: CheckedContinuation<CodexServiceSnapshotResponse, Never>?
+    private var queuedResponse: CodexServiceSnapshotResponse?
+
+    func wait() async -> CodexServiceSnapshotResponse {
+        if let queuedResponse {
+            self.queuedResponse = nil
+            return queuedResponse
+        }
+        return await withCheckedContinuation { continuation = $0 }
+    }
+
+    func release(snapshot: CodexSnapshot) {
+        let response = CodexServiceSnapshotResponse(
+            authMode: .chatGPT,
+            snapshot: snapshot,
+            errorMessage: nil
+        )
+        if let continuation {
+            self.continuation = nil
+            continuation.resume(returning: response)
+        } else {
+            queuedResponse = response
+        }
+    }
+}
+
+actor FailingFirstSignOut {
+    private var attemptCount = 0
+
+    func run() throws {
+        attemptCount += 1
+        if attemptCount == 1 {
+            throw CodexiOSError.secureStoreFailure("Could not delete saved sign-in.")
+        }
+    }
+}
+
+actor LiveActivityCallGate {
+    private var continuation: CheckedContinuation<Void, Never>?
+    private var isReleased = false
+
+    func wait() async {
+        guard isReleased == false else { return }
+        await withCheckedContinuation { continuation = $0 }
+    }
+
+    func release() {
+        isReleased = true
+        continuation?.resume()
+        continuation = nil
+    }
+}
+
+@MainActor
+final class StubBackgroundRefreshScheduler: CodexiOSBackgroundRefreshScheduling {
+    private(set) var scheduledCadences: [TimeInterval] = []
+    private(set) var cancelCount = 0
+
+    func schedule(cadence: TimeInterval) {
+        scheduledCadences.append(cadence)
+    }
+
+    func cancel() {
+        cancelCount += 1
     }
 }
 
@@ -616,21 +1365,31 @@ actor StubCodexiOSLiveActivityManager: CodexiOSLiveActivityManaging {
     private var state: CodexiOSLiveActivityRuntimeState
     private let startState: CodexiOSLiveActivityRuntimeState
     private let startDelay: Duration?
+    private let recoverGate: LiveActivityCallGate?
+    private let updateGate: LiveActivityCallGate?
+    private let updateState: CodexiOSLiveActivityRuntimeState?
     private var calls: [Call] = []
     private var showUsedQuotaValues: [Bool] = []
 
     init(
         state: CodexiOSLiveActivityRuntimeState,
         startState: CodexiOSLiveActivityRuntimeState? = nil,
-        startDelay: Duration? = nil
+        startDelay: Duration? = nil,
+        recoverGate: LiveActivityCallGate? = nil,
+        updateGate: LiveActivityCallGate? = nil,
+        updateState: CodexiOSLiveActivityRuntimeState? = nil
     ) {
         self.state = state
         self.startState = startState ?? state
         self.startDelay = startDelay
+        self.recoverGate = recoverGate
+        self.updateGate = updateGate
+        self.updateState = updateState
     }
 
     func recover() async -> CodexiOSLiveActivityRuntimeState {
         calls.append(.recover)
+        if let recoverGate { await recoverGate.wait() }
         return state
     }
 
@@ -657,6 +1416,8 @@ actor StubCodexiOSLiveActivityManager: CodexiOSLiveActivityManaging {
     ) async -> CodexiOSLiveActivityRuntimeState {
         calls.append(.update(showFiveHour: showFiveHour))
         showUsedQuotaValues.append(showUsedQuota)
+        if let updateGate { await updateGate.wait() }
+        if let updateState { state = updateState }
         return state
     }
 
@@ -696,22 +1457,31 @@ actor StubCodexiOSLiveActivityManager: CodexiOSLiveActivityManaging {
 
 actor StubCodexiOSService: CodexiOSServiceProtocol {
     typealias FetchHandler = @Sendable () async throws -> CodexServiceSnapshotResponse
+    typealias OutcomeHandler = @Sendable () async throws -> CodexiOSSnapshotOutcome
     typealias BeginHandler = @Sendable () async throws -> CodexiOSDeviceAuthStart
     typealias PollHandler = @Sendable (String) async throws -> CodexiOSPollResult
     typealias SignOutHandler = @Sendable () async throws -> Void
+    typealias RecoverHandler = @Sendable () async throws -> CodexiOSDeviceAuthStart?
+    typealias CancelHandler = @Sendable () async throws -> Void
 
     private let fetchHandler: FetchHandler
+    private let outcomeHandler: OutcomeHandler?
     private let beginHandler: BeginHandler
     private let pollHandler: PollHandler
     private let signOutHandler: SignOutHandler
+    private let recoverHandler: RecoverHandler
+    private let cancelHandler: CancelHandler
 
     private var fetchCount = 0
     private var pollCount = 0
+    private var signOutCount = 0
+    private var cancelCount = 0
 
     init(
         fetchHandler: @escaping FetchHandler = {
             CodexServiceSnapshotResponse(authMode: nil, snapshot: nil, errorMessage: nil)
         },
+        outcomeHandler: OutcomeHandler? = nil,
         beginHandler: @escaping BeginHandler = {
             CodexiOSDeviceAuthStart(
                 flowID: "flow-default",
@@ -722,17 +1492,27 @@ actor StubCodexiOSService: CodexiOSServiceProtocol {
         pollHandler: @escaping PollHandler = { _ in
             .pending("Still waiting. Finish in Safari, then check again.")
         },
-        signOutHandler: @escaping SignOutHandler = {}
+        signOutHandler: @escaping SignOutHandler = {},
+        recoverHandler: @escaping RecoverHandler = { nil },
+        cancelHandler: @escaping CancelHandler = {}
     ) {
         self.fetchHandler = fetchHandler
+        self.outcomeHandler = outcomeHandler
         self.beginHandler = beginHandler
         self.pollHandler = pollHandler
         self.signOutHandler = signOutHandler
+        self.recoverHandler = recoverHandler
+        self.cancelHandler = cancelHandler
     }
 
-    func fetchSnapshot() async throws -> CodexServiceSnapshotResponse {
+    func fetchSnapshot() async throws -> CodexiOSSnapshotOutcome {
         fetchCount += 1
-        return try await fetchHandler()
+        if let outcomeHandler { return try await outcomeHandler() }
+        return .legacy(try await fetchHandler())
+    }
+
+    func recoverPendingSignIn() async throws -> CodexiOSDeviceAuthStart? {
+        try await recoverHandler()
     }
 
     func beginSignIn() async throws -> CodexiOSDeviceAuthStart {
@@ -744,7 +1524,13 @@ actor StubCodexiOSService: CodexiOSServiceProtocol {
         return try await pollHandler(flowID)
     }
 
+    func cancelSignIn() async throws {
+        cancelCount += 1
+        try await cancelHandler()
+    }
+
     func signOut() async throws {
+        signOutCount += 1
         try await signOutHandler()
     }
 
@@ -754,6 +1540,14 @@ actor StubCodexiOSService: CodexiOSServiceProtocol {
 
     func pollCallCount() -> Int {
         pollCount
+    }
+
+    func signOutCallCount() -> Int {
+        signOutCount
+    }
+
+    func cancelCallCount() -> Int {
+        cancelCount
     }
 }
 

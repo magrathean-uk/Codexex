@@ -141,8 +141,7 @@ enum CodexQuotaNotificationPlanner {
         let resetText = CodexFormatting.relativeResetText(now: now, resetAt: window.resetsAt)
         let fingerprint = fingerprint(
             kind: .fiveHourPressure,
-            resetAt: window.resetsAt,
-            percent: window.clampedUsedPercent
+            resetAt: window.resetsAt
         )
         return CodexQuotaNotification(
             id: fingerprint,
@@ -175,8 +174,7 @@ enum CodexQuotaNotificationPlanner {
         let resetText = CodexFormatting.relativeResetText(now: now, resetAt: resetsAt)
         let fingerprint = fingerprint(
             kind: .fiveHourResetSoon,
-            resetAt: resetsAt,
-            percent: window.clampedUsedPercent
+            resetAt: resetsAt
         )
         return CodexQuotaNotification(
             id: fingerprint,
@@ -202,12 +200,10 @@ enum CodexQuotaNotificationPlanner {
             return nil
         }
 
-        let percent = Int((projection ?? forecast.currentPercent ?? 0).rounded())
         let resetAt = forecast.resetAt ?? limit.weeklyWindow?.resetsAt
         let fingerprint = fingerprint(
             kind: .weeklyForecastRisk,
-            resetAt: resetAt,
-            percent: Double(percent)
+            resetAt: resetAt
         )
         return CodexQuotaNotification(
             id: fingerprint,
@@ -229,11 +225,10 @@ enum CodexQuotaNotificationPlanner {
 
     private static func fingerprint(
         kind: CodexQuotaNotificationKind,
-        resetAt: Date?,
-        percent: Double
+        resetAt: Date?
     ) -> String {
         let resetBucket = resetAt.map { String(Int($0.timeIntervalSince1970.rounded())) } ?? "unknown"
-        return "\(kind.rawValue)|\(resetBucket)|\(Int(percent.rounded()))"
+        return "\(kind.rawValue)|\(resetBucket)"
     }
 }
 
@@ -242,13 +237,31 @@ struct CodexQuotaNotificationDeliveryResult: Sendable, Equatable {
     let delivered: Bool
 }
 
+enum CodexNotificationAuthorizationState: Sendable, Equatable {
+    case unknown
+    case notDetermined
+    case authorized
+    case denied
+}
+
 protocol CodexQuotaNotificationDelivering: Sendable {
     func deliver(_ notifications: [CodexQuotaNotification]) async -> [CodexQuotaNotificationDeliveryResult]
+    func authorizationState(requestIfNeeded: Bool) async -> CodexNotificationAuthorizationState
+}
+
+extension CodexQuotaNotificationDelivering {
+    func authorizationState(requestIfNeeded: Bool) async -> CodexNotificationAuthorizationState {
+        .authorized
+    }
 }
 
 struct CodexNoopQuotaNotificationDelivery: CodexQuotaNotificationDelivering {
     func deliver(_ notifications: [CodexQuotaNotification]) async -> [CodexQuotaNotificationDeliveryResult] {
         notifications.map { CodexQuotaNotificationDeliveryResult(notification: $0, delivered: true) }
+    }
+
+    func authorizationState(requestIfNeeded: Bool) async -> CodexNotificationAuthorizationState {
+        .authorized
     }
 }
 
@@ -285,17 +298,23 @@ final class CodexUserNotificationDelivery: CodexQuotaNotificationDelivering, @un
         return results
     }
 
-    private func canDeliver(center: UNUserNotificationCenter) async -> Bool {
+    func authorizationState(requestIfNeeded: Bool) async -> CodexNotificationAuthorizationState {
+        let center = centerProvider()
         switch await authorizationStatus(center: center) {
         case .authorized, .provisional, .ephemeral:
-            return true
+            return .authorized
         case .notDetermined:
-            return await requestAuthorization(center: center)
+            guard requestIfNeeded else { return .notDetermined }
+            return await requestAuthorization(center: center) ? .authorized : .denied
         case .denied:
-            return false
+            return .denied
         @unknown default:
-            return false
+            return .unknown
         }
+    }
+
+    private func canDeliver(center: UNUserNotificationCenter) async -> Bool {
+        await authorizationState(requestIfNeeded: true) == .authorized
     }
 
     private func authorizationStatus(center: UNUserNotificationCenter) async -> UNAuthorizationStatus {

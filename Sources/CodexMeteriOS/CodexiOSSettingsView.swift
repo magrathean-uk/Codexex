@@ -141,7 +141,7 @@ struct CodexiOSSettingsView: View {
         }
         .scrollContentBackground(.hidden)
         .background(CodexiOSTheme.background.ignoresSafeArea())
-        .tint(.green)
+        .tint(Color.primary)
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
         .preferredColorScheme(CodexiOSAppearanceMode(rawValue: appearanceMode)?.colorScheme)
@@ -173,13 +173,13 @@ struct CodexiOSSettingsView: View {
         ) {
             Button("Reset App", role: .destructive) {
                 Task {
-                    await model.stopLiveActivity(announce: false)
-                    CodexiOSAppResetter.resetAndClose()
+                    await model.resetApp()
                 }
             }
+            .disabled(model.isResetting)
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This deletes sign-in, settings, preview state, and local data. Codexex will close after reset.")
+            Text("This deletes sign-in, pending login, settings, preview state, and local usage history.")
         }
         .alert(
             "Keep Codexex running",
@@ -209,6 +209,16 @@ struct CodexiOSSettingsView: View {
             } else if model.isSignedIn {
                 LabeledContent("Status") {
                     Text("Signed in")
+                        .foregroundStyle(.secondary)
+                }
+            } else if model.liveAccountState == .authExpired {
+                LabeledContent("Status") {
+                    Text("Sign-in expired")
+                        .foregroundStyle(.secondary)
+                }
+            } else if model.liveAccountState == .unavailable {
+                LabeledContent("Status") {
+                    Text("Unavailable")
                         .foregroundStyle(.secondary)
                 }
             } else {
@@ -246,8 +256,23 @@ struct CodexiOSSettingsView: View {
                         Task { await model.checkSignIn() }
                     }
                     .disabled(model.isSigningIn)
+                    Button("Start Over") {
+                        Task { await model.restartSignIn() }
+                    }
+                    .disabled(model.isSigningIn)
+                    Button("Cancel Sign-in", role: .destructive) {
+                        Task { await model.cancelSignIn() }
+                    }
+                    .disabled(model.isSigningIn)
                 } else if model.isSignedIn {
                     Button("Refresh Now") {
+                        Task { await model.refresh() }
+                    }
+                    Button("Sign Out", role: .destructive) {
+                        Task { await model.signOut() }
+                    }
+                } else if model.liveAccountState == .unavailable {
+                    Button("Retry") {
                         Task { await model.refresh() }
                     }
                     Button("Sign Out", role: .destructive) {
@@ -258,6 +283,13 @@ struct CodexiOSSettingsView: View {
                         Task { await model.beginSignIn() }
                     }
                     .disabled(model.isSigningIn)
+                }
+
+                if let error = model.errorMessage {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
         } header: {
@@ -313,7 +345,7 @@ struct CodexiOSSettingsView: View {
 
     @ViewBuilder
     private var liveActivitySection: some View {
-        if model.isSignedIn || model.previewModeEnabled {
+        if model.isSignedIn || model.previewModeEnabled || model.isLiveActivityRunning {
             Section {
                 Button {
                     if model.isLiveActivityRunning {
@@ -414,7 +446,7 @@ struct CodexiOSSettingsView: View {
             }
             .accessibilityIdentifier("ios.settings.reset")
         } footer: {
-            Text("Deletes sign-in, settings, preview state, and local data. The app closes when done.")
+            Text("Deletes sign-in, pending login, settings, preview state, and local usage history. Codexex stays open.")
         }
     }
 

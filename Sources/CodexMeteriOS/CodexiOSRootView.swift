@@ -3,6 +3,7 @@ import UIKit
 import CodexMeterCore
 
 struct CodexiOSRootView: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @AppStorage(CodexiOSSettingsKeys.showSpark) private var showSpark = true
     @AppStorage(CodexiOSSettingsKeys.showHistory) private var showHistory = true
     @AppStorage(CodexiOSSettingsKeys.resetDisplayStyle) private var resetDisplayStyle = CodexiOSResetDisplayStyle.relative.rawValue
@@ -37,7 +38,10 @@ struct CodexiOSRootView: View {
             isShowingMatrixQuota = enabled
         }
         .fullScreenCover(isPresented: $isShowingMatrixQuota) {
-            CodexiOSMatrixThemeHost(model: model)
+            CodexiOSMatrixThemeHost(model: model) {
+                matrixThemeEnabled = false
+                isShowingMatrixQuota = false
+            }
         }
         .alert(
             "Keep Codexex running",
@@ -116,6 +120,14 @@ struct CodexiOSRootView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
+                if let lastUpdatedAt = model.lastUpdatedAt,
+                   model.liveAccountState == .unavailable {
+                    Text("Last updated \(lastUpdatedAt.formatted(date: .abbreviated, time: .shortened))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
                 if let error = model.errorMessage, error != model.statusMessage {
                     Text(error)
                         .font(.callout)
@@ -186,28 +198,31 @@ struct CodexiOSRootView: View {
         .accessibilityIdentifier("ios.dashboard.settings")
     }
 
+    @ViewBuilder
     private var refreshActionButton: some View {
-        Button {
-            Task { await model.refresh() }
-        } label: {
-            if model.isRefreshing {
-                Label {
-                    Text("Refreshing")
-                } icon: {
-                    CodexiOSRefreshingIcon()
+        if shouldShowStatusCard == false {
+            Button {
+                Task { await model.refresh() }
+            } label: {
+                if model.isRefreshing {
+                    Label {
+                        Text("Refreshing")
+                    } icon: {
+                        CodexiOSRefreshingIcon()
+                    }
+                } else {
+                    Label("Refresh", systemImage: "arrow.clockwise")
                 }
-            } else {
-                Label("Refresh", systemImage: "arrow.clockwise")
             }
+            .buttonStyle(CodexiOSTopButtonStyle())
+            .disabled(model.isRefreshing)
+            .accessibilityIdentifier("ios.dashboard.refresh")
         }
-        .buttonStyle(CodexiOSTopButtonStyle())
-        .disabled(model.isRefreshing)
-        .accessibilityIdentifier("ios.dashboard.refresh")
     }
 
     @ViewBuilder
     private var liveActivityActionButton: some View {
-        if model.isSignedIn || model.previewModeEnabled {
+        if model.isSignedIn || model.previewModeEnabled || model.isLiveActivityRunning {
             Button {
                 if model.isLiveActivityRunning {
                     Task { await model.stopLiveActivity() }
@@ -253,6 +268,10 @@ struct CodexiOSRootView: View {
                     .buttonStyle(CodexiOSSecondaryButtonStyle())
                 Button("Check Status") { Task { await model.checkSignIn() } }
                     .buttonStyle(CodexiOSSecondaryButtonStyle())
+                Button("Start Over") { Task { await model.restartSignIn() } }
+                    .buttonStyle(CodexiOSSecondaryButtonStyle())
+                Button("Cancel") { Task { await model.cancelSignIn() } }
+                    .buttonStyle(CodexiOSSecondaryButtonStyle())
             }
         } else if model.isSignedIn {
             FlowLayout(spacing: 10) {
@@ -260,6 +279,21 @@ struct CodexiOSRootView: View {
                     .buttonStyle(CodexiOSPrimaryButtonStyle())
                 Button("Sign out") { Task { await model.signOut() } }
                     .buttonStyle(CodexiOSSecondaryButtonStyle())
+            }
+        } else if model.liveAccountState == .unavailable {
+            FlowLayout(spacing: 10) {
+                Button {
+                    Task { await model.refresh() }
+                } label: {
+                    Text(model.isRefreshing ? "Retrying" : "Retry")
+                }
+                .buttonStyle(CodexiOSPrimaryButtonStyle())
+                .disabled(model.isRefreshing)
+
+                Button("Sign Out", role: .destructive) {
+                    Task { await model.signOut() }
+                }
+                .buttonStyle(CodexiOSSecondaryButtonStyle())
             }
         } else {
             Button {
@@ -303,28 +337,7 @@ struct CodexiOSRootView: View {
         )
         return iOSCard {
             VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .firstTextBaseline, spacing: 12) {
-                    Text(limit.displayName)
-                        .font(.headline.weight(.semibold))
-                        .fixedSize(horizontal: false, vertical: true)
-                        .lineLimit(2)
-                    Spacer(minLength: 12)
-                    if let headline {
-                        Text("\(headline.title) · \(CodexiOSQuotaDisplay.percentText(for: headline.window, showUsedQuota: showUsedQuota)) \(CodexiOSQuotaDisplay.label(showUsedQuota: showUsedQuota))")
-                            .font(.system(size: 30, weight: .semibold).monospacedDigit())
-                            .minimumScaleFactor(0.7)
-                            .lineLimit(1)
-                            .accessibilityLabel("Codex quota")
-                            .accessibilityValue("\(headline.title), \(CodexiOSQuotaDisplay.accessibilityValue(for: headline.window, showUsedQuota: showUsedQuota))")
-                            .accessibilityIdentifier(quotaIdentifier(for: limit, suffix: "headline"))
-                    } else {
-                        Text("Weekly unavailable")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .accessibilityLabel("Weekly quota unavailable")
-                            .accessibilityIdentifier(quotaIdentifier(for: limit, suffix: "headline"))
-                    }
-                }
+                quotaHeader(limit: limit, headline: headline)
 
                 if showFiveHourPresentation,
                    let fiveHour = CodexiOSQuotaPresentation.fiveHourWindow(for: limit) {
@@ -363,6 +376,58 @@ struct CodexiOSRootView: View {
         }
     }
 
+    @ViewBuilder
+    private func quotaHeader(limit: CodexLimit, headline: CodexiOSQuotaHeadline?) -> some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 8) {
+                quotaName(limit)
+                quotaHeadline(limit: limit, headline: headline)
+            }
+        } else {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                quotaName(limit)
+                Spacer(minLength: 12)
+                quotaHeadline(limit: limit, headline: headline)
+            }
+        }
+    }
+
+    private func quotaName(_ limit: CodexLimit) -> some View {
+        Text(limit.displayName)
+            .font(.headline.weight(.semibold))
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    @ViewBuilder
+    private func quotaHeadline(limit: CodexLimit, headline: CodexiOSQuotaHeadline?) -> some View {
+        if let headline {
+            let percent = CodexiOSQuotaDisplay.percentText(for: headline.window, showUsedQuota: showUsedQuota)
+            let label = CodexiOSQuotaDisplay.label(showUsedQuota: showUsedQuota)
+            Group {
+                if dynamicTypeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(headline.title)
+                        Text("\(percent) \(label)")
+                    }
+                } else {
+                    Text("\(headline.title) · \(percent) \(label)")
+                }
+            }
+                .font(.title.weight(.semibold).monospacedDigit())
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityLabel("Codex quota")
+                .accessibilityValue("\(headline.title), \(CodexiOSQuotaDisplay.accessibilityValue(for: headline.window, showUsedQuota: showUsedQuota))")
+                .accessibilityIdentifier(quotaIdentifier(for: limit, suffix: "headline"))
+        } else {
+            Text("Weekly unavailable")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityLabel("Weekly quota unavailable")
+                .accessibilityIdentifier(quotaIdentifier(for: limit, suffix: "headline"))
+        }
+    }
+
     private func quotaRow(
         title: String,
         window: CodexQuotaWindow,
@@ -372,20 +437,22 @@ struct CodexiOSRootView: View {
     ) -> some View {
         let reset = resetText(for: window)
         return VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text(title)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
-                Spacer(minLength: 10)
-                if showsPercentage {
-                    Text(CodexiOSQuotaDisplay.percentText(for: window, showUsedQuota: showUsedQuota))
-                        .font(.subheadline.weight(.semibold).monospacedDigit())
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        quotaRowTitle(title)
+                        Spacer(minLength: 10)
+                        if showsPercentage { quotaRowPercentage(window) }
+                    }
+                    quotaResetText(reset)
                 }
-                Text(reset)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.78)
+            } else {
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    quotaRowTitle(title)
+                    Spacer(minLength: 10)
+                    if showsPercentage { quotaRowPercentage(window) }
+                    quotaResetText(reset)
+                }
             }
             CodexiOSQuotaBar(
                 progress: CodexiOSQuotaDisplay.percent(for: window, showUsedQuota: showUsedQuota) / 100,
@@ -401,6 +468,26 @@ struct CodexiOSRootView: View {
                 : reset
         )
         .accessibilityIdentifier(identifier)
+    }
+
+    private func quotaRowTitle(_ title: String) -> some View {
+        Text(title)
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func quotaRowPercentage(_ window: CodexQuotaWindow) -> some View {
+        Text(CodexiOSQuotaDisplay.percentText(for: window, showUsedQuota: showUsedQuota))
+            .font(.subheadline.weight(.semibold).monospacedDigit())
+            .fixedSize(horizontal: true, vertical: true)
+    }
+
+    private func quotaResetText(_ reset: String) -> some View {
+        Text(reset)
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     private func resetText(for window: CodexQuotaWindow) -> String {
@@ -472,16 +559,20 @@ struct CodexiOSRootView: View {
     }
 
     private var statusCardTitle: String {
-        if model.isCheckingSavedAccount {
+        switch model.liveAccountState {
+        case .checking:
             return "Loading quota"
-        }
-        if model.hasPendingSignIn {
+        case .pendingSignIn:
             return "Finish sign-in"
+        case .authExpired:
+            return "Sign-in expired"
+        case .unavailable:
+            return "Quota unavailable"
+        case .signedOut:
+            return "Sign in"
+        case .signedIn:
+            return model.errorMessage == nil ? "Signed in" : "Quota unavailable"
         }
-        if model.errorMessage != nil {
-            return "Needs attention"
-        }
-        return "Sign in"
     }
 
     private func iOSCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
@@ -492,13 +583,16 @@ struct CodexiOSRootView: View {
 
 private struct CodexiOSMatrixThemeHost: View {
     @Bindable var model: CodexiOSModel
+    let onClose: () -> Void
     @State private var isShowingSettings = false
 
     var body: some View {
         NavigationStack {
-            CodexiOSMatrixQuotaView(model: model) {
-                isShowingSettings = true
-            }
+            CodexiOSMatrixQuotaView(
+                model: model,
+                onClose: onClose,
+                onOpenSettings: { isShowingSettings = true }
+            )
             .navigationDestination(isPresented: $isShowingSettings) {
                 CodexiOSSettingsView(model: model)
             }
@@ -927,12 +1021,12 @@ struct CodexiOSPrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.headline.weight(.semibold))
-            .foregroundStyle(.white)
+            .foregroundStyle(Color(uiColor: .systemBackground))
             .padding(.horizontal, 16)
             .frame(minHeight: 44)
             .scaleEffect(configuration.isPressed && reduceMotion == false ? 0.97 : 1)
             .background(
-                CodexiOSTheme.primaryGradient.opacity(isEnabled ? (configuration.isPressed ? 0.72 : 1) : 0.45),
+                Color.primary.opacity(isEnabled ? (configuration.isPressed ? 0.78 : 1) : 0.42),
                 in: RoundedRectangle(cornerRadius: 10, style: .continuous)
             )
             .contentShape(Rectangle())

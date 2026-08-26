@@ -12,6 +12,7 @@ enum CodexAuthSessionPhase: Equatable, Sendable {
     case starting(message: String)
     case codeReady(CodexDeviceCodeContext, message: String)
     case polling(CodexDeviceCodeContext, message: String)
+    case cancelling(CodexDeviceCodeContext, message: String)
     case signedIn(message: String)
     case signedOut(message: String)
     case signingOut(message: String)
@@ -27,6 +28,9 @@ enum CodexAuthSessionEvent: Equatable, Sendable {
     case pollingRequested
     case pollingPending(String)
     case pollingFailed(String)
+    case pollingInterrupted(String)
+    case cancelRequested
+    case cancelFailed(String)
     case clearDeviceCode
     case signOutRequested
     case signedIn
@@ -72,6 +76,19 @@ struct CodexAuthSession: Equatable, Sendable {
         case .pollingFailed(let message):
             phase = .failed(message: message, deviceCode: currentDeviceCode)
 
+        case .pollingInterrupted(let message):
+            phase = .failed(message: message, deviceCode: nil)
+
+        case .cancelRequested:
+            guard let context = currentDeviceCode else {
+                phase = .signedOut(message: "Sign in to load quota.")
+                return
+            }
+            phase = .cancelling(context, message: "Cancelling sign-in…")
+
+        case .cancelFailed(let message):
+            phase = .failed(message: message, deviceCode: currentDeviceCode)
+
         case .clearDeviceCode:
             phase = .signedOut(message: "Sign in to load quota.")
 
@@ -100,6 +117,7 @@ struct CodexAuthSession: Equatable, Sendable {
         switch phase {
         case .codeReady(let context, _),
              .polling(let context, _),
+             .cancelling(let context, _),
              .failed(_, let context?):
             return context
         case .unresolved,
@@ -120,6 +138,7 @@ struct CodexAuthSession: Equatable, Sendable {
         case .starting(let message),
              .codeReady(_, let message),
              .polling(_, let message),
+             .cancelling(_, let message),
              .signedIn(let message),
              .signedOut(let message),
              .signingOut(let message),
@@ -142,6 +161,7 @@ struct CodexAuthSession: Equatable, Sendable {
             return true
         case .unresolved,
              .codeReady,
+             .cancelling,
              .signedIn,
              .signedOut,
              .signingOut,
@@ -159,11 +179,31 @@ struct CodexAuthSession: Equatable, Sendable {
              .starting,
              .codeReady,
              .polling,
+             .cancelling,
              .signedOut,
              .signingOut,
              .failed:
             return false
         }
+    }
+
+    var isAuthenticated: Bool {
+        if case .signedIn = phase { return true }
+        return false
+    }
+
+    var isSigningOut: Bool {
+        if case .signingOut = phase { return true }
+        return false
+    }
+
+    var isCancelling: Bool {
+        if case .cancelling = phase { return true }
+        return false
+    }
+
+    var isBusy: Bool {
+        isSigningIn || isSigningOut || isCancelling
     }
 
     var hasResolvedState: Bool {

@@ -2175,6 +2175,8 @@ dependencies = [
  "codex-client",
  "codex-login",
  "codex-protocol",
+ "httpdate",
+ "libc",
  "pretty_assertions",
  "reqwest",
  "serde",

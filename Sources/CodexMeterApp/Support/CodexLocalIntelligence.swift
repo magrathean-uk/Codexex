@@ -60,7 +60,7 @@ enum CodexLocalIntelligence {
             severity: severity,
             title: riskTitle,
             message: message,
-            supportingLabel: "Local AI",
+            supportingLabel: "",
             supportingValue: supportingValue(rangeText: rangeText, weekly: weekly, burnSignal: burnSignal),
             supportingDetail: burnSignal?.detail ?? weekly?.detail
         )

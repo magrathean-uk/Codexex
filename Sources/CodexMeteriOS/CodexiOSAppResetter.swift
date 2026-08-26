@@ -1,23 +1,21 @@
 import Foundation
-import UIKit
 
 enum CodexiOSAppResetter {
-    static func resetAndClose(defaults: UserDefaults = .standard, tokenStore: CodexiOSTokenStore = CodexiOSTokenStore()) {
-        resetLocalData(defaults: defaults) {
-            try tokenStore.clear()
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-            exit(0)
-        }
-    }
-
     static func resetLocalData(
         defaults: UserDefaults = .standard,
         clearTokens: () throws -> Void = {
             try CodexiOSTokenStore().clear()
-        }
-    ) {
+        },
+        clearPendingAuth: () throws -> Void = {
+            try CodexiOSPendingAuthStore().clear()
+        },
+        clearHistory: () throws -> Void = {}
+    ) throws {
+        var failures: [String] = []
+        do { try clearTokens() } catch { failures.append(error.localizedDescription) }
+        do { try clearPendingAuth() } catch { failures.append(error.localizedDescription) }
+        do { try clearHistory() } catch { failures.append(error.localizedDescription) }
+
         if let bundleIdentifier = Bundle.main.bundleIdentifier {
             defaults.removePersistentDomain(forName: bundleIdentifier)
         }
@@ -26,6 +24,11 @@ enum CodexiOSAppResetter {
             defaults.removeObject(forKey: key)
         }
         defaults.synchronize()
-        try? clearTokens()
+
+        guard failures.isEmpty else {
+            throw CodexiOSError.secureStoreFailure(
+                "Some local data could not be deleted. \(failures.joined(separator: " "))"
+            )
+        }
     }
 }

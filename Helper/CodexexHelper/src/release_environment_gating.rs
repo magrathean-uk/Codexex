@@ -7,7 +7,7 @@ pub(crate) fn development_env_var(name: &str) -> Option<String> {
         env::var(name)
             .ok()
             .map(|value| value.trim().trim_end_matches('/').to_string())
-            .filter(|value| value.is_empty() == false)
+            .filter(|value| !value.is_empty())
     }
 
     #[cfg(not(any(debug_assertions, test, feature = "internal-env-overrides")))]

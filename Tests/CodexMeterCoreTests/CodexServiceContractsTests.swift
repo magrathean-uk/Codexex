@@ -40,6 +40,26 @@ final class CodexServiceContractsTests: XCTestCase {
         XCTAssertNil(object["flowId"])
     }
 
+    func testCancelDeviceAuthRequestAndResponseUseTypedWireContract() throws {
+        let request = CodexHelperRequest(
+            method: .cancelDeviceAuth,
+            flowID: "flow-123",
+            requestID: "request-cancel"
+        )
+        let object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(request)) as? [String: Any]
+        )
+        XCTAssertEqual(object["method"] as? String, "cancelDeviceAuth")
+        XCTAssertEqual(object["flow_id"] as? String, "flow-123")
+
+        let data = Data(#"{"protocolVersion":1,"requestId":"request-cancel","type":"deviceAuthCancelled"}"#.utf8)
+        let response = try JSONDecoder()
+            .decode(CodexHelperResponseEnvelope.self, from: data)
+            .validated(against: request)
+        XCTAssertEqual(try response.typedResponse(), .deviceAuthCancelled)
+        XCTAssertNoThrow(try response.requireResponse(.deviceAuthCancelled))
+    }
+
     func testSnapshotEnvelopeDecodesEmbeddedPayload() throws {
         let payloadObject: [String: Any?] = ["authMode": "chatGPT", "snapshot": nil, "errorMessage": nil]
         let payloadData = try JSONSerialization.data(withJSONObject: payloadObject.compactMapValues { $0 })

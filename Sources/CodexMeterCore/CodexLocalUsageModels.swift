@@ -36,13 +36,21 @@ public struct CodexLocalTokenUsage: Codable, Sendable, Equatable {
 
     public func adding(_ other: CodexLocalTokenUsage) -> CodexLocalTokenUsage {
         CodexLocalTokenUsage(
-            inputTokens: inputTokens + other.inputTokens,
-            cachedInputTokens: cachedInputTokens + other.cachedInputTokens,
-            outputTokens: outputTokens + other.outputTokens,
-            reasoningOutputTokens: reasoningOutputTokens + other.reasoningOutputTokens,
-            totalTokens: totalTokens + other.totalTokens
+            inputTokens: codexSaturatingNonnegativeAdd(inputTokens, other.inputTokens),
+            cachedInputTokens: codexSaturatingNonnegativeAdd(cachedInputTokens, other.cachedInputTokens),
+            outputTokens: codexSaturatingNonnegativeAdd(outputTokens, other.outputTokens),
+            reasoningOutputTokens: codexSaturatingNonnegativeAdd(reasoningOutputTokens, other.reasoningOutputTokens),
+            totalTokens: codexSaturatingNonnegativeAdd(totalTokens, other.totalTokens)
         )
     }
+}
+
+@inline(__always)
+func codexSaturatingNonnegativeAdd(_ lhs: Int, _ rhs: Int) -> Int {
+    let safeLHS = max(0, lhs)
+    let safeRHS = max(0, rhs)
+    let (sum, overflow) = safeLHS.addingReportingOverflow(safeRHS)
+    return overflow ? .max : sum
 }
 
 public struct CodexLocalRateLimitWindow: Codable, Sendable, Equatable {
@@ -350,6 +358,7 @@ public struct CodexLocalUsageSummary: Codable, Sendable, Equatable {
     public let contextWindowPercent: Double?
     public let sessionAutopsies: [CodexLocalSessionAutopsy]
     public let attributionConfidence: CodexLocalAttributionConfidence
+    public let coverage: CodexLocalUsageCoverage
 
     public init(
         capturedAt: Date,
@@ -367,7 +376,8 @@ public struct CodexLocalUsageSummary: Codable, Sendable, Equatable {
         latestModel: String?,
         contextWindowPercent: Double?,
         sessionAutopsies: [CodexLocalSessionAutopsy] = [],
-        attributionConfidence: CodexLocalAttributionConfidence = .unknown
+        attributionConfidence: CodexLocalAttributionConfidence = .unknown,
+        coverage: CodexLocalUsageCoverage = .unknown
     ) {
         self.capturedAt = capturedAt
         self.dataPath = dataPath
@@ -385,6 +395,132 @@ public struct CodexLocalUsageSummary: Codable, Sendable, Equatable {
         self.contextWindowPercent = contextWindowPercent
         self.sessionAutopsies = sessionAutopsies
         self.attributionConfidence = attributionConfidence
+        self.coverage = coverage
+    }
+}
+
+public struct CodexLocalUsageCoverage: Codable, Sendable, Equatable {
+    public let isKnown: Bool
+    public let indexedFileCount: Int
+    public let selectedFileCount: Int
+    public let discoveredFileCount: Int
+    public let bytesRead: UInt64
+    public let retainedEntryCount: Int
+    public let omittedEntryCount: Int
+
+    public init(
+        isKnown: Bool = true,
+        indexedFileCount: Int,
+        selectedFileCount: Int,
+        discoveredFileCount: Int,
+        bytesRead: UInt64,
+        retainedEntryCount: Int = 0,
+        omittedEntryCount: Int = 0
+    ) {
+        self.isKnown = isKnown
+        self.indexedFileCount = max(0, indexedFileCount)
+        self.selectedFileCount = max(0, selectedFileCount)
+        self.discoveredFileCount = max(0, discoveredFileCount)
+        self.bytesRead = bytesRead
+        self.retainedEntryCount = max(0, retainedEntryCount)
+        self.omittedEntryCount = max(0, omittedEntryCount)
+    }
+
+    public var isComplete: Bool {
+        isKnown
+            && isSelectedSetIndexed
+            && selectedFileCount >= discoveredFileCount
+            && omittedEntryCount == 0
+    }
+
+    public var isSelectedSetIndexed: Bool {
+        isKnown && indexedFileCount >= selectedFileCount
+    }
+
+    public var label: String {
+        guard isKnown else { return "Coverage unavailable" }
+        guard discoveredFileCount > 0 else { return "No session files" }
+        if omittedEntryCount > 0 {
+            let retained = "Latest \(retainedEntryCount) rows"
+            if isSelectedSetIndexed == false {
+                return "Indexing \(indexedFileCount) of latest \(selectedFileCount) files · \(retained.lowercased())"
+            }
+            let allFiles = discoveredFileCount == 1 ? "1 file" : "\(discoveredFileCount) files"
+            let fileScope = selectedFileCount >= discoveredFileCount
+                ? allFiles
+                : "\(selectedFileCount) of \(discoveredFileCount) files"
+            return "\(retained) · \(fileScope)"
+        }
+        return isComplete
+            ? "All \(discoveredFileCount) files"
+            : isSelectedSetIndexed
+                ? "Latest \(selectedFileCount) of \(discoveredFileCount) files"
+                : "Indexing \(indexedFileCount) of latest \(selectedFileCount) files"
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case isKnown
+        case indexedFileCount
+        case selectedFileCount
+        case discoveredFileCount
+        case bytesRead
+        case retainedEntryCount
+        case omittedEntryCount
+    }
+
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            isKnown: try values.decodeIfPresent(Bool.self, forKey: .isKnown) ?? true,
+            indexedFileCount: try values.decode(Int.self, forKey: .indexedFileCount),
+            selectedFileCount: try values.decode(Int.self, forKey: .selectedFileCount),
+            discoveredFileCount: try values.decode(Int.self, forKey: .discoveredFileCount),
+            bytesRead: try values.decode(UInt64.self, forKey: .bytesRead),
+            retainedEntryCount: try values.decodeIfPresent(Int.self, forKey: .retainedEntryCount) ?? 0,
+            omittedEntryCount: try values.decodeIfPresent(Int.self, forKey: .omittedEntryCount) ?? 0
+        )
+    }
+
+    public static let unknown = CodexLocalUsageCoverage(
+        isKnown: false,
+        indexedFileCount: 0,
+        selectedFileCount: 0,
+        discoveredFileCount: 0,
+        bytesRead: 0
+    )
+}
+
+public struct CodexLocalUsageParserState: Codable, Sendable, Equatable {
+    public var sessionID: String?
+    public var projectPath: String?
+    public var model: String?
+    public var turnID: String?
+    public var currentTurnCommandCount: Int
+    public var parsedLineCount: Int
+    public var isDiscardingOversizedLine: Bool
+    public var pendingLineByteCount: Int
+    public var hasParsedUnterminatedLine: Bool
+
+    public init(
+        sessionID: String? = nil,
+        projectPath: String? = nil,
+        model: String? = nil,
+        turnID: String? = nil,
+        currentTurnCommandCount: Int = 0,
+        parsedLineCount: Int = 0,
+        isDiscardingOversizedLine: Bool = false,
+        pendingLineByteCount: Int = 0,
+        hasParsedUnterminatedLine: Bool = false
+    ) {
+        self.sessionID = sessionID
+        self.projectPath = projectPath
+        self.model = model
+        self.turnID = turnID
+        self.currentTurnCommandCount = max(0, currentTurnCommandCount)
+        self.parsedLineCount = max(0, parsedLineCount)
+        self.isDiscardingOversizedLine = isDiscardingOversizedLine
+        self.pendingLineByteCount = max(0, pendingLineByteCount)
+        self.hasParsedUnterminatedLine = hasParsedUnterminatedLine
     }
 }
 
@@ -393,12 +529,20 @@ public struct CodexLocalUsageFileState: Codable, Sendable, Equatable {
     public let inode: UInt64
     public let size: UInt64
     public let modifiedAt: Date
+    public let appendFingerprint: String?
 
-    public init(path: String, inode: UInt64, size: UInt64, modifiedAt: Date) {
+    public init(
+        path: String,
+        inode: UInt64,
+        size: UInt64,
+        modifiedAt: Date,
+        appendFingerprint: String? = nil
+    ) {
         self.path = path
         self.inode = inode
         self.size = size
         self.modifiedAt = modifiedAt
+        self.appendFingerprint = appendFingerprint
     }
 }
 

@@ -51,7 +51,8 @@ final class PopupAppKitButtonControl: NSControl {
     private var isHovered = false
     private var isPressed = false
 
-    override var acceptsFirstResponder: Bool { false }
+    override var acceptsFirstResponder: Bool { isEnabled }
+    override var canBecomeKeyView: Bool { isEnabled }
     override var focusRingType: NSFocusRingType {
         get { .none }
         set { }
@@ -109,6 +110,31 @@ final class PopupAppKitButtonControl: NSControl {
         }
     }
 
+    override func keyDown(with event: NSEvent) {
+        guard isEnabled else {
+            super.keyDown(with: event)
+            return
+        }
+        switch event.charactersIgnoringModifiers {
+        case " ", "\r", "\u{3}":
+            actionHandler?()
+        default:
+            super.keyDown(with: event)
+        }
+    }
+
+    override func becomeFirstResponder() -> Bool {
+        let accepted = super.becomeFirstResponder()
+        if accepted { needsDisplay = true }
+        return accepted
+    }
+
+    override func resignFirstResponder() -> Bool {
+        let resigned = super.resignFirstResponder()
+        if resigned { needsDisplay = true }
+        return resigned
+    }
+
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
 
@@ -121,6 +147,18 @@ final class PopupAppKitButtonControl: NSControl {
             NSColor.separatorColor.withAlphaComponent(0.58).setStroke()
             path.lineWidth = 1
             path.stroke()
+        }
+
+
+        if window?.firstResponder === self {
+            NSColor.labelColor.withAlphaComponent(0.88).setStroke()
+            let focusPath = NSBezierPath(
+                roundedRect: bounds.insetBy(dx: 2.5, dy: 2.5),
+                xRadius: max(2, GlassTokens.pillRadius - 2),
+                yRadius: max(2, GlassTokens.pillRadius - 2)
+            )
+            focusPath.lineWidth = 2
+            focusPath.stroke()
         }
 
         drawContent()

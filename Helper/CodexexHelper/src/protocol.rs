@@ -11,6 +11,7 @@ pub enum HelperRequest {
     FetchSnapshot,
     BeginDeviceAuth,
     PollDeviceAuth { flow_id: String },
+    CancelDeviceAuth { flow_id: String },
     SignOut,
 }
 
@@ -32,6 +33,7 @@ pub enum HelperResponse {
     DeviceAuthPending {
         message: String,
     },
+    DeviceAuthCancelled,
     SignedIn,
     SignedOut,
     Error {
@@ -47,7 +49,12 @@ pub struct HelperRequestEnvelope {
     #[serde(rename = "requestId")]
     pub request_id: Option<String>,
     pub method: String,
-    #[serde(rename = "flow_id", alias = "flowId", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "flow_id",
+        alias = "flowId",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub flow_id: Option<String>,
 }
 
@@ -72,6 +79,12 @@ impl HelperRequestEnvelope {
                 method: "pollDeviceAuth".to_string(),
                 flow_id: Some(flow_id),
             },
+            HelperRequest::CancelDeviceAuth { flow_id } => Self {
+                protocol_version: PROTOCOL_VERSION,
+                request_id,
+                method: "cancelDeviceAuth".to_string(),
+                flow_id: Some(flow_id),
+            },
             HelperRequest::SignOut => Self {
                 protocol_version: PROTOCOL_VERSION,
                 request_id,
@@ -82,7 +95,13 @@ impl HelperRequestEnvelope {
     }
 
     fn into_request(self) -> Result<HelperRequest, String> {
-        if self.request_id.as_deref().unwrap_or_default().trim().is_empty() {
+        if self
+            .request_id
+            .as_deref()
+            .unwrap_or_default()
+            .trim()
+            .is_empty()
+        {
             return Err("missing requestId".to_string());
         }
 
@@ -91,9 +110,14 @@ impl HelperRequestEnvelope {
             "beginDeviceAuth" => Ok(HelperRequest::BeginDeviceAuth),
             "pollDeviceAuth" => self
                 .flow_id
-                .filter(|value| value.trim().is_empty() == false)
+                .filter(|value| !value.trim().is_empty())
                 .map(|flow_id| HelperRequest::PollDeviceAuth { flow_id })
                 .ok_or_else(|| "pollDeviceAuth requires flow_id".to_string()),
+            "cancelDeviceAuth" => self
+                .flow_id
+                .filter(|value| !value.trim().is_empty())
+                .map(|flow_id| HelperRequest::CancelDeviceAuth { flow_id })
+                .ok_or_else(|| "cancelDeviceAuth requires flow_id".to_string()),
             "signOut" => Ok(HelperRequest::SignOut),
             method => Err(format!("unsupported method: {method}")),
         }
@@ -158,6 +182,16 @@ impl HelperResponseEnvelope {
                 verification_uri: None,
                 user_code: None,
             },
+            HelperResponse::DeviceAuthCancelled => Self {
+                protocol_version: PROTOCOL_VERSION,
+                request_id,
+                response_type: "deviceAuthCancelled".to_string(),
+                payload_json: None,
+                message: None,
+                flow_id: None,
+                verification_uri: None,
+                user_code: None,
+            },
             HelperResponse::SignedIn => Self {
                 protocol_version: PROTOCOL_VERSION,
                 request_id,
@@ -210,6 +244,7 @@ fn dispatch_request(request: HelperRequest) -> anyhow::Result<HelperResponse> {
         HelperRequest::FetchSnapshot => quota::fetch_snapshot(),
         HelperRequest::BeginDeviceAuth => auth::begin_device_auth(),
         HelperRequest::PollDeviceAuth { flow_id } => auth::poll_device_auth(&flow_id),
+        HelperRequest::CancelDeviceAuth { flow_id } => auth::cancel_device_auth(&flow_id),
         HelperRequest::SignOut => auth::sign_out(),
     }
 }
@@ -238,8 +273,12 @@ pub fn handle_wire_line(line: &str) -> HelperResponseEnvelope {
             }
 
             match envelope.into_request() {
-                Ok(request) => HelperResponseEnvelope::from_response(request_id, handle_request(request)),
-                Err(message) => HelperResponseEnvelope::error(request_id, format!("invalid request: {message}")),
+                Ok(request) => {
+                    HelperResponseEnvelope::from_response(request_id, handle_request(request))
+                }
+                Err(message) => {
+                    HelperResponseEnvelope::error(request_id, format!("invalid request: {message}"))
+                }
             }
         }
         Err(err) => HelperResponseEnvelope::error(None, format!("invalid request: {err}")),

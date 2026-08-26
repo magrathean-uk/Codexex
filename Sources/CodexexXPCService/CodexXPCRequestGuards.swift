@@ -26,24 +26,4 @@ enum CodexXPCRequestGuards {
     }
 }
 
-final class CodexXPCResetThrottle {
-    private let minimumInterval: TimeInterval
-    private var lastResetAt: Date?
-
-    init(minimumInterval: TimeInterval = 0.75) {
-        self.minimumInterval = minimumInterval
-    }
-
-    func shouldReset(now: Date = Date()) -> Bool {
-        guard let lastResetAt else {
-            self.lastResetAt = now
-            return true
-        }
-        guard now.timeIntervalSince(lastResetAt) >= minimumInterval else {
-            return false
-        }
-        self.lastResetAt = now
-        return true
-    }
-}
 #endif

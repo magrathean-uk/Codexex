@@ -6,19 +6,28 @@ import CodexMeterCore
 enum CodexiOSLiveAccountState: Equatable {
     case checking
     case signedOut
+    case authExpired
+    case unavailable
     case pendingSignIn
     case signedIn
 }
 
 protocol CodexiOSServiceProtocol: Sendable {
-    func fetchSnapshot() async throws -> CodexServiceSnapshotResponse
+    func fetchSnapshot() async throws -> CodexiOSSnapshotOutcome
+    func recoverPendingSignIn() async throws -> CodexiOSDeviceAuthStart?
     func beginSignIn() async throws -> CodexiOSDeviceAuthStart
     func pollSignIn(flowID: String) async throws -> CodexiOSPollResult
+    func cancelSignIn() async throws
     func signOut() async throws
 }
 
-typealias CodexiOSOpenURLAction = @MainActor @Sendable (URL) async -> Void
+typealias CodexiOSOpenURLAction = @MainActor @Sendable (URL) async -> Bool
 typealias CodexiOSCopyTextAction = @MainActor @Sendable (String) -> Void
+
+private let codexiOSSharedUsageHistoryStore = CodexUsageHistoryStore()
+private let codexiOSSharedLiveActivityManager = CodexiOSLiveActivitySerialManager(
+    manager: CodexiOSLiveActivity()
+)
 
 @MainActor
 @Observable
@@ -27,8 +36,9 @@ final class CodexiOSModel {
     private let defaults: UserDefaults
     private let openURLAction: CodexiOSOpenURLAction
     private let copyTextAction: CodexiOSCopyTextAction
-    private let historyStore: CodexUsageHistoryStore
-    private let liveActivityManager: any CodexiOSLiveActivityManaging
+    let historyStore: CodexUsageHistoryStore
+    let liveActivityManager: any CodexiOSLiveActivityManaging
+    private let backgroundRefreshScheduler: any CodexiOSBackgroundRefreshScheduling
 
     var hasCompletedOnboarding: Bool
     var previewModeEnabled: Bool
@@ -36,12 +46,14 @@ final class CodexiOSModel {
     var usageHistory: [CodexUsageHistorySample] = []
     var isRefreshing = false
     var isSigningIn = false
+    var isResetting = false
     var statusMessage = "Checking saved account."
     var errorMessage: String?
     var deviceCode: String?
     var verificationURL: URL?
     var flowID: String?
     var lastUpdatedAt: Date?
+    var retryAvailableAt: Date?
     private(set) var hasCheckedLiveActivityAvailability = false
     private(set) var isLiveActivityAvailable = false
     private(set) var isLiveActivityRunning = false
@@ -52,17 +64,29 @@ final class CodexiOSModel {
 
     private var liveActivityGeneration = 0
     private var liveActivityOperationCount = 0
+    private var accountOperationGeneration: UInt64 = 0
+    private var startTask: Task<Void, Never>?
+    private var retriesTransientAccountFailure = false
+    private var isHandlingBackgroundRefresh = false
 
     init(
         service: any CodexiOSServiceProtocol = CodexiOSService(),
         defaults: UserDefaults = .standard,
-        historyStore: CodexUsageHistoryStore = CodexUsageHistoryStore(),
-        liveActivityManager: any CodexiOSLiveActivityManaging = CodexiOSLiveActivity(),
+        historyStore: CodexUsageHistoryStore = codexiOSSharedUsageHistoryStore,
+        liveActivityManager: (any CodexiOSLiveActivityManaging)? = nil,
+        liveActivityCoordinator: any CodexiOSLiveActivityManaging = codexiOSSharedLiveActivityManager,
+        backgroundRefreshScheduler: any CodexiOSBackgroundRefreshScheduling = CodexiOSSystemBackgroundRefreshScheduler(),
         openURLAction: @escaping CodexiOSOpenURLAction = { url in
             await UIApplication.shared.open(url)
         },
         copyTextAction: @escaping CodexiOSCopyTextAction = { text in
-            UIPasteboard.general.string = text
+            UIPasteboard.general.setItems(
+                [["public.utf8-plain-text": text]],
+                options: [
+                    .localOnly: true,
+                    .expirationDate: Date().addingTimeInterval(CodexiOSPendingAuthStore.ttl)
+                ]
+            )
         }
     ) {
         self.service = service
@@ -70,13 +94,19 @@ final class CodexiOSModel {
         self.openURLAction = openURLAction
         self.copyTextAction = copyTextAction
         self.historyStore = historyStore
-        self.liveActivityManager = CodexiOSLiveActivitySerialManager(
-            manager: liveActivityManager
-        )
+        self.liveActivityManager = if let liveActivityManager {
+            CodexiOSLiveActivitySerialManager(manager: liveActivityManager)
+        } else {
+            liveActivityCoordinator
+        }
+        self.backgroundRefreshScheduler = backgroundRefreshScheduler
         let storedPreviewModeEnabled = defaults.bool(forKey: CodexiOSSettingsKeys.previewModeEnabled)
         hasCompletedOnboarding = defaults.bool(forKey: CodexiOSSettingsKeys.hasCompletedOnboarding)
         previewModeEnabled = storedPreviewModeEnabled
         liveAccountState = storedPreviewModeEnabled ? .signedOut : .checking
+        if storedPreviewModeEnabled {
+            applyPreviewSnapshot()
+        }
     }
 
     var isSignedIn: Bool {
@@ -87,18 +117,79 @@ final class CodexiOSModel {
         liveAccountState == .checking
     }
 
+    var canAutoRefresh: Bool {
+        isSignedIn || (liveAccountState == .unavailable && retriesTransientAccountFailure)
+    }
+
     var hasPendingSignIn: Bool {
         liveAccountState == .pendingSignIn && flowID != nil
     }
 
     func start() async {
+        if let startTask {
+            await startTask.value
+            return
+        }
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.performStart()
+        }
+        startTask = task
+        await task.value
+    }
+
+    private func performStart() async {
+        let accountGeneration = accountOperationGeneration
+        let previewModeAtStart = previewModeEnabled
         await recoverLiveActivity()
-        usageHistory = await historyStore.load()
+        guard startupIsCurrent(
+            accountGeneration: accountGeneration,
+            previewModeAtStart: previewModeAtStart
+        ) else { return }
+        let restoredHistory = await historyStore.load()
+        guard startupIsCurrent(
+            accountGeneration: accountGeneration,
+            previewModeAtStart: previewModeAtStart
+        ) else { return }
+        usageHistory = restoredHistory
         if previewModeEnabled {
             applyPreviewSnapshot()
             await updateLiveActivity(with: snapshot)
             return
         }
+        do {
+            let pending = try await service.recoverPendingSignIn()
+            guard startupIsCurrent(
+                accountGeneration: accountGeneration,
+                previewModeAtStart: previewModeAtStart
+            ) else { return }
+            if let pending {
+                applyPendingSignIn(pending, message: "Resuming ChatGPT sign-in.")
+                await checkSignIn()
+                return
+            }
+        } catch {
+            guard startupIsCurrent(
+                accountGeneration: accountGeneration,
+                previewModeAtStart: previewModeAtStart
+            ) else { return }
+            if error as? CodexiOSError == .signInExpired {
+                clearPendingSignIn()
+                liveAccountState = .signedOut
+                retriesTransientAccountFailure = false
+                errorMessage = nil
+                statusMessage = CodexiOSError.signInExpired.localizedDescription
+            } else {
+                liveAccountState = .unavailable
+                retriesTransientAccountFailure = false
+                applyError(message(for: error))
+            }
+            return
+        }
+        guard startupIsCurrent(
+            accountGeneration: accountGeneration,
+            previewModeAtStart: previewModeAtStart
+        ) else { return }
         await refresh()
     }
 
@@ -109,14 +200,23 @@ final class CodexiOSModel {
             await updateLiveActivity(with: snapshot)
             return
         }
+        if let retryAvailableAt, retryAvailableAt > Date() {
+            statusMessage = "Try again \(Self.relativeDescription(for: retryAvailableAt))."
+            return
+        }
+        let generation = accountOperationGeneration
         isRefreshing = true
         defer { isRefreshing = false }
 
         do {
-            await applySnapshotResponse(try await service.fetchSnapshot())
+            let outcome = try await service.fetchSnapshot()
+            guard generation == accountOperationGeneration, previewModeEnabled == false else { return }
+            await applySnapshotOutcome(outcome)
         } catch {
+            guard generation == accountOperationGeneration, previewModeEnabled == false else { return }
             if liveAccountState == .checking {
-                liveAccountState = .signedOut
+                liveAccountState = .unavailable
+                retriesTransientAccountFailure = true
             }
             applyError(message(for: error))
             await markLiveActivityStale()
@@ -125,20 +225,26 @@ final class CodexiOSModel {
 
     func beginSignIn() async {
         guard isSigningIn == false else { return }
+        accountOperationGeneration &+= 1
+        let generation = accountOperationGeneration
+        retriesTransientAccountFailure = false
         isSigningIn = true
         errorMessage = nil
+        retryAvailableAt = nil
         statusMessage = "Starting ChatGPT sign-in."
         defer { isSigningIn = false }
 
         do {
             let auth = try await service.beginSignIn()
-            deviceCode = auth.userCode
-            verificationURL = auth.verificationURL
-            flowID = auth.flowID
-            liveAccountState = .pendingSignIn
-            copyTextAction(auth.userCode)
-            statusMessage = "Device code copied. Paste it in Safari."
+            guard generation == accountOperationGeneration else { return }
+            applyPendingSignIn(auth, message: "Opening Safari.")
+            let didOpen = await openURLAction(auth.verificationURL)
+            guard generation == accountOperationGeneration else { return }
+            statusMessage = didOpen
+                ? "Safari opened. Enter the device code to continue."
+                : Self.manualSignInMessage
         } catch {
+            guard generation == accountOperationGeneration else { return }
             clearPendingSignIn()
             liveAccountState = .signedOut
             applyError(message(for: error))
@@ -148,6 +254,7 @@ final class CodexiOSModel {
     func checkSignIn() async {
         guard let flowID else { return }
         guard isSigningIn == false else { return }
+        let generation = accountOperationGeneration
         isSigningIn = true
         errorMessage = nil
         defer { isSigningIn = false }
@@ -155,17 +262,53 @@ final class CodexiOSModel {
         do {
             switch try await service.pollSignIn(flowID: flowID) {
             case .pending(let message):
+                guard generation == accountOperationGeneration else { return }
                 liveAccountState = .pendingSignIn
+                retriesTransientAccountFailure = false
                 statusMessage = message
             case .signedIn:
+                guard generation == accountOperationGeneration else { return }
                 liveAccountState = .signedIn
+                retriesTransientAccountFailure = false
                 statusMessage = "Signed in."
                 clearPendingSignIn()
                 completeOnboarding()
                 await refresh()
             }
         } catch {
-            liveAccountState = .pendingSignIn
+            guard generation == accountOperationGeneration else { return }
+            if error as? CodexiOSError == .signInExpired {
+                clearPendingSignIn()
+                liveAccountState = .signedOut
+                retriesTransientAccountFailure = false
+                errorMessage = nil
+                statusMessage = CodexiOSError.signInExpired.localizedDescription
+            } else {
+                liveAccountState = .pendingSignIn
+                retriesTransientAccountFailure = false
+                applyError(message(for: error))
+            }
+        }
+    }
+
+    func restartSignIn() async {
+        await cancelSignIn()
+        await beginSignIn()
+    }
+
+    func cancelSignIn() async {
+        accountOperationGeneration &+= 1
+        clearPendingSignIn()
+        liveAccountState = .signedOut
+        retriesTransientAccountFailure = false
+        errorMessage = nil
+        retryAvailableAt = nil
+        statusMessage = "Sign-in cancelled."
+        do {
+            try await service.cancelSignIn()
+        } catch {
+            liveAccountState = .unavailable
+            retriesTransientAccountFailure = false
             applyError(message(for: error))
         }
     }
@@ -183,7 +326,7 @@ final class CodexiOSModel {
         guard previewModeEnabled == false else { return }
         if autoCheckSignInOnReturn, hasPendingSignIn {
             await checkSignInAfterReturn()
-        } else if refreshWhenActive, isSignedIn {
+        } else if refreshWhenActive, canAutoRefresh {
             let refreshIntervalSeconds = max(
                 defaults.object(forKey: CodexiOSSettingsKeys.refreshIntervalSeconds) as? Int ?? 300,
                 300
@@ -204,23 +347,85 @@ final class CodexiOSModel {
 
     func openSignInPage() async {
         guard let verificationURL else { return }
-        await openURLAction(verificationURL)
+        let generation = accountOperationGeneration
+        let didOpen = await openURLAction(verificationURL)
+        guard generation == accountOperationGeneration,
+              self.verificationURL == verificationURL else { return }
+        statusMessage = didOpen
+            ? "Safari opened. Enter the device code to continue."
+            : Self.manualSignInMessage
     }
 
     func signOut() async {
+        accountOperationGeneration &+= 1
+        let generation = accountOperationGeneration
         invalidateLiveActivityOperations()
-        CodexiOSBackgroundRefresh.cancel()
+        backgroundRefreshScheduler.cancel()
         liveAccountState = .signedOut
+        retriesTransientAccountFailure = false
         snapshot = nil
         lastUpdatedAt = nil
         clearPendingSignIn()
         await stopLiveActivity(announce: false)
         do {
             try await service.signOut()
+            guard generation == accountOperationGeneration else { return }
             errorMessage = nil
+            retryAvailableAt = nil
             statusMessage = "Signed out."
         } catch {
+            guard generation == accountOperationGeneration else { return }
+            liveAccountState = .unavailable
+            retriesTransientAccountFailure = false
             applyError(message(for: error))
+        }
+    }
+
+    func resetApp() async {
+        guard isResetting == false else { return }
+        let wasOnboarded = hasCompletedOnboarding
+        isResetting = true
+        defer { isResetting = false }
+        accountOperationGeneration &+= 1
+        invalidateLiveActivityOperations()
+        backgroundRefreshScheduler.cancel()
+        await stopLiveActivity(announce: false)
+
+        var failures: [String] = []
+        do { try await service.signOut() } catch { failures.append(message(for: error)) }
+        do { try await historyStore.clear() } catch { failures.append(message(for: error)) }
+
+        do {
+            try CodexiOSAppResetter.resetLocalData(
+                defaults: defaults,
+                clearTokens: {},
+                clearPendingAuth: {},
+                clearHistory: {}
+            )
+        } catch {
+            failures.append(message(for: error))
+        }
+
+        previewModeEnabled = false
+        snapshot = nil
+        usageHistory = []
+        lastUpdatedAt = nil
+        retryAvailableAt = nil
+        clearPendingSignIn()
+
+        if failures.isEmpty {
+            hasCompletedOnboarding = false
+            liveAccountState = .signedOut
+            retriesTransientAccountFailure = false
+            errorMessage = nil
+            statusMessage = "Codexex was reset."
+        } else {
+            // Keep the current screen alive long enough to surface the failure.
+            // Cleared defaults still make the next cold launch start cleanly.
+            hasCompletedOnboarding = wasOnboarded
+            liveAccountState = .unavailable
+            retriesTransientAccountFailure = false
+            applyError("Some local data could not be deleted. \(failures.joined(separator: " "))")
         }
     }
 
@@ -231,6 +436,8 @@ final class CodexiOSModel {
     }
 
     func enablePreviewMode() {
+        accountOperationGeneration &+= 1
+        let generation = accountOperationGeneration
         invalidateLiveActivityOperations()
         previewModeEnabled = true
         defaults.set(true, forKey: CodexiOSSettingsKeys.previewModeEnabled)
@@ -240,27 +447,42 @@ final class CodexiOSModel {
         errorMessage = nil
         clearPendingSignIn()
         liveAccountState = .signedOut
+        retriesTransientAccountFailure = false
+        retryAvailableAt = nil
         Task { [weak self] in
             guard let self else { return }
+            guard self.accountOperationGeneration == generation, self.previewModeEnabled else { return }
+            try? await self.service.cancelSignIn()
+            guard self.accountOperationGeneration == generation, self.previewModeEnabled else { return }
             await self.updateLiveActivity(with: self.snapshot)
         }
     }
 
     func disablePreviewMode() {
         guard previewModeEnabled else { return }
+        accountOperationGeneration &+= 1
+        let generation = accountOperationGeneration
         invalidateLiveActivityOperations()
         previewModeEnabled = false
         defaults.set(false, forKey: CodexiOSSettingsKeys.previewModeEnabled)
         snapshot = nil
+        usageHistory = []
         lastUpdatedAt = nil
         liveAccountState = .signedOut
+        retriesTransientAccountFailure = false
+        retryAvailableAt = nil
         statusMessage = "Preview mode off."
         beginLiveActivityOperation()
         Task { [weak self] in
             guard let self else { return }
             defer { self.endLiveActivityOperation() }
             await self.stopLiveActivity(announce: false)
-            guard self.previewModeEnabled == false else { return }
+            guard self.accountOperationGeneration == generation,
+                  self.previewModeEnabled == false else { return }
+            let restoredHistory = await self.historyStore.load()
+            guard self.accountOperationGeneration == generation,
+                  self.previewModeEnabled == false else { return }
+            self.usageHistory = restoredHistory
             await self.refresh()
         }
     }
@@ -273,37 +495,57 @@ final class CodexiOSModel {
         errorMessage = nil
         statusMessage = "Preview mode is active."
         liveAccountState = .signedOut
+        retriesTransientAccountFailure = false
+        retryAvailableAt = nil
     }
 
-    private func applySnapshotResponse(_ response: CodexServiceSnapshotResponse) async {
-        if let snapshot = response.snapshot {
+    private func applySnapshotOutcome(_ outcome: CodexiOSSnapshotOutcome) async {
+        switch outcome {
+        case .loaded(let snapshot):
             self.snapshot = snapshot
             lastUpdatedAt = snapshot.capturedAt
             errorMessage = nil
+            retryAvailableAt = nil
             statusMessage = "Signed in."
             clearPendingSignIn()
             liveAccountState = .signedIn
+            retriesTransientAccountFailure = false
             completeOnboarding()
             usageHistory = await historyStore.append(snapshot: snapshot)
             await updateLiveActivity(with: snapshot)
-            return
-        }
-
-        errorMessage = response.errorMessage
-        statusMessage = response.errorMessage ?? "No quota data yet."
-
-        if hasPendingSignIn, response.authMode == nil {
-            liveAccountState = .pendingSignIn
-        } else if response.authMode == .chatGPT {
-            liveAccountState = .signedIn
-            completeOnboarding()
-            await markLiveActivityStale()
-        } else {
+        case .signedOut:
+            errorMessage = nil
+            retryAvailableAt = nil
+            statusMessage = "Sign in with ChatGPT to read your Codex quota."
             snapshot = nil
             lastUpdatedAt = nil
-            liveAccountState = .signedOut
+            liveAccountState = hasPendingSignIn ? .pendingSignIn : .signedOut
+            retriesTransientAccountFailure = false
+            if hasPendingSignIn == false {
+                invalidateLiveActivityOperations()
+                await stopLiveActivity(announce: false)
+            }
+        case .authExpired(let message):
+            errorMessage = nil
+            retryAvailableAt = nil
+            statusMessage = message
+            snapshot = nil
+            lastUpdatedAt = nil
+            clearPendingSignIn()
+            liveAccountState = .authExpired
+            retriesTransientAccountFailure = false
             invalidateLiveActivityOperations()
             await stopLiveActivity(announce: false)
+        case .unavailable(let message, let hasStoredCredentials, let retry):
+            errorMessage = message
+            statusMessage = message
+            retryAvailableAt = retry.retryAfter
+            liveAccountState = hasStoredCredentials ? .unavailable : .signedOut
+            retriesTransientAccountFailure = hasStoredCredentials && retry.isTransient
+            if hasStoredCredentials { completeOnboarding() }
+            await markLiveActivityStale()
+        case .superseded:
+            return
         }
     }
 
@@ -346,7 +588,7 @@ final class CodexiOSModel {
         if announce {
             statusMessage = "Live Activity stopped."
         }
-        CodexiOSBackgroundRefresh.cancel()
+        backgroundRefreshScheduler.cancel()
     }
 
     func updateLiveActivityPresentation(showFiveHour: Bool) async {
@@ -390,10 +632,17 @@ final class CodexiOSModel {
     func refreshLiveActivityInBackground() async -> Bool {
         await recoverLiveActivity()
         guard isLiveActivityRunning, previewModeEnabled == false else {
-            CodexiOSBackgroundRefresh.cancel()
+            backgroundRefreshScheduler.cancel()
             return true
         }
 
+        isHandlingBackgroundRefresh = true
+        defer {
+            isHandlingBackgroundRefresh = false
+            if isLiveActivityRunning, previewModeEnabled == false {
+                backgroundRefreshScheduler.schedule(cadence: liveActivityCadence)
+            }
+        }
         await refresh()
         return Task.isCancelled == false && errorMessage == nil && isLiveActivityStale == false
     }
@@ -429,7 +678,18 @@ final class CodexiOSModel {
     }
 
     private func recoverLiveActivity() async {
-        applyLiveActivityState(await liveActivityManager.recover())
+        let generation = liveActivityGeneration
+        let state = await liveActivityManager.recover()
+        guard generation == liveActivityGeneration else { return }
+        applyLiveActivityState(state)
+    }
+
+    private func startupIsCurrent(
+        accountGeneration: UInt64,
+        previewModeAtStart: Bool
+    ) -> Bool {
+        accountGeneration == accountOperationGeneration
+            && previewModeEnabled == previewModeAtStart
     }
 
     private func updateLiveActivity(with snapshot: CodexSnapshot?) async {
@@ -488,8 +748,21 @@ final class CodexiOSModel {
     }
 
     private func scheduleBackgroundLiveActivityRefreshIfNeeded() {
-        guard isLiveActivityRunning, previewModeEnabled == false else { return }
-        CodexiOSBackgroundRefresh.schedule(cadence: liveActivityCadence)
+        guard isHandlingBackgroundRefresh == false,
+              isLiveActivityRunning,
+              previewModeEnabled == false else { return }
+        backgroundRefreshScheduler.schedule(cadence: liveActivityCadence)
+    }
+
+    private func applyPendingSignIn(_ auth: CodexiOSDeviceAuthStart, message: String) {
+        flowID = auth.flowID
+        verificationURL = auth.verificationURL
+        deviceCode = auth.userCode
+        liveAccountState = .pendingSignIn
+        retriesTransientAccountFailure = false
+        retryAvailableAt = nil
+        errorMessage = nil
+        statusMessage = message
     }
 
     private func clearPendingSignIn() {
@@ -504,4 +777,13 @@ final class CodexiOSModel {
         }
         return error.localizedDescription
     }
+
+    private static func relativeDescription(for date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .full
+        return formatter.localizedString(for: date, relativeTo: Date())
+    }
+
+    private static let manualSignInMessage =
+        "Could not open Safari. Copy the code, then open auth.openai.com/codex/device manually."
 }

@@ -441,15 +441,20 @@ enum CodexAppSettings {
         return url
     }
 
-    static func codexSessionsSecurityScopedURL() -> URL? {
+    static func codexSessionsSecurityScopedURL(
+        resolver: (Data, inout Bool) throws -> URL = { bookmark, isStale in
+            try URL(
+                resolvingBookmarkData: bookmark,
+                options: [.withSecurityScope],
+                relativeTo: nil,
+                bookmarkDataIsStale: &isStale
+            )
+        }
+    ) -> URL? {
         guard let bookmark = codexSessionsBookmark else { return nil }
         var isStale = false
-        return try? URL(
-            resolvingBookmarkData: bookmark,
-            options: [.withSecurityScope],
-            relativeTo: nil,
-            bookmarkDataIsStale: &isStale
-        )
+        guard let url = try? resolver(bookmark, &isStale), isStale == false else { return nil }
+        return url
     }
 
     static func removeAll(defaults: UserDefaults = .standard) {

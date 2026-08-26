@@ -105,6 +105,8 @@ struct SettingsRootView: View {
     @State private var isShowingResetConfirmation = false
     @State private var accountScrollRequest = 0
     @State private var pendingAccountScroll = false
+    @State private var resetErrorMessage: String?
+    @State private var isResetting = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -150,10 +152,33 @@ struct SettingsRootView: View {
         .alert("Reset Codexex?", isPresented: $isShowingResetConfirmation) {
             Button("Cancel", role: .cancel) {}
             Button("Reset App", role: .destructive) {
-                CodexAppResetter.resetAndQuit()
+                isResetting = true
+                Task { @MainActor in
+                    if let helperFailure = await model.clearHelperStateForAppReset() {
+                        resetErrorMessage = helperFailure
+                        isResetting = false
+                        return
+                    }
+                    let result = CodexAppResetter.resetAndQuit()
+                    if result.succeeded == false {
+                        resetErrorMessage = result.message
+                        isResetting = false
+                    }
+                }
             }
         } message: {
             Text("This deletes sign-in, settings, preview state, history, and helper data. Codexex will quit after reset.")
+        }
+        .alert(
+            "Reset incomplete",
+            isPresented: Binding(
+                get: { resetErrorMessage != nil },
+                set: { if $0 == false { resetErrorMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) { resetErrorMessage = nil }
+        } message: {
+            Text(resetErrorMessage ?? "Codexex could not finish the reset.")
         }
     }
 
@@ -373,7 +398,7 @@ struct SettingsRootView: View {
             ) {
                 SettingsListRow(
                     title: "Sessions folder",
-                    detail: model.codexSessionsPath ?? "~/.codex/sessions",
+                    detail: model.localUsageSettingsDetail,
                     isLast: true
                 ) {
                     Button("Choose") { model.chooseCodexSessionsFolder() }
@@ -502,7 +527,11 @@ struct SettingsRootView: View {
                 )
             }
 
-            SettingsListRow(title: "Quota notifications", detail: "Opt-in alerts for 5H pressure, reset, and weekly risk.") {
+            SettingsListRow(
+                title: "Quota notifications",
+                detail: model.quotaNotificationStatusMessage
+                    ?? "Opt-in alerts for 5H pressure, reset, and weekly risk."
+            ) {
                 CodexSwitch(isOn: Binding(
                     get: { model.quotaNotificationsEnabled },
                     set: { model.setQuotaNotificationsEnabled($0) }
@@ -592,8 +621,9 @@ struct SettingsRootView: View {
                 footer: "Deletes sign-in, settings, preview state, history, and helper data. Codexex quits when done."
             ) {
                 SettingsListRow(title: "Reset app", detail: "Return Codexex to first launch.", isLast: true) {
-                    Button("Reset") { isShowingResetConfirmation = true }
+                    Button(isResetting ? "Resetting…" : "Reset") { isShowingResetConfirmation = true }
                         .buttonStyle(CodexDestructiveButtonStyle())
+                        .disabled(isResetting)
                 }
             }
 
@@ -622,6 +652,7 @@ struct SettingsRootView: View {
                 if let code = model.authDeviceCode {
                     SettingsDeviceCodeCallout(
                         code: code,
+                        isCancelling: model.isCancellingPendingSignIn,
                         openSafari: { model.openAuthVerificationPage() },
                         copyCode: { model.copyAuthCode() },
                         cancel: { model.cancelPendingChatGPTSignIn() }
@@ -643,10 +674,15 @@ struct SettingsRootView: View {
                         }
                     }
                     .buttonStyle(SettingsGhostButtonStyle())
+                    .disabled(model.isAuthBusy)
                 }
 
                 SettingsListRow(title: "Sign out", isLast: true) {
-                    if model.isSignedIn, model.previewModeEnabled == false {
+                    if model.isSigningOut {
+                        ProgressView()
+                            .controlSize(.small)
+                            .accessibilityLabel("Signing out")
+                    } else if model.isSignedIn, model.previewModeEnabled == false {
                         Button("Sign Out") { model.signOut() }
                             .buttonStyle(CodexDestructiveButtonStyle())
                     } else {
@@ -662,12 +698,17 @@ struct SettingsRootView: View {
 
     @ViewBuilder
     private var accountPrimaryAction: some View {
-        if model.isSignedIn, model.previewModeEnabled == false {
+        if model.isSigningOut {
+            Text("Signing out…")
+                .font(.system(size: 11.5, weight: .medium))
+                .foregroundStyle(.secondary)
+        } else if model.isSignedIn, model.previewModeEnabled == false {
             Button("Manage") { model.openManageSubscription() }
                 .buttonStyle(CodexPrimaryButtonStyle())
         } else if model.authDeviceCode != nil {
-            Button("Clear Code") { model.clearAuthCode() }
+            Button(model.isCancellingPendingSignIn ? "Clearing…" : "Clear Code") { model.clearAuthCode() }
                 .buttonStyle(SettingsGhostButtonStyle())
+                .disabled(model.isCancellingPendingSignIn)
         } else {
             Button("Sign In") { model.startChatGPTSignIn() }
                 .buttonStyle(CodexPrimaryButtonStyle())
@@ -868,6 +909,7 @@ private enum SettingsRowIconName {
 
 private struct SettingsDeviceCodeCallout: View {
     let code: String
+    let isCancelling: Bool
     let openSafari: () -> Void
     let copyCode: () -> Void
     let cancel: () -> Void
@@ -908,6 +950,7 @@ private struct SettingsDeviceCodeCallout: View {
                 }
                 .buttonStyle(CodexPrimaryButtonStyle())
                 .keyboardShortcut(.defaultAction)
+                .disabled(isCancelling)
 
                 Button {
                     copyCode()
@@ -915,15 +958,17 @@ private struct SettingsDeviceCodeCallout: View {
                     Label("Copy", systemImage: "doc.on.doc")
                 }
                 .buttonStyle(SettingsGhostButtonStyle())
+                .disabled(isCancelling)
 
                 Spacer(minLength: 0)
 
                 Button {
                     cancel()
                 } label: {
-                    Label("Cancel", systemImage: "xmark")
+                    Label(isCancelling ? "Cancelling…" : "Cancel", systemImage: "xmark")
                 }
                 .buttonStyle(SettingsGhostButtonStyle())
+                .disabled(isCancelling)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -960,6 +1005,10 @@ private struct CodexSwitch: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityValue(isOn ? "On" : "Off")
+        .accessibilityRepresentation {
+            Toggle(accessibilityLabel, isOn: $isOn)
+                .toggleStyle(.switch)
+        }
     }
 }
 
@@ -981,6 +1030,7 @@ private struct CodexSegmentedControl<Value: Hashable>: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityAddTraits(selection == segment.1 ? .isSelected : [])
                 .background {
                     if selection == segment.1 {
                         RoundedRectangle(cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous)
@@ -1006,6 +1056,8 @@ private struct CodexSegmentedControl<Value: Hashable>: View {
                 .strokeBorder(SettingsTheme.hairline, lineWidth: 1)
         }
         .opacity(isEnabled ? 1 : 0.45)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Options")
     }
 }
 

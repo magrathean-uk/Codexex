@@ -7,9 +7,12 @@ final class CodexiOSMatrixSpeedTests: XCTestCase {
         XCTAssertEqual(matrixDefaultSpeedMultiplier, 1, accuracy: 0.0001)
     }
 
-    func testRainUsesAdaptive120FPSAndReferenceSpeed() {
-        XCTAssertEqual(matrixDisplayFPS, 120, accuracy: 0.0001)
-        XCTAssertEqual(matrixRenderInterval, 1.0 / 120.0, accuracy: 0.0001)
+    func testRainCapsAt60FPSAndUses30FPSInLowPowerMode() {
+        XCTAssertEqual(matrixDisplayFPS, 60, accuracy: 0.0001)
+        XCTAssertEqual(matrixLowPowerDisplayFPS, 30, accuracy: 0.0001)
+        XCTAssertEqual(matrixRenderInterval, 1.0 / 60.0, accuracy: 0.0001)
+        XCTAssertEqual(matrixRenderInterval(lowPowerMode: false), 1.0 / 60.0, accuracy: 0.0001)
+        XCTAssertEqual(matrixRenderInterval(lowPowerMode: true), 1.0 / 30.0, accuracy: 0.0001)
         XCTAssertEqual(matrixMotionSamplingInterval, 1.0 / 30.0, accuracy: 0.0001)
         XCTAssertEqual(matrixGIFDropInterval, 0.15, accuracy: 0.0001)
     }

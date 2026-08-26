@@ -8,6 +8,13 @@ struct CodexAuthBeginFailure: Equatable {
 }
 
 enum CodexAuthFlow {
+    static func isTerminalPollingFailure(_ message: String) -> Bool {
+        let normalized = message.lowercased()
+        return normalized.contains("start again")
+            || normalized.contains("expired")
+            || normalized.contains("invalid flow")
+    }
+
     static func beginFailure(_ error: Error, now: Date = Date()) -> CodexAuthBeginFailure {
         if error.localizedDescription.contains("429") {
             return CodexAuthBeginFailure(

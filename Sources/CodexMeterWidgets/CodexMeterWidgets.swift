@@ -12,23 +12,45 @@ struct CodexMeterWidgets: WidgetBundle {
 struct CodexQuotaLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: CodexLiveActivityAttributes.self) { context in
-            QuotaUsageView(state: context.state)
+            let isStale = CodexLiveActivityPresentation.resolvedStaleness(
+                systemIsStale: context.isStale,
+                contentStateIsStale: context.state.isStale
+            )
+            QuotaUsageView(state: context.state, isStale: isStale)
                 .activityBackgroundTint(Color(uiColor: .systemBackground))
         } dynamicIsland: { context in
+            let isStale = CodexLiveActivityPresentation.resolvedStaleness(
+                systemIsStale: context.isStale,
+                contentStateIsStale: context.state.isStale
+            )
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.bottom) {
-                    QuotaUsageView(state: context.state)
+                    QuotaUsageView(state: context.state, isStale: isStale)
                 }
             } compactLeading: {
-                ActivityIcon(size: 16)
-                    .accessibilityLabel("Codexex Usage")
+                if isStale {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                        .accessibilityLabel("Update needed")
+                } else {
+                    ActivityIcon(size: 16)
+                        .accessibilityLabel("Codexex Usage")
+                }
             } compactTrailing: {
                 Text("\(context.state.displayedWeeklyPercent)%")
                     .monospacedDigit()
-                    .accessibilityLabel(context.state.weeklyDisplayDescription)
+                    .accessibilityLabel(
+                        "\(context.state.weeklyDisplayDescription). \(isStale ? "Update needed" : "Up to date")"
+                    )
             } minimal: {
-                ActivityIcon(size: 16)
-                    .accessibilityLabel("Codexex Usage")
+                if isStale {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                        .accessibilityLabel("Codexex Usage. Update needed")
+                } else {
+                    ActivityIcon(size: 16)
+                        .accessibilityLabel("Codexex Usage. Up to date")
+                }
             }
             .keylineTint(.accentColor)
         }
@@ -37,6 +59,7 @@ struct CodexQuotaLiveActivity: Widget {
 
 private struct QuotaUsageView: View {
     let state: CodexLiveActivityAttributes.ContentState
+    let isStale: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 11) {
@@ -46,25 +69,57 @@ private struct QuotaUsageView: View {
                     .font(.headline.weight(.semibold))
                     .lineLimit(1)
                     .minimumScaleFactor(0.82)
+                Spacer(minLength: 6)
+                if isStale {
+                    Label("Update needed", systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.orange)
+                        .fixedSize(horizontal: true, vertical: false)
+                }
             }
 
             Text(state.weeklyDisplayDescription)
                 .font(.subheadline.weight(.medium))
                 .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.78)
+                .fixedSize(horizontal: false, vertical: true)
 
             ProgressView(value: state.displayedWeeklyFraction)
                 .tint(.accentColor)
                 .frame(height: 8)
                 .accessibilityHidden(true)
+
+            if let fiveHour = state.fiveHourDisplayDescription {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(fiveHour)
+                        .font(.caption.weight(.medium))
+                        .monospacedDigit()
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if let resetAt = state.fiveHourResetAt {
+                        Text("5-hour reset \(resetAt, style: .relative)")
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+
+            if let resetAt = state.weeklyResetAt {
+                HStack(spacing: 5) {
+                    Image(systemName: "clock")
+                    Text("Weekly reset")
+                    Text(resetAt, style: .relative)
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .fontDesign(.rounded)
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Codexex Usage")
-        .accessibilityValue(state.weeklyDisplayDescription)
+        .accessibilityValue(state.accessibilityDescription(isStale: isStale))
     }
 }
 
@@ -73,19 +128,31 @@ private struct ActivityIcon: View {
 
     var body: some View {
         Group {
-            if let path = Bundle.main.path(forResource: "icon-1024", ofType: "png"),
-               let image = UIImage(contentsOfFile: path),
-               let icon = image.preparingThumbnail(of: CGSize(width: size * 3, height: size * 3)) {
+            if let icon = ActivityIconAsset.preparedImage {
                 Image(uiImage: icon)
                     .widgetAccentedRenderingMode(.fullColor)
-                    .scaleEffect(1.0 / 3.0)
+                    .scaleEffect(size / ActivityIconAsset.pointSize)
             } else {
-                Color.clear
+                Image(systemName: "terminal.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(.primary)
+                    .padding(size * 0.18)
             }
         }
-            .frame(width: size, height: size)
-            .clipShape(RoundedRectangle(cornerRadius: size * 0.22, style: .continuous))
+        .frame(width: size, height: size)
+        .clipShape(RoundedRectangle(cornerRadius: size * 0.22, style: .continuous))
     }
+}
+
+@MainActor
+private enum ActivityIconAsset {
+    static let pointSize: CGFloat = 84
+    static let preparedImage: UIImage? = {
+        guard let path = Bundle.main.path(forResource: "icon-1024", ofType: "png"),
+              let source = UIImage(contentsOfFile: path) else { return nil }
+        return source.preparingThumbnail(of: CGSize(width: pointSize, height: pointSize)) ?? source
+    }()
 }
 
 private let previewAttributes = CodexLiveActivityAttributes()
@@ -135,6 +202,6 @@ private let previewStale = CodexLiveActivityAttributes.ContentState(
 }
 
 #Preview("System stale layout") {
-    QuotaUsageView(state: previewNormal)
+    QuotaUsageView(state: previewNormal, isStale: true)
         .padding()
 }

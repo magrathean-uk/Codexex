@@ -11,6 +11,16 @@ struct CodexStatusItemViewState: Equatable {
     let showsOpenAILogo: Bool
     let shouldDim: Bool
 
+    var accessibilityValue: String {
+        let status: String
+        if isRefreshing { status = "Refreshing" }
+        else if hasError { status = "Issue" }
+        else if isStale { status = "Stale" }
+        else if let severity { status = severity.title }
+        else { status = "Live" }
+        return "\(title), \(status)"
+    }
+
     @MainActor
     init(model: CodexMenuBarModel) {
         hasError = model.lastError != nil

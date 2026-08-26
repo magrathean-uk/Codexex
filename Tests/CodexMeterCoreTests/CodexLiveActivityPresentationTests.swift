@@ -96,6 +96,54 @@ final class CodexLiveActivityPresentationTests: XCTestCase {
         XCTAssertEqual(used.weeklyDisplayDescription, "32% used of weekly quota")
     }
 
+    func testContentStateDescribesOptionalFiveHourAndStaleness() {
+        let state = CodexLiveActivityAttributes.ContentState(
+            weeklyPercentLeft: 68,
+            weeklyUsedFraction: 0.32,
+            weeklyResetAt: nil,
+            fiveHourPercentLeft: 91,
+            fiveHourResetAt: nil,
+            isStale: true,
+            showsUsedQuota: true
+        )
+
+        XCTAssertEqual(state.displayedFiveHourPercent, 9)
+        XCTAssertEqual(state.fiveHourDisplayDescription, "9% used of 5-hour quota")
+        XCTAssertEqual(state.freshnessDescription, "Update needed")
+        XCTAssertEqual(
+            state.accessibilityDescription,
+            "32% used of weekly quota. 9% used of 5-hour quota. Update needed"
+        )
+    }
+
+    func testSystemStalenessOverridesFreshContentStateAndAccessibility() {
+        let state = CodexLiveActivityAttributes.ContentState(
+            weeklyPercentLeft: 68,
+            weeklyUsedFraction: 0.32,
+            weeklyResetAt: nil,
+            fiveHourPercentLeft: nil,
+            fiveHourResetAt: nil,
+            isStale: false
+        )
+
+        let resolved = CodexLiveActivityPresentation.resolvedStaleness(
+            systemIsStale: true,
+            contentStateIsStale: state.isStale
+        )
+
+        XCTAssertTrue(resolved)
+        XCTAssertEqual(
+            state.accessibilityDescription(isStale: resolved),
+            "68% left of weekly quota. Update needed"
+        )
+        XCTAssertFalse(
+            CodexLiveActivityPresentation.resolvedStaleness(
+                systemIsStale: false,
+                contentStateIsStale: false
+            )
+        )
+    }
+
     func testLegacyUntaggedWindowsPreservePrimaryFiveHourAndSecondaryWeeklyRoles() throws {
         let now = Date(timeIntervalSince1970: 1_700_000_000)
         let snapshot = CodexSnapshot(

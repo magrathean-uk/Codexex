@@ -11,6 +11,8 @@ struct PopupStatusCardView: View {
             PopupPlainSection {
                 CodexDeviceCodeCallout(
                     code: code,
+                    message: model.lastError ?? model.authStatusMessage,
+                    isCancelling: model.isCancellingPendingSignIn,
                     openSafari: { model.openAuthVerificationPage() },
                     copyCode: { model.copyAuthCode() },
                     cancel: { model.cancelPendingChatGPTSignIn() }
@@ -27,17 +29,20 @@ struct PopupStatusCardView: View {
 
                     Spacer(minLength: 8)
 
-                    CodexStateBadge(kind: model.designStateBadgeKind)
+                    CodexStateBadge(
+                        kind: model.designStateBadgeKind,
+                        monochrome: usesMonochromeRecoveryPresentation
+                    )
                 }
 
                 Text(model.statusCardMessage)
                     .font(.system(size: GlassTokens.popupBodyFontSize))
-                    .foregroundStyle(CodexTheme.muted)
+                    .foregroundStyle(usesMonochromeRecoveryPresentation ? Color.secondary : CodexTheme.muted)
                     .lineLimit(3)
                     .fixedSize(horizontal: false, vertical: true)
 
                 if model.isRefreshing {
-                    PopupLoadingBar()
+                    PopupLoadingBar(monochrome: usesMonochromeRecoveryPresentation)
                         .padding(.top, 1)
                         .accessibilityLabel("Loading quota")
                 }
@@ -51,7 +56,14 @@ struct PopupStatusCardView: View {
     }
 
     private var statusTint: Color {
-        model.designStateBadgeKind.tint
+        usesMonochromeRecoveryPresentation ? .primary : model.designStateBadgeKind.tint
+    }
+
+    private var usesMonochromeRecoveryPresentation: Bool {
+        guard model.snapshot == nil else { return false }
+        return model.lastError != nil || (
+            model.hasResolvedAuthState && model.isSignedIn == false
+        )
     }
 
     private var shouldShowActionRow: Bool {
@@ -59,7 +71,7 @@ struct PopupStatusCardView: View {
             model.isSignedIn == false
                 && model.hasResolvedAuthState
                 && model.authDeviceCode == nil
-                && model.isSigningIn == false
+                && model.isAuthBusy == false
         )
     }
 

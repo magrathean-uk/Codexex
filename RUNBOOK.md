@@ -121,6 +121,16 @@ The normal path is:
 4. The embed script signs it when code signing is enabled.
 5. The app talks to the helper through the bundled XPC service.
 
+Release builds follow Xcode's `ARCHS`: the helper is compiled for both
+`arm64` and `x86_64`, then combined before signing. Keep both Rust standard
+library targets installed (`aarch64-apple-darwin` and
+`x86_64-apple-darwin`) so the helper matches the universal macOS app. The
+build uses the `stable` rustup toolchain for both Cargo and rustc by default;
+set `CODEXEX_RUSTUP_TOOLCHAIN` to select another installed toolchain or
+`CODEXEX_RUSTUP_BIN` to select a specific rustup executable. The staged helper
+is stripped with Apple's `strip` after its slices are combined; set
+`CODEXEX_STRIP_BIN` only when selecting another compatible Apple strip tool.
+
 `CodexAppServerProbe` in core is a legacy parity path only. App Store builds should stay on the helper plus XPC path.
 
 ## Release inputs
@@ -156,7 +166,7 @@ Run the lightweight release guard before archiving:
 Scripts/release-smoke.sh
 ```
 
-This is a static release guard, not full UI proof. It checks the project source of truth, App Store entitlements, helper build/embed wiring, `LSUIElement`, review metadata, privacy text, the versioned helper protocol markers, and the legacy-probe compile flag. It also runs helper tests when `cargo` is available and an Xcode build-settings smoke when `xcodebuild` is available.
+This is a static release guard, not full UI proof. It checks the project source of truth, App Store entitlements, helper build/embed wiring, `LSUIElement`, review metadata, privacy text, the versioned helper protocol markers, and the legacy-probe compile flag. It also preflights both macOS Rust targets, runs helper tests with that same rustup toolchain, and runs macOS plus iOS Xcode build-settings smokes when `xcodebuild` is available.
 
 ## Legacy probe quarantine
 

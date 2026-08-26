@@ -277,12 +277,14 @@ final class CodexStatusItemController: NSObject {
     private func trackPopupModelState() {
         _ = model.snapshot
         _ = model.localUsageSummary
+        _ = model.localUsageLoadState
         _ = model.localIntelligenceSummary
         _ = model.isRefreshing
         _ = model.lastError
         _ = model.popupSummary
         _ = model.isCurrentSummarySnoozed
         _ = model.isSigningIn
+        _ = model.isSigningOut
         _ = model.isSignedIn
         _ = model.hasResolvedAuthState
         _ = model.authDeviceCode
@@ -302,6 +304,7 @@ final class CodexStatusItemController: NSObject {
         _ = model.appearanceMode
         _ = model.diagnosticsStatusMessage
         _ = model.shouldDimStatusItem
+        _ = model.staleDeadlineReached
         _ = model.usageHistory
     }
 
@@ -366,6 +369,9 @@ final class CodexStatusItemController: NSObject {
         let button = statusItem.button
         button?.title = state.title
         button?.toolTip = state.title
+        button?.setAccessibilityLabel("Codexex quota")
+        button?.setAccessibilityValue(state.accessibilityValue)
+        button?.setAccessibilityHelp("Opens Codexex quota details")
         button?.image = StatusBarLabel.menuBarImage(
             isRefreshing: state.isRefreshing,
             hasError: state.hasError,

@@ -19,7 +19,7 @@ final class CodexQuotaNotificationPlannerTests: XCTestCase {
 
         XCTAssertEqual(plan.notifications.map(\.kind), [.fiveHourPressure])
         XCTAssertEqual(plan.notifications.first?.title, "Codex 5H near limit")
-        XCTAssertEqual(plan.notifications.first?.fingerprint, "fiveHourPressure|1800007200|92")
+        XCTAssertEqual(plan.notifications.first?.fingerprint, "fiveHourPressure|1800007200")
     }
 
     func testPlansResetSoonWhenHeavyWindowIsAboutToReset() {
@@ -50,7 +50,7 @@ final class CodexQuotaNotificationPlannerTests: XCTestCase {
         )
 
         XCTAssertEqual(plan.notifications.map(\.kind), [.weeklyForecastRisk])
-        XCTAssertEqual(plan.notifications.first?.fingerprint, "weeklyForecastRisk|1800345600|116")
+        XCTAssertEqual(plan.notifications.first?.fingerprint, "weeklyForecastRisk|1800345600")
         XCTAssertEqual(plan.notifications.first?.body, "Projected 116% by reset · Stable.")
     }
 
@@ -78,6 +78,36 @@ final class CodexQuotaNotificationPlannerTests: XCTestCase {
         )
 
         XCTAssertTrue(secondPlan.notifications.isEmpty)
+    }
+
+    func testPercentChangesDoNotRepeatWithinSameResetCycle() throws {
+        let first = CodexQuotaNotificationPlanner.plan(
+            snapshot: makeSnapshot(fiveHourUsed: 90, fiveHourResetOffset: 2 * 60 * 60),
+            insights: nil,
+            preferences: .enabled,
+            receipts: .empty,
+            now: now
+        )
+        let notification = try XCTUnwrap(first.notifications.first)
+        let receipts = CodexQuotaNotificationReceipts.empty.recording(notification)
+
+        let changedPercent = CodexQuotaNotificationPlanner.plan(
+            snapshot: makeSnapshot(fiveHourUsed: 97, fiveHourResetOffset: 2 * 60 * 60),
+            insights: nil,
+            preferences: .enabled,
+            receipts: receipts,
+            now: now
+        )
+        let nextCycle = CodexQuotaNotificationPlanner.plan(
+            snapshot: makeSnapshot(fiveHourUsed: 97, fiveHourResetOffset: 3 * 60 * 60),
+            insights: nil,
+            preferences: .enabled,
+            receipts: receipts,
+            now: now
+        )
+
+        XCTAssertTrue(changedPercent.notifications.isEmpty)
+        XCTAssertEqual(nextCycle.notifications.map(\.kind), [.fiveHourPressure])
     }
 
     func testDoesNotPlanWhenDisabledOrMissingSnapshot() {

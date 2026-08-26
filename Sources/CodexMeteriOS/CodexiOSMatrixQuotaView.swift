@@ -30,6 +30,7 @@ struct CodexiOSMatrixQuotaView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     @Bindable var model: CodexiOSModel
+    let onClose: () -> Void
     let onOpenSettings: () -> Void
     @State private var motion = CodexiOSMatrixMotion()
     @AppStorage(CodexiOSSettingsKeys.showUsedQuota) private var showUsedQuota = false
@@ -37,6 +38,7 @@ struct CodexiOSMatrixQuotaView: View {
     @State private var dragStartSpeed = matrixDefaultSpeedMultiplier
     @State private var density = matrixDefaultDensity
     @State private var dragStartDensity = matrixDefaultDensity
+    @State private var isLowPowerModeEnabled = ProcessInfo.processInfo.isLowPowerModeEnabled
 
     private var weeklyWindow: CodexQuotaWindow? {
         guard let snapshot = model.snapshot else { return nil }
@@ -59,12 +61,16 @@ struct CodexiOSMatrixQuotaView: View {
         reduceMotion == false && scenePhase == .active
     }
 
+    private var activeRenderInterval: TimeInterval {
+        matrixRenderInterval(lowPowerMode: isLowPowerModeEnabled)
+    }
+
     var body: some View {
         GeometryReader { proxy in
             ZStack {
                 TimelineView(
                     .animation(
-                        minimumInterval: matrixRenderInterval,
+                        minimumInterval: activeRenderInterval,
                         paused: isAnimationActive == false
                     )
                 ) { timeline in
@@ -109,6 +115,22 @@ struct CodexiOSMatrixQuotaView: View {
                 VStack(spacing: 0) {
                     HStack {
                         Button {
+                            onClose()
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 17, weight: .semibold))
+                                .frame(width: 44, height: 44)
+                                .background(.black.opacity(0.48), in: Circle())
+                                .overlay {
+                                    Circle().stroke(Color.white.opacity(0.45), lineWidth: 1)
+                                }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Close Matrix theme")
+
+                        Spacer()
+
+                        Button {
                             onOpenSettings()
                         } label: {
                             Image(systemName: "gearshape")
@@ -122,7 +144,6 @@ struct CodexiOSMatrixQuotaView: View {
                         .buttonStyle(.plain)
                         .accessibilityLabel("Matrix theme settings")
 
-                        Spacer()
                     }
                     .padding(.horizontal, 18)
                     .padding(.top, 52)
@@ -172,6 +193,9 @@ struct CodexiOSMatrixQuotaView: View {
         }
         .onDisappear {
             motion.stop()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)) { _ in
+            isLowPowerModeEnabled = ProcessInfo.processInfo.isLowPowerModeEnabled
         }
     }
 }
@@ -379,9 +403,14 @@ private func positiveModulo(_ value: Int, by modulus: Int) -> Int {
 private let matrixGlyphs = Array("アカサタナハマヤラワ0123456789ABCDEF<>[]{}").map(String.init)
 let matrixDefaultSpeedMultiplier = 1.0
 let matrixDefaultDensity = 0.5
-let matrixDisplayFPS = 120.0
+let matrixDisplayFPS = 60.0
+let matrixLowPowerDisplayFPS = 30.0
 let matrixRenderInterval = 1.0 / matrixDisplayFPS
 let matrixMotionSamplingInterval = 1.0 / 30.0
+
+func matrixRenderInterval(lowPowerMode: Bool) -> TimeInterval {
+    1.0 / (lowPowerMode ? matrixLowPowerDisplayFPS : matrixDisplayFPS)
+}
 let matrixGIFDropInterval = 0.15
 let matrixWaveAmplitude = 6.5
 

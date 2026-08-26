@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 
 public enum CodexHelperLineReaderError: LocalizedError, Sendable, Equatable {
@@ -23,78 +24,79 @@ public enum CodexHelperLineReader {
         timeout: TimeInterval,
         maxBytes: Int
     ) throws -> String {
-        let state = State()
-        let semaphore = DispatchSemaphore(value: 0)
-
-        handle.readabilityHandler = { readableHandle in
-            let data = readableHandle.availableData
-            state.append(data, maxBytes: maxBytes)
-            if state.isComplete {
-                semaphore.signal()
-            }
+        guard maxBytes >= 0 else {
+            throw CodexHelperLineReaderError.responseTooLarge
+        }
+        let descriptor = handle.fileDescriptor
+        guard descriptor >= 0 else {
+            throw CodexHelperLineReaderError.closed
         }
 
-        let result = semaphore.wait(timeout: .now() + timeout)
-        handle.readabilityHandler = nil
+        let timeoutNanoseconds = UInt64(
+            min(max(0, timeout) * 1_000_000_000, Double(UInt64.max))
+        )
+        let start = DispatchTime.now().uptimeNanoseconds
+        let deadlineResult = start.addingReportingOverflow(timeoutNanoseconds)
+        let deadline = deadlineResult.overflow ? UInt64.max : deadlineResult.partialValue
+        let readableEvents = Int16(POLLIN | POLLHUP | POLLERR)
+        var buffer = Data()
 
-        if result == .timedOut {
-            throw CodexHelperLineReaderError.timeout
-        }
-
-        return try state.result()
-    }
-
-    private final class State: @unchecked Sendable {
-        private let lock = NSLock()
-        private var buffer = Data()
-        private var error: CodexHelperLineReaderError?
-        private var line: String?
-
-        var isComplete: Bool {
-            lock.lock()
-            defer { lock.unlock() }
-            return line != nil || error != nil
-        }
-
-        func append(_ data: Data, maxBytes: Int) {
-            lock.lock()
-            defer { lock.unlock() }
-
-            guard line == nil, error == nil else { return }
-
-            guard data.isEmpty == false else {
-                error = .closed
-                return
+        while true {
+            let now = DispatchTime.now().uptimeNanoseconds
+            let pollTimeout: Int32
+            if timeoutNanoseconds == 0 {
+                pollTimeout = 0
+            } else {
+                guard now < deadline else {
+                    throw CodexHelperLineReaderError.timeout
+                }
+                let remaining = deadline - now
+                let roundedMilliseconds = remaining / 1_000_000
+                    + (remaining.isMultiple(of: 1_000_000) ? 0 : 1)
+                pollTimeout = Int32(min(UInt64(Int32.max), roundedMilliseconds))
             }
 
-            if let newlineIndex = data.firstIndex(of: 0x0A) {
-                let prefix = data.prefix(upTo: newlineIndex)
-                guard buffer.count + prefix.count <= maxBytes else {
-                    error = .responseTooLarge
-                    return
+            var state = pollfd(fd: descriptor, events: readableEvents, revents: 0)
+            let pollResult = Darwin.poll(&state, 1, pollTimeout)
+            if pollResult == 0 {
+                throw CodexHelperLineReaderError.timeout
+            }
+            if pollResult < 0 {
+                if errno == EINTR { continue }
+                throw CodexHelperLineReaderError.closed
+            }
+            if state.revents & Int16(POLLNVAL) != 0 {
+                throw CodexHelperLineReaderError.closed
+            }
+            guard state.revents & readableEvents != 0 else { continue }
+
+            let remainingCapacity = maxBytes > buffer.count ? maxBytes - buffer.count : 0
+            let readLimit = min(64 * 1_024, remainingCapacity == Int.max ? Int.max : remainingCapacity + 1)
+            var bytes = [UInt8](repeating: 0, count: max(1, readLimit))
+            let bytesRead = Darwin.read(descriptor, &bytes, bytes.count)
+            if bytesRead < 0 {
+                if errno == EINTR || errno == EAGAIN { continue }
+                throw CodexHelperLineReaderError.closed
+            }
+            guard bytesRead > 0 else {
+                throw CodexHelperLineReaderError.closed
+            }
+
+            let chunk = Data(bytes.prefix(bytesRead))
+            if let newlineIndex = chunk.firstIndex(of: 0x0A) {
+                let prefix = chunk.prefix(upTo: newlineIndex)
+                let availableCapacity = maxBytes - buffer.count
+                guard prefix.count <= availableCapacity else {
+                    throw CodexHelperLineReaderError.responseTooLarge
                 }
                 buffer.append(prefix)
-                line = String(decoding: buffer, as: UTF8.self)
-                return
+                return String(decoding: buffer, as: UTF8.self)
             }
 
-            buffer.append(data)
+            buffer.append(chunk)
             if buffer.count > maxBytes {
-                error = .responseTooLarge
+                throw CodexHelperLineReaderError.responseTooLarge
             }
-        }
-
-        func result() throws -> String {
-            lock.lock()
-            defer { lock.unlock() }
-
-            if let error {
-                throw error
-            }
-            if let line {
-                return line
-            }
-            throw CodexHelperLineReaderError.closed
         }
     }
 }

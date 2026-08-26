@@ -11,6 +11,23 @@ enum CodexiOSBackgroundRefreshPolicy {
 }
 
 @MainActor
+protocol CodexiOSBackgroundRefreshScheduling {
+    func schedule(cadence: TimeInterval)
+    func cancel()
+}
+
+@MainActor
+struct CodexiOSSystemBackgroundRefreshScheduler: CodexiOSBackgroundRefreshScheduling {
+    func schedule(cadence: TimeInterval) {
+        CodexiOSBackgroundRefresh.schedule(cadence: cadence)
+    }
+
+    func cancel() {
+        CodexiOSBackgroundRefresh.cancel()
+    }
+}
+
+@MainActor
 enum CodexiOSBackgroundRefresh {
     static let identifier = "com.magrathean.CodexexApp.quota-refresh"
     private static var isRegistered = false
@@ -34,6 +51,9 @@ enum CodexiOSBackgroundRefresh {
     }
 
     static func schedule(cadence: TimeInterval) {
+        // Keep one replaceable request. This also makes the retry path safe when
+        // a successful foreground update already submitted a request.
+        BGTaskScheduler.shared.cancel(taskRequestWithIdentifier: identifier)
         let request = BGAppRefreshTaskRequest(identifier: identifier)
         request.earliestBeginDate = CodexiOSBackgroundRefreshPolicy.earliestBeginDate(
             cadence: cadence

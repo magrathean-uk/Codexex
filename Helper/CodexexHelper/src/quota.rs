@@ -1,6 +1,8 @@
 use anyhow::Result;
 use codex_backend_client::Client as BackendClient;
-use codex_login::{AuthCredentialsStoreMode, AuthKeyringBackendKind, AuthManager};
+use codex_login::{
+    AuthCredentialsStoreMode, AuthKeyringBackendKind, AuthManager, RefreshTokenError,
+};
 use serde::Serialize;
 use tokio::runtime::Builder;
 
@@ -76,11 +78,16 @@ pub fn fetch_snapshot() -> Result<HelperResponse> {
 async fn fetch_snapshot_payload() -> Result<ServiceSnapshotPayload> {
     let http_client_factory = state::http_client_factory();
     let auth_manager = AuthManager::shared(
-        state::codex_home()?, false, AuthCredentialsStoreMode::File, None,
-        Some(state::chatgpt_base_url()), AuthKeyringBackendKind::default(),
+        state::codex_home()?,
+        false,
+        AuthCredentialsStoreMode::File,
+        None,
+        Some(state::chatgpt_base_url()),
+        AuthKeyringBackendKind::default(),
         state::auth_route_config(),
-    ).await;
-    let Some(auth) = auth_manager.auth().await else {
+    )
+    .await;
+    let Some(mut auth) = auth_manager.auth().await else {
         return Ok(ServiceSnapshotPayload {
             auth_mode: None,
             snapshot: None,
@@ -88,7 +95,7 @@ async fn fetch_snapshot_payload() -> Result<ServiceSnapshotPayload> {
         });
     };
 
-    if auth.is_chatgpt_auth() == false {
+    if !auth.is_chatgpt_auth() {
         return Ok(ServiceSnapshotPayload {
             auth_mode: None,
             snapshot: None,
@@ -97,21 +104,64 @@ async fn fetch_snapshot_payload() -> Result<ServiceSnapshotPayload> {
     }
 
     let client = BackendClient::from_auth(state::chatgpt_base_url(), &auth, http_client_factory);
-    let rate_limits = match client.get_rate_limits_many().await {
-        Ok(rate_limits) if rate_limits.is_empty() == false => rate_limits,
+    let mut rate_limits_result = client.get_rate_limits_many().await;
+    if rate_limits_result
+        .as_ref()
+        .is_err_and(|error| backend_http_status(error) == Some(401))
+    {
+        let mut recovery = auth_manager.unauthorized_recovery();
+        let recovery_result = async {
+            while recovery.has_next() {
+                let step = recovery.next().await?;
+                if step.auth_state_changed() == Some(true) {
+                    break;
+                }
+            }
+            Ok::<(), RefreshTokenError>(())
+        }
+        .await;
+
+        match recovery_result {
+            Ok(()) => {
+                let Some(refreshed_auth) = auth_manager.auth_cached() else {
+                    return Ok(signed_out_payload());
+                };
+                if !refreshed_auth.is_chatgpt_auth() {
+                    return Ok(signed_out_payload());
+                }
+                auth = refreshed_auth;
+                let retry_client = BackendClient::from_auth(
+                    state::chatgpt_base_url(),
+                    &auth,
+                    state::http_client_factory(),
+                );
+                // Exactly one backend retry with the recovered credential.
+                rate_limits_result = retry_client.get_rate_limits_many().await;
+            }
+            Err(RefreshTokenError::Permanent(_)) => {
+                return Ok(expired_sign_in_payload());
+            }
+            Err(RefreshTokenError::Transient(_)) => {
+                return Ok(signed_in_error_payload(
+                    "Could not refresh ChatGPT sign-in. Check your connection and try again.",
+                ));
+            }
+        }
+    }
+
+    let rate_limits = match rate_limits_result {
+        Ok(rate_limits) if !rate_limits.is_empty() => rate_limits,
         Ok(_) => {
             return Ok(ServiceSnapshotPayload {
                 auth_mode: Some("chatGPT".to_string()),
                 snapshot: None,
-                error_message: Some("Signed in, but no quota windows were returned for this account.".to_string()),
-            })
+                error_message: Some(
+                    "Signed in, but no quota windows were returned for this account.".to_string(),
+                ),
+            });
         }
         Err(error) => {
-            return Ok(ServiceSnapshotPayload {
-                auth_mode: Some("chatGPT".to_string()),
-                snapshot: None,
-                error_message: Some(error.to_string()),
-            })
+            return Ok(signed_in_error_payload(backend_user_message(&error)));
         }
     };
 
@@ -141,14 +191,18 @@ async fn fetch_snapshot_payload() -> Result<ServiceSnapshotPayload> {
                 }),
             }
         })
-        .filter(|limit| limit.primary.is_some() || limit.secondary.is_some() || limit.credits.is_some())
+        .filter(|limit| {
+            limit.primary.is_some() || limit.secondary.is_some() || limit.credits.is_some()
+        })
         .collect();
 
     if limits.is_empty() {
         return Ok(ServiceSnapshotPayload {
             auth_mode: Some("chatGPT".to_string()),
             snapshot: None,
-            error_message: Some("Signed in, but no quota windows were returned for this account.".to_string()),
+            error_message: Some(
+                "Signed in, but no quota windows were returned for this account.".to_string(),
+            ),
         });
     }
 
@@ -169,6 +223,57 @@ async fn fetch_snapshot_payload() -> Result<ServiceSnapshotPayload> {
         auth_mode: Some("chatGPT".to_string()),
         snapshot: Some(snapshot),
         error_message: None,
+    })
+}
+
+fn signed_out_payload() -> ServiceSnapshotPayload {
+    ServiceSnapshotPayload {
+        auth_mode: None,
+        snapshot: None,
+        error_message: Some("Not signed in. Use the button below.".to_string()),
+    }
+}
+
+fn expired_sign_in_payload() -> ServiceSnapshotPayload {
+    ServiceSnapshotPayload {
+        auth_mode: None,
+        snapshot: None,
+        error_message: Some(
+            "Your ChatGPT sign-in expired or was revoked. Sign in again.".to_string(),
+        ),
+    }
+}
+
+fn signed_in_error_payload(message: &str) -> ServiceSnapshotPayload {
+    ServiceSnapshotPayload {
+        auth_mode: Some("chatGPT".to_string()),
+        snapshot: None,
+        error_message: Some(message.to_string()),
+    }
+}
+
+fn backend_user_message(error: &anyhow::Error) -> &'static str {
+    match backend_http_status(error) {
+        Some(403) => {
+            "Quota access is unavailable for this account. Your ChatGPT sign-in is still active."
+        }
+        Some(429) => "Quota refresh is rate-limited. Try again shortly.",
+        Some(500..=599) => "OpenAI quota service is temporarily unavailable. Try again shortly.",
+        Some(401) => {
+            "Quota access is temporarily unavailable. Your ChatGPT sign-in is still active."
+        }
+        _ => "Quota is temporarily unavailable. Refresh again shortly.",
+    }
+}
+
+fn backend_http_status(error: &anyhow::Error) -> Option<u16> {
+    error.chain().find_map(|cause| {
+        let message = cause.to_string();
+        let status_prefix = message
+            .split_once("; content-type=")
+            .map_or(message.as_str(), |(prefix, _)| prefix);
+        let (_, status) = status_prefix.rsplit_once(" failed: ")?;
+        status.split_whitespace().next()?.parse().ok()
     })
 }
 

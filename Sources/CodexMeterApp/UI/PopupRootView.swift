@@ -12,6 +12,7 @@ enum PopupRootDisplayMode {
 struct PopupRootView: View {
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
     @Bindable var model: CodexMenuBarModel
+    @State private var showsLocalUsageDetails = false
     var onOpenSettings: () -> Void = {}
     var displayMode: PopupRootDisplayMode = .live
     var reduceMotionOverride: Bool?
@@ -50,14 +51,24 @@ struct PopupRootView: View {
     }
 
     private var popupContent: some View {
-        VStack(alignment: .leading, spacing: GlassTokens.contentSpacing) {
-            mainContent
+        VStack(alignment: .leading, spacing: 0) {
+            ScrollView {
+                mainContent
+                    .padding(.horizontal, GlassTokens.pagePadding)
+                    .padding(.top, GlassTokens.pagePadding)
+                    .padding(.bottom, GlassTokens.contentSpacing / 2)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+            }
+            .scrollIndicators(.automatic)
+            .frame(maxHeight: GlassTokens.popupMaxHeight - GlassTokens.popupFooterReservedHeight)
 
             if displayMode == .live {
                 footer
+                    .padding(.horizontal, GlassTokens.pagePadding)
+                    .padding(.bottom, GlassTokens.pagePadding)
+                    .background(CodexTheme.window)
             }
         }
-        .padding(GlassTokens.pagePadding)
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .transaction { transaction in
             transaction.animation = nil
@@ -94,7 +105,93 @@ struct PopupRootView: View {
                     onHistoryModeChange: { model.setDefaultHistoryMode($0) }
                 )
             }
+
+            if shouldShowLocalUsageSection {
+                localUsageSection
+            }
         }
+    }
+
+    private var shouldShowLocalUsageSection: Bool {
+        if displayMode == .settingsPreview {
+            return presentedLocalUsageSummary != nil
+        }
+        return model.localUsageSummary != nil || model.localUsageLoadState != .idle
+    }
+
+    private var localUsageSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                showsLocalUsageDetails.toggle()
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: showsLocalUsageDetails ? "chevron.down" : "chevron.right")
+                    Text("Local usage")
+                        .font(.system(size: GlassTokens.popupBodyFontSize, weight: .semibold))
+                    Spacer(minLength: 0)
+                    Text(localUsageScopeText)
+                        .font(.system(size: GlassTokens.popupMetaFontSize))
+                        .foregroundStyle(CodexTheme.dim)
+                        .lineLimit(1)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityValue(showsLocalUsageDetails ? "Expanded" : "Collapsed")
+
+            if showsLocalUsageDetails {
+                if let message = localUsageUnavailableMessage {
+                    PopupPlainSection {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(message)
+                                .font(.system(size: GlassTokens.popupBodyFontSize))
+                                .foregroundStyle(CodexTheme.muted)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Button("Choose Sessions Folder") {
+                                model.chooseCodexSessionsFolder()
+                            }
+                            .buttonStyle(CodexGhostButtonStyle())
+                        }
+                    }
+                }
+                if let summary = presentedLocalUsageSummary {
+                    CodexLocalUsageCardView(summary: summary) {
+                        model.chooseCodexSessionsFolder()
+                    }
+                } else {
+                    PopupPlainSection {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(model.localUsageLoadState.statusText)
+                                .font(.system(size: GlassTokens.popupBodyFontSize))
+                                .foregroundStyle(CodexTheme.muted)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Button("Choose Sessions Folder") {
+                                model.chooseCodexSessionsFolder()
+                            }
+                            .buttonStyle(CodexGhostButtonStyle())
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var localUsageScopeText: String {
+        if localUsageUnavailableMessage != nil {
+            return "Access needed"
+        }
+        if let summary = presentedLocalUsageSummary {
+            return summary.coverage.label
+        }
+        return model.localUsageLoadState.statusText
+    }
+
+    private var localUsageUnavailableMessage: String? {
+        guard displayMode == .live,
+              case .unavailable(let message) = model.localUsageLoadState else {
+            return nil
+        }
+        return message
     }
 
     private var footer: some View {
@@ -131,7 +228,6 @@ struct PopupRootView: View {
             }
             .frame(maxWidth: .infinity)
         }
-        .padding(.top, 2)
         .frame(maxWidth: .infinity, alignment: .trailing)
     }
 
@@ -323,6 +419,7 @@ private struct PopupFooterControl: View {
 struct PopupLoadingBar: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isActive = false
+    var monochrome = false
 
     var body: some View {
         GeometryReader { proxy in
@@ -331,12 +428,18 @@ struct PopupLoadingBar: View {
 
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 3, style: .continuous)
-                    .fill(CodexTheme.control.opacity(0.82))
+                    .fill(
+                        monochrome
+                            ? Color.primary.opacity(0.12)
+                            : CodexTheme.control.opacity(0.82)
+                    )
 
                 RoundedRectangle(cornerRadius: 3, style: .continuous)
                     .fill(
                         LinearGradient(
-                            colors: [CodexTheme.accent, CodexTheme.accent2],
+                            colors: monochrome
+                                ? [Color.primary.opacity(0.82), Color.secondary]
+                                : [CodexTheme.accent, CodexTheme.accent2],
                             startPoint: .leading,
                             endPoint: .trailing
                         )

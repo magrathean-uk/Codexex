@@ -6,7 +6,8 @@ public enum CodexLocalUsageAggregator {
         dataPath: String,
         capturedAt: Date = Date(),
         calendar: Calendar = .autoupdatingCurrent,
-        configReport: CodexLocalConfigReport = CodexLocalConfigReport(severity: .ok, issues: [])
+        configReport: CodexLocalConfigReport = CodexLocalConfigReport(severity: .ok, issues: []),
+        coverage: CodexLocalUsageCoverage = .unknown
     ) -> CodexLocalUsageSummary {
         let deduped = deduplicate(entries)
         let todayStart = calendar.startOfDay(for: capturedAt)
@@ -40,7 +41,8 @@ public enum CodexLocalUsageAggregator {
             latestModel: latest?.model,
             contextWindowPercent: latestContextWindowPercent,
             sessionAutopsies: sessionAutopsies(from: sessions, totalTokens: total.totalTokens),
-            attributionConfidence: attributionConfidence(entries: deduped)
+            attributionConfidence: attributionConfidence(entries: deduped),
+            coverage: coverage
         )
     }
 
@@ -71,7 +73,7 @@ public enum CodexLocalUsageAggregator {
                     startedAt: sorted.first!.timestamp,
                     lastActivityAt: latest.timestamp,
                     entryCount: values.count,
-                    commandCount: values.reduce(0) { $0 + $1.commandCount },
+                    commandCount: values.reduce(0) { codexSaturatingNonnegativeAdd($0, $1.commandCount) },
                     tokens: values.reduce(.zero) { $0.adding($1.tokens) }
                 )
             }
@@ -100,7 +102,7 @@ public enum CodexLocalUsageAggregator {
                     latestModel: latest.model,
                     lastActivityAt: latest.timestamp,
                     sessionCount: Set(values.map(\.sessionID)).count,
-                    commandCount: values.reduce(0) { $0 + $1.commandCount },
+                    commandCount: values.reduce(0) { codexSaturatingNonnegativeAdd($0, $1.commandCount) },
                     tokens: values.reduce(.zero) { $0.adding($1.tokens) }
                 )
             }

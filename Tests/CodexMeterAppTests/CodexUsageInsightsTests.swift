@@ -499,6 +499,47 @@ final class CodexUsageInsightsTests: XCTestCase {
         XCTAssertTrue(fileManager.fileExists(atPath: fileURL.path))
     }
 
+    func testUsageHistoryStoreUsesOwnerOnlyFileAndDirectoryPermissions() async throws {
+        let fileManager = FileManager.default
+        let root = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let directory = root.appendingPathComponent("Codexex", isDirectory: true)
+        let fileURL = directory.appendingPathComponent("usage-history.json")
+        defer { try? fileManager.removeItem(at: root) }
+        let store = CodexUsageHistoryStore(
+            fileURL: fileURL,
+            secureParentDirectory: true
+        )
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+
+        _ = await store.append(snapshot: makeSnapshot(now: now), now: now)
+        let persistenceFailure = await store.persistenceFailure()
+
+        XCTAssertEqual(try permissions(at: directory), 0o700)
+        XCTAssertEqual(try permissions(at: fileURL), 0o600)
+        XCTAssertEqual(try permissions(at: directory.appendingPathComponent(".usage-history.json.lock")), 0o600)
+        XCTAssertNil(persistenceFailure)
+    }
+
+    func testUsageHistoryStoreRecordsPersistenceFailure() async throws {
+        let fileManager = FileManager.default
+        let root = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? fileManager.removeItem(at: root) }
+        try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
+        let blockedParent = root.appendingPathComponent("not-a-directory")
+        try Data("blocked".utf8).write(to: blockedParent)
+        let store = CodexUsageHistoryStore(
+            fileURL: blockedParent.appendingPathComponent("usage-history.json"),
+            secureParentDirectory: true
+        )
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+
+        let samples = await store.append(snapshot: makeSnapshot(now: now), now: now)
+        let persistenceFailure = await store.persistenceFailure()
+
+        XCTAssertEqual(samples.count, 1)
+        XCTAssertFalse((persistenceFailure ?? "").isEmpty)
+    }
+
     func testUsageHistoryStoreAppendsWhenCreditsBalanceChanges() async throws {
         let fileManager = FileManager.default
         let root = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
@@ -584,6 +625,70 @@ final class CodexUsageInsightsTests: XCTestCase {
 
         XCTAssertEqual(loaded.count, 1)
         XCTAssertEqual(loaded.first?.weekly?.usedPercent, 42)
+    }
+
+    func testHistoryCompactionPreservesIndependentFiveHourAndWeeklyPeaks() async throws {
+        let fileManager = FileManager.default
+        let root = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let fileURL = root.appendingPathComponent("usage-history.json")
+        defer { try? fileManager.removeItem(at: root) }
+        try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let oldBucketStart = floor(now.addingTimeInterval(-8 * 24 * 60 * 60).timeIntervalSince1970 / 1_800) * 1_800
+        let fiveHourPeak = CodexUsageHistorySample(
+            capturedAt: Date(timeIntervalSince1970: oldBucketStart + 60),
+            fiveHour: CodexUsageHistoryWindow(usedPercent: 95, windowDurationMinutes: 300, resetsAt: nil),
+            weekly: CodexUsageHistoryWindow(usedPercent: 10, windowDurationMinutes: 10_080, resetsAt: nil)
+        )
+        let weeklyPeak = CodexUsageHistorySample(
+            capturedAt: Date(timeIntervalSince1970: oldBucketStart + 120),
+            fiveHour: CodexUsageHistoryWindow(usedPercent: 15, windowDurationMinutes: 300, resetsAt: nil),
+            weekly: CodexUsageHistoryWindow(usedPercent: 90, windowDurationMinutes: 10_080, resetsAt: nil)
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        try encoder.encode([fiveHourPeak, weeklyPeak]).write(to: fileURL)
+
+        let loaded = await CodexUsageHistoryStore(fileURL: fileURL).load(now: now)
+
+        XCTAssertEqual(Set(loaded.map { $0.id }), Set([fiveHourPeak.id, weeklyPeak.id]))
+        XCTAssertEqual(loaded.map { $0.fiveHour?.usedPercent }, [95, 15])
+        XCTAssertEqual(loaded.map { $0.weekly?.usedPercent }, [10, 90])
+    }
+
+    func testHistoryCompactionRepairsDuplicateIDsWithoutDroppingDivergentPeaks() async throws {
+        let fileManager = FileManager.default
+        let root = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let fileURL = root.appendingPathComponent("usage-history.json")
+        defer { try? fileManager.removeItem(at: root) }
+        try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let bucket = floor(now.addingTimeInterval(-8 * 24 * 60 * 60).timeIntervalSince1970 / 1_800) * 1_800
+        let duplicateID = UUID()
+        let samples = [
+            CodexUsageHistorySample(
+                id: duplicateID,
+                capturedAt: Date(timeIntervalSince1970: bucket + 60),
+                fiveHour: CodexUsageHistoryWindow(usedPercent: 95, windowDurationMinutes: 300, resetsAt: nil),
+                weekly: CodexUsageHistoryWindow(usedPercent: 10, windowDurationMinutes: 10_080, resetsAt: nil)
+            ),
+            CodexUsageHistorySample(
+                id: duplicateID,
+                capturedAt: Date(timeIntervalSince1970: bucket + 120),
+                fiveHour: CodexUsageHistoryWindow(usedPercent: 15, windowDurationMinutes: 300, resetsAt: nil),
+                weekly: CodexUsageHistoryWindow(usedPercent: 90, windowDurationMinutes: 10_080, resetsAt: nil)
+            )
+        ]
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        try encoder.encode(samples).write(to: fileURL)
+
+        let loaded = await CodexUsageHistoryStore(fileURL: fileURL).load(now: now)
+
+        XCTAssertEqual(loaded.count, 2)
+        XCTAssertEqual(Set(loaded.map(\.id)).count, 2)
+        XCTAssertEqual(loaded.map { $0.fiveHour?.usedPercent }, [95, 15])
+        XCTAssertEqual(loaded.map { $0.weekly?.usedPercent }, [10, 90])
     }
 
     func testWeeklyForecastIgnoresSamplesMissingWeeklyWindow() {
@@ -758,5 +863,10 @@ final class CodexUsageInsightsTests: XCTestCase {
                 weeklyReset: resetAt
             )
         }
+    }
+
+    private func permissions(at url: URL) throws -> Int {
+        let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
+        return try XCTUnwrap(attributes[.posixPermissions] as? NSNumber).intValue & 0o777
     }
 }

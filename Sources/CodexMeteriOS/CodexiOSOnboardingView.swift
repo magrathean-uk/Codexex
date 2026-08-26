@@ -40,8 +40,16 @@ struct CodexiOSOnboardingView: View {
         }
         .animation(.spring(response: 0.45, dampingFraction: 0.9), value: step)
         .onAppear {
+            if model.hasPendingSignIn {
+                step = .login
+            }
             withAnimation(.spring(response: 0.7, dampingFraction: 0.82)) {
                 hasAppeared = true
+            }
+        }
+        .onChange(of: model.hasPendingSignIn) { _, hasPendingSignIn in
+            if hasPendingSignIn {
+                withAnimation { step = .login }
             }
         }
     }
@@ -146,6 +154,17 @@ struct CodexiOSOnboardingView: View {
                             Button("Check Status") { Task { await model.checkSignIn() } }
                                 .buttonStyle(CodexiOSSecondaryButtonStyle())
                                 .disabled(model.isSigningIn)
+                            Button("Start Over") { Task { await model.restartSignIn() } }
+                                .buttonStyle(CodexiOSSecondaryButtonStyle())
+                                .disabled(model.isSigningIn)
+                            Button("Cancel") {
+                                Task {
+                                    await model.cancelSignIn()
+                                    withAnimation { step = .welcome }
+                                }
+                            }
+                            .buttonStyle(CodexiOSSecondaryButtonStyle())
+                            .disabled(model.isSigningIn)
                         }
                     }
                 }

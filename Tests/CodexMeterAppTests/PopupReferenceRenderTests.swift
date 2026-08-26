@@ -6,6 +6,66 @@ import XCTest
 
 @MainActor
 final class PopupReferenceRenderTests: XCTestCase {
+    func testStateBadgeSymbolsExist() {
+        for kind in [
+            CodexStateBadgeKind.live,
+            .preview,
+            .waiting,
+            .signedOut,
+            .stale,
+            .error,
+        ] {
+            XCTAssertNotNil(
+                NSImage(systemSymbolName: kind.systemImage, accessibilityDescription: nil),
+                "Missing SF Symbol for \(kind.title): \(kind.systemImage)"
+            )
+        }
+    }
+
+    func testPopupAppKitButtonsParticipateInKeyTraversalAndActivateWithKeyboard() throws {
+        var activations: [String] = []
+        let first = PopupAppKitButtonControl(frame: NSRect(x: 0, y: 0, width: 120, height: 36))
+        first.controlTitle = "Settings"
+        first.actionHandler = { activations.append("settings") }
+        let second = PopupAppKitButtonControl(frame: NSRect(x: 130, y: 0, width: 120, height: 36))
+        second.controlTitle = "Refresh"
+        second.actionHandler = { activations.append("refresh") }
+        first.nextKeyView = second
+        second.nextKeyView = first
+
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 260, height: 44))
+        container.addSubview(first)
+        container.addSubview(second)
+        let window = NSWindow(
+            contentRect: container.bounds,
+            styleMask: [.titled],
+            backing: .buffered,
+            defer: false
+        )
+        window.contentView = container
+        window.initialFirstResponder = first
+
+        XCTAssertTrue(first.acceptsFirstResponder)
+        XCTAssertTrue(window.makeFirstResponder(first))
+        window.selectNextKeyView(nil)
+        XCTAssertTrue(window.firstResponder === second)
+
+        let space = try XCTUnwrap(NSEvent.keyEvent(
+            with: .keyDown,
+            location: .zero,
+            modifierFlags: [],
+            timestamp: 0,
+            windowNumber: window.windowNumber,
+            context: nil,
+            characters: " ",
+            charactersIgnoringModifiers: " ",
+            isARepeat: false,
+            keyCode: 49
+        ))
+        second.keyDown(with: space)
+        XCTAssertEqual(activations, ["refresh"])
+    }
+
     func testReferencePopupRendersNonBlackGlassFrameInLightAndDark() throws {
         setenv("CODEXEX_REFERENCE_RENDER", "1", 1)
         defer { unsetenv("CODEXEX_REFERENCE_RENDER") }
@@ -118,10 +178,20 @@ final class PopupReferenceRenderTests: XCTestCase {
         let bitmap = try windowRenderedBitmap(for: view, width: GlassTokens.popupWidth, height: 260)
         let sample = PixelSample(bitmap: bitmap)
 
+        if let outputPath = ProcessInfo.processInfo.environment["CODEXEX_FAILURE_RENDER_OUTPUT"] {
+            let pngData = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+            try pngData.write(to: URL(fileURLWithPath: outputPath), options: .atomic)
+        }
+
         XCTAssertLessThan(
             sample.accentBluePixels,
             50,
             "failure popup recovery actions should stay monochrome"
+        )
+        XCTAssertLessThan(
+            sample.chromaticPixels,
+            100,
+            "failure popup should use only theme-neutral recovery colors"
         )
 
         let buttons = hostedButtonSnapshots(
@@ -176,6 +246,7 @@ final class PopupReferenceRenderTests: XCTestCase {
         XCTAssertEqual(buttons.map(\.title).sorted(), ["Refresh", "Sample Data", "Settings", "Sign In"])
         XCTAssertEqual(buttons.filter { $0.title == "Refresh" }.count, 1)
         XCTAssertLessThan(sample.accentBluePixels, 50)
+        XCTAssertLessThan(sample.chromaticPixels, 100)
 
         let widths = buttons.map(\.width)
         XCTAssertEqual(widths.count, 4)
@@ -184,6 +255,33 @@ final class PopupReferenceRenderTests: XCTestCase {
             try XCTUnwrap(widths.min()),
             accuracy: 0.5
         )
+    }
+
+    func testStaleSnapshotErrorPopupStillUsesOneRefresh() async throws {
+        let snapshot = CodexPreviewData.snapshot(now: Date(timeIntervalSince1970: 1_800_000_000))
+        let service = RenderSequenceService(responses: [
+            CodexServiceSnapshotResponse(authMode: .chatGPT, snapshot: snapshot, errorMessage: nil),
+            CodexServiceSnapshotResponse(authMode: .chatGPT, snapshot: nil, errorMessage: "server unavailable 503")
+        ])
+        let model = CodexMenuBarModel(service: service, localUsageProvider: RenderLocalUsageProvider())
+        await model.refreshNow(manual: true)
+        await model.refreshNow(manual: true)
+
+        XCTAssertNotNil(model.snapshot)
+        XCTAssertNotNil(model.lastError)
+        let view = PopupRootView(
+            model: model,
+            displayMode: .live,
+            reduceMotionOverride: true,
+            previewReferenceDate: Date(timeIntervalSince1970: 1_800_000_000)
+        )
+        let buttons = hostedButtonSnapshots(
+            for: view,
+            width: GlassTokens.popupWidth,
+            height: GlassTokens.popupMaxHeight
+        )
+
+        XCTAssertEqual(buttons.filter { $0.title == "Refresh" }.count, 1)
     }
 
     func testPreviewModePopupFitsUnder600PointsInAllHistoryModes() throws {
@@ -363,10 +461,28 @@ private struct RenderSignedOutService: CodexServiceClient {
 }
 
 private struct RenderLocalUsageProvider: CodexLocalUsageProviding {
-    func fetchLocalUsageSummary() async -> CodexLocalUsageSummary? {
-        nil
+    func fetchLocalUsageSummary() async -> CodexLocalUsageFetchResult {
+        .unavailable("Local usage unavailable in render test.")
     }
 }
+
+private actor RenderSequenceService: CodexServiceClient {
+    private var responses: [CodexServiceSnapshotResponse]
+
+    init(responses: [CodexServiceSnapshotResponse]) {
+        self.responses = responses
+    }
+
+    func fetchSnapshotResponse() async throws -> CodexServiceSnapshotResponse {
+        responses.removeFirst()
+    }
+
+    func beginChatGPTSignIn() async throws -> CodexDeviceAuthStart { throw RenderUnusedCall() }
+    func completeChatGPTSignIn(flowID: String) async throws -> CodexDeviceAuthPollResult { throw RenderUnusedCall() }
+    func signOut() async throws { throw RenderUnusedCall() }
+}
+
+private struct RenderUnusedCall: Error {}
 
 @MainActor
 private func renderedBitmap<Content: View>(
@@ -462,6 +578,7 @@ private struct PixelSample {
     let nonBlackShare: Double
     let brightGlassShare: Double
     let accentBluePixels: Int
+    let chromaticPixels: Int
     let labelAccentBluePixels: Int
     let lowerAccentBluePixels: Int
     let footerPrimaryAccentBluePixels: Int
@@ -472,6 +589,7 @@ private struct PixelSample {
         var nonBlack = 0
         var brightGlass = 0
         var accentBlue = 0
+        var chromatic = 0
         var labelAccentBlue = 0
         var lowerAccentBlue = 0
         var footerPrimaryAccentBlue = 0
@@ -510,6 +628,12 @@ private struct PixelSample {
                     }
                 }
 
+                let highestChannel = max(red, green, blue)
+                let lowestChannel = min(red, green, blue)
+                if highestChannel > 0.20, highestChannel - lowestChannel > 0.12 {
+                    chromatic += 1
+                }
+
                 if y.isMultiple(of: step), x.isMultiple(of: step) {
                     total += 1
                     let brightness = (red + green + blue) / 3
@@ -528,6 +652,7 @@ private struct PixelSample {
         nonBlackShare = Double(nonBlack) / denominator
         brightGlassShare = Double(brightGlass) / denominator
         accentBluePixels = accentBlue
+        chromaticPixels = chromatic
         labelAccentBluePixels = labelAccentBlue
         lowerAccentBluePixels = lowerAccentBlue
         footerPrimaryAccentBluePixels = footerPrimaryAccentBlue

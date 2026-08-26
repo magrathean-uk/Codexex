@@ -59,6 +59,7 @@ struct SettingsAccountCardView: View {
     private func deviceCodeCard(code: String) -> some View {
         CodexDeviceCodeCallout(
             code: code,
+            isCancelling: model.isCancellingPendingSignIn,
             openSafari: { model.openAuthVerificationPage() },
             copyCode: { model.copyAuthCode() },
             cancel: { model.cancelPendingChatGPTSignIn() }
@@ -73,10 +74,11 @@ struct SettingsAccountCardView: View {
             }
             .buttonStyle(CodexDestructiveButtonStyle())
         } else if model.authDeviceCode != nil {
-            Button("Clear Code") {
+            Button(model.isCancellingPendingSignIn ? "Clearing…" : "Clear Code") {
                 model.clearAuthCode()
             }
             .buttonStyle(SettingsGhostButtonStyle())
+            .disabled(model.isCancellingPendingSignIn)
         } else {
             Button("Sign In with ChatGPT") {
                 model.startChatGPTSignIn()

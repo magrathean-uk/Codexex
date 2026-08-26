@@ -1,15 +1,26 @@
 import Foundation
 import CodexMeterCore
 
-final class CodexHelperProcess {
+final class CodexHelperProcess: @unchecked Sendable {
     private let sendLock = NSLock()
     private let stateLock = NSLock()
     private let maxResponseBytes = 1_048_576
     private let responseTimeout: TimeInterval = 15
+    private let helperURLProvider: (() throws -> URL)?
+    private let beforePublishingLaunch: (() -> Void)?
     private var process: Process?
     private var stdinHandle: FileHandle?
     private var stdoutHandle: FileHandle?
     private var stderrHandle: FileHandle?
+    private var resetGeneration: UInt64 = 0
+
+    init(
+        helperURLProvider: (() throws -> URL)? = nil,
+        beforePublishingLaunch: (() -> Void)? = nil
+    ) {
+        self.helperURLProvider = helperURLProvider
+        self.beforePublishingLaunch = beforePublishingLaunch
+    }
 
     deinit {
         _ = shutdown(captureStderr: false)
@@ -43,15 +54,27 @@ final class CodexHelperProcess {
     }
 
     func reset() {
+        // Cancellation must interrupt a blocked stdout read. `sendLock` keeps
+        // later sends out until that read unwinds; `stateLock` makes shutdown
+        // safe while the current send still owns `sendLock`.
+        stateLock.lock()
+        resetGeneration &+= 1
+        stateLock.unlock()
         _ = shutdown(captureStderr: false)
     }
 
     private func ensureStarted() throws {
-        if isRunning { return }
+        stateLock.lock()
+        if process?.isRunning == true {
+            stateLock.unlock()
+            return
+        }
+        let launchGeneration = resetGeneration
+        stateLock.unlock()
 
         _ = shutdown(captureStderr: false)
 
-        let helperURL = try locateHelperURL()
+        let helperURL = try helperURLProvider?() ?? locateHelperURL()
 
         let process = Process()
         process.executableURL = helperURL
@@ -64,19 +87,24 @@ final class CodexHelperProcess {
         process.standardError = stderr
 
         try process.run()
+        beforePublishingLaunch?()
 
         stateLock.lock()
+        guard resetGeneration == launchGeneration else {
+            stateLock.unlock()
+            stdin.fileHandleForWriting.closeFile()
+            stdout.fileHandleForReading.closeFile()
+            stderr.fileHandleForReading.closeFile()
+            if process.isRunning {
+                process.terminate()
+            }
+            throw helperError("Helper operation was cancelled.", code: 5)
+        }
         self.process = process
         stdinHandle = stdin.fileHandleForWriting
         stdoutHandle = stdout.fileHandleForReading
         stderrHandle = stderr.fileHandleForReading
         stateLock.unlock()
-    }
-
-    private var isRunning: Bool {
-        stateLock.lock()
-        defer { stateLock.unlock() }
-        return process?.isRunning == true
     }
 
     private func currentHandles() throws -> (stdin: FileHandle, stdout: FileHandle) {

@@ -8,13 +8,19 @@ import CodexMeterCore
 @MainActor
 @Observable
 final class CodexMenuBarModel {
+    private static let maxLocalUsageScansPerRefresh = 8
+
     private final class Lifecycle {
         var refreshLoopTask: Task<Void, Never>?
         var deviceAuthPollTask: Task<Void, Never>?
+        var localUsageTask: Task<Void, Never>?
+        var staleDeadlineTask: Task<Void, Never>?
 
         deinit {
             refreshLoopTask?.cancel()
             deviceAuthPollTask?.cancel()
+            localUsageTask?.cancel()
+            staleDeadlineTask?.cancel()
         }
     }
 
@@ -32,6 +38,7 @@ final class CodexMenuBarModel {
     private(set) var showPaceConfidence = CodexAppSettings.showPaceConfidence
     private(set) var hideIdleSecondaryLimits = CodexAppSettings.hideIdleSecondaryLimits
     private(set) var quotaNotificationsEnabled = CodexAppSettings.quotaNotificationsEnabled
+    private(set) var quotaNotificationAuthorizationState: CodexNotificationAuthorizationState = .unknown
     private(set) var codexSessionsPath = CodexAppSettings.codexSessionsPath
     private(set) var showFiveHourInMenubar = CodexAppSettings.showFiveHourInMenubar
     private(set) var showWeeklyInMenubar = CodexAppSettings.showWeeklyInMenubar
@@ -42,6 +49,7 @@ final class CodexMenuBarModel {
     private(set) var hasCompletedOnboarding = CodexAppSettings.hasCompletedOnboarding
     private(set) var previewModeEnabled = CodexAppSettings.previewModeEnabled
     private(set) var reduceMotionEnabled = false
+    private(set) var staleDeadlineReached = false
     private var summarySnoozeFingerprint = CodexAppSettings.summarySnoozeFingerprint
     private var summarySnoozeExpiresAt = CodexAppSettings.summarySnoozeExpiresAt
 
@@ -52,10 +60,13 @@ final class CodexMenuBarModel {
     private let notificationDelivery: any CodexQuotaNotificationDelivering
     private let deviceAuthPollingConfiguration: CodexDeviceAuthPollingConfiguration
     private let openURL: @MainActor (URL) -> Bool
+    private let clock: CodexMenuBarClock
     private let refreshCoordinator = CodexRefreshCoordinator()
     private let lifecycle = Lifecycle()
     private var didStart = false
     private var refreshBackoff = CodexRefreshBackoff()
+    private var localUsageGeneration = 0
+    private var notificationPermissionGeneration = 0
 
     init(
         service: any CodexServiceClient = CodexXPCClient(),
@@ -64,6 +75,7 @@ final class CodexMenuBarModel {
         historyRepository: CodexHistoryRepository = CodexHistoryRepository(),
         notificationDelivery: any CodexQuotaNotificationDelivering = CodexUserNotificationDelivery(),
         deviceAuthPollingConfiguration: CodexDeviceAuthPollingConfiguration = .production,
+        clock: CodexMenuBarClock = .live,
         openURL: @escaping @MainActor (URL) -> Bool = { NSWorkspace.shared.open($0) }
     ) {
         self.service = service
@@ -72,6 +84,7 @@ final class CodexMenuBarModel {
         self.historyRepository = historyRepository
         self.notificationDelivery = notificationDelivery
         self.deviceAuthPollingConfiguration = deviceAuthPollingConfiguration
+        self.clock = clock
         self.openURL = openURL
         let settings = settingsStore.snapshot()
         autoRefreshEnabled = settings.autoRefreshEnabled
@@ -107,11 +120,27 @@ final class CodexMenuBarModel {
     var authVerificationURL: URL? { authSession.verificationURL }
     var authFlowID: String? { authSession.flowID }
     var isSigningIn: Bool { authSession.isSigningIn }
+    var isSigningOut: Bool { authSession.isSigningOut }
+    var isCancellingPendingSignIn: Bool { authSession.isCancelling }
+    var isAuthBusy: Bool { authSession.isBusy }
     var isSignedIn: Bool { authSession.isSignedIn }
     var hasResolvedAuthState: Bool { authSession.hasResolvedState }
     var usageHistory: [CodexUsageHistorySample] { dashboard.usageHistory }
     var usageInsights: CodexUsageInsights? { dashboard.usageInsights }
     var localUsageSummary: CodexLocalUsageSummary? { dashboard.localUsageSummary }
+    var localUsageLoadState: CodexLocalUsageLoadState { dashboard.localUsageLoadState }
+    var quotaNotificationStatusMessage: String? {
+        switch quotaNotificationAuthorizationState {
+        case .denied:
+            return "Blocked by macOS. Allow notifications in System Settings."
+        case .notDetermined where quotaNotificationsEnabled:
+            return "Waiting for macOS notification permission."
+        case .unknown where quotaNotificationsEnabled:
+            return "Checking macOS notification permission."
+        case .authorized, .notDetermined, .unknown:
+            return nil
+        }
+    }
     var localIntelligenceSummary: CodexLocalIntelligenceSummary? {
         CodexLocalIntelligence.summary(
             insights: usageInsights,
@@ -126,7 +155,7 @@ final class CodexMenuBarModel {
             return false
         }
         let staleSeconds = max(Double(refreshIntervalSeconds * 2 + 60), 15 * 60)
-        return Date().timeIntervalSince(lastUpdatedAt) > staleSeconds
+        return staleDeadlineReached || clock.now().timeIntervalSince(lastUpdatedAt) > staleSeconds
     }
     var popupSummary: PopupSummaryPresentation? {
         let fallback = PopupPresentation.summary(
@@ -153,6 +182,7 @@ final class CodexMenuBarModel {
         CodexLog.ui.log(
             "model start onboarding=\(self.hasCompletedOnboarding, privacy: .public) preview=\(self.previewModeEnabled, privacy: .public)"
         )
+        refreshNotificationAuthorization(requestIfNeeded: false)
 
         if previewModeEnabled {
             authSession.apply(.previewEnabled)
@@ -163,36 +193,12 @@ final class CodexMenuBarModel {
             await refreshNow(manual: true)
         }
 
-        lifecycle.refreshLoopTask = Task { [weak self] in
-            while Task.isCancelled == false {
-                guard let self else { break }
-
-                if self.autoRefreshEnabled == false {
-                    do {
-                        try await Task.sleep(for: .seconds(30))
-                    } catch {
-                        break
-                    }
-                    continue
-                }
-
-                do {
-                    try await Task.sleep(for: .seconds(Double(self.refreshIntervalSeconds)))
-                } catch {
-                    break
-                }
-
-                guard Task.isCancelled == false else { break }
-                guard self.refreshBackoff.allowsAutomaticRefresh() else {
-                    continue
-                }
-                await self.refreshNow()
-            }
-        }
+        restartRefreshLoop()
     }
 
     func refreshNow(manual: Bool = false) async {
-        if manual == false && refreshBackoff.allowsAutomaticRefresh() == false {
+        guard isSigningOut == false, isCancellingPendingSignIn == false else { return }
+        if manual == false && refreshBackoff.allowsAutomaticRefresh(now: clock.now()) == false {
             return
         }
         guard dashboard.isRefreshing == false else { return }
@@ -210,11 +216,10 @@ final class CodexMenuBarModel {
         }
         defer { dashboard.isRefreshing = false }
 
-        async let localSummary = localUsageProvider.fetchLocalUsageSummary()
+        startLocalUsageRefresh()
 
         do {
             let response = try await service.fetchSnapshotResponse()
-            let resolvedLocalSummary = await localSummary
             guard refreshCoordinator.isCurrent(generation) else { return }
 
             if let result = response.snapshot {
@@ -223,9 +228,9 @@ final class CodexMenuBarModel {
                 guard refreshCoordinator.isCurrent(generation) else { return }
                 animateStateChange(.easeInOut(duration: 0.18)) {
                     dashboard.applySnapshot(result, historyState: updatedHistory)
-                    dashboard.applyLocalUsageSummary(resolvedLocalSummary)
                     authSession.apply(.signedIn)
                 }
+                scheduleStaleDeadline()
                 refreshBackoff.recordSuccess()
                 await deliverQuotaNotificationsIfNeeded(snapshot: result)
             } else {
@@ -234,30 +239,27 @@ final class CodexMenuBarModel {
                 )
                 animateStateChange(.easeInOut(duration: 0.18)) {
                     applySnapshotResponse(response)
-                    dashboard.applyLocalUsageSummary(resolvedLocalSummary)
                 }
                 if let message = response.errorMessage {
                     let failureClass = CodexRefreshBackoff.classify(errorMessage: message)
-                    refreshBackoff.recordFailure(failureClass)
+                    refreshBackoff.recordFailure(failureClass, now: clock.now())
                 } else {
                     refreshBackoff.recordSuccess()
                 }
             }
         } catch {
             CodexLog.refresh.error("refresh failed message=\(error.localizedDescription, privacy: .public)")
-            let resolvedLocalSummary = await localSummary
             guard refreshCoordinator.isCurrent(generation) else { return }
             let failureClass = CodexRefreshBackoff.classify(errorMessage: error.localizedDescription)
-            refreshBackoff.recordFailure(failureClass)
+            refreshBackoff.recordFailure(failureClass, now: clock.now())
             animateStateChange(.easeInOut(duration: 0.18)) {
-                dashboard.applyLocalUsageSummary(resolvedLocalSummary)
                 dashboard.setError(error.localizedDescription)
             }
         }
     }
 
     func startChatGPTSignIn() {
-        guard isSigningIn == false else { return }
+        guard canStartChatGPTSignIn else { return }
         if let cooldownMessage = authSession.cooldownMessage {
             CodexLog.auth.log("startChatGPTSignIn blocked cooldown")
             authSession.apply(.beginBlocked(message: cooldownMessage))
@@ -313,9 +315,42 @@ final class CodexMenuBarModel {
     }
 
     func clearAuthCode() {
+        cancelPendingChatGPTSignIn()
+    }
+
+    func cancelPendingChatGPTSignIn() {
+        guard let flowID = authFlowID else {
+            invalidateRefreshResults(cancelHelper: true)
+            authSession.apply(.clearDeviceCode)
+            dashboard.setError(nil)
+            return
+        }
+        guard isCancellingPendingSignIn == false, isSigningOut == false else { return }
+
         invalidateRefreshResults(cancelHelper: true)
-        authSession.apply(.clearDeviceCode)
+        let generation = refreshCoordinator.token()
+        authSession.apply(.cancelRequested)
         dashboard.setError(nil)
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                try await withHelperTimeout(.seconds(deviceAuthPollingConfiguration.requestTimeoutSeconds)) {
+                    try await self.service.cancelChatGPTSignIn(flowID: flowID)
+                } onTimeout: { [service] in
+                    service.cancelPendingOperations()
+                }
+                guard self.refreshCoordinator.isCurrent(generation), self.authFlowID == flowID else { return }
+                self.authSession.apply(.clearDeviceCode)
+                self.dashboard.setError(nil)
+                CodexLog.auth.log("pending device auth cancelled flow=\(flowID, privacy: .private(mask: .hash))")
+            } catch {
+                guard self.refreshCoordinator.isCurrent(generation), self.authFlowID == flowID else { return }
+                let message = CodexSensitiveRedactor.redacted(error.localizedDescription)
+                self.authSession.apply(.cancelFailed("Could not cancel sign-in. \(message)"))
+                CodexLog.auth.error("cancel sign-in failed message=\(message, privacy: .private)")
+            }
+        }
     }
 
     func completePendingChatGPTSignIn() {
@@ -323,14 +358,14 @@ final class CodexMenuBarModel {
     }
 
     func checkPendingChatGPTSignIn() {
-        guard let authFlowID else { return }
+        guard let authFlowID, isCancellingPendingSignIn == false else { return }
         CodexLog.auth.log("poll pending sign-in flow=\(authFlowID, privacy: .private(mask: .hash))")
         let generation = refreshCoordinator.token()
         startDeviceAuthPolling(flowID: authFlowID, generation: generation, pollImmediately: true)
     }
 
     func openAuthVerificationPage() {
-        guard let authVerificationURL else { return }
+        guard let authVerificationURL, isCancellingPendingSignIn == false else { return }
         completeOnboarding()
         CodexLog.auth.log("opening Safari for device auth")
         guard openURL(authVerificationURL) else {
@@ -343,7 +378,7 @@ final class CodexMenuBarModel {
     }
 
     func copyAuthCode() {
-        guard let code = authDeviceCode else { return }
+        guard let code = authDeviceCode, isCancellingPendingSignIn == false else { return }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(code, forType: .string)
         authSession.apply(.pollingPending("Code copied. Paste it in Safari."))
@@ -363,11 +398,15 @@ final class CodexMenuBarModel {
     func setAutoRefreshEnabled(_ enabled: Bool) {
         autoRefreshEnabled = enabled
         settingsStore.setAutoRefreshEnabled(enabled)
+        restartRefreshLoop()
     }
 
     func setRefreshIntervalSeconds(_ seconds: Int) {
-        refreshIntervalSeconds = seconds
-        settingsStore.setRefreshIntervalSeconds(seconds)
+        let clampedSeconds = max(seconds, 300)
+        refreshIntervalSeconds = clampedSeconds
+        settingsStore.setRefreshIntervalSeconds(clampedSeconds)
+        restartRefreshLoop()
+        scheduleStaleDeadline()
     }
 
     func setShowHistoryEnabled(_ enabled: Bool) {
@@ -406,8 +445,25 @@ final class CodexMenuBarModel {
     }
 
     func setQuotaNotificationsEnabled(_ enabled: Bool) {
-        quotaNotificationsEnabled = enabled
-        settingsStore.setQuotaNotificationsEnabled(enabled)
+        notificationPermissionGeneration += 1
+        let generation = notificationPermissionGeneration
+        guard enabled else {
+            quotaNotificationsEnabled = false
+            settingsStore.setQuotaNotificationsEnabled(false)
+            return
+        }
+
+        quotaNotificationAuthorizationState = .notDetermined
+        quotaNotificationsEnabled = false
+        settingsStore.setQuotaNotificationsEnabled(false)
+        Task { @MainActor [weak self, notificationDelivery] in
+            let state = await notificationDelivery.authorizationState(requestIfNeeded: true)
+            guard let self, self.notificationPermissionGeneration == generation else { return }
+            self.quotaNotificationAuthorizationState = state
+            let granted = state == .authorized
+            self.quotaNotificationsEnabled = granted
+            self.settingsStore.setQuotaNotificationsEnabled(granted)
+        }
     }
 
     func setCodexSessionsPath(_ path: String?) {
@@ -517,6 +573,8 @@ final class CodexMenuBarModel {
         previewModeEnabled = true
         authSession.apply(.previewEnabled)
         dashboard.applyPreview(now: Date())
+        restartRefreshLoop()
+        scheduleStaleDeadline()
     }
 
     func disablePreviewMode(refreshAfterDisable: Bool = true) {
@@ -526,7 +584,9 @@ final class CodexMenuBarModel {
         settingsStore.setPreviewModeEnabled(false)
         previewModeEnabled = false
         authSession.apply(.previewDisabled)
-        dashboard.clearSnapshot(keepHistory: false)
+        dashboard.clearSnapshot(keepHistory: false, keepLocalUsage: false)
+        restartRefreshLoop()
+        scheduleStaleDeadline()
 
         guard refreshAfterDisable else { return }
         Task { @MainActor [weak self] in
@@ -535,6 +595,7 @@ final class CodexMenuBarModel {
     }
 
     func signOut() {
+        guard isSigningOut == false else { return }
         CodexLog.auth.log("signOut")
         if previewModeEnabled {
             disablePreviewMode()
@@ -543,16 +604,20 @@ final class CodexMenuBarModel {
         invalidateRefreshResults(cancelHelper: true)
         dashboard.setError(nil)
         authSession.apply(.signOutRequested)
+        let generation = refreshCoordinator.token()
 
         Task { @MainActor [weak self] in
             guard let self else { return }
 
             do {
                 try await service.signOut()
+                guard self.refreshCoordinator.isCurrent(generation), self.isSigningOut else { return }
                 CodexLog.auth.log("signOut complete")
                 dashboard.clearSnapshot(keepHistory: true)
                 authSession.apply(.signedOut("Signed out."))
+                scheduleStaleDeadline()
             } catch {
+                guard self.refreshCoordinator.isCurrent(generation), self.isSigningOut else { return }
                 CodexLog.auth.error("signOut failed message=\(error.localizedDescription, privacy: .public)")
                 dashboard.setError(error.localizedDescription)
                 authSession.apply(.signedIn)
@@ -560,24 +625,138 @@ final class CodexMenuBarModel {
         }
     }
 
+    func clearHelperStateForAppReset() async -> String? {
+        CodexLog.auth.log("reset helper sign-out start")
+        invalidateRefreshResults(cancelHelper: true)
+        do {
+            try await service.signOut()
+            CodexLog.auth.log("reset helper sign-out complete")
+            return nil
+        } catch {
+            CodexLog.auth.error(
+                "reset helper sign-out failed message=\(error.localizedDescription, privacy: .public)"
+            )
+            return "Could not clear helper sign-in: \(error.localizedDescription)"
+        }
+    }
+
     private func applySnapshotResponse(_ response: CodexServiceSnapshotResponse) {
         let hasPendingDeviceCode = authSession.currentDeviceCode != nil
-        dashboard.snapshot = nil
-        dashboard.lastUpdatedAt = nil
-        dashboard.setError(response.authMode == .chatGPT ? response.errorMessage : nil)
-
-        if CodexAuthFlow.shouldPreservePendingDeviceCode(
+        let preservesPendingDeviceCode = CodexAuthFlow.shouldPreservePendingDeviceCode(
             response: response,
             hasPendingDeviceCode: hasPendingDeviceCode
-        ) {
+        )
+
+        if response.authMode == nil {
+            if preservesPendingDeviceCode {
+                dashboard.setError(nil)
+                return
+            }
+            dashboard.clearSnapshot(keepHistory: true)
+            dashboard.setError(nil)
+            authSession.apply(.signedOut(CodexAuthFlow.signedOutMessage(for: response)))
+            scheduleStaleDeadline()
             return
         }
+
+        dashboard.setError(response.errorMessage ?? "Quota is temporarily unavailable.")
 
         switch response.authMode {
         case .chatGPT:
             authSession.apply(.signedIn)
         case nil:
-            authSession.apply(.signedOut(CodexAuthFlow.signedOutMessage(for: response)))
+            break
+        }
+    }
+
+    private func startLocalUsageRefresh() {
+        localUsageGeneration += 1
+        let generation = localUsageGeneration
+        lifecycle.localUsageTask?.cancel()
+        dashboard.beginLocalUsageLoad()
+        lifecycle.localUsageTask = Task { @MainActor [weak self, localUsageProvider, clock] in
+            var scanCount = 0
+            while Task.isCancelled == false, scanCount < Self.maxLocalUsageScansPerRefresh {
+                scanCount += 1
+                let result = await localUsageProvider.fetchLocalUsageSummary()
+                guard Task.isCancelled == false else { return }
+                let shouldContinue: Bool
+                if let self, self.localUsageGeneration == generation {
+                    self.dashboard.applyLocalUsageResult(result)
+                    if case .available(let summary) = result {
+                        shouldContinue = summary.coverage.isSelectedSetIndexed == false
+                            && summary.coverage.bytesRead > 0
+                            && scanCount < Self.maxLocalUsageScansPerRefresh
+                    } else {
+                        shouldContinue = false
+                    }
+                    if shouldContinue == false {
+                        self.lifecycle.localUsageTask = nil
+                    }
+                } else {
+                    return
+                }
+                guard shouldContinue else { return }
+                do {
+                    try await clock.sleep(5)
+                } catch {
+                    return
+                }
+            }
+        }
+    }
+
+    private func restartRefreshLoop() {
+        lifecycle.refreshLoopTask?.cancel()
+        lifecycle.refreshLoopTask = nil
+        guard didStart, autoRefreshEnabled, previewModeEnabled == false else { return }
+
+        lifecycle.refreshLoopTask = Task { @MainActor [weak self, clock] in
+            while Task.isCancelled == false {
+                guard let interval = self?.refreshIntervalSeconds else { return }
+                do {
+                    try await clock.sleep(TimeInterval(interval))
+                } catch {
+                    return
+                }
+                guard let self else { return }
+                guard Task.isCancelled == false else { return }
+                guard self.refreshBackoff.allowsAutomaticRefresh(now: self.clock.now()) else {
+                    continue
+                }
+                await self.refreshNow()
+            }
+        }
+    }
+
+    private func scheduleStaleDeadline() {
+        lifecycle.staleDeadlineTask?.cancel()
+        lifecycle.staleDeadlineTask = nil
+        staleDeadlineReached = false
+        guard previewModeEnabled == false, let lastUpdatedAt else { return }
+
+        let staleSeconds = max(Double(refreshIntervalSeconds * 2 + 60), 15 * 60)
+        let deadline = lastUpdatedAt.addingTimeInterval(staleSeconds)
+        let delay = deadline.timeIntervalSince(clock.now())
+        guard delay > 0 else {
+            staleDeadlineReached = true
+            return
+        }
+
+        lifecycle.staleDeadlineTask = Task { @MainActor [weak self, clock] in
+            do {
+                try await clock.sleep(delay)
+            } catch {
+                return
+            }
+            guard let self else { return }
+            guard Task.isCancelled == false,
+                  self.lastUpdatedAt == lastUpdatedAt,
+                  self.previewModeEnabled == false else {
+                return
+            }
+            self.staleDeadlineReached = true
+            self.lifecycle.staleDeadlineTask = nil
         }
     }
 
@@ -602,6 +781,20 @@ final class CodexMenuBarModel {
             receipts = receipts.recording(result.notification)
         }
         settingsStore.setQuotaNotificationReceipts(receipts)
+    }
+
+    private func refreshNotificationAuthorization(requestIfNeeded: Bool) {
+        notificationPermissionGeneration += 1
+        let generation = notificationPermissionGeneration
+        Task { @MainActor [weak self, notificationDelivery] in
+            let state = await notificationDelivery.authorizationState(requestIfNeeded: requestIfNeeded)
+            guard let self, self.notificationPermissionGeneration == generation else { return }
+            self.quotaNotificationAuthorizationState = state
+            if state == .denied, self.quotaNotificationsEnabled {
+                self.quotaNotificationsEnabled = false
+                self.settingsStore.setQuotaNotificationsEnabled(false)
+            }
+        }
     }
 
     private func invalidateRefreshResults(cancelHelper: Bool) {
@@ -693,16 +886,21 @@ final class CodexMenuBarModel {
             return .pending
         } catch is HelperOperationTimedOut {
             guard authFlowID == flowID, refreshCoordinator.isCurrent(generation) else { return .stale }
-            authSession.apply(.pollingPending("Still checking sign-in."))
+            authSession.apply(.pollingPending("Sign-in check timed out. Retrying with the same code."))
             CodexLog.auth.log("device auth poll timed out")
             return .pending
         } catch {
             guard authFlowID == flowID, refreshCoordinator.isCurrent(generation) else { return .stale }
-            authSession.apply(.pollingFailed(error.localizedDescription))
+            let message = error.localizedDescription
+            if CodexAuthFlow.isTerminalPollingFailure(message) {
+                authSession.apply(.pollingInterrupted(message))
+            } else {
+                authSession.apply(.pollingFailed(message))
+            }
             CodexLog.auth.error(
                 "poll sign-in failed message=\(error.localizedDescription, privacy: .public)"
             )
-            return .stale
+            return CodexAuthFlow.isTerminalPollingFailure(message) ? .stale : .pending
         }
     }
 
@@ -741,15 +939,17 @@ final class CodexMenuBarModel {
             "Version: \(Bundle.main.codexexVersionString)",
             "Generated: \(formatter.string(from: now))",
             "Preview: \(previewModeEnabled)",
-            "Signed in: \(isSignedIn)",
+            "Signed in: \(authSession.isAuthenticated)",
             "Refreshing: \(isRefreshing)",
             "Stale: \(isDataStale)",
             "Auto refresh: \(autoRefreshEnabled) / \(refreshIntervalSeconds)s",
             "Menu mode: \(menuBarDisplayMode.rawValue)",
             "Reset style: \(resetDisplayStyle.rawValue)",
             "History samples: \(usageHistory.count)",
-            "Local sessions: \(localUsage?.sessions.count ?? 0)",
-            "Local all-session tokens: \(localUsage?.total.totalTokens ?? 0)",
+            "Local status: \(localUsageLoadState.statusText)",
+            "Local sessions: \(localUsage.map { String($0.sessions.count) } ?? "unavailable")",
+            "Local indexed tokens: \(localUsage.map { String($0.total.totalTokens) } ?? "unavailable")",
+            "Local coverage: \(localUsage?.coverage.label ?? "unavailable")",
             "Local top project: \(localUsage?.projects.first?.displayName ?? "none")",
             "Local top model: \(localUsage?.modelSummaries.first?.model ?? "none")",
             "Local attribution: \(localUsage?.attributionConfidence.level.rawValue ?? "unknown")",
@@ -776,6 +976,18 @@ final class CodexMenuBarModel {
 
 private struct PendingSignInStillWaiting: Error {}
 private struct HelperOperationTimedOut: Error {}
+
+struct CodexMenuBarClock: Sendable {
+    let now: @Sendable () -> Date
+    let sleep: @Sendable (TimeInterval) async throws -> Void
+
+    static let live = CodexMenuBarClock(
+        now: Date.init,
+        sleep: { seconds in
+            try await Task.sleep(for: .seconds(max(0, seconds)))
+        }
+    )
+}
 
 struct CodexDeviceAuthPollingConfiguration: Sendable, Equatable {
     let intervalSeconds: Double

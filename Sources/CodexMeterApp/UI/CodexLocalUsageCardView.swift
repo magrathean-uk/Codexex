@@ -34,7 +34,7 @@ struct CodexLocalUsageCardView: View {
                 header
 
                 HStack(spacing: 10) {
-                    metric("All tokens", value: compactTokens(summary.total.totalTokens), systemImage: "sum")
+                    metric("Indexed tokens", value: compactTokens(summary.total.totalTokens), systemImage: "sum")
                     metric("Cached input", value: compactTokens(summary.total.cachedInputTokens), systemImage: "tray.full.fill")
                     metric("Output", value: compactTokens(summary.total.outputTokens), systemImage: "bolt.fill")
                 }
@@ -47,7 +47,7 @@ struct CodexLocalUsageCardView: View {
     private var header: some View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("All sessions")
+                Text(summary.coverage.isComplete ? "All indexed sessions" : "Recent indexed sessions")
                     .font(.system(size: 16, weight: .semibold))
 
                 Text(CodexLocalUsageText.headerSummary(
@@ -57,6 +57,11 @@ struct CodexLocalUsageCardView: View {
                 ))
                 .font(.system(size: 13))
                     .foregroundStyle(CodexTheme.muted)
+                    .lineLimit(1)
+
+                Text(summary.coverage.label)
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(CodexTheme.dim)
                     .lineLimit(1)
             }
 
@@ -97,7 +102,7 @@ struct CodexLocalUsageCardView: View {
                 }
 
                 if let top = summary.projects.first {
-                    infoRow("Top project", value: "\(top.displayName) · \(compactTokens(top.tokens.totalTokens)) all tokens")
+                    infoRow("Top project", value: "\(top.displayName) · \(compactTokens(top.tokens.totalTokens)) indexed tokens")
                 }
 
                 if let model = summary.modelSummaries.first {

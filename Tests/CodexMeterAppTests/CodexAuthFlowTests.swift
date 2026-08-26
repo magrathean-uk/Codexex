@@ -28,4 +28,11 @@ final class CodexAuthFlowTests: XCTestCase {
             "Not signed in. Use the button below."
         )
     }
+
+    func testPollingFailureClassificationKeepsTransientFlowAndClearsTerminalFlow() {
+        XCTAssertFalse(CodexAuthFlow.isTerminalPollingFailure("device auth temporarily failed with status 503"))
+        XCTAssertFalse(CodexAuthFlow.isTerminalPollingFailure("network connection was lost"))
+        XCTAssertTrue(CodexAuthFlow.isTerminalPollingFailure("Sign-in code expired. Start again."))
+        XCTAssertTrue(CodexAuthFlow.isTerminalPollingFailure("token endpoint returned status 400. Start again."))
+    }
 }

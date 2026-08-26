@@ -34,6 +34,11 @@ actor CodexiOSLiveActivitySerialManager: CodexiOSLiveActivityManaging {
     private let manager: any CodexiOSLiveActivityManaging
     private var isLocked = false
     private var waiters: [CheckedContinuation<Void, Never>] = []
+    private var newestSnapshotDate: Date?
+    private var latestRuntimeState = CodexiOSLiveActivityRuntimeState(
+        isAvailable: false,
+        activityID: nil
+    )
 
     init(manager: any CodexiOSLiveActivityManaging) {
         self.manager = manager
@@ -42,7 +47,8 @@ actor CodexiOSLiveActivitySerialManager: CodexiOSLiveActivityManaging {
     func recover() async -> CodexiOSLiveActivityRuntimeState {
         await acquire()
         defer { release() }
-        return await manager.recover()
+        guard Task.isCancelled == false else { return latestRuntimeState }
+        return await recoverCurrentState()
     }
 
     func start(
@@ -53,12 +59,17 @@ actor CodexiOSLiveActivitySerialManager: CodexiOSLiveActivityManaging {
     ) async throws -> CodexiOSLiveActivityRuntimeState {
         await acquire()
         defer { release() }
-        return try await manager.start(
+        try Task.checkCancellation()
+        guard isCurrent(snapshot) else { return await recoverCurrentState() }
+        let state = try await manager.start(
             snapshot: snapshot,
             showFiveHour: showFiveHour,
             showUsedQuota: showUsedQuota,
             cadence: cadence
         )
+        record(snapshot)
+        latestRuntimeState = state
+        return state
     }
 
     func update(
@@ -69,12 +80,17 @@ actor CodexiOSLiveActivitySerialManager: CodexiOSLiveActivityManaging {
     ) async -> CodexiOSLiveActivityRuntimeState {
         await acquire()
         defer { release() }
-        return await manager.update(
+        guard Task.isCancelled == false else { return latestRuntimeState }
+        guard isCurrent(snapshot) else { return await recoverCurrentState() }
+        let state = await manager.update(
             snapshot: snapshot,
             showFiveHour: showFiveHour,
             showUsedQuota: showUsedQuota,
             cadence: cadence
         )
+        record(snapshot)
+        latestRuntimeState = state
+        return state
     }
 
     func markStale(
@@ -85,18 +101,27 @@ actor CodexiOSLiveActivitySerialManager: CodexiOSLiveActivityManaging {
     ) async -> CodexiOSLiveActivityRuntimeState {
         await acquire()
         defer { release() }
-        return await manager.markStale(
+        guard Task.isCancelled == false else { return latestRuntimeState }
+        guard isCurrent(snapshot) else { return await recoverCurrentState() }
+        let state = await manager.markStale(
             snapshot: snapshot,
             showFiveHour: showFiveHour,
             showUsedQuota: showUsedQuota,
             cadence: cadence
         )
+        record(snapshot)
+        latestRuntimeState = state
+        return state
     }
 
     func stop() async -> CodexiOSLiveActivityRuntimeState {
         await acquire()
         defer { release() }
-        return await manager.stop()
+        guard Task.isCancelled == false else { return latestRuntimeState }
+        let state = await manager.stop()
+        newestSnapshotDate = nil
+        latestRuntimeState = state
+        return state
     }
 
     private func acquire() async {
@@ -115,6 +140,24 @@ actor CodexiOSLiveActivitySerialManager: CodexiOSLiveActivityManaging {
             return
         }
         waiters.removeFirst().resume()
+    }
+
+    func queuedOperationCount() -> Int {
+        waiters.count
+    }
+
+    private func isCurrent(_ snapshot: CodexSnapshot) -> Bool {
+        newestSnapshotDate.map { snapshot.capturedAt >= $0 } ?? true
+    }
+
+    private func record(_ snapshot: CodexSnapshot) {
+        newestSnapshotDate = max(newestSnapshotDate ?? snapshot.capturedAt, snapshot.capturedAt)
+    }
+
+    private func recoverCurrentState() async -> CodexiOSLiveActivityRuntimeState {
+        let state = await manager.recover()
+        latestRuntimeState = state
+        return state
     }
 }
 

@@ -53,6 +53,7 @@ public enum CodexHelperRequestMethod: String, Codable, Sendable, Equatable {
     case fetchSnapshot
     case beginDeviceAuth
     case pollDeviceAuth
+    case cancelDeviceAuth
     case signOut
 }
 
@@ -90,6 +91,7 @@ public enum CodexHelperResponseType: String, Codable, Sendable, Equatable {
     case snapshot
     case deviceAuthStarted
     case deviceAuthPending
+    case deviceAuthCancelled
     case signedIn
     case signedOut
     case error
@@ -99,6 +101,7 @@ public enum CodexHelperWireResponse: Sendable, Equatable {
     case snapshot(CodexServiceSnapshotResponse)
     case deviceAuthStarted(CodexDeviceAuthStart)
     case deviceAuthPending(CodexDeviceAuthPollResult)
+    case deviceAuthCancelled
     case signedIn(CodexDeviceAuthPollResult)
     case signedOut
 }
@@ -210,7 +213,7 @@ public struct CodexHelperResponseEnvelope: Codable, Sendable, Equatable {
         switch try typedResponse() {
         case .signedIn(let result), .deviceAuthPending(let result):
             return result
-        case .snapshot, .deviceAuthStarted, .signedOut:
+        case .snapshot, .deviceAuthStarted, .deviceAuthCancelled, .signedOut:
             throw CodexHelperWireError.unexpectedResponse(
                 expected: "\(CodexHelperResponseType.deviceAuthPending.rawValue) or \(CodexHelperResponseType.signedIn.rawValue)",
                 actual: type.rawValue
@@ -236,6 +239,8 @@ public struct CodexHelperResponseEnvelope: Codable, Sendable, Equatable {
             return .signedIn(CodexDeviceAuthPollResult(status: .signedIn, message: message))
         case .deviceAuthPending:
             return .deviceAuthPending(CodexDeviceAuthPollResult(status: .pending, message: message))
+        case .deviceAuthCancelled:
+            return .deviceAuthCancelled
         case .signedOut:
             return .signedOut
         case .error:

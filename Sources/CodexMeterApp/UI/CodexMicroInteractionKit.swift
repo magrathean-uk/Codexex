@@ -26,7 +26,7 @@ enum CodexStateBadgeKind: Equatable {
         case .preview: return "wand.and.stars"
         case .waiting: return "clock.fill"
         case .signedOut: return "person.crop.circle.badge.xmark"
-        case .stale: return "exclamationmark.clock.fill"
+        case .stale: return "clock.badge.exclamationmark.fill"
         case .error: return "exclamationmark.triangle.fill"
         }
     }
@@ -45,20 +45,33 @@ enum CodexStateBadgeKind: Equatable {
 
 struct CodexStateBadge: View {
     let kind: CodexStateBadgeKind
+    var monochrome = false
 
     var body: some View {
         Label(kind.title, systemImage: kind.systemImage)
             .font(.system(size: 11, weight: .semibold))
             .labelStyle(.titleAndIcon)
-            .foregroundStyle(kind.tint)
+            .foregroundStyle(tint)
             .padding(.horizontal, 8)
             .frame(height: 22)
-            .background(kind.tint.opacity(0.12), in: RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous))
+            .background(background, in: RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: GlassTokens.pillRadius, style: .continuous)
-                    .strokeBorder(kind.tint.opacity(0.22), lineWidth: 1)
+                    .strokeBorder(border, lineWidth: 1)
             }
             .accessibilityLabel(kind.title)
+    }
+
+    private var tint: Color {
+        monochrome ? .primary : kind.tint
+    }
+
+    private var background: Color {
+        monochrome ? Color.primary.opacity(0.12) : kind.tint.opacity(0.12)
+    }
+
+    private var border: Color {
+        monochrome ? Color.primary.opacity(0.22) : kind.tint.opacity(0.22)
     }
 }
 
@@ -73,6 +86,8 @@ struct CodexPressableScale: ViewModifier {
 
 struct CodexDeviceCodeCallout: View {
     let code: String
+    var message: String? = nil
+    var isCancelling = false
     let openSafari: () -> Void
     let copyCode: () -> Void
     let cancel: () -> Void
@@ -100,17 +115,27 @@ struct CodexDeviceCodeCallout: View {
                         .strokeBorder(CodexTheme.hairline, lineWidth: 1)
                 }
 
+            if let message, message.isEmpty == false {
+                Text(message)
+                    .font(.system(size: GlassTokens.popupMetaFontSize))
+                    .foregroundStyle(CodexTheme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             HStack(spacing: 8) {
                 Button("Open", action: openSafari)
                     .buttonStyle(CodexPrimaryButtonStyle())
                     .keyboardShortcut(.defaultAction)
+                    .disabled(isCancelling)
                 Button("Copy", action: copyCode)
                     .buttonStyle(CodexGhostButtonStyle())
+                    .disabled(isCancelling)
 
                 Spacer(minLength: 0)
 
-                Button("Cancel", action: cancel)
+                Button(isCancelling ? "Cancelling…" : "Cancel", action: cancel)
                     .buttonStyle(CodexGhostButtonStyle())
+                    .disabled(isCancelling)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

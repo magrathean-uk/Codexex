@@ -1,6 +1,8 @@
 use anyhow::{Context, Result};
 use codex_client::{HttpClientFactory, OutboundProxyPolicy};
-use codex_login::{AuthCredentialsStoreMode, AuthKeyringBackendKind, AuthRouteConfig, CLIENT_ID, ServerOptions};
+use codex_login::{
+    AuthCredentialsStoreMode, AuthKeyringBackendKind, AuthRouteConfig, CLIENT_ID, ServerOptions,
+};
 use std::fs;
 use std::path::PathBuf;
 
@@ -15,7 +17,7 @@ const DEFAULT_CHATGPT_BASE_URL: &str = "https://chatgpt.com";
 
 pub fn codex_home() -> Result<PathBuf> {
     let path = if let Some(override_path) = development_env_path(STATE_DIR_ENV) {
-        PathBuf::from(override_path)
+        override_path
     } else {
         let home = std::env::var_os("HOME").context("HOME is not set")?;
         PathBuf::from(home)
