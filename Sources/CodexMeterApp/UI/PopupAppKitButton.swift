@@ -206,11 +206,10 @@ final class PopupAppKitButtonControl: NSControl {
 
         if let systemImage,
            let image = NSImage(systemSymbolName: systemImage, accessibilityDescription: nil) {
-            let configured = image.withSymbolConfiguration(
-                NSImage.SymbolConfiguration(pointSize: 11, weight: .semibold)
-            ) ?? image
+            let symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 11, weight: .semibold)
+                .applying(NSImage.SymbolConfiguration(paletteColors: [foregroundColor]))
+            let configured = image.withSymbolConfiguration(symbolConfiguration) ?? image
             configured.isTemplate = true
-            foregroundColor.set()
             let iconRect = NSRect(
                 x: cursorX,
                 y: floor((bounds.height - iconSize.height) / 2),

@@ -106,7 +106,9 @@ extension PopupSummaryPresentation {
 
     private var compactSupportLine: String {
         let label = supportingLabel.isEmpty ? nil : supportingLabel
-        let value = supportingValue.isEmpty ? nil : supportingValue
+        let value = supportingValue.isEmpty || message.localizedCaseInsensitiveContains(supportingValue)
+            ? nil
+            : supportingValue
         return [label, value]
             .compactMap { $0 }
             .joined(separator: " · ")

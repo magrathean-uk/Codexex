@@ -51,22 +51,22 @@ struct PopupRootView: View {
     }
 
     private var popupContent: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ScrollView {
-                mainContent
-                    .padding(.horizontal, GlassTokens.pagePadding)
-                    .padding(.top, GlassTokens.pagePadding)
-                    .padding(.bottom, GlassTokens.contentSpacing / 2)
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
-            }
-            .scrollIndicators(.automatic)
-            .frame(maxHeight: GlassTokens.popupMaxHeight - GlassTokens.popupFooterReservedHeight)
-
+        Group {
             if displayMode == .live {
-                footer
-                    .padding(.horizontal, GlassTokens.pagePadding)
-                    .padding(.bottom, GlassTokens.pagePadding)
-                    .background(CodexTheme.window)
+                ViewThatFits(in: .vertical) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        paddedMainContent
+                        paddedFooter
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
+
+                    VStack(alignment: .leading, spacing: 0) {
+                        scrollableMainContent
+                        paddedFooter
+                    }
+                }
+            } else {
+                scrollableMainContent
             }
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -74,6 +74,29 @@ struct PopupRootView: View {
             transaction.animation = nil
             transaction.disablesAnimations = true
         }
+    }
+
+    private var paddedMainContent: some View {
+        mainContent
+            .padding(.horizontal, GlassTokens.pagePadding)
+            .padding(.top, GlassTokens.pagePadding)
+            .padding(.bottom, GlassTokens.contentSpacing / 2)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+    }
+
+    private var scrollableMainContent: some View {
+        ScrollView {
+            paddedMainContent
+        }
+        .scrollIndicators(.automatic)
+        .frame(maxHeight: GlassTokens.popupMaxHeight - GlassTokens.popupFooterReservedHeight)
+    }
+
+    private var paddedFooter: some View {
+        footer
+            .padding(.horizontal, GlassTokens.pagePadding)
+            .padding(.bottom, GlassTokens.pagePadding)
+            .background(CodexTheme.window)
     }
 
     private var mainContent: some View {

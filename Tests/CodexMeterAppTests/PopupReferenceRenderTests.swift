@@ -334,6 +334,11 @@ final class PopupReferenceRenderTests: XCTestCase {
         let fittingSize = hostingController.sizeThatFits(
             in: NSSize(width: GlassTokens.popupWidth, height: GlassTokens.popupMaxHeight)
         )
+        XCTAssertLessThan(
+            fittingSize.height,
+            400,
+            "a short live popup should hug its content instead of reserving an empty scroll region"
+        )
         let bitmap = try windowRenderedBitmap(for: view, width: GlassTokens.popupWidth, height: fittingSize.height)
         let sample = PixelSample(bitmap: bitmap)
 

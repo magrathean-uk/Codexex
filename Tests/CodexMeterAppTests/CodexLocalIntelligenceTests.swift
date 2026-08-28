@@ -49,7 +49,7 @@ final class CodexLocalIntelligenceTests: XCTestCase {
         )
 
         XCTAssertEqual(summary?.popupHeaderText.primary, "Likely 42-58% by reset.")
-        XCTAssertEqual(summary?.popupHeaderText.secondary, "Heavy session detected. · 42-58%")
+        XCTAssertEqual(summary?.popupHeaderText.secondary, "Heavy session detected.")
         XCTAssertFalse(summary?.popupHeaderText.secondary.contains("AI") ?? true)
         XCTAssertFalse(summary?.popupHeaderText.secondary.contains("tokens") ?? true)
         XCTAssertFalse(summary?.popupHeaderText.secondary.contains("...") ?? true)
