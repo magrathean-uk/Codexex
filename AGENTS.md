@@ -10,10 +10,7 @@ Read in this order:
 - `Package.swift`
 - `Scripts/release-smoke.sh`
 
-Older prompts may mention `/Users/bolyki/dev/source/AGENTS.md` and
-`/Users/bolyki/dev/source/AGENT_INDEX.md`. They are not present in this
-checkout; do not stop for them. If they appear later, read them before this
-file and follow the closest AGENTS.md when rules conflict.
+Older prompts may mention parent-directory `AGENTS.md` or `AGENT_INDEX.md` files. They are not present in this checkout; do not stop for them. If they appear later, read them before this file and follow the closest `AGENTS.md` when rules conflict.
 
 Rules:
 
