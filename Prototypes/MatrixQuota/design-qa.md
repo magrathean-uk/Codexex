@@ -1,6 +1,6 @@
 # Matrix theme design QA
 
-Source visual truth: `/Users/bolyki/Downloads/Digital_rain_animation_medium_letters_shine.gif` (500 × 400 px).
+Source visual truth: local reference asset `Digital_rain_animation_medium_letters_shine.gif` (500 × 400 px). The source asset is not committed to this repository.
 
 Implementation captures: `/tmp/codexex-matrix-crisp-a.png` and `/tmp/codexex-matrix-crisp-b.png` (1206 × 2622 px each).
 
@@ -27,7 +27,7 @@ State: Matrix theme enabled; preview quota 32%; initial rain speed 100%; two cap
 
 - Fonts and typography: passed. Medium monospaced glyphs are sharp, legible, and substantially less frenetic than the prior per-frame cycling; the percentage remains the only display type.
 - Spacing and layout rhythm: passed. Narrow columns fill the submerged region without crowding the percentage or the Settings target.
-- Colors and visual tokens: passed. Near-black base, vivid phosphor green trails, and sparse pale heads match the GIF's contrast structure.
+- Colours and visual tokens: passed. Near-black base, vivid phosphor green trails, and sparse pale heads match the GIF's contrast structure.
 - Image quality and asset fidelity: passed. This is live Canvas output rather than a blurred bitmap; captures retain hard glyph edges.
 - Copy and content: passed. The screen contains only the quota percentage and Settings as requested.
 
@@ -46,4 +46,4 @@ State: Matrix theme enabled; preview quota 32%; initial rain speed 100%; two cap
 
 - P3: tune the hidden drag sensitivity on physical iPhone and iPad hardware if it feels too coarse.
 
-final result: passed
+Final result: passed.
