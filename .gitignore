@@ -1,10 +1,14 @@
-.build/
+# macOS and editor state
 .DS_Store
-DerivedData/
-*.xcuserstate
 *.swp
+*.xcuserstate
 
-Helper/CodexexHelper/target/
+# Generated local agent and brainstorming state
+.superpowers/
 
-# Swift build artifacts
+# Swift and Xcode build artefacts
 .build/
+DerivedData/
+
+# Rust helper build artefacts
+Helper/CodexexHelper/target/
