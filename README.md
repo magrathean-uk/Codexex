@@ -1,94 +1,101 @@
 # Codexex
 
-Codexex is a macOS menu bar app with an iPhone/iPad companion for viewing Codex quota state, reset windows, history, and forecast.
+Codexex is a native macOS menu bar utility with an iPhone and iPad companion for viewing Codex quota windows, reset timing, and local usage signals.
 
-Built by [Magrathean UK](https://magrathean.uk).
+Built by [Magrathean UK](https://magrathean.uk). Codexex is independent from OpenAI, Anthropic, and Apple.
 
-## Canonical docs
+## What it does
 
-- [AGENTS.md](./AGENTS.md)
-- [RUNBOOK.md](./RUNBOOK.md)
-- [PRIVACY.md](./PRIVACY.md)
+- Shows the reported 5-hour quota window when one is available, with weekly allowance and reset timing alongside it.
+- Uses weekly allowance and progress when an account reports no 5-hour window.
+- Provides a compact macOS menu bar popup, Settings, onboarding, refresh controls, notifications, appearance choices, and launch-at-login support.
+- Provides native iPhone and iPad quota views, Preview Mode, settings, and an optional Live Activity for the Lock Screen and Dynamic Island.
+- Keeps quota history and forecast views on the device.
+- On macOS, reads official local Codex session logs to show token burn, project and model activity, cache-read pressure, tool-loop signals, and context-window pressure when the relevant data is present.
+- Uses ChatGPT sign-in through an OAuth device-code flow. The macOS app uses a bundled Rust helper behind a sandboxed XPC service.
 
-Current release: `6.0.0` (`19`). `project.yml` is the version and target source of truth.
+Quota and forecast values are informational. They can be delayed, incomplete, rounded, unavailable, or different from the source of truth in your OpenAI account dashboard or invoices.
 
-## Product shape
+## Privacy model
 
-- Menu bar first on macOS. No dock-facing main window.
-- Compact weekly menu-bar mode uses the OpenAI mark plus the weekly percentage; enabling the optional main Codex 5-hour window restores `5H` and `W` labels. Spark 5-hour data stays visible.
-- Native iPhone/iPad companion using the shared quota contracts.
-- On-demand, stale-aware iPhone Live Activity for the last foreground quota refresh.
-- SwiftUI app content with a small AppKit shell for status item behavior.
-- `5H`, weekly, and 30-day history views, reset times, local history, and forecast.
-- Local Codex session usage: project/model/session burn, cache-read pressure, tool-loop and model-overkill signals.
-- Companion scripts for local status JSON and Codex lifecycle hook capture.
-- System, Light, and Dark appearance modes that follow the same app theme in popup and Settings.
-- ChatGPT sign-in plus Preview Mode for offline review.
-- Sandboxed app with a bundled helper and XPC bridge.
+Sign-in, token storage, quota requests, quota history, and local session analysis run on the device. Codexex does not use browser cookies or browser scraping, and it does not send OpenAI credentials, account identity, quota values, or usage history to a Magrathean account service.
 
-## Repo layout
+The optional iOS Live Activity wake path uses content-free background notifications. The phone fetches quota directly from OpenAI after a wake. iOS controls background execution timing, so a wake or an unchanged display does not prove that a quota refresh completed. See [PRIVACY.md](./PRIVACY.md) for the full policy.
 
-- `Sources/CodexMeterCore/`: quota models, formatting, binary discovery, and service contracts.
-- `Sources/CodexMeterApp/`: app lifecycle, menu bar model, popup, settings, onboarding, and history UI.
-- `Sources/CodexMeteriOS/`: iPhone/iPad app shell, onboarding, settings, and quota presentation.
-- `Sources/CodexexXPCService/`: XPC service that brokers the helper process.
-- `Helper/CodexexHelper/`: Rust helper used for the OAuth device-code flow and quota reads.
-- `Scripts/`: helper build and embed scripts used by the Xcode target.
-- `AppStore/`: entitlements and App Store-facing bundle settings.
-- `Tests/`: XCTest coverage for both core logic and app behavior.
-- `fastlane/metadata/`: checked-in App Store text inputs.
-- `Package.swift`: SwiftPM adapter for local development and package tests; `project.yml` remains the Xcode source of truth.
+## Repository map
 
-## Quick start
+- `Sources/CodexMeterCore/` contains shared quota models, formatting, local usage parsing, and service contracts.
+- `Sources/CodexMeterApp/` contains the macOS menu bar app, onboarding, Settings, history, and local diagnostics.
+- `Sources/CodexMeteriOS/` contains the iPhone and iPad app.
+- `Sources/CodexMeterWidgets/` contains the WidgetKit extension for Live Activity presentation.
+- `Sources/CodexexXPCService/` contains the sandbox bridge to the helper.
+- `Helper/CodexexHelper/` contains the Rust authentication and quota helper.
+- `Scripts/` contains helper packaging and optional local companion scripts.
+- `Tests/` contains Swift and XPC tests.
+- `project.yml` is the Xcode project source of truth. `Package.swift` is the Swift Package Manager adapter for local package tests.
+- `fastlane/metadata/` contains App Store metadata inputs.
 
-Local build and test commands are self-contained. Xcode examples use `/tmp`
-cache paths so they do not depend on files outside this checkout.
+## Requirements
+
+The project targets macOS 26 and iOS 26. `Package.swift` declares Swift tools version 6.2, while the generated Xcode targets set `SWIFT_VERSION` to 6.0. Xcode project generation uses XcodeGen. The macOS helper build uses Rust's stable toolchain and supports the `aarch64-apple-darwin` and `x86_64-apple-darwin` targets for a universal app build.
+
+## Build and test
+
+Run commands from the repository root. These commands are defined by the checked-in manifests and runbook:
 
 ```bash
 swift test
+cargo test --manifest-path Helper/CodexexHelper/Cargo.toml
 xcodegen generate --spec project.yml
+```
+
+The macOS app test scheme is:
+
+```bash
 xcodebuild -project CodexMeter.xcodeproj \
   -scheme CodexMeterApp \
   -derivedDataPath /tmp/codexex-derived-data \
   -clonedSourcePackagesDirPath /tmp/codexex-swiftpm-cache \
-  build
+  test
 ```
 
-Useful checks:
+The iOS target and tests are wired through the `CodexMeteriOS` scheme in `project.yml`; choose an installed iOS 26 simulator destination when invoking `xcodebuild` for that scheme.
+
+Useful repository checks:
 
 ```bash
-cargo test --manifest-path Helper/CodexexHelper/Cargo.toml
 bash Scripts/check-codexex-companions.sh
 bash Scripts/release-smoke.sh
 ```
 
-Use [RUNBOOK.md](./RUNBOOK.md) for helper flow, XPC notes, and release hygiene.
+After changing `project.yml`, regenerate `CodexMeter.xcodeproj`. Do not hand-edit the generated project.
 
-## Legal
+## Optional local companions
+
+The status script inspects local Codex session data. The optional installer writes lifecycle hooks at the user level:
+
+```bash
+Scripts/codexex-status.sh
+Scripts/install-codexex-companions.sh
+```
+
+The installer backs up an existing hooks file and backs up the user configuration when it needs to enable Codex hooks. It replaces entries for the four named lifecycle events it manages. Review the resulting user-level configuration before relying on the hooks; [RUNBOOK.md](RUNBOOK.md#companion-commands) describes the changes. Hook metadata can still contain private paths and identifiers.
+
+## Documentation
+
+- [AGENTS.md](./AGENTS.md) contains project boundaries and source-backed development rules.
+- [RUNBOOK.md](./RUNBOOK.md) describes the architecture, release checks, helper/XPC flow, and Live Activity behavior.
+- [PRIVACY.md](./PRIVACY.md) describes local data, network communication, and the optional wake service.
+- [SECURITY.md](./SECURITY.md) explains vulnerability reporting and safe-harbour boundaries.
+- [CONTRIBUTING.md](./CONTRIBUTING.md) describes the contribution workflow.
+- [SUPPORT.md](./SUPPORT.md) describes support requests and useful diagnostic material.
+- [license.md](./license.md) inventories third-party components and their licence obligations.
+- [NOTICE](./NOTICE) records attribution notices.
+
+## Licence
+
+The Codexex source is proprietary software. See [LICENSE](./LICENSE) for the complete source licence. Third-party components retain their own licences, documented in [license.md](./license.md) and [NOTICE](./NOTICE).
 
 Copyright © 2026 Magrathean UK Ltd. All rights reserved.
 
-Codexex is proprietary software. See [`LICENSE`](./LICENSE) for the full licence text. Third-party components and their licences are listed in [`license.md`](./license.md). Apache-2.0 attribution required by the openai/codex Rust crates and other upstream components is recorded in [`NOTICE`](./NOTICE). Public availability of this repository does not grant any right to copy, modify, redistribute, or use the Codexex source outside the licence terms.
-
-The published Codexex application (macOS & iOS) is governed by the user-facing terms published at:
-
-- Privacy Policy — <https://codexex.eu/privacy/>
-- Terms of Service — <https://codexex.eu/terms/>
-
-### Quota information is informational only
-
-Quota readings, reset timing, history, session-burn analytics, and forecast values shown by Codexex are derived from third-party API responses (notably from OpenAI) and from local computation. They may be incomplete, delayed, inaccurate, rounded, cached, or unavailable for reasons outside our control. Codexex is **not a billing system, an audit log, or a contractual record** and is **not a substitute for the source of truth provided by your OpenAI account dashboard or invoices**.
-
-### Trademarks and disclaimers
-
-OpenAI, ChatGPT, GPT, Codex, and Spark are trademarks of OpenAI, Inc. or its affiliates. Anthropic and Claude are trademarks of Anthropic, PBC. Apple, the Apple logo, macOS, iPadOS, iOS, and Swift are trademarks of Apple Inc.
-
-Codexex is **not affiliated with, endorsed by, sponsored by, authorised by, or in any way officially connected to** OpenAI, Anthropic, or Apple. References to these names exist solely for descriptive interoperability. All trademarks remain the property of their respective owners.
-
-### Reporting
-
-For security issues, see [`SECURITY.md`](./SECURITY.md). For licensing or commercial enquiries, email <contact@magrathean.uk>.
-
----
-
-Magrathean UK Ltd. is a company registered in England and Wales (Company No. 16955343) with registered office at 16 Caledonian Court West Street, Watford, England, WD17 1RY.
+For security reports, see [SECURITY.md](./SECURITY.md). For licensing enquiries, contact `contact@magrathean.uk`.

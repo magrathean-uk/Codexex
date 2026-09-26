@@ -1,6 +1,6 @@
 # Codexex Runbook
 
-Current release: `6.0.0` (`19`). Keep `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `project.yml`; regenerate the Xcode project after changing them.
+The checkout is configured for version `6.1.1`, build `26`. Keep `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `project.yml`; regenerate the Xcode project after changing them.
 
 ## Architecture map
 
@@ -15,6 +15,8 @@ Current release: `6.0.0` (`19`). Keep `MARKETING_VERSION` and `CURRENT_PROJECT_V
 Build and test commands are self-contained in this checkout. Use explicit
 derived-data and SwiftPM cache paths for Xcode commands instead of relying on a
 shared parent-directory environment script.
+
+For optional cache and build-output management, consider [Clean Development](https://github.com/magrathean-uk/clean-development). It is not required for the commands below.
 
 Swift package tests:
 
@@ -36,22 +38,17 @@ xcodegen generate --spec project.yml
 
 `Package.swift` is a local development and package-test adapter. Keep Xcode target wiring in `project.yml`.
 
-No standalone lint, format, typecheck, Makefile, Justfile, or GitHub Actions
-workflow was found in this checkout. Use builds/tests as the typecheck gate.
-
-Optional companion installation targets the user layer:
-
-```bash
-Scripts/install-codexex-companions.sh
-```
-
-That script backs up `~/.codex/hooks.json` and `~/.codex/config.toml` before updating the named lifecycle events. Inspect those user-level files after installation because user and project hook sources are additive.
+Use builds and tests as the Swift typecheck gate. The existing
+[compliance workflow](.github/workflows/cargo-deny.yml) runs `cargo-deny`
+license, dependency-ban, and source checks for the Rust helper on pushes and
+pull requests to `main`. It does not run app tests or the vulnerability
+advisory check. No standalone formatter or linter configuration is supplied.
 
 ## Local Codex usage path
 
 Codexex reads official local Codex session logs under `~/.codex/sessions/`.
 It parses `token_count` events, local rate-limit fields, project/model context, command counts, and context-window metadata.
-This is separate from ChatGPT sign-in: sign-in remains the quota truth, local sessions explain what burned the quota.
+This is separate from ChatGPT sign-in: authenticated quota responses provide account allowance data; local sessions provide token-usage context. Session totals are not a complete billing record.
 
 The local reader stays sandbox-safe and does not read browser state, cookies, private APIs, or token stores.
 It can surface:
@@ -73,8 +70,9 @@ Scripts/check-codexex-companions.sh
 Scripts/install-codexex-companions.sh
 ```
 
-`codexex-status.sh` emits compact JSON from local session logs, including all-session token totals, session autopsies, waste signals, reset windows, plan type, and context-window pressure. The hook command writes redacted event metadata only: event, cwd, tool, session id, turn id, and status.
-The installer backs up `~/.codex/hooks.json` and `~/.codex/config.toml` before adding Codexex hook entries.
+`codexex-status.sh` emits JSON derived from local session logs, including token totals, session summaries, usage signals, reset windows, plan type, and context-window pressure. The hook command records event metadata: event, working directory, tool, session ID, turn ID, and status. Working directory paths and identifiers can still be sensitive.
+
+The installer uses `CODEX_HOME`, or `~/.codex` by default. It backs up an existing `hooks.json`, then replaces the `SessionStart`, `PermissionRequest`, `PostToolUse`, and `Stop` entries with Codexex commands. It may also back up and append a feature setting to an existing `config.toml`. Review those changes and the resulting TOML before using the hooks; installation is optional and changes user configuration. Keep this checkout available because installed commands reference its script paths.
 
 Build or test the app target:
 
@@ -92,19 +90,35 @@ Pick an installed simulator destination before running iOS tests.
 ## iOS Live Activity
 
 Live Activity starts explicitly from iOS Settings after a valid quota refresh.
-While it runs, Codexex schedules an on-device `BGAppRefreshTask` to fetch the
-latest quota and update the activity when iOS grants background runtime. Timing
-is system-controlled and force-quitting the app stops these refreshes. Codexex
-has no APNs backend or server-side account data; the activity uses its stale
-date when refreshes stop. It shows the last-fetched ChatGPT account quota, not
-Mac-only local session-log token burn.
+While it runs, the app schedules on-device background refresh and registers
+for background notification wakes at the configured relay endpoint. The
+registration request carries an APNs token, its environment, and an opaque
+installation credential. It does not carry OpenAI credentials, account
+identity, quota, or usage history. The relay's documented data handling is in
+[PRIVACY.md](PRIVACY.md); its server implementation and deployment are outside
+this repository.
+
+After a wake, the phone attempts a direct quota refresh and updates the
+activity. ActivityKit is requested with `pushType: nil`: these are app wake
+notifications, not direct ActivityKit content pushes. Timing is controlled by
+iOS. Tapping a stale activity opens Codexex and requests a manual refresh.
+The activity shows account quota, not Mac-only session-log token usage.
+
+The card's Updated time comes from the last quota snapshot fetched on the
+device; receiving a wake alone does not advance it. For physical-device
+verification, Debug builds overwrite `Library/Caches/CodexexAPNsWake.json`
+inside the app container with only the most recent wake's timestamps and
+result. A `refreshed` receipt must have a `snapshotCapturedAt` after
+`receivedAt`. Read only this file when checking delivery; it contains no
+account, token, quota, or history. Release builds do not write this receipt.
+APNs acceptance, registration renewal, and an unchanged percentage alone do
+not prove that a background quota refresh completed.
 
 ## Menu bar presentation
 
-Fresh installs keep the optional main Codex 5-hour window off. In that compact
-weekly mode, the macOS status item uses the OpenAI mark followed by the weekly
-value. Spark 5-hour data stays visible. Turning the main Codex 5-hour window
-back on restores the explicit `5H` and `W` labels.
+The macOS status item uses the OpenAI mark followed by the weekly value when the
+5-hour window is unavailable. Any account shows the main Codex 5-hour window
+when OpenAI reports one, regardless of plan name.
 
 ## Helper and XPC flow
 
@@ -149,24 +163,24 @@ in-app purchase target. Do not add one without approved product identifiers,
 review copy, restore-purchase UX, and StoreKit tests.
 
 Preview Mode must remain useful regardless of pricing so App Review can inspect
-quota, history, local session usage, notifications copy, and Settings offline.
+the reset dashboard, refresh controls, notifications settings, and account settings offline.
 
 ## Review smoke path
 
 1. Launch the app.
 2. Use `Preview Mode` or start ChatGPT sign-in from Settings.
-3. Confirm the popup shows quota cards, reset timing, Peaks/Cycle/Month history, and forecast state.
+3. Confirm the popup shows the reset dashboard: any plan leads with a reported 5-hour reset; an account with only a weekly window leads with weekly allowance and progress. Check that stale data is identified and the Refresh control works.
 4. Confirm the settings window can sign out, change refresh cadence, switch System/Light/Dark appearance, and toggle menu bar labels.
 
 ## Scripted release smoke
 
-Run the lightweight release guard before archiving:
+Run the release guard before archiving:
 
 ```bash
 Scripts/release-smoke.sh
 ```
 
-This is a static release guard, not full UI proof. It checks the project source of truth, App Store entitlements, helper build/embed wiring, `LSUIElement`, review metadata, privacy text, the versioned helper protocol markers, and the legacy-probe compile flag. It also preflights both macOS Rust targets, runs helper tests with that same rustup toolchain, and runs macOS plus iOS Xcode build-settings smokes when `xcodebuild` is available.
+This combines static checks, helper tests, and toolchain/build-settings checks. It is not full UI proof and can compile Rust test artifacts. It checks the project source of truth, App Store entitlements, helper build/embed wiring, `LSUIElement`, review metadata, privacy text, the versioned helper protocol markers, and the legacy-probe compile flag. It also preflights both macOS Rust targets, runs helper tests with that same rustup toolchain, and runs macOS plus iOS Xcode build-settings smokes when `xcodebuild` is available.
 
 ## Legacy probe quarantine
 
@@ -181,10 +195,8 @@ Direct `codex app-server` capture is excluded from normal shipping builds unless
 - Do not hand-edit `CodexMeter.xcodeproj`; regenerate it from `project.yml`.
 - Do not add project-local Codex hooks; keep generated Xcode protection in the documented `project.yml` workflow.
 
-## Done criteria for agent work
+## Validation scope
 
-- The touched files match the repo ownership map above.
-- The narrowest useful test or smoke command has run.
-- If a build/test command could not run, the exact blocker is listed.
-- Generated Xcode project output is refreshed after `project.yml` changes.
-- The final report names verification, result, blockers, and recommended next step.
+Run checks that cover the changed behavior. SwiftPM covers core and macOS package targets; Xcode also covers the XPC host and iOS target wiring. For iOS changes, run the `CodexMeteriOS` scheme against an installed simulator destination. For helper or packaging changes, include helper tests and the release smoke script.
+
+Record the revision, command, result, and any blocker. A source review, passing unit test, or successful archive does not establish UI behavior, device background delivery, or App Store acceptance. Use the review smoke path and physical-device checks where those behaviors changed.
