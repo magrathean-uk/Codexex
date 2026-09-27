@@ -1,22 +1,20 @@
 Codexex
-Copyright (c) 2026 Magrathean UK Ltd.
+Copyright © 2026 MAGRATHEAN UK LTD
 
-This product includes software developed at OpenAI, Inc., distributed under
-the Apache License, Version 2.0 (the "openai/codex" Rust crates referenced in
-Helper/CodexexHelper/Cargo.toml: codex-app-server-protocol, codex-backend-client,
-codex-client, codex-login).
+Codexex is proprietary software. See LICENSE.
 
-The Apache License, Version 2.0 may be obtained at:
-http://www.apache.org/licenses/LICENSE-2.0
+This product includes third-party material:
 
-This product also incorporates third-party MIT- and dual MIT/Apache-2.0-licensed
-Rust components (including reqwest, tokio, serde, serde_json, anyhow, chrono,
-base64, urlencoding, thiserror, tokio-tungstenite, and tungstenite). See
-LICENSE.md for the complete component inventory.
+codex-app-server-protocol, codex-backend-client, codex-client and codex-login, from
+openai/codex — Apache License, Version 2.0. The licence text is at
+http://www.apache.org/licenses/LICENSE-2.0.
 
-The OpenAI/Codex provider mark in the macOS menu bar is derived from
-CodexBar's `ProviderIcon-codex.svg`, Copyright (c) 2026 Peter Steinberger,
-licensed under the MIT License:
+Further MIT- and Apache-2.0-licensed Rust crates (including reqwest, tokio, serde and
+others) — see docs/legal/third-party-notices.md for the full inventory.
+
+The OpenAI/Codex provider icon shown in the macOS menu bar is adapted from CodexBar's
+ProviderIcon-codex.svg, Copyright (c) 2026 Peter Steinberger, licensed under the MIT
+License (source: https://github.com/steipete/CodexBar/blob/main/LICENSE):
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -35,9 +33,5 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-Source: https://github.com/steipete/CodexBar/blob/main/LICENSE.
-
-All third-party trademarks (including OpenAI, ChatGPT, GPT, Codex, Spark,
-Anthropic, Claude, Apple, macOS, iPadOS, iOS, and Swift) remain the property
-of their respective owners. Codexex is not affiliated with, endorsed by, or
-sponsored by OpenAI, Anthropic, or Apple.
+Codexex is independent. It is not affiliated with, endorsed by or supported by OpenAI,
+Inc., Anthropic, PBC or Apple Inc.

@@ -1,6 +1,6 @@
 # Codexex support
 
-Product information and the App Store support destination are at [codexex.eu](https://codexex.eu/). For support, use [contact+codexex@magrathean.uk](mailto:contact+codexex@magrathean.uk), the address listed in [PRIVACY.md](PRIVACY.md). Licensing enquiries use [contact@magrathean.uk](mailto:contact@magrathean.uk). Security reports follow [SECURITY.md](SECURITY.md).
+Product information and the App Store support destination are at [codexex.eu](https://codexex.eu/). For support, use [contact+codexex@magrathean.uk](mailto:contact+codexex@magrathean.uk), the address listed in [PRIVACY.md](../PRIVACY.md). Licensing enquiries use [contact@magrathean.uk](mailto:contact@magrathean.uk). Security reports follow [SECURITY.md](SECURITY.md).
 
 ## Useful details
 

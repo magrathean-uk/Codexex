@@ -1,9 +1,9 @@
 # Codexex contributor guidance
 
 Read the task-relevant product document before changing code: `README.md` for
-the product and layout, `RUNBOOK.md` and `Scripts/release-smoke.sh` for release
-work, `project.yml` for Xcode targets, and `Package.swift` for Swift package
-work.
+the product and layout, `docs/development/runbook.md` and
+`Scripts/release-smoke.sh` for release work, `project.yml` for Xcode targets,
+and `Package.swift` for Swift package work.
 
 ## Boundaries
 
@@ -19,6 +19,9 @@ work.
   authentication flow.
 - Keep release metadata in `fastlane/metadata/` and privacy copy in
   `PRIVACY.md`.
+- Legal files (`LICENSE`, `NOTICE`, `docs/legal/`, contributor terms, copyright and
+  attribution strings) are owner-controlled: change them only on the owner's explicit
+  instruction.
 
 `project.yml` is the Xcode source of truth. Do not edit
 `CodexMeter.xcodeproj` directly. After changing `project.yml`, run

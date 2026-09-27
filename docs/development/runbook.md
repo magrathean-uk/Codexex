@@ -39,7 +39,7 @@ xcodegen generate --spec project.yml
 `Package.swift` is a local development and package-test adapter. Keep Xcode target wiring in `project.yml`.
 
 Use builds and tests as the Swift typecheck gate. The existing
-[compliance workflow](.github/workflows/cargo-deny.yml) runs `cargo-deny`
+[compliance workflow](../../.github/workflows/cargo-deny.yml) runs `cargo-deny`
 license, dependency-ban, and source checks for the Rust helper on pushes and
 pull requests to `main`. It does not run app tests or the vulnerability
 advisory check. No standalone formatter or linter configuration is supplied.
@@ -95,7 +95,7 @@ for background notification wakes at the configured relay endpoint. The
 registration request carries an APNs token, its environment, and an opaque
 installation credential. It does not carry OpenAI credentials, account
 identity, quota, or usage history. The relay's documented data handling is in
-[PRIVACY.md](PRIVACY.md); its server implementation and deployment are outside
+[PRIVACY.md](../../PRIVACY.md); its server implementation and deployment are outside
 this repository.
 
 After a wake, the phone attempts a direct quota refresh and updates the

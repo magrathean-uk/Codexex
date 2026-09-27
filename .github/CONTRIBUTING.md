@@ -1,12 +1,12 @@
 # Contributing to Codexex
 
-Codexex is proprietary software. Read [LICENSE](LICENSE) before copying, modifying, or distributing it. Public repository access does not create a contribution or redistribution licence. Discuss work outside an existing agreement through the contact in [SUPPORT.md](SUPPORT.md).
+Codexex is proprietary software. Read [LICENSE](../LICENSE) before copying, modifying, or distributing it. Public repository access does not create a contribution or redistribution licence. Discuss work outside an existing agreement through the contact in [SUPPORT.md](SUPPORT.md).
 
 ## Working on an authorised change
 
-Keep changes focused and preserve unrelated work. Use the ownership map and project rules in [AGENTS.md](AGENTS.md). Keep generated Xcode configuration in sync by editing `project.yml` and running `xcodegen generate --spec project.yml`.
+Keep changes focused and preserve unrelated work. Use the ownership map and project rules in [AGENTS.md](../AGENTS.md). Keep generated Xcode configuration in sync by editing `project.yml` and running `xcodegen generate --spec project.yml`.
 
-Build prerequisites, commands, helper packaging, and manual checks are documented in [RUNBOOK.md](RUNBOOK.md). Start with the checks for the code you changed:
+Build prerequisites, commands, helper packaging, and manual checks are documented in the [runbook](../docs/development/runbook.md). Start with the checks for the code you changed:
 
 | Change | Checks |
 | --- | --- |
@@ -16,7 +16,7 @@ Build prerequisites, commands, helper packaging, and manual checks are documente
 | Rust authentication or quota helper | `cargo test --manifest-path Helper/CodexexHelper/Cargo.toml` |
 | Companion scripts | `bash Scripts/check-codexex-companions.sh` |
 | Release or helper packaging | `bash Scripts/release-smoke.sh` and the runbook's review smoke path |
-| MatrixQuota prototype | Scoped guidance in [Prototypes/MatrixQuota/AGENTS.md](Prototypes/MatrixQuota/AGENTS.md) |
+| MatrixQuota prototype | Scoped guidance in [Prototypes/MatrixQuota/AGENTS.md](../Prototypes/MatrixQuota/AGENTS.md) |
 
 ## Review information
 

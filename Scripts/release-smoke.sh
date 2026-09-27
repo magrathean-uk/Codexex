@@ -81,8 +81,8 @@ require_text "com.apple.security.app-sandbox" AppStore/Codexex.entitlements
 require_text "com.apple.security.app-sandbox" AppStore/CodexexXPCService.entitlements
 require_text "com.apple.security.inherit" AppStore/CodexexHelper.entitlements
 require_text "ChatGPT/OpenAI sign-in" PRIVACY.md
-require_text "Paid packaging" RUNBOOK.md
-require_text "paid-upfront App Store pricing" RUNBOOK.md
+require_text "Paid packaging" docs/development/runbook.md
+require_text "paid-upfront App Store pricing" docs/development/runbook.md
 require_text "MARKETING_VERSION: 6.0.0" project.yml
 require_text "CURRENT_PROJECT_VERSION: 19" project.yml
 require_text "OpenAILogo" Sources/CodexMeterApp/UI/StatusBarLabel.swift

@@ -54,7 +54,7 @@ control is operating as intended.
 
 ## Scope & Safe Harbour
 
-Magrathean UK Ltd. will not pursue a good-faith researcher for security disclosures that:
+Magrathean will not pursue a good-faith researcher for security disclosures that:
 
 - Target non-production test systems or researcher-owned environments;
 - Avoid persistence, destructive changes, denial of service, and access to
