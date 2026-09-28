@@ -3,14 +3,56 @@ Copyright © 2026 MAGRATHEAN UK LTD
 
 Codexex is proprietary software. See LICENSE.
 
-This product includes third-party material:
+This product includes third-party material. The full inventory, with the version and
+licence of every component, is in docs/legal/third-party-notices.md.
 
-codex-app-server-protocol, codex-backend-client, codex-client and codex-login, from
-openai/codex — Apache License, Version 2.0. The licence text is at
-http://www.apache.org/licenses/LICENSE-2.0.
+Rust helper (macOS app only)
 
-Further MIT- and Apache-2.0-licensed Rust crates (including reqwest, tokio, serde and
-others) — see docs/legal/third-party-notices.md for the full inventory.
+The helper embedded in the macOS app is built from Helper/CodexexHelper. It includes:
+
+- 39 crates from openai/codex at commit be6e8eac029b183056b7e4402879f15d2c85f61b
+  (version 0.147.0), including codex-protocol, codex-backend-client, codex-client and
+  codex-login — Apache License, Version 2.0
+  (http://www.apache.org/licenses/LICENSE-2.0).
+- tokio-tungstenite 0.28.0 (MIT) and tungstenite 0.27.0 (MIT OR Apache-2.0), from the
+  openai-oss-forks repositories.
+- 567 further Rust crates, including tokio, reqwest, rustls, serde and chrono, under MIT,
+  Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, Zlib, Unicode-3.0, CDLA-Permissive-2.0
+  and other permissive licences, and one crate under MPL-2.0 (below), as listed in
+  docs/legal/third-party-notices.md.
+- The Rust standard library — Apache-2.0 OR MIT.
+
+option-ext 0.2.0 is licensed under the Mozilla Public License 2.0 and is used
+unmodified. Its source code is available at https://crates.io/crates/option-ext/0.2.0
+and https://github.com/soc/option-ext.
+
+The NOTICE file of openai/codex at that commit reads:
+
+    OpenAI Codex
+    Copyright 2025 OpenAI
+
+    This project includes code derived from [Ratatui](https://github.com/ratatui/ratatui), licensed under the MIT license.
+    Copyright (c) 2016-2022 Florian Dehau
+    Copyright (c) 2023-2025 The Ratatui Developers
+
+The NOTICE file of moka 0.12.15 reads:
+
+    Additional Notices for Moka
+
+    The majority of the Moka library is dual-licensed under the MIT and Apache 2.0
+    licenses.
+
+    However, the following files are an exception and are licensed solely under
+    the Apache License 2.0:
+
+    - src/common/frequency_sketch.rs
+    - src/common/timer_wheel.rs
+
+    These files were ported from the Java Caffeine library and are not dual-licensed.
+
+    Please refer to the LICENSE-APACHE file for more details on the Apache License 2.0.
+
+Icon asset
 
 The OpenAI/Codex provider icon shown in the macOS menu bar is adapted from CodexBar's
 ProviderIcon-codex.svg, Copyright (c) 2026 Peter Steinberger, licensed under the MIT
