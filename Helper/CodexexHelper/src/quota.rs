@@ -104,8 +104,8 @@ async fn fetch_snapshot_payload() -> Result<ServiceSnapshotPayload> {
     }
 
     let client = BackendClient::from_auth(state::chatgpt_base_url(), &auth, http_client_factory);
-    let mut rate_limits_result = client.get_rate_limits_many().await;
-    if rate_limits_result
+    let mut rate_limit_result = client.get_rate_limits().await;
+    if rate_limit_result
         .as_ref()
         .is_err_and(|error| backend_http_status(error) == Some(401))
     {
@@ -136,7 +136,7 @@ async fn fetch_snapshot_payload() -> Result<ServiceSnapshotPayload> {
                     state::http_client_factory(),
                 );
                 // Exactly one backend retry with the recovered credential.
-                rate_limits_result = retry_client.get_rate_limits_many().await;
+                rate_limit_result = retry_client.get_rate_limits().await;
             }
             Err(RefreshTokenError::Permanent(_)) => {
                 return Ok(expired_sign_in_payload());
@@ -149,54 +149,14 @@ async fn fetch_snapshot_payload() -> Result<ServiceSnapshotPayload> {
         }
     }
 
-    let rate_limits = match rate_limits_result {
-        Ok(rate_limits) if !rate_limits.is_empty() => rate_limits,
-        Ok(_) => {
-            return Ok(ServiceSnapshotPayload {
-                auth_mode: Some("chatGPT".to_string()),
-                snapshot: None,
-                error_message: Some(
-                    "Signed in, but no quota windows were returned for this account.".to_string(),
-                ),
-            });
-        }
+    let raw_limit = match rate_limit_result {
+        Ok(limit) => limit,
         Err(error) => {
             return Ok(signed_in_error_payload(backend_user_message(&error)));
         }
     };
 
-    let limits: Vec<LimitPayload> = rate_limits
-        .into_iter()
-        .map(|limit| {
-            let id = limit.limit_id.unwrap_or_else(|| "codex".to_string());
-            let raw_limit_name = limit.limit_name;
-            LimitPayload {
-                bucket: infer_bucket(&id, raw_limit_name.as_deref()).to_string(),
-                id,
-                raw_limit_name,
-                primary: limit.primary.map(|window| WindowPayload {
-                    used_percent: window.used_percent,
-                    window_duration_minutes: window.window_minutes,
-                    resets_at: window.resets_at.map(|value| value as f64),
-                }),
-                secondary: limit.secondary.map(|window| WindowPayload {
-                    used_percent: window.used_percent,
-                    window_duration_minutes: window.window_minutes,
-                    resets_at: window.resets_at.map(|value| value as f64),
-                }),
-                credits: limit.credits.map(|credits| CreditsPayload {
-                    has_credits: credits.has_credits,
-                    unlimited: credits.unlimited,
-                    balance: credits.balance,
-                }),
-            }
-        })
-        .filter(|limit| {
-            limit.primary.is_some() || limit.secondary.is_some() || limit.credits.is_some()
-        })
-        .collect();
-
-    if limits.is_empty() {
+    if raw_limit.primary.is_none() && raw_limit.secondary.is_none() && raw_limit.credits.is_none() {
         return Ok(ServiceSnapshotPayload {
             auth_mode: Some("chatGPT".to_string()),
             snapshot: None,
@@ -205,6 +165,29 @@ async fn fetch_snapshot_payload() -> Result<ServiceSnapshotPayload> {
             ),
         });
     }
+
+    let limit = LimitPayload {
+        bucket: "codex".to_string(),
+        id: raw_limit.limit_id.unwrap_or_else(|| "codex".to_string()),
+        raw_limit_name: raw_limit.limit_name,
+        primary: raw_limit.primary.map(|window| WindowPayload {
+            used_percent: window.used_percent,
+            window_duration_minutes: window.window_minutes,
+            resets_at: window.resets_at.map(|value| value as f64),
+        }),
+        secondary: raw_limit.secondary.map(|window| WindowPayload {
+            used_percent: window.used_percent,
+            window_duration_minutes: window.window_minutes,
+            resets_at: window.resets_at.map(|value| value as f64),
+        }),
+        credits: raw_limit.credits.map(|credits| CreditsPayload {
+            has_credits: credits.has_credits,
+            unlimited: credits.unlimited,
+            balance: credits.balance,
+        }),
+    };
+
+    let limits = vec![limit];
 
     let snapshot = SnapshotPayload {
         captured_at: std::time::SystemTime::now()
@@ -275,15 +258,4 @@ fn backend_http_status(error: &anyhow::Error) -> Option<u16> {
         let (_, status) = status_prefix.rsplit_once(" failed: ")?;
         status.split_whitespace().next()?.parse().ok()
     })
-}
-
-fn infer_bucket(limit_id: &str, limit_name: Option<&str>) -> &'static str {
-    let haystack = format!("{} {}", limit_id, limit_name.unwrap_or_default()).to_lowercase();
-    if haystack.contains("spark") {
-        "spark"
-    } else if haystack.contains("codex") {
-        "codex"
-    } else {
-        "other"
-    }
 }

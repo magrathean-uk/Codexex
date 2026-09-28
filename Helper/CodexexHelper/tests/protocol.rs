@@ -350,8 +350,7 @@ fn fetch_snapshot_tolerates_unknown_plan_type_when_no_quota_is_returned() {
             .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
                 "plan_type": "future_plan",
                 "rate_limit": null,
-                "credits": null,
-                "additional_rate_limits": null
+                "credits": null
             })))
             .mount(&server)
             .await;
@@ -963,23 +962,7 @@ fn device_auth_flow_persists_login_and_fetches_live_snapshot() {
                         "reset_after_seconds": 3600,
                         "reset_at": 1736294400
                     }
-                },
-                "additional_rate_limits": [
-                    {
-                        "limit_name": "Codex Spark",
-                        "metered_feature": "spark",
-                        "rate_limit": {
-                            "allowed": true,
-                            "limit_reached": false,
-                            "primary_window": {
-                                "used_percent": 88,
-                                "limit_window_seconds": 18000,
-                                "reset_after_seconds": 600,
-                                "reset_at": 1735693200
-                            }
-                        }
-                    }
-                ]
+                }
             })))
             .mount(&server)
             .await;
@@ -1010,6 +993,7 @@ fn device_auth_flow_persists_login_and_fetches_live_snapshot() {
             let value: Value = serde_json::from_str(&payload_json).unwrap();
             assert_eq!(value["authMode"], "chatGPT");
             assert_eq!(value["snapshot"]["account"]["email"], "user@example.com");
+            assert_eq!(value["snapshot"]["limits"].as_array().unwrap().len(), 1);
             assert_eq!(value["snapshot"]["limits"][0]["bucket"], "codex");
         }
         other => panic!("expected service snapshot payload, got {other:?}"),
@@ -1070,7 +1054,6 @@ fn sample_usage_payload() -> Value {
                 "reset_at": 1736294400
             }
         },
-        "additional_rate_limits": null,
         "credits": null
     })
 }
