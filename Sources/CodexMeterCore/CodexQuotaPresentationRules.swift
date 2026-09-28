@@ -3,7 +3,6 @@ import Foundation
 public enum CodexQuotaPresentationStyle: Sendable, Equatable {
     case hero
     case standard
-    case compact
 }
 
 public enum CodexQuotaResetTextStyle: Sendable, Equatable {
@@ -55,19 +54,6 @@ public enum CodexQuotaPresentationRules {
         )
     }
 
-    public static func shouldShow(
-        _ limit: CodexLimit,
-        showSpark: Bool,
-        hideIdleSecondaryLimits: Bool
-    ) -> Bool {
-        guard limit.bucket == .spark else { return true }
-        guard showSpark else { return false }
-        if hideIdleSecondaryLimits, isIdle(limit) {
-            return false
-        }
-        return true
-    }
-
     public static func isIdle(_ limit: CodexLimit) -> Bool {
         [limit.fiveHourWindow, limit.weeklyWindow]
             .compactMap { $0?.clampedUsedPercent }
@@ -114,8 +100,6 @@ public enum CodexQuotaPresentationRules {
             return 0
         case .other:
             return 1
-        case .spark:
-            return 2
         }
     }
 
@@ -124,9 +108,6 @@ public enum CodexQuotaPresentationRules {
         visibleCredits: CodexCredits?,
         isIdle: Bool
     ) -> CodexQuotaPresentationStyle {
-        if limit.bucket == .spark, isIdle, visibleCredits == nil {
-            return .compact
-        }
         if limit.bucket == .codex {
             return .hero
         }

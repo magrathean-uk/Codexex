@@ -33,9 +33,19 @@ struct PopupRootView: View {
     }
 
     var body: some View {
-        popupContent
+        Group {
+            if let snapshot = presentedSnapshot {
+                PopupResetDashboardView(
+                    model: model,
+                    snapshot: snapshot,
+                    onOpenSettings: onOpenSettings
+                )
+            } else {
+                popupContent
+            }
+        }
             .frame(width: GlassTokens.popupWidth, alignment: .topLeading)
-            .background(CodexTheme.window)
+            .background(presentedSnapshot == nil ? CodexTheme.window : PopupResetDashboardView.background)
             .preferredColorScheme(model.appearanceMode.colorScheme)
             .onAppear {
                 model.setReduceMotionEnabled(reduceMotionEnabled)
@@ -274,14 +284,7 @@ struct PopupRootView: View {
     }
 
     private var quotaLimitPresentations: [PopupLimitPresentation] {
-        orderedLimitPresentations.filter { presentation in
-            guard presentation.limit.bucket == .spark else { return true }
-            return CodexQuotaPresentationRules.shouldShow(
-                presentation.limit,
-                showSpark: model.showSparkEnabled,
-                hideIdleSecondaryLimits: model.hideIdleSecondaryLimits
-            )
-        }
+        orderedLimitPresentations
     }
 
     private var showHistorySection: Bool {
@@ -303,17 +306,12 @@ struct PopupRootView: View {
 
     @ViewBuilder
     private func limitCard(for presentation: PopupLimitPresentation) -> some View {
-        switch presentation.style {
-        case .compact:
-            CompactLimitCardView(presentation: presentation)
-        case .hero, .standard:
-            LimitCardView(
-                presentation: presentation,
-                resetDisplayStyle: model.resetDisplayStyle,
-                displayMode: model.menuBarDisplayMode,
-                showFiveHour: model.showFiveHourInMenubar
-            )
-        }
+        LimitCardView(
+            presentation: presentation,
+            resetDisplayStyle: model.resetDisplayStyle,
+            displayMode: model.menuBarDisplayMode,
+            showFiveHour: model.showFiveHourInMenubar
+        )
     }
 
     private var shouldShowStatusCard: Bool {

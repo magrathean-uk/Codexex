@@ -498,7 +498,7 @@ final class CodexMenuBarModelAuthRestoreTests: XCTestCase {
             account: CodexAccount(
                 authType: "chatGPT",
                 email: "user@example.com",
-                planType: "PRO"
+                planType: "PLUS"
             ),
             limits: [
                 CodexLimit(
@@ -528,7 +528,7 @@ final class CodexMenuBarModelAuthRestoreTests: XCTestCase {
             account: CodexAccount(
                 authType: "chatGPT",
                 email: "user@example.com",
-                planType: "PRO"
+                planType: "PLUS"
             ),
             limits: [
                 CodexLimit(

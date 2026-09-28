@@ -3,7 +3,6 @@ import SwiftUI
 enum CodexiOSSettingsKeys {
     static let autoCheckSignInOnReturn = "ios.autoCheckSignInOnReturn"
     static let refreshWhenActive = "ios.refreshWhenActive"
-    static let showSpark = "ios.showSpark"
     static let showHistory = "ios.showHistory"
     static let resetDisplayStyle = "ios.resetDisplayStyle"
     static let refreshIntervalSeconds = "ios.refreshIntervalSeconds"
@@ -12,7 +11,6 @@ enum CodexiOSSettingsKeys {
     static let appearanceMode = "ios.appearanceMode"
     static let defaultHistoryMode = "ios.defaultHistoryMode"
     static let showPaceConfidence = "ios.showPaceConfidence"
-    static let showFiveHourPresentation = "ios.showFiveHourPresentation"
     static let showUsedQuota = "ios.showUsedQuota"
     static let matrixThemeEnabled = "ios.matrixThemeEnabled"
     static let summarySnoozeFingerprint = "ios.summarySnoozeFingerprint"
@@ -21,7 +19,6 @@ enum CodexiOSSettingsKeys {
     static let all = [
         autoCheckSignInOnReturn,
         refreshWhenActive,
-        showSpark,
         showHistory,
         resetDisplayStyle,
         refreshIntervalSeconds,
@@ -30,7 +27,6 @@ enum CodexiOSSettingsKeys {
         appearanceMode,
         defaultHistoryMode,
         showPaceConfidence,
-        showFiveHourPresentation,
         showUsedQuota,
         matrixThemeEnabled,
         summarySnoozeFingerprint,
@@ -110,13 +106,8 @@ enum CodexiOSHistoryMode: String, CaseIterable, Identifiable {
 struct CodexiOSSettingsView: View {
     @AppStorage(CodexiOSSettingsKeys.autoCheckSignInOnReturn) private var autoCheckSignInOnReturn = true
     @AppStorage(CodexiOSSettingsKeys.refreshWhenActive) private var refreshWhenActive = true
-    @AppStorage(CodexiOSSettingsKeys.showSpark) private var showSpark = true
-    @AppStorage(CodexiOSSettingsKeys.showHistory) private var showHistory = true
-    @AppStorage(CodexiOSSettingsKeys.resetDisplayStyle) private var resetDisplayStyle = CodexiOSResetDisplayStyle.relative.rawValue
-    @AppStorage(CodexiOSSettingsKeys.appearanceMode) private var appearanceMode = CodexiOSAppearanceMode.system.rawValue
-    @AppStorage(CodexiOSSettingsKeys.defaultHistoryMode) private var defaultHistoryMode = CodexiOSHistoryMode.dailyPeaks.rawValue
+    @AppStorage(CodexiOSSettingsKeys.appearanceMode) private var appearanceMode = CodexiOSAppearanceMode.dark.rawValue
     @AppStorage(CodexiOSSettingsKeys.refreshIntervalSeconds) private var refreshIntervalSeconds = 300
-    @AppStorage(CodexiOSSettingsKeys.showFiveHourPresentation) private var showFiveHourPresentation = false
     @AppStorage(CodexiOSSettingsKeys.showUsedQuota) private var showUsedQuota = false
     @AppStorage(CodexiOSSettingsKeys.matrixThemeEnabled) private var matrixThemeEnabled = false
     @Bindable var model: CodexiOSModel
@@ -145,18 +136,10 @@ struct CodexiOSSettingsView: View {
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
         .preferredColorScheme(CodexiOSAppearanceMode(rawValue: appearanceMode)?.colorScheme)
-        .onChange(of: showFiveHourPresentation) { _, enabled in
-            Task {
-                await model.updateLiveActivityPresentation(
-                    showFiveHour: enabled,
-                    showUsedQuota: showUsedQuota
-                )
-            }
-        }
         .onChange(of: showUsedQuota) { _, enabled in
             Task {
                 await model.updateLiveActivityPresentation(
-                    showFiveHour: showFiveHourPresentation,
+                    showFiveHour: model.snapshot?.showsFiveHourLimit ?? false,
                     showUsedQuota: enabled
                 )
             }
@@ -210,6 +193,12 @@ struct CodexiOSSettingsView: View {
                 LabeledContent("Status") {
                     Text("Signed in")
                         .foregroundStyle(.secondary)
+                }
+                if let plan = model.snapshot?.account.displayPlan {
+                    LabeledContent("Plan") {
+                        Text(plan)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             } else if model.liveAccountState == .authExpired {
                 LabeledContent("Status") {
@@ -301,34 +290,18 @@ struct CodexiOSSettingsView: View {
 
     private var displaySection: some View {
         Section {
-            Toggle("Show Spark", isOn: $showSpark)
-            Toggle("Show 5-hour window", isOn: $showFiveHourPresentation)
-                .accessibilityIdentifier("ios.settings.showFiveHour")
-            Toggle("Show Usage History", isOn: $showHistory)
             Toggle("Matrix theme", isOn: $matrixThemeEnabled)
                 .accessibilityIdentifier("ios.settings.matrixTheme")
-
-            Picker("Reset Times", selection: $resetDisplayStyle) {
-                ForEach(CodexiOSResetDisplayStyle.allCases) { style in
-                    Text(style.title).tag(style.rawValue)
-                }
-            }
 
             Picker("Appearance", selection: $appearanceMode) {
                 ForEach(CodexiOSAppearanceMode.allCases) { mode in
                     Text(mode.title).tag(mode.rawValue)
                 }
             }
-
-            Picker("History", selection: $defaultHistoryMode) {
-                ForEach(CodexiOSHistoryMode.allCases) { mode in
-                    Text(mode.title).tag(mode.rawValue)
-                }
-            }
         } header: {
             Text("Display")
         } footer: {
-            Text("Matrix theme opens the fullscreen Matrix view. 5-hour presentation controls rows, headlines, history, and Live Activity.")
+            Text("The 5-hour window appears automatically for Plus accounts when the account provides it. Matrix theme opens the fullscreen Matrix view.")
         }
     }
 

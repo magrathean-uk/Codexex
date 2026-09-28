@@ -52,7 +52,6 @@ struct CodexPopupSizingState: Equatable {
     let historyCount: Int
     let showHistory: Bool
     let showHistoryChart: Bool
-    let showSpark: Bool
     let hasVisibleSummary: Bool
     let appearance: CodexAppearanceMode
 
@@ -65,7 +64,6 @@ struct CodexPopupSizingState: Equatable {
         historyCount = model.usageHistory.count
         showHistory = model.showHistoryEnabled
         showHistoryChart = model.showHistoryChartEnabled
-        showSpark = model.showSparkEnabled
         hasVisibleSummary = model.popupSummary != nil && model.isCurrentSummarySnoozed == false
         appearance = model.appearanceMode
     }

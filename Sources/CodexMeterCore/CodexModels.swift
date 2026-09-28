@@ -27,8 +27,50 @@ public struct CodexSnapshot: Sendable, Equatable, Codable {
         limits.first(where: { $0.bucket == .codex }) ?? limits.first
     }
 
-    public var sparkLimit: CodexLimit? {
-        limits.first(where: { $0.bucket == .spark })
+    public var showsFiveHourLimit: Bool {
+        codexLimit?.fiveHourWindow != nil
+    }
+}
+
+public enum CodexAccountTier: String, Sendable, Codable, Equatable {
+    case plus
+    case pro
+    case business
+    case other
+
+    public init(planType: String?) {
+        let normalized = (planType ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .replacingOccurrences(of: "-", with: "_")
+            .replacingOccurrences(of: " ", with: "_")
+
+        if normalized == "plus" {
+            self = .plus
+        } else if normalized == "pro" {
+            self = .pro
+        } else if normalized.contains("business")
+            || normalized.contains("enterprise")
+            || normalized.contains("team")
+            || normalized.contains("edu")
+            || normalized.hasPrefix("ent") {
+            self = .business
+        } else {
+            self = .other
+        }
+    }
+
+    public var displayName: String? {
+        switch self {
+        case .plus:
+            return "PLUS"
+        case .pro:
+            return "PRO"
+        case .business:
+            return "BUSINESS"
+        case .other:
+            return nil
+        }
     }
 }
 
@@ -43,8 +85,16 @@ public struct CodexAccount: Sendable, Equatable, Codable {
         self.planType = planType
     }
 
+    public var tier: CodexAccountTier {
+        CodexAccountTier(planType: planType)
+    }
+
+    public var displayPlan: String? {
+        tier.displayName ?? planType?.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+    }
+
     public var displaySubtitle: String {
-        let parts = [email, planType?.uppercased()].compactMap { value -> String? in
+        let parts = [email, displayPlan].compactMap { value -> String? in
             guard let value, value.isEmpty == false else { return nil }
             return value
         }
@@ -88,14 +138,10 @@ public struct CodexCredits: Sendable, Equatable, Codable {
 
 public enum CodexLimitBucket: String, Sendable, Codable, CaseIterable {
     case codex
-    case spark
     case other
 
     public static func infer(limitId: String, limitName: String?) -> CodexLimitBucket {
         let haystack = "\(limitId) \(limitName ?? "")".lowercased()
-        if haystack.contains("spark") {
-            return .spark
-        }
         if haystack.contains("codex") {
             return .codex
         }
@@ -105,8 +151,7 @@ public enum CodexLimitBucket: String, Sendable, Codable, CaseIterable {
     public var sortOrder: Int {
         switch self {
         case .codex: 0
-        case .spark: 1
-        case .other: 2
+        case .other: 1
         }
     }
 }
@@ -143,8 +188,6 @@ public struct CodexLimit: Sendable, Equatable, Codable, Identifiable {
         switch bucket {
         case .codex:
             return "Codex"
-        case .spark:
-            return "Codex Spark"
         case .other:
             return id
         }
@@ -169,6 +212,10 @@ public struct CodexLimit: Sendable, Equatable, Codable, Identifiable {
         if secondary?.windowDurationMinutes == preferredMinutes {
             return secondary
         }
+        // A duration-tagged window is not a substitute for a missing window of another length.
+        // Positional fallback is only safe for older responses without duration metadata.
+        let candidates = [primary, secondary].compactMap { $0 }
+        guard candidates.allSatisfy({ $0.windowDurationMinutes == nil }) else { return nil }
         return fallback
     }
 }

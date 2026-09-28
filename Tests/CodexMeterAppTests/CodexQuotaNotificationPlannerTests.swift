@@ -129,15 +129,34 @@ final class CodexQuotaNotificationPlannerTests: XCTestCase {
         ).notifications.isEmpty)
     }
 
+    func testPlansFiveHourNotificationsForProWhenWindowIsReported() {
+        let snapshot = makeSnapshot(
+            fiveHourUsed: 98,
+            fiveHourResetOffset: 3 * 60 * 60,
+            planType: "PRO"
+        )
+
+        let plan = CodexQuotaNotificationPlanner.plan(
+            snapshot: snapshot,
+            insights: nil,
+            preferences: .enabled,
+            receipts: .empty,
+            now: now
+        )
+
+        XCTAssertEqual(plan.notifications.map(\.kind), [.fiveHourPressure])
+    }
+
     private func makeSnapshot(
         fiveHourUsed: Double,
         fiveHourResetOffset: TimeInterval,
-        weeklyUsed: Double = 44
+        weeklyUsed: Double = 44,
+        planType: String = "PLUS"
     ) -> CodexSnapshot {
         CodexSnapshot(
             capturedAt: now,
             executablePath: "/Applications/Codexex.app/Contents/Helpers/codexex-helper",
-            account: CodexAccount(authType: "chatGPT", email: nil, planType: "PRO"),
+            account: CodexAccount(authType: "chatGPT", email: nil, planType: planType),
             limits: [
                 CodexLimit(
                     id: "codex",

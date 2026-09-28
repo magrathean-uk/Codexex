@@ -5,72 +5,6 @@ import XCTest
 @testable import CodexMeterCore
 
 final class PopupPresentationTests: XCTestCase {
-    func testSparkAccentUsesCyanReferenceColor() throws {
-        let color = try XCTUnwrap(NSColor(limitAccentColor(for: .spark)).usingColorSpace(.sRGB))
-
-        XCTAssertLessThan(color.redComponent, 0.55)
-        XCTAssertGreaterThan(color.greenComponent, 0.75)
-        XCTAssertGreaterThan(color.blueComponent, 0.85)
-    }
-
-    func testPopupOrdersSparkAfterPrimaryLimits() {
-        let ordered = PopupPresentation.orderedLimits([
-            makeLimit(id: "spark", name: "Codex Spark", bucket: .spark, fiveHour: 12, weekly: 18),
-            makeLimit(id: "other", name: "Research", bucket: .other, fiveHour: 42, weekly: 55),
-            makeLimit(id: "codex", name: "Codex", bucket: .codex, fiveHour: 34, weekly: 69)
-        ])
-
-        XCTAssertEqual(ordered.map(\.bucket), [.codex, .other, .spark])
-    }
-
-    func testSparkUsesCompactCardWhenIdle() {
-        let presentation = PopupPresentation.presentation(
-            for: makeLimit(id: "spark", name: "GPT-5.3-Codex-Spark", bucket: .spark, fiveHour: 0, weekly: 0)
-        )
-
-        XCTAssertEqual(presentation.style, .compact)
-        XCTAssertEqual(presentation.compactDisplayName, "Spark")
-    }
-
-    func testSparkUsesFullCardWhenActive() {
-        let presentation = PopupPresentation.presentation(
-            for: makeLimit(id: "spark", name: "Codex Spark", bucket: .spark, fiveHour: 8, weekly: 0)
-        )
-
-        XCTAssertEqual(presentation.style, .standard)
-    }
-
-    func testSparkShowsInactiveFiveHourBesideWeekly() {
-        let rows = PopupPresentation.visibleWindowRows(
-            for: makeLimit(id: "spark", name: "Codex Spark", bucket: .spark, fiveHour: 0, weekly: 13),
-            includeInactive: true,
-            showFiveHour: true
-        )
-
-        XCTAssertEqual(rows.map(\.title), ["5H", "Weekly"])
-        XCTAssertEqual(rows.map { Int($0.window.usedPercent) }, [0, 13])
-    }
-
-    func testSparkFiveHourStaysVisibleWhenMainCodexFiveHourIsDisabled() {
-        let spark = makeLimit(
-            id: "spark",
-            name: "Codex Spark",
-            bucket: .spark,
-            fiveHour: 12,
-            weekly: 60
-        )
-        let codex = makeLimit(
-            id: "codex",
-            name: "Codex",
-            bucket: .codex,
-            fiveHour: 12,
-            weekly: 60
-        )
-
-        XCTAssertTrue(PopupPresentation.shouldShowFiveHour(for: spark, userEnabled: false))
-        XCTAssertFalse(PopupPresentation.shouldShowFiveHour(for: codex, userEnabled: false))
-    }
-
     func testFiveHourVisibilityFiltersRowsAndHeadline() {
         let limit = makeLimit(
             id: "codex",
@@ -139,10 +73,10 @@ final class PopupPresentationTests: XCTestCase {
 
     func testLimitHeadlineUsesLowestRemainingWindow() throws {
         let codex = makeLimit(id: "codex", name: "Codex", bucket: .codex, fiveHour: 100, weekly: 45)
-        let spark = makeLimit(id: "spark", name: "Codex Spark", bucket: .spark, fiveHour: 0, weekly: 64)
+        let other = makeLimit(id: "other", name: "Research", bucket: .other, fiveHour: 0, weekly: 64)
 
         XCTAssertEqual(PopupPresentation.headlineWindow(for: codex, showFiveHour: true)?.remainingPercentText, "0%")
-        XCTAssertEqual(PopupPresentation.headlineWindow(for: spark, showFiveHour: true)?.remainingPercentText, "36%")
+        XCTAssertEqual(PopupPresentation.headlineWindow(for: other, showFiveHour: true)?.remainingPercentText, "36%")
     }
 
     func testZeroAndUnlimitedCreditsStayHidden() {
@@ -326,58 +260,6 @@ final class PopupPresentationTests: XCTestCase {
         XCTAssertEqual(summary?.supportingLabel, "Weekly forecast")
         XCTAssertEqual(summary?.supportingValue, "Volatile")
         XCTAssertEqual(summary?.supportingDetail, "89% by reset · likely 71-107%")
-    }
-
-    func testSummaryIgnoresSparkLimitsForAlerting() {
-        let sparkLimit = makeLimit(id: "spark", name: "Codex Spark", bucket: .spark, fiveHour: 0, weekly: 100)
-        let snapshot = CodexSnapshot(
-            capturedAt: Date(timeIntervalSince1970: 1_800_000_000),
-            executablePath: "/Applications/Codexex.app",
-            account: CodexAccount(
-                authType: "chatGPT",
-                email: "user@example.com",
-                planType: "PRO"
-            ),
-            limits: [
-                makeLimit(id: "codex", name: "Codex", bucket: .codex, fiveHour: 12, weekly: 41),
-                sparkLimit
-            ]
-        )
-
-        let summary = PopupPresentation.summary(
-            snapshot: snapshot,
-            insights: CodexUsageInsights(
-                weeklyPace: CodexUsageForecast(
-                    message: "Projected 62% by reset",
-                    tone: .safe,
-                    confidence: .stable,
-                    currentPercent: 41,
-                    projectedPercentAtReset: 62,
-                    paceVariancePercent: -4,
-                    sampleCount: 6,
-                    resetAt: Date(timeIntervalSince1970: 1_800_000_000),
-                    detail: "4% under pace · 6 samples"
-                ),
-                fiveHourPressure: CodexUsageInsightRow(
-                    title: "5-hour pressure",
-                    message: "12% used",
-                    detail: "resets in 4h",
-                    tone: .safe
-                ),
-                recentPeaks: CodexUsageInsightRow(
-                    title: "Recent peaks",
-                    message: "5H 18% · W 62%",
-                    detail: "Last 24h / 7d",
-                    tone: .safe
-                )
-            ),
-            previewModeEnabled: false,
-            hasRefreshIssue: false,
-            showFiveHour: true
-        )
-
-        XCTAssertEqual(summary?.severity, .safe)
-        XCTAssertEqual(summary?.message, "You are on track for this cycle.")
     }
 
     func testHistoryLegendUsesCurrentPercentNotForecastWarning() {

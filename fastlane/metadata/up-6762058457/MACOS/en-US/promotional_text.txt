@@ -1,1 +1,1 @@
-Track weekly Codex usage, local session burn, forecasts, and Preview Mode from the Mac menu bar.
+See your next Codex reset and weekly allowance from the Mac menu bar, with Preview Mode available before sign-in.

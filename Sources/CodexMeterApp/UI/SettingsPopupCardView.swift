@@ -15,15 +15,6 @@ struct SettingsPopupCardView: View {
                 .foregroundStyle(.primary)
 
             SettingsToggleRow(
-                title: "Show Spark",
-                detail: "Keep Spark visible as raw usage only.",
-                isOn: Binding(
-                    get: { model.showSparkEnabled },
-                    set: { model.setShowSparkEnabled($0) }
-                )
-            )
-
-            SettingsToggleRow(
                 title: "Show history",
                 detail: "Show the usage history section in the popup.",
                 isOn: Binding(
@@ -48,17 +39,9 @@ struct SettingsPopupCardView: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
 
-            SettingsToggleRow(
-                title: "Show Codex 5-hour window",
-                detail: "Show main Codex 5H in the menu bar, popup, summaries, and history. Spark stays visible.",
-                isOn: Binding(
-                    get: { model.showFiveHourInMenubar },
-                    set: { model.setShowFiveHourInMenubar($0) }
-                )
-            )
-            .accessibilityIdentifier("mac.settings.showFiveHour")
-            .accessibilityLabel("Show Codex 5-hour window")
-            .accessibilityValue(model.showFiveHourInMenubar ? "On" : "Off")
+            Text("The 5-hour window appears automatically for Plus accounts when the account provides it.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
 
             SettingsToggleRow(
                 title: "Show weekly in menu bar",

@@ -2,7 +2,7 @@ import XCTest
 @testable import CodexMeterCore
 
 final class CodexSnapshotParsingTests: XCTestCase {
-    func testSeparateSparkBucketParsesAndSorts() throws {
+    func testCodexBucketParsesAndSorts() throws {
         let account = """
         {
           "account": {
@@ -28,12 +28,6 @@ final class CodexSnapshotParsingTests: XCTestCase {
               "limitName": null,
               "primary": { "usedPercent": 25, "windowDurationMins": 15, "resetsAt": 1730947200 },
               "secondary": null
-            },
-            "gpt-5.3-codex-spark": {
-              "limitId": "gpt-5.3-codex-spark",
-              "limitName": "Codex Spark",
-              "primary": { "usedPercent": 42, "windowDurationMins": 60, "resetsAt": 1730950800 },
-              "secondary": null
             }
           }
         }
@@ -46,10 +40,8 @@ final class CodexSnapshotParsingTests: XCTestCase {
         )
 
         XCTAssertEqual(snapshot.account.email, "user@example.com")
-        XCTAssertEqual(snapshot.limits.count, 2)
+        XCTAssertEqual(snapshot.limits.count, 1)
         XCTAssertEqual(snapshot.limits.first?.bucket, .codex)
-        XCTAssertEqual(snapshot.sparkLimit?.bucket, .spark)
-        XCTAssertEqual(snapshot.sparkLimit?.primary?.usedPercentText, "42%")
     }
 
     func testNonChatGPTAuthRejected() throws {

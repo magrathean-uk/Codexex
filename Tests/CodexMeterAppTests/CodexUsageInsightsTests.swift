@@ -10,9 +10,9 @@ final class CodexUsageInsightsTests: XCTestCase {
             now: now,
             limits: [
                 CodexLimit(
-                    id: "spark",
-                    rawLimitName: "Codex Spark",
-                    bucket: .spark,
+                    id: "other",
+                    rawLimitName: "Other",
+                    bucket: .other,
                     primary: CodexQuotaWindow(
                         usedPercent: 22,
                         windowDurationMinutes: 300,
@@ -445,21 +445,11 @@ final class CodexUsageInsightsTests: XCTestCase {
         XCTAssertFalse(insights?.recentPeaks.message.isEmpty ?? true)
     }
 
-    func testPreviewDataUsesCurrentSparkDisplayName() {
-        let snapshot = CodexPreviewData.snapshot(now: Date(timeIntervalSince1970: 1_800_000_000))
-
-        XCTAssertEqual(snapshot.sparkLimit?.displayName, "GPT-5.3-Codex-Spark")
-    }
-
     func testPreviewDataMatchesReferenceQuotaCards() throws {
         let snapshot = CodexPreviewData.snapshot(now: Date(timeIntervalSince1970: 1_800_000_000))
         let codex = try XCTUnwrap(snapshot.codexLimit)
-        let spark = try XCTUnwrap(snapshot.sparkLimit)
-
         XCTAssertEqual(codex.fiveHourWindow?.remainingPercentText, "92%")
         XCTAssertEqual(codex.weeklyWindow?.remainingPercentText, "95%")
-        XCTAssertEqual(spark.fiveHourWindow?.remainingPercentText, "100%")
-        XCTAssertEqual(spark.weeklyWindow?.remainingPercentText, "51%")
     }
 
     func testPreviewLocalUsageMatchesReferenceEmptyState() {
@@ -702,8 +692,7 @@ final class CodexUsageInsightsTests: XCTestCase {
                 resetsAt: now.addingTimeInterval(90 * 60)
             ),
             weekly: nil,
-            codexCreditsBalance: nil,
-            sparkCreditsBalance: nil
+            codexCreditsBalance: nil
         )
         let samples = [
             makeSample(hoursAgo: 3, fiveHour: 20, weekly: 12, weeklyReset: resetAt, now: now),
@@ -840,8 +829,7 @@ final class CodexUsageInsightsTests: XCTestCase {
                 windowDurationMinutes: 10_080,
                 resetsAt: weeklyReset ?? date.addingTimeInterval(4 * 24 * 60 * 60)
             ),
-            codexCreditsBalance: nil,
-            sparkCreditsBalance: nil
+            codexCreditsBalance: nil
         )
     }
 

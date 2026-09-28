@@ -1,4 +1,5 @@
-Codexex 6.0.0 makes the menu bar clearer:
+Codexex 6.1.1 brings a clearer menu-bar dashboard:
 
-- Weekly-only mode now uses the OpenAI mark with the quota percentage.
-- Turning on the optional main Codex 5-hour window restores the familiar `5H` and `W` labels; Spark stays visible.
+- Any account leads with the next 5-hour reset when OpenAI reports one; otherwise weekly allowance and progress lead.
+- Quota windows are labelled only when their reported duration matches, avoiding misleading reset times.
+- Refined spacing, contrast, and refresh feedback make the compact view easier to read.

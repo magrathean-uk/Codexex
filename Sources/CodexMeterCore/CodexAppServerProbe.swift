@@ -288,8 +288,9 @@ enum _SnapshotReducer {
             buckets = byId
                 .sorted(by: { $0.key < $1.key })
                 .map(\.value)
+                .filter(isCodexLimit)
         } else if let single = rateLimits.rateLimits {
-            buckets = [single]
+            buckets = isCodexLimit(single) ? [single] : []
         } else {
             buckets = []
         }
@@ -345,6 +346,13 @@ enum _SnapshotReducer {
         }
 
         return snapshot
+    }
+
+    private static func isCodexLimit(_ payload: _RateLimitPayload) -> Bool {
+        let id = payload.limitId?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let name = payload.limitName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard id.isEmpty == false || name.isEmpty == false else { return true }
+        return CodexLimitBucket.infer(limitId: id, limitName: name) == .codex
     }
 }
 

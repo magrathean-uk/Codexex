@@ -15,6 +15,8 @@ public struct CodexLiveActivityAttributes: Codable, Hashable, Sendable {
         public let isStale: Bool
         /// Optional for decoding Live Activities created before the display-mode setting existed.
         public let showsUsedQuota: Bool?
+        /// Optional so activities created by earlier app versions still decode.
+        public let lastUpdatedAt: Date?
 
         public var displaysUsedQuota: Bool { showsUsedQuota ?? false }
 
@@ -55,7 +57,8 @@ public struct CodexLiveActivityAttributes: Codable, Hashable, Sendable {
             [
                 weeklyDisplayDescription,
                 fiveHourDisplayDescription,
-                resolvedIsStale ? "Update needed" : "Up to date"
+                resolvedIsStale ? "Update needed" : "Up to date",
+                lastUpdatedAt.map { "Updated \($0.formatted(date: .omitted, time: .shortened))" }
             ]
                 .compactMap { $0 }
                 .joined(separator: ". ")
@@ -68,7 +71,8 @@ public struct CodexLiveActivityAttributes: Codable, Hashable, Sendable {
             fiveHourPercentLeft: Int?,
             fiveHourResetAt: Date?,
             isStale: Bool,
-            showsUsedQuota: Bool = false
+            showsUsedQuota: Bool = false,
+            lastUpdatedAt: Date? = nil
         ) {
             self.weeklyPercentLeft = weeklyPercentLeft
             self.weeklyUsedFraction = weeklyUsedFraction
@@ -77,6 +81,7 @@ public struct CodexLiveActivityAttributes: Codable, Hashable, Sendable {
             self.fiveHourResetAt = fiveHourResetAt
             self.isStale = isStale
             self.showsUsedQuota = showsUsedQuota
+            self.lastUpdatedAt = lastUpdatedAt
         }
     }
 
@@ -119,7 +124,8 @@ public enum CodexLiveActivityPresentation {
             fiveHourPercentLeft: fiveHour.map { Int($0.remainingPercent.rounded()) },
             fiveHourResetAt: fiveHour?.resetsAt,
             isStale: stale,
-            showsUsedQuota: showUsedQuota
+            showsUsedQuota: showUsedQuota,
+            lastUpdatedAt: snapshot.capturedAt
         )
     }
 

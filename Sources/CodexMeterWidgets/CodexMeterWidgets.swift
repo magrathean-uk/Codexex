@@ -17,7 +17,8 @@ struct CodexQuotaLiveActivity: Widget {
                 contentStateIsStale: context.state.isStale
             )
             QuotaUsageView(state: context.state, isStale: isStale)
-                .activityBackgroundTint(Color(uiColor: .systemBackground))
+                .activityBackgroundTint(QuotaUsageView.backgroundColor)
+                .widgetURL(URL(string: "codexex://refresh"))
         } dynamicIsland: { context in
             let isStale = CodexLiveActivityPresentation.resolvedStaleness(
                 systemIsStale: context.isStale,
@@ -39,6 +40,7 @@ struct CodexQuotaLiveActivity: Widget {
             } compactTrailing: {
                 Text("\(context.state.displayedWeeklyPercent)%")
                     .monospacedDigit()
+                    .foregroundStyle(QuotaUsageView.accentColor)
                     .accessibilityLabel(
                         "\(context.state.weeklyDisplayDescription). \(isStale ? "Update needed" : "Up to date")"
                     )
@@ -52,7 +54,8 @@ struct CodexQuotaLiveActivity: Widget {
                         .accessibilityLabel("Codexex Usage. Up to date")
                 }
             }
-            .keylineTint(.accentColor)
+            .keylineTint(QuotaUsageView.accentColor)
+            .widgetURL(URL(string: "codexex://refresh"))
         }
     }
 }
@@ -61,62 +64,90 @@ private struct QuotaUsageView: View {
     let state: CodexLiveActivityAttributes.ContentState
     let isStale: Bool
 
+    static let backgroundColor = Color(red: 0.12, green: 0.12, blue: 0.13)
+    static let accentColor = Color(red: 0.32, green: 0.89, blue: 0.60)
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 11) {
-            HStack(alignment: .center, spacing: 10) {
-                ActivityIcon(size: 28)
-                Text("Codexex Usage")
-                    .font(.headline.weight(.semibold))
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 8) {
+                ActivityIcon(size: 24)
+                Text("CODEXEX")
+                    .font(.caption.weight(.semibold))
+                    .tracking(1)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.82)
-                Spacer(minLength: 6)
+                Spacer(minLength: 8)
                 if isStale {
-                    Label("Update needed", systemImage: "exclamationmark.triangle.fill")
-                        .font(.caption.weight(.semibold))
+                    Label("Tap to update", systemImage: "arrow.clockwise")
+                        .font(.caption2.weight(.semibold))
                         .foregroundStyle(.orange)
-                        .fixedSize(horizontal: true, vertical: false)
+                        .lineLimit(1)
+                } else if let lastUpdatedAt = state.lastUpdatedAt {
+                    Text("Updated \(lastUpdatedAt, style: .time)")
+                        .font(.caption2)
+                        .foregroundStyle(.white.opacity(0.65))
+                        .monospacedDigit()
+                        .lineLimit(1)
                 }
             }
+            .padding(.bottom, 8)
 
-            Text(state.weeklyDisplayDescription)
-                .font(.subheadline.weight(.medium))
-                .monospacedDigit()
-                .fixedSize(horizontal: false, vertical: true)
+            HStack(alignment: .firstTextBaseline, spacing: 5) {
+                Text("\(state.displayedWeeklyPercent)%")
+                    .font(.system(.title, design: .rounded, weight: .bold))
+                    .foregroundStyle(Self.accentColor)
+                Text(state.displaysUsedQuota ? "used" : "left")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+                Spacer(minLength: 0)
+            }
+            .monospacedDigit()
 
-            ProgressView(value: state.displayedWeeklyFraction)
-                .tint(.accentColor)
-                .frame(height: 8)
-                .accessibilityHidden(true)
+            HStack(spacing: 8) {
+                Text("Weekly quota")
+                Spacer(minLength: 4)
+                if let resetAt = state.weeklyResetAt {
+                    Text("Resets \(resetAt, style: .relative)")
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.white.opacity(0.65))
+            .padding(.top, 1)
+            .padding(.bottom, 10)
 
-            if let fiveHour = state.fiveHourDisplayDescription {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(fiveHour)
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(.white.opacity(0.2))
+                    Capsule()
+                        .fill(Self.accentColor)
+                        .frame(width: geometry.size.width * state.displayedWeeklyFraction)
+                }
+            }
+            .frame(height: 5)
+            .accessibilityHidden(true)
+
+            if let fiveHourPercent = state.displayedFiveHourPercent {
+                HStack(spacing: 8) {
+                    Text("5-hour · \(fiveHourPercent)% \(state.displaysUsedQuota ? "used" : "left")")
                         .font(.caption.weight(.medium))
                         .monospacedDigit()
-                        .fixedSize(horizontal: false, vertical: true)
-
+                    Spacer(minLength: 4)
                     if let resetAt = state.fiveHourResetAt {
-                        Text("5-hour reset \(resetAt, style: .relative)")
+                        Text("Resets \(resetAt, style: .relative)")
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
                 }
                 .font(.caption)
-                .foregroundStyle(.secondary)
-            }
-
-            if let resetAt = state.weeklyResetAt {
-                HStack(spacing: 5) {
-                    Image(systemName: "clock")
-                    Text("Weekly reset")
-                    Text(resetAt, style: .relative)
-                }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+                .foregroundStyle(.white.opacity(0.72))
+                .padding(.top, 9)
             }
         }
-        .fontDesign(.rounded)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .foregroundStyle(.white)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 13)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Codexex Usage")
         .accessibilityValue(state.accessibilityDescription(isStale: isStale))
@@ -159,18 +190,20 @@ private let previewAttributes = CodexLiveActivityAttributes()
 private let previewNormal = CodexLiveActivityAttributes.ContentState(
     weeklyPercentLeft: 68,
     weeklyUsedFraction: 0.32,
-    weeklyResetAt: nil,
-    fiveHourPercentLeft: nil,
-    fiveHourResetAt: nil,
-    isStale: false
+    weeklyResetAt: .now.addingTimeInterval(6 * 24 * 60 * 60),
+    fiveHourPercentLeft: 100,
+    fiveHourResetAt: .now.addingTimeInterval(4 * 60 * 60),
+    isStale: false,
+    lastUpdatedAt: .now
 )
 private let previewStale = CodexLiveActivityAttributes.ContentState(
     weeklyPercentLeft: 68,
     weeklyUsedFraction: 0.32,
-    weeklyResetAt: nil,
-    fiveHourPercentLeft: nil,
-    fiveHourResetAt: nil,
-    isStale: true
+    weeklyResetAt: .now.addingTimeInterval(6 * 24 * 60 * 60),
+    fiveHourPercentLeft: 100,
+    fiveHourResetAt: .now.addingTimeInterval(4 * 60 * 60),
+    isStale: true,
+    lastUpdatedAt: .now
 )
 
 #Preview("Lock Screen states", as: .content, using: previewAttributes) {
@@ -204,4 +237,5 @@ private let previewStale = CodexLiveActivityAttributes.ContentState(
 #Preview("System stale layout") {
     QuotaUsageView(state: previewNormal, isStale: true)
         .padding()
+        .background(QuotaUsageView.backgroundColor, in: RoundedRectangle(cornerRadius: 20))
 }

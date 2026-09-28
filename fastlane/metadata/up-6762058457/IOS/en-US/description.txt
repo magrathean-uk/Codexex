@@ -1,10 +1,10 @@
 Codexex is a native iPhone and iPad utility for keeping Codex usage readable at a glance.
 
-It shows weekly usage, an optional 5-hour window, reset timing, Peaks/Cycle/Month history, pace and forecast hints, and Preview Mode sample data so you can check the layout before signing in.
+It shows the next 5-hour reset when your account reports one, plus weekly allowance and reset timing. When only a weekly window is reported, weekly allowance and progress lead instead. Preview Mode lets you check the layout before signing in.
 
 Start a compact Live Activity after a foreground refresh to see your weekly percentage left and progress bar from the Lock Screen or Dynamic Island.
 
-Codexex keeps the iPhone and iPad experience focused on clear quota status, readable history, and quick refresh controls.
+Codexex keeps the iPhone and iPad experience focused on clear quota status and quick refresh controls.
 
 Codexex supports ChatGPT sign-in through Safari and a device-code flow. Quota reads stay on this device, with no browser cookies and no scraping.
 

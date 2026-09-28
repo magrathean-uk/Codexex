@@ -4,22 +4,30 @@ import CodexMeterCore
 
 struct CodexiOSRootView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    @AppStorage(CodexiOSSettingsKeys.showSpark) private var showSpark = true
     @AppStorage(CodexiOSSettingsKeys.showHistory) private var showHistory = true
     @AppStorage(CodexiOSSettingsKeys.resetDisplayStyle) private var resetDisplayStyle = CodexiOSResetDisplayStyle.relative.rawValue
-    @AppStorage(CodexiOSSettingsKeys.appearanceMode) private var appearanceMode = CodexiOSAppearanceMode.system.rawValue
+    @AppStorage(CodexiOSSettingsKeys.appearanceMode) private var appearanceMode = CodexiOSAppearanceMode.dark.rawValue
     @AppStorage(CodexiOSSettingsKeys.defaultHistoryMode) private var defaultHistoryMode = CodexiOSHistoryMode.dailyPeaks.rawValue
-    @AppStorage(CodexiOSSettingsKeys.showFiveHourPresentation) private var showFiveHourPresentation = false
     @AppStorage(CodexiOSSettingsKeys.showUsedQuota) private var showUsedQuota = false
     @AppStorage(CodexiOSSettingsKeys.matrixThemeEnabled) private var matrixThemeEnabled = false
     @Bindable var model: CodexiOSModel
     @State private var isShowingMatrixQuota = false
     @State private var isShowingLiveActivityStartWarning = false
 
+    private var showFiveHourPresentation: Bool {
+        model.snapshot?.showsFiveHourLimit ?? false
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
-                if #available(iOS 26.0, *) {
+                if let snapshot = model.snapshot {
+                    CodexiOSResetDashboardView(
+                        model: model,
+                        snapshot: snapshot,
+                        onMatrixThemeEnabled: { isShowingMatrixQuota = true }
+                    )
+                } else if #available(iOS 26.0, *) {
                     GlassEffectContainer(spacing: 12) {
                         responsiveLayout
                     }
@@ -27,7 +35,13 @@ struct CodexiOSRootView: View {
                     responsiveLayout
                 }
             }
-            .background(CodexiOSTheme.background.ignoresSafeArea())
+            .background {
+                if model.snapshot != nil {
+                    CodexiOSResetDashboardView.background.ignoresSafeArea()
+                } else {
+                    CodexiOSTheme.background.ignoresSafeArea()
+                }
+            }
         }
         .preferredColorScheme(CodexiOSAppearanceMode(rawValue: appearanceMode)?.colorScheme)
         .onAppear {
@@ -52,7 +66,7 @@ struct CodexiOSRootView: View {
                 Task { await model.startLiveActivity() }
             }
         } message: {
-            Text("Codexex refreshes this on your phone when iOS allows it. Please do not manually close it from the app switcher.")
+            Text("Codexex uses content-free wake notifications, then refreshes directly from OpenAI on your phone. Please do not manually close it from the app switcher.")
         }
     }
 
@@ -173,9 +187,19 @@ struct CodexiOSRootView: View {
     }
 
     private var contentHeader: some View {
-        Text("Codexex")
-            .font(.system(size: 38, weight: .bold))
-            .lineLimit(1)
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Codexex")
+                .font(.system(size: 38, weight: .bold))
+                .lineLimit(1)
+
+            if model.isSignedIn,
+               let plan = model.snapshot?.account.displayPlan {
+                Text(plan)
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("Plan \(plan)")
+            }
+        }
     }
 
     private var bottomActionBar: some View {
@@ -323,11 +347,7 @@ struct CodexiOSRootView: View {
     }
 
     private func shouldShow(_ limit: CodexLimit) -> Bool {
-        CodexQuotaPresentationRules.shouldShow(
-            limit,
-            showSpark: showSpark,
-            hideIdleSecondaryLimits: true
-        )
+        true
     }
 
     private func quotaCard(_ limit: CodexLimit) -> some View {
@@ -532,7 +552,7 @@ struct CodexiOSRootView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Private by default")
                     .font(.headline.weight(.semibold))
-                Text("No server, no Mac bridge, no browser cookies. Sign in happens on-device and tokens stay in Keychain.")
+                Text("No account or quota relay, no Mac bridge, and no browser cookies. Sign in happens on-device and tokens stay in Keychain.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -555,7 +575,7 @@ struct CodexiOSRootView: View {
     }
 
     private func tint(for bucket: CodexLimitBucket) -> Color {
-        bucket == .spark ? CodexiOSTheme.tertiary : CodexiOSTheme.secondary
+        CodexiOSTheme.secondary
     }
 
     private var statusCardTitle: String {

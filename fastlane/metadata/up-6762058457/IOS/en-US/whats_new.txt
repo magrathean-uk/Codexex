@@ -1,4 +1,5 @@
-Codexex 6.0.0 adds a focused usage view:
+Codexex 6.1.1 brings a clearer reset dashboard:
 
-- Live Activity shows weekly percentage left and progress on the Lock Screen and Dynamic Island.
-- The optional 5-hour window is off by default for a clearer weekly view.
+- Any account leads with the next 5-hour reset when OpenAI reports one; otherwise weekly allowance and progress lead.
+- Larger text is easier to read without losing key reset details.
+- Live Activity background wakes and registration recover more reliably after interruptions.

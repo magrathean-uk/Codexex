@@ -33,14 +33,12 @@ final class CodexMenuBarModel {
     private(set) var showHistoryEnabled = CodexAppSettings.showHistoryEnabled
     private(set) var showHistoryChartEnabled = CodexAppSettings.showHistoryChartEnabled
     private(set) var showInsightsEnabled = CodexAppSettings.showInsightsEnabled
-    private(set) var showSparkEnabled = CodexAppSettings.showSparkEnabled
     private(set) var defaultHistoryMode = CodexAppSettings.defaultHistoryMode
     private(set) var showPaceConfidence = CodexAppSettings.showPaceConfidence
     private(set) var hideIdleSecondaryLimits = CodexAppSettings.hideIdleSecondaryLimits
     private(set) var quotaNotificationsEnabled = CodexAppSettings.quotaNotificationsEnabled
     private(set) var quotaNotificationAuthorizationState: CodexNotificationAuthorizationState = .unknown
     private(set) var codexSessionsPath = CodexAppSettings.codexSessionsPath
-    private(set) var showFiveHourInMenubar = CodexAppSettings.showFiveHourInMenubar
     private(set) var showWeeklyInMenubar = CodexAppSettings.showWeeklyInMenubar
     private(set) var menuBarDisplayMode = CodexAppSettings.menuBarDisplayMode
     private(set) var resetDisplayStyle = CodexAppSettings.resetDisplayStyle
@@ -93,13 +91,11 @@ final class CodexMenuBarModel {
         showHistoryEnabled = settings.showHistoryEnabled
         showHistoryChartEnabled = settings.showHistoryChartEnabled
         showInsightsEnabled = settings.showInsightsEnabled
-        showSparkEnabled = settings.showSparkEnabled
         defaultHistoryMode = settings.defaultHistoryMode
         showPaceConfidence = settings.showPaceConfidence
         hideIdleSecondaryLimits = settings.hideIdleSecondaryLimits
         quotaNotificationsEnabled = settings.quotaNotificationsEnabled
         codexSessionsPath = settings.codexSessionsPath
-        showFiveHourInMenubar = settings.showFiveHourInMenubar
         showWeeklyInMenubar = settings.showWeeklyInMenubar
         menuBarDisplayMode = settings.menuBarDisplayMode
         resetDisplayStyle = settings.resetDisplayStyle
@@ -112,6 +108,7 @@ final class CodexMenuBarModel {
     }
 
     var snapshot: CodexSnapshot? { dashboard.snapshot }
+    var showFiveHourInMenubar: Bool { snapshot?.showsFiveHourLimit ?? false }
     var isRefreshing: Bool { dashboard.isRefreshing }
     var lastError: String? { authSession.lastError ?? dashboard.lastError }
     var lastUpdatedAt: Date? { dashboard.lastUpdatedAt }
@@ -424,11 +421,6 @@ final class CodexMenuBarModel {
         settingsStore.setShowHistoryChartEnabled(enabled)
     }
 
-    func setShowSparkEnabled(_ enabled: Bool) {
-        showSparkEnabled = enabled
-        settingsStore.setShowSparkEnabled(enabled)
-    }
-
     func setDefaultHistoryMode(_ mode: PopupHistoryMode) {
         defaultHistoryMode = mode
         settingsStore.setDefaultHistoryMode(mode)
@@ -495,11 +487,6 @@ final class CodexMenuBarModel {
         Task { @MainActor [weak self] in
             await self?.refreshNow(manual: true)
         }
-    }
-
-    func setShowFiveHourInMenubar(_ enabled: Bool) {
-        showFiveHourInMenubar = enabled
-        settingsStore.setShowFiveHourInMenubar(enabled)
     }
 
     func setShowWeeklyInMenubar(_ enabled: Bool) {
@@ -915,7 +902,9 @@ final class CodexMenuBarModel {
         let formatter = ISO8601DateFormatter()
         let limits = snapshot?.limits.map { limit in
             let windows = [
-                limit.fiveHourWindow.map { "5H \($0.usedPercentText) reset=\(formatter.string(from: $0.resetsAt ?? .distantPast))" },
+                showFiveHourInMenubar
+                    ? limit.fiveHourWindow.map { "5H \($0.usedPercentText) reset=\(formatter.string(from: $0.resetsAt ?? .distantPast))" }
+                    : nil,
                 limit.weeklyWindow.map { "W \($0.usedPercentText) reset=\(formatter.string(from: $0.resetsAt ?? .distantPast))" }
             ]
             .compactMap { $0 }

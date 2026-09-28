@@ -1,1 +1,1 @@
-codex,menu bar,quota,usage,chatgpt,oauth,history,forecast,preview
+menu bar,quota,chatgpt,oauth,reset,weekly,preview

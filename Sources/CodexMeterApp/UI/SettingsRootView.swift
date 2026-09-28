@@ -5,9 +5,8 @@ import SwiftUI
 
 private enum SettingsSection: String, CaseIterable, Identifiable {
     case general
-    case popup
     case menuBar
-    case forecast
+    case notifications
     case about
 
     var id: String { rawValue }
@@ -16,12 +15,10 @@ private enum SettingsSection: String, CaseIterable, Identifiable {
         switch self {
         case .general:
             return "General"
-        case .popup:
-            return "Popup"
         case .menuBar:
             return "Menu Bar"
-        case .forecast:
-            return "Forecast"
+        case .notifications:
+            return "Notifications"
         case .about:
             return "About"
         }
@@ -31,12 +28,10 @@ private enum SettingsSection: String, CaseIterable, Identifiable {
         switch self {
         case .general:
             return "slider.horizontal.3"
-        case .popup:
-            return "rectangle.topthird.inset.filled"
         case .menuBar:
             return "menubar.rectangle"
-        case .forecast:
-            return "chart.line.uptrend.xyaxis"
+        case .notifications:
+            return "bell"
         case .about:
             return "info.circle"
         }
@@ -271,8 +266,8 @@ struct SettingsRootView: View {
                         .lineLimit(1)
 
                     HStack(spacing: 5) {
-                        if model.snapshot?.account.planType?.isEmpty == false {
-                            Text(model.snapshot?.account.planType?.uppercased() ?? "")
+                        if model.snapshot?.account.displayPlan?.isEmpty == false {
+                            Text(model.snapshot?.account.displayPlan ?? "")
                                 .font(.system(size: 9, weight: .bold))
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 4)
@@ -331,12 +326,10 @@ struct SettingsRootView: View {
         switch selection {
         case .general:
             generalSection
-        case .popup:
-            popupSection
         case .menuBar:
             menuBarSection
-        case .forecast:
-            forecastSection
+        case .notifications:
+            notificationsSection
         case .about:
             aboutSection
         }
@@ -410,38 +403,6 @@ struct SettingsRootView: View {
         }
     }
 
-    private var popupSection: some View {
-        SettingsListGroup(
-            title: "Popup contents",
-            footer: "Choose which sections appear in the menu bar popup."
-        ) {
-            SettingsListRow(title: "Spark", detail: "Show the secondary Spark meter.") {
-                CodexSwitch(
-                    isOn: Binding(get: { model.showSparkEnabled }, set: { model.setShowSparkEnabled($0) }),
-                    accessibilityLabel: "Show Spark"
-                )
-            }
-
-            SettingsListRow(title: "Usage history") {
-                CodexSwitch(
-                    isOn: Binding(get: { model.showHistoryEnabled }, set: { model.setShowHistoryEnabled($0) }),
-                    accessibilityLabel: "Show usage history"
-                )
-            }
-
-            SettingsListRow(title: "History chart", detail: "Bars and trend line inside usage history.", isLast: true) {
-                CodexSwitch(
-                    isOn: Binding(
-                        get: { model.showHistoryChartEnabled },
-                        set: { model.setShowHistoryChartEnabled($0) }
-                    ),
-                    accessibilityLabel: "Show history chart"
-                )
-                    .disabled(model.showHistoryEnabled == false)
-            }
-        }
-    }
-
     private var appearanceSection: some View {
         SettingsListGroup(
             title: "Theme",
@@ -464,7 +425,7 @@ struct SettingsRootView: View {
     private var menuBarSection: some View {
         SettingsListGroup(
             title: "Quota presentation",
-            footer: "5-hour visibility controls main Codex usage. Spark remains visible. Weekly visibility is menu-bar only."
+            footer: "The 5-hour window appears automatically for Plus accounts when the account provides it. Weekly visibility is menu-bar only."
         ) {
             SettingsListRow(title: "Mode", detail: "Menu bar usage, remaining quota, or weekly pace.") {
                 CodexSegmentedControl(selection: Binding(
@@ -478,20 +439,6 @@ struct SettingsRootView: View {
                 .frame(width: 174, height: SettingsControlMetrics.controlHeight)
             }
 
-            SettingsListRow(
-                title: "Show Codex 5-hour window",
-                detail: "Main Codex menu bar, popup, summaries, and history. Spark stays visible."
-            ) {
-                CodexSwitch(
-                    isOn: Binding(
-                        get: { model.showFiveHourInMenubar },
-                        set: { model.setShowFiveHourInMenubar($0) }
-                    ),
-                    accessibilityLabel: "Show Codex 5-hour window"
-                )
-                .accessibilityIdentifier("mac.settings.showFiveHour")
-            }
-
             SettingsListRow(title: "Weekly window") {
                 CodexSwitch(
                     isOn: Binding(
@@ -502,62 +449,24 @@ struct SettingsRootView: View {
                 )
             }
 
-            SettingsListRow(title: "Reset times", detail: "Choose countdown or clock time.", isLast: true) {
-                CodexSegmentedControl(selection: Binding(
-                    get: { model.resetDisplayStyle },
-                    set: { model.setResetDisplayStyle($0) }
-                ), segments: [
-                    ("In 2h", .relative),
-                    ("Clock", .absolute)
-                ])
-                .frame(width: 132, height: SettingsControlMetrics.controlHeight)
-            }
         }
     }
 
-    private var forecastSection: some View {
+    private var notificationsSection: some View {
         SettingsListGroup(
-            title: "Forecast",
-            footer: "Early estimate uses prior cycles. Stable uses current weekly pace. ML tuned starts after one month with enough data. Volatile appears when the projection swings."
+            title: "Quota notifications",
+            footer: "Optional local alerts for 5-hour pressure, reset, and weekly risk."
         ) {
-            SettingsListRow(title: "Pace confidence", detail: "Show Early, Stable, ML tuned, or Volatile labels.") {
-                CodexSwitch(
-                    isOn: Binding(get: { model.showPaceConfidence }, set: { model.setShowPaceConfidence($0) }),
-                    accessibilityLabel: "Show pace confidence"
-                )
-            }
-
             SettingsListRow(
                 title: "Quota notifications",
                 detail: model.quotaNotificationStatusMessage
-                    ?? "Opt-in alerts for 5H pressure, reset, and weekly risk."
+                    ?? "Opt-in alerts for 5-hour pressure, reset, and weekly risk.",
+                isLast: true
             ) {
                 CodexSwitch(isOn: Binding(
                     get: { model.quotaNotificationsEnabled },
                     set: { model.setQuotaNotificationsEnabled($0) }
                 ), accessibilityLabel: "Quota notifications")
-            }
-
-            SettingsListRow(title: "Hide idle limits", detail: "Collapse secondary limits when inactive.") {
-                CodexSwitch(
-                    isOn: Binding(
-                        get: { model.hideIdleSecondaryLimits },
-                        set: { model.setHideIdleSecondaryLimits($0) }
-                    ),
-                    accessibilityLabel: "Hide idle limits"
-                )
-            }
-
-            SettingsListRow(title: "History default", isLast: true) {
-                CodexSegmentedControl(selection: Binding(
-                    get: { model.defaultHistoryMode },
-                    set: { model.setDefaultHistoryMode($0) }
-                ), segments: [
-                    ("Peaks", .dailyPeaks),
-                    ("Cycle", .thisCycle),
-                    ("Month", .monthly)
-                ])
-                .frame(width: 190, height: SettingsControlMetrics.controlHeight)
             }
         }
     }
@@ -867,8 +776,6 @@ private enum SettingsRowIconName {
             return "folder"
         case "Appearance":
             return "circle.lefthalf.filled"
-        case "Spark":
-            return "sparkles"
         case "Usage history":
             return "chart.bar.xaxis"
         case "History chart":

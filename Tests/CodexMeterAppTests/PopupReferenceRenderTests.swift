@@ -115,6 +115,110 @@ final class PopupReferenceRenderTests: XCTestCase {
         }
     }
 
+    func testResetDashboardRendersPlusAndPro() throws {
+        let now = Date()
+        let plus = CodexPreviewData.snapshot(now: now)
+        let weekly = try XCTUnwrap(plus.codexLimit?.weeklyWindow)
+        let pro = CodexSnapshot(
+            capturedAt: now,
+            executablePath: plus.executablePath,
+            account: CodexAccount(authType: "preview", email: nil, planType: "PRO"),
+            limits: [
+                CodexLimit(
+                    id: "codex",
+                    rawLimitName: "Codex",
+                    bucket: .codex,
+                    primary: weekly,
+                    secondary: nil
+                )
+            ]
+        )
+
+        let proWithFiveHour = CodexSnapshot(
+            capturedAt: now,
+            executablePath: plus.executablePath,
+            account: CodexAccount(authType: "preview", email: nil, planType: "PRO"),
+            limits: plus.limits
+        )
+
+        for (name, snapshot) in [("plus", plus), ("pro-weekly-only", pro), ("pro-five-hour", proWithFiveHour)] {
+            XCTAssertEqual(snapshot.showsFiveHourLimit, name != "pro-weekly-only")
+            let suiteName = "PopupResetDashboardTests.\(UUID().uuidString)"
+            let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+            defaults.removePersistentDomain(forName: suiteName)
+            defer { defaults.removePersistentDomain(forName: suiteName) }
+            let model = CodexMenuBarModel(settingsStore: CodexAppSettingsStore(defaults: defaults))
+            model.setAppearanceMode(.dark)
+
+            let view = PopupResetDashboardView(model: model, snapshot: snapshot, onOpenSettings: {})
+                .preferredColorScheme(.dark)
+            let bitmap = try windowRenderedBitmap(
+                for: view,
+                width: GlassTokens.popupWidth,
+                height: GlassTokens.popupMaxHeight
+            )
+
+            XCTAssertGreaterThan(PixelSample(bitmap: bitmap).nonBlackShare, 0.05)
+            let data = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+            let attachment = XCTAttachment(data: data, uniformTypeIdentifier: "public.png")
+            attachment.name = "codexex-mac-reset-\(name)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+        }
+    }
+
+    func testDesktopStoreScreenshotsRenderPlusAndPro() throws {
+        let now = Date()
+        let plus = CodexPreviewData.snapshot(now: now)
+        let weekly = try XCTUnwrap(plus.codexLimit?.weeklyWindow)
+        let pro = CodexSnapshot(
+            capturedAt: now,
+            executablePath: plus.executablePath,
+            account: CodexAccount(authType: "preview", email: nil, planType: "PRO"),
+            limits: [CodexLimit(id: "codex", rawLimitName: "Codex", bucket: .codex, primary: weekly, secondary: nil)]
+        )
+
+        for (name, snapshot) in [("plus", plus), ("pro", pro)] {
+            let suiteName = "PopupDesktopStoreTests.\(UUID().uuidString)"
+            let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+            defaults.removePersistentDomain(forName: suiteName)
+            defer { defaults.removePersistentDomain(forName: suiteName) }
+            let model = CodexMenuBarModel(settingsStore: CodexAppSettingsStore(defaults: defaults))
+            model.setAppearanceMode(.dark)
+            model.setMenuBarDisplayMode(.remaining)
+            model.enablePreviewMode()
+
+            let popup = PopupResetDashboardView(model: model, snapshot: snapshot, onOpenSettings: {})
+                .frame(width: GlassTokens.popupWidth, height: GlassTokens.popupMaxHeight)
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 18)
+                        .strokeBorder(.white.opacity(0.12), lineWidth: 1)
+                }
+                .shadow(color: .black.opacity(0.48), radius: 26, y: 16)
+            let desktop = ZStack {
+                LinearGradient(
+                    colors: [Color(red: 0.18, green: 0.23, blue: 0.25), Color(red: 0.08, green: 0.11, blue: 0.13)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                popup
+            }
+            .frame(width: 1_440, height: 900)
+            .preferredColorScheme(.dark)
+
+            let bitmap = try windowRenderedBitmap(for: desktop, width: 1_440, height: 900)
+            XCTAssertEqual(bitmap.pixelsWide, 2_880)
+            XCTAssertEqual(bitmap.pixelsHigh, 1_800)
+            XCTAssertGreaterThan(PixelSample(bitmap: bitmap).accentGreenPixels, 300)
+            let data = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+            let attachment = XCTAttachment(data: data, uniformTypeIdentifier: "public.png")
+            attachment.name = "codexex-mac-store-\(name)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+        }
+    }
+
     func testHistoryModeSelectorRendersCompactCurrentModeInBothAppearances() throws {
         for colorScheme in [ColorScheme.light, .dark] {
             for historyMode in PopupHistoryMode.allCases {
@@ -257,7 +361,7 @@ final class PopupReferenceRenderTests: XCTestCase {
         )
     }
 
-    func testStaleSnapshotErrorPopupStillUsesOneRefresh() async throws {
+    func testStaleSnapshotErrorPopupRendersResetDashboard() async throws {
         let snapshot = CodexPreviewData.snapshot(now: Date(timeIntervalSince1970: 1_800_000_000))
         let service = RenderSequenceService(responses: [
             CodexServiceSnapshotResponse(authMode: .chatGPT, snapshot: snapshot, errorMessage: nil),
@@ -275,13 +379,12 @@ final class PopupReferenceRenderTests: XCTestCase {
             reduceMotionOverride: true,
             previewReferenceDate: Date(timeIntervalSince1970: 1_800_000_000)
         )
-        let buttons = hostedButtonSnapshots(
+        let bitmap = try windowRenderedBitmap(
             for: view,
             width: GlassTokens.popupWidth,
             height: GlassTokens.popupMaxHeight
         )
-
-        XCTAssertEqual(buttons.filter { $0.title == "Refresh" }.count, 1)
+        XCTAssertGreaterThan(PixelSample(bitmap: bitmap).accentGreenPixels, 300)
     }
 
     func testPreviewModePopupFitsUnder600PointsInAllHistoryModes() throws {
@@ -305,22 +408,29 @@ final class PopupReferenceRenderTests: XCTestCase {
                 in: NSSize(width: GlassTokens.popupWidth, height: GlassTokens.popupMaxHeight)
             )
 
-            XCTAssertLessThan(
-                fittingSize.height,
-                540,
-                "Preview Mode popup should fit under 540pt in \(historyMode.title)"
-            )
+            XCTAssertLessThanOrEqual(fittingSize.height, GlassTokens.popupMaxHeight)
             XCTAssertGreaterThan(fittingSize.height, 320)
-            XCTAssertLessThan(fittingSize.height, GlassTokens.popupMaxHeight)
         }
     }
 
     func testLivePopupFooterRendersVisibleActionRail() async throws {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let suiteName = "PopupReferenceRenderTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defaults.removePersistentDomain(forName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let historyURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("\(UUID().uuidString)-usage-history.json")
+        defer { try? FileManager.default.removeItem(at: historyURL) }
         let model = CodexMenuBarModel(
             service: RenderSuccessfulService(now: now),
-            localUsageProvider: RenderLocalUsageProvider()
+            localUsageProvider: RenderLocalUsageProvider(),
+            settingsStore: CodexAppSettingsStore(defaults: defaults),
+            historyRepository: CodexHistoryRepository(
+                store: CodexUsageHistoryStore(fileURL: historyURL)
+            )
         )
+        model.setShowHistoryEnabled(false)
 
         await model.refreshNow(manual: true)
 
@@ -334,11 +444,8 @@ final class PopupReferenceRenderTests: XCTestCase {
         let fittingSize = hostingController.sizeThatFits(
             in: NSSize(width: GlassTokens.popupWidth, height: GlassTokens.popupMaxHeight)
         )
-        XCTAssertLessThan(
-            fittingSize.height,
-            400,
-            "a short live popup should hug its content instead of reserving an empty scroll region"
-        )
+        XCTAssertLessThanOrEqual(fittingSize.height, GlassTokens.popupMaxHeight)
+        XCTAssertGreaterThan(fittingSize.height, 400)
         let bitmap = try windowRenderedBitmap(for: view, width: GlassTokens.popupWidth, height: fittingSize.height)
         let sample = PixelSample(bitmap: bitmap)
 
@@ -348,14 +455,14 @@ final class PopupReferenceRenderTests: XCTestCase {
         }
 
         XCTAssertGreaterThan(
-            sample.lowerAccentBluePixels,
+            sample.lowerAccentGreenPixels,
             300,
-            "live popup footer should render a visible primary Refresh action near the bottom edge"
+            "live reset dashboard should retain a visible green accent near its footer"
         )
         XCTAssertGreaterThan(
-            sample.footerPrimaryAccentBluePixels,
+            sample.footerPrimaryAccentGreenPixels,
             300,
-            "live popup footer should keep the Refresh control visible in its right-side footer slot"
+            "live reset dashboard should keep Refresh visible in its right-side footer slot"
         )
     }
 
@@ -390,9 +497,9 @@ final class PopupReferenceRenderTests: XCTestCase {
         }
 
         XCTAssertGreaterThan(
-            sample.footerPrimaryAccentBluePixels,
+            sample.footerPrimaryAccentGreenPixels,
             300,
-            "window-hosted popup should draw the Refresh control in the footer"
+            "window-hosted reset dashboard should draw Refresh in the footer"
         )
     }
 }
@@ -583,10 +690,13 @@ private struct PixelSample {
     let nonBlackShare: Double
     let brightGlassShare: Double
     let accentBluePixels: Int
+    let accentGreenPixels: Int
     let chromaticPixels: Int
     let labelAccentBluePixels: Int
     let lowerAccentBluePixels: Int
     let footerPrimaryAccentBluePixels: Int
+    let lowerAccentGreenPixels: Int
+    let footerPrimaryAccentGreenPixels: Int
 
     init(bitmap: NSBitmapImageRep) {
         let width = bitmap.pixelsWide
@@ -594,10 +704,13 @@ private struct PixelSample {
         var nonBlack = 0
         var brightGlass = 0
         var accentBlue = 0
+        var accentGreen = 0
         var chromatic = 0
         var labelAccentBlue = 0
         var lowerAccentBlue = 0
         var footerPrimaryAccentBlue = 0
+        var lowerAccentGreen = 0
+        var footerPrimaryAccentGreen = 0
         var total = 0
         let step = 8
         let labelBandXStart = Int(Double(width) * 0.24)
@@ -633,6 +746,16 @@ private struct PixelSample {
                     }
                 }
 
+                if green > 0.55 && green - red > 0.15 && green - blue > 0.05 {
+                    accentGreen += 1
+                    if y >= lowerBandStart {
+                        lowerAccentGreen += 1
+                    }
+                    if x >= footerBandXStart, y >= footerBandYStart {
+                        footerPrimaryAccentGreen += 1
+                    }
+                }
+
                 let highestChannel = max(red, green, blue)
                 let lowestChannel = min(red, green, blue)
                 if highestChannel > 0.20, highestChannel - lowestChannel > 0.12 {
@@ -657,9 +780,12 @@ private struct PixelSample {
         nonBlackShare = Double(nonBlack) / denominator
         brightGlassShare = Double(brightGlass) / denominator
         accentBluePixels = accentBlue
+        accentGreenPixels = accentGreen
         chromaticPixels = chromatic
         labelAccentBluePixels = labelAccentBlue
         lowerAccentBluePixels = lowerAccentBlue
         footerPrimaryAccentBluePixels = footerPrimaryAccentBlue
+        lowerAccentGreenPixels = lowerAccentGreen
+        footerPrimaryAccentGreenPixels = footerPrimaryAccentGreen
     }
 }

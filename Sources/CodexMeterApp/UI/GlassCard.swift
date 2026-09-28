@@ -20,8 +20,6 @@ enum CodexTheme {
     static let dim = color(light: ns(0x101727).withAlphaComponent(0.44), dark: ns(0xFFFFFF).withAlphaComponent(0.42))
     static let accent = Color(red: 0.10, green: 0.15, blue: 1.00)
     static let accent2 = Color(red: 0.13, green: 0.84, blue: 0.91)
-    static let spark = Color(red: 0.42, green: 0.85, blue: 1.00)
-    static let spark2 = Color(red: 0.13, green: 0.84, blue: 0.91)
     static let amber = Color(red: 1.00, green: 0.65, blue: 0.08)
     static let danger = Color(red: 1.00, green: 0.27, blue: 0.32)
     static let success = Color(red: 0.35, green: 0.82, blue: 0.44)

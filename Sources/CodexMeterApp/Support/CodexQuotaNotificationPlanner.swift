@@ -98,15 +98,16 @@ enum CodexQuotaNotificationPlanner {
             return CodexQuotaNotificationPlan(notifications: [])
         }
 
+        let fiveHourAvailable = snapshot.showsFiveHourLimit
         let candidates = [
             resetSoonNotification(
                 limit: codexLimit,
-                enabled: preferences.resetReminderEnabled,
+                enabled: fiveHourAvailable && preferences.resetReminderEnabled,
                 now: now
             ),
             pressureNotification(
                 limit: codexLimit,
-                enabled: preferences.fiveHourPressureEnabled,
+                enabled: fiveHourAvailable && preferences.fiveHourPressureEnabled,
                 now: now
             ),
             weeklyForecastNotification(

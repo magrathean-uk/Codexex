@@ -22,27 +22,15 @@ public enum CodexRateLimitPayloadMapper {
         executablePath: String,
         account: CodexAccount
     ) -> CodexSnapshot {
-        var limits: [CodexRawQuotaLimit] = [
+        let limits: [CodexRawQuotaLimit] = [
             makeLimit(
                 id: "codex",
                 name: nil,
                 details: payload.rateLimit,
                 credits: payload.credits,
-                planType: payload.planType,
                 capturedAt: capturedAt
             )
         ]
-
-        limits.append(contentsOf: payload.additionalRateLimits.map { additional in
-            makeLimit(
-                id: additional.meteredFeature ?? additional.limitName ?? UUID().uuidString,
-                name: additional.limitName,
-                details: additional.rateLimit,
-                credits: nil,
-                planType: payload.planType,
-                capturedAt: capturedAt
-            )
-        })
 
         return CodexQuotaSnapshotBuilder.snapshot(
             capturedAt: capturedAt,
@@ -61,7 +49,6 @@ public enum CodexRateLimitPayloadMapper {
         name: String?,
         details: RateLimitDetails?,
         credits: CreditsPayload?,
-        planType: String?,
         capturedAt: Date
     ) -> CodexRawQuotaLimit {
         CodexRawQuotaLimit(
@@ -102,13 +89,11 @@ public enum CodexRateLimitPayloadMapper {
 private struct WhamUsagePayload: Decodable {
     let planType: String?
     let rateLimit: RateLimitDetails?
-    let additionalRateLimits: [AdditionalRateLimitPayload]
     let credits: CreditsPayload?
 
     enum CodingKeys: String, CodingKey {
         case planType = "plan_type"
         case rateLimit = "rate_limit"
-        case additionalRateLimits = "additional_rate_limits"
         case credits
     }
 
@@ -116,27 +101,7 @@ private struct WhamUsagePayload: Decodable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         planType = try container.decodeIfPresent(String.self, forKey: .planType)
         rateLimit = try container.decodeFlexibleOptional(RateLimitDetails.self, forKey: .rateLimit)
-        additionalRateLimits = try container.decodeFlexibleArray(AdditionalRateLimitPayload.self, forKey: .additionalRateLimits)
         credits = try container.decodeFlexibleOptional(CreditsPayload.self, forKey: .credits)
-    }
-}
-
-private struct AdditionalRateLimitPayload: Decodable {
-    let limitName: String?
-    let meteredFeature: String?
-    let rateLimit: RateLimitDetails?
-
-    enum CodingKeys: String, CodingKey {
-        case limitName = "limit_name"
-        case meteredFeature = "metered_feature"
-        case rateLimit = "rate_limit"
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        limitName = try container.decodeIfPresent(String.self, forKey: .limitName)
-        meteredFeature = try container.decodeIfPresent(String.self, forKey: .meteredFeature)
-        rateLimit = try container.decodeFlexibleOptional(RateLimitDetails.self, forKey: .rateLimit)
     }
 }
 
@@ -204,14 +169,6 @@ private extension KeyedDecodingContainer {
             return nil
         }
         return try decodeIfPresent(T.self, forKey: key)
-    }
-
-    func decodeFlexibleArray<T: Decodable>(_ type: T.Type, forKey key: Key) throws -> [T] {
-        guard contains(key) else { return [] }
-        if try decodeNil(forKey: key) {
-            return []
-        }
-        return (try? decode([T].self, forKey: key)) ?? []
     }
 
     func decodeLossyDouble(forKey key: Key) throws -> Double? {

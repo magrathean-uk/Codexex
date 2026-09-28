@@ -16,17 +16,16 @@ final class CodexSnapshotParityTests: XCTestCase {
         let rateLimits = """
         {
           "rateLimitsByLimitId": {
+            "other-limit": {
+              "limitId": "other-limit",
+              "limitName": "Other",
+              "primary": { "usedPercent": 3, "windowDurationMins": 60, "resetsAt": 1800000000 }
+            },
             "codex-5h": {
               "limitId": "codex-5h",
               "limitName": "Codex",
               "primary": { "usedPercent": 44, "windowDurationMins": 300, "resetsAt": 1800000000 },
               "secondary": { "usedPercent": 12, "windowDurationMins": 10080, "resetsAt": 1800050000 }
-            },
-            "spark-week": {
-              "limitId": "spark-week",
-              "limitName": "Spark",
-              "primary": { "usedPercent": 71, "windowDurationMins": 10080, "resetsAt": 1800100000 },
-              "secondary": { "usedPercent": 9, "windowDurationMins": 300, "resetsAt": 1800150000 }
             }
           }
         }
@@ -40,9 +39,9 @@ final class CodexSnapshotParityTests: XCTestCase {
         )
 
         XCTAssertEqual(snapshot.account.email, "user@example.com")
-        XCTAssertEqual(snapshot.limits.count, 2)
-        XCTAssertEqual(snapshot.limits.map(\.id), ["codex-5h", "spark-week"])
-        XCTAssertEqual(snapshot.limits.map(\.bucket), [.codex, .spark])
+        XCTAssertEqual(snapshot.limits.count, 1)
+        XCTAssertEqual(snapshot.limits.map(\.id), ["codex-5h"])
+        XCTAssertEqual(snapshot.limits.map(\.bucket), [.codex])
 
         let codexLimit = try XCTUnwrap(snapshot.limits.first)
         XCTAssertEqual(codexLimit.id, "codex-5h")
@@ -64,25 +63,6 @@ final class CodexSnapshotParityTests: XCTestCase {
             )
         )
 
-        let sparkLimit = try XCTUnwrap(snapshot.limits.last)
-        XCTAssertEqual(sparkLimit.id, "spark-week")
-        XCTAssertEqual(sparkLimit.bucket, .spark)
-        XCTAssertEqual(
-            sparkLimit.primary,
-            CodexQuotaWindow(
-                usedPercent: 71,
-                windowDurationMinutes: 10_080,
-                resetsAt: Date(timeIntervalSince1970: 1_800_100_000)
-            )
-        )
-        XCTAssertEqual(
-            sparkLimit.secondary,
-            CodexQuotaWindow(
-                usedPercent: 9,
-                windowDurationMinutes: 300,
-                resetsAt: Date(timeIntervalSince1970: 1_800_150_000)
-            )
-        )
     }
 
     func testSnapshotReducerThrowsForUnauthenticatedAccount() {

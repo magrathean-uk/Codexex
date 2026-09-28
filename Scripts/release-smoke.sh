@@ -19,6 +19,14 @@ require_text() {
   grep -Fq "$needle" "$file" || fail "expected '$needle' in $file"
 }
 
+reject_text() {
+  local needle="$1"
+  local file="$2"
+  if grep -Fq "$needle" "$file"; then
+    fail "unexpected '$needle' in $file"
+  fi
+}
+
 require_count() {
   local needle="$1"
   local expected="$2"
@@ -46,12 +54,20 @@ require_file Helper/CodexexHelper/src/release_environment_gating.rs
 require_file Helper/CodexexHelper/src/secure_file_permissions.rs
 require_file Helper/CodexexHelper/src/state.rs
 require_file Sources/CodexexXPCService/Info.plist
+require_file Sources/CodexMeteriOS/Info.plist
+require_file Sources/CodexMeterApp/PrivacyInfo.xcprivacy
+require_file Sources/CodexMeteriOS/PrivacyInfo.xcprivacy
 require_file Sources/CodexMeterApp/Assets.xcassets/OpenAILogo.imageset/openai-logo.svg
 require_file PRIVACY.md
 
 [[ -d fastlane/metadata ]] || fail "missing fastlane/metadata"
 
 require_text "INFOPLIST_KEY_LSUIElement: YES" project.yml
+require_text "<key>CFBundleDevelopmentRegion</key>" Sources/CodexMeteriOS/Info.plist
+require_text "35F9.1" Sources/CodexMeterApp/PrivacyInfo.xcprivacy
+require_text "35F9.1" Sources/CodexMeteriOS/PrivacyInfo.xcprivacy
+reject_text "35F4.1" Sources/CodexMeterApp/PrivacyInfo.xcprivacy
+reject_text "35F4.1" Sources/CodexMeteriOS/PrivacyInfo.xcprivacy
 require_text "CodexexXPCService" project.yml
 require_count "Build Codexex Helper" 2 project.yml
 require_count "Embed Codexex Helper" 2 project.yml
@@ -83,11 +99,18 @@ require_text "com.apple.security.inherit" AppStore/CodexexHelper.entitlements
 require_text "ChatGPT/OpenAI sign-in" PRIVACY.md
 require_text "Paid packaging" docs/development/runbook.md
 require_text "paid-upfront App Store pricing" docs/development/runbook.md
-require_text "MARKETING_VERSION: 6.0.0" project.yml
-require_text "CURRENT_PROJECT_VERSION: 19" project.yml
+require_text "MARKETING_VERSION: 6.1.1" project.yml
+require_text "CURRENT_PROJECT_VERSION: 26" project.yml
 require_text "OpenAILogo" Sources/CodexMeterApp/UI/StatusBarLabel.swift
-require_text "Codexex 6.0.0" fastlane/metadata/up-6762058457/IOS/en-US/whats_new.txt
-require_text "Codexex 6.0.0" fastlane/metadata/up-6762058457/MACOS/en-US/whats_new.txt
+require_text "Codexex 6.1.1" fastlane/metadata/up-6762058457/IOS/en-US/whats_new.txt
+require_text "Codexex 6.1.1" fastlane/metadata/up-6762058457/MACOS/en-US/whats_new.txt
+
+# Keep the removed quota product out of source, tests, and documentation. Store
+# release notes intentionally mention the removal for App Store review context.
+legacy_bucket_term='s''park'
+if git grep -n -i -F -- "$legacy_bucket_term" -- . ':(exclude)fastlane/metadata'; then
+  fail "removed quota bucket is still referenced"
+fi
 
 bash Scripts/check-codexex-companions.sh
 bash -n Scripts/build-codexex-helper.sh

@@ -5,7 +5,7 @@ struct CodexiOSShellView: View {
     @AppStorage(CodexiOSSettingsKeys.autoCheckSignInOnReturn) private var autoCheckSignInOnReturn = true
     @AppStorage(CodexiOSSettingsKeys.refreshWhenActive) private var refreshWhenActive = true
     @AppStorage(CodexiOSSettingsKeys.refreshIntervalSeconds) private var refreshIntervalSeconds = 300
-    @AppStorage(CodexiOSSettingsKeys.appearanceMode) private var appearanceMode = CodexiOSAppearanceMode.system.rawValue
+    @AppStorage(CodexiOSSettingsKeys.appearanceMode) private var appearanceMode = CodexiOSAppearanceMode.dark.rawValue
     @AppStorage(CodexiOSSettingsKeys.hasCompletedOnboarding) private var storedHasCompletedOnboarding = false
     @Bindable var model: CodexiOSModel
 
@@ -44,6 +44,10 @@ struct CodexiOSShellView: View {
                     refreshWhenActive: refreshWhenActive
                 )
             }
+        }
+        .onOpenURL { url in
+            guard url.scheme == "codexex", url.host == "refresh" else { return }
+            Task { await model.refresh() }
         }
         .preferredColorScheme(CodexiOSAppearanceMode(rawValue: appearanceMode)?.colorScheme)
     }

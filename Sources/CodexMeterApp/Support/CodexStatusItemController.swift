@@ -153,7 +153,11 @@ final class CodexStatusItemController: NSObject {
         hostingController?.view.appearance = appearance
 
         let resolvedAppearance = appearance ?? window.effectiveAppearance
-        let resolvedBackground = CodexTheme.windowNSColor(for: resolvedAppearance)
+        let resolvedBackground = if model.snapshot != nil || model.previewModeEnabled {
+            PopupResetDashboardView.backgroundNSColor(for: resolvedAppearance)
+        } else {
+            CodexTheme.windowNSColor(for: resolvedAppearance)
+        }
         window.isOpaque = true
         window.backgroundColor = resolvedBackground
 
@@ -291,7 +295,6 @@ final class CodexStatusItemController: NSObject {
         _ = model.authStatusMessage
         _ = model.lastUpdatedAt
         _ = model.previewModeEnabled
-        _ = model.showSparkEnabled
         _ = model.showHistoryEnabled
         _ = model.showHistoryChartEnabled
         _ = model.defaultHistoryMode

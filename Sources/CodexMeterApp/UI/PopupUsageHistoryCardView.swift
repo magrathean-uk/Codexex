@@ -481,7 +481,7 @@ private struct MiniUsageHistoryGraph: View {
                 with: .linearGradient(
                     Gradient(colors: [
                         limitAccentColor(for: .codex).opacity(0.72),
-                        CodexTheme.spark.opacity(0.48)
+                        CodexTheme.accent2.opacity(0.48)
                     ]),
                     startPoint: CGPoint(x: rect.midX, y: rect.minY),
                     endPoint: CGPoint(x: rect.midX, y: rect.maxY)

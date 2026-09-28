@@ -2,31 +2,27 @@ import Foundation
 import CodexMeterCore
 
 enum CodexiOSPreviewData {
-    static func snapshot(now: Date = Date()) -> CodexSnapshot {
+    static func snapshot(now: Date = Date(), planType: String = "PLUS") -> CodexSnapshot {
         let fiveHourReset = Calendar.current.date(byAdding: .minute, value: 118, to: now)
         let weeklyReset = Calendar.current.date(byAdding: .day, value: 3, to: now)
-        let sparkFiveHourReset = Calendar.current.date(byAdding: .minute, value: 240, to: now)
-        let sparkWeeklyReset = Calendar.current.date(byAdding: .day, value: 2, to: now)
+        let isPro = CodexAccountTier(planType: planType) == .pro
 
         return CodexSnapshot(
             capturedAt: now,
             executablePath: "Codexex iOS Preview",
-            account: CodexAccount(authType: "preview", email: "sample@codexex.local", planType: "PRO"),
+            account: CodexAccount(authType: "preview", email: "sample@codexex.local", planType: planType),
             limits: [
                 CodexLimit(
                     id: "codex",
                     rawLimitName: "Codex",
                     bucket: .codex,
-                    primary: CodexQuotaWindow(usedPercent: 24, windowDurationMinutes: 300, resetsAt: fiveHourReset),
-                    secondary: CodexQuotaWindow(usedPercent: 68, windowDurationMinutes: 10_080, resetsAt: weeklyReset),
+                    primary: isPro
+                        ? CodexQuotaWindow(usedPercent: 40, windowDurationMinutes: 10_080, resetsAt: weeklyReset)
+                        : CodexQuotaWindow(usedPercent: 24, windowDurationMinutes: 300, resetsAt: fiveHourReset),
+                    secondary: isPro
+                        ? nil
+                        : CodexQuotaWindow(usedPercent: 68, windowDurationMinutes: 10_080, resetsAt: weeklyReset),
                     credits: CodexCredits(hasCredits: true, unlimited: false, balance: "12.50")
-                ),
-                CodexLimit(
-                    id: "spark",
-                    rawLimitName: "Spark",
-                    bucket: .spark,
-                    primary: CodexQuotaWindow(usedPercent: 8, windowDurationMinutes: 300, resetsAt: sparkFiveHourReset),
-                    secondary: CodexQuotaWindow(usedPercent: 38, windowDurationMinutes: 10_080, resetsAt: sparkWeeklyReset)
                 )
             ]
         )
@@ -53,8 +49,7 @@ enum CodexiOSPreviewData {
                     windowDurationMinutes: 10_080,
                     resetsAt: Calendar.current.date(byAdding: .day, value: 4, to: date)
                 ),
-                codexCreditsBalance: String(format: "%.2f", max(0, 22.0 - (Double(day) * 0.32))),
-                sparkCreditsBalance: nil
+                codexCreditsBalance: String(format: "%.2f", max(0, 22.0 - (Double(day) * 0.32)))
             )
         }
     }

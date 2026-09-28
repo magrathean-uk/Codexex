@@ -39,6 +39,7 @@ final class CodexiOSModel {
     let historyStore: CodexUsageHistoryStore
     let liveActivityManager: any CodexiOSLiveActivityManaging
     private let backgroundRefreshScheduler: any CodexiOSBackgroundRefreshScheduling
+    private let pushRegistrationManager: any CodexiOSPushRegistering
 
     var hasCompletedOnboarding: Bool
     var previewModeEnabled: Bool
@@ -76,6 +77,7 @@ final class CodexiOSModel {
         liveActivityManager: (any CodexiOSLiveActivityManaging)? = nil,
         liveActivityCoordinator: any CodexiOSLiveActivityManaging = codexiOSSharedLiveActivityManager,
         backgroundRefreshScheduler: any CodexiOSBackgroundRefreshScheduling = CodexiOSSystemBackgroundRefreshScheduler(),
+        pushRegistrationManager: any CodexiOSPushRegistering = codexiOSSharedPushRegistrationManager,
         openURLAction: @escaping CodexiOSOpenURLAction = { url in
             await UIApplication.shared.open(url)
         },
@@ -100,6 +102,7 @@ final class CodexiOSModel {
             liveActivityCoordinator
         }
         self.backgroundRefreshScheduler = backgroundRefreshScheduler
+        self.pushRegistrationManager = pushRegistrationManager
         let storedPreviewModeEnabled = defaults.bool(forKey: CodexiOSSettingsKeys.previewModeEnabled)
         hasCompletedOnboarding = defaults.bool(forKey: CodexiOSSettingsKeys.hasCompletedOnboarding)
         previewModeEnabled = storedPreviewModeEnabled
@@ -210,10 +213,14 @@ final class CodexiOSModel {
 
         do {
             let outcome = try await service.fetchSnapshot()
-            guard generation == accountOperationGeneration, previewModeEnabled == false else { return }
+            guard Task.isCancelled == false,
+                  generation == accountOperationGeneration,
+                  previewModeEnabled == false else { return }
             await applySnapshotOutcome(outcome)
         } catch {
-            guard generation == accountOperationGeneration, previewModeEnabled == false else { return }
+            guard Task.isCancelled == false,
+                  generation == accountOperationGeneration,
+                  previewModeEnabled == false else { return }
             if liveAccountState == .checking {
                 liveAccountState = .unavailable
                 retriesTransientAccountFailure = true
@@ -488,7 +495,12 @@ final class CodexiOSModel {
     }
 
     private func applyPreviewSnapshot() {
-        let preview = CodexiOSPreviewData.snapshot()
+        #if DEBUG
+        let previewPlanType = ProcessInfo.processInfo.environment["CODEXEX_PREVIEW_PLAN"] ?? "PLUS"
+        #else
+        let previewPlanType = "PLUS"
+        #endif
+        let preview = CodexiOSPreviewData.snapshot(planType: previewPlanType)
         snapshot = preview
         lastUpdatedAt = preview.capturedAt
         usageHistory = CodexiOSPreviewData.history(now: preview.capturedAt)
@@ -571,9 +583,12 @@ final class CodexiOSModel {
             isLiveActivityStale = false
             errorMessage = nil
             statusMessage = state.isRunning
-                ? "Live Activity started. It refreshes on-device when iOS allows it."
+                ? "Live Activity started. It refreshes on your device when iOS allows."
                 : "Live Activities are unavailable on this device."
             scheduleBackgroundLiveActivityRefreshIfNeeded()
+            if state.isRunning, previewModeEnabled == false {
+                await pushRegistrationManager.enable()
+            }
         } catch { applyError(message(for: error)) }
     }
 
@@ -589,6 +604,7 @@ final class CodexiOSModel {
             statusMessage = "Live Activity stopped."
         }
         backgroundRefreshScheduler.cancel()
+        await pushRegistrationManager.disable()
     }
 
     func updateLiveActivityPresentation(showFiveHour: Bool) async {
@@ -631,6 +647,7 @@ final class CodexiOSModel {
 
     func refreshLiveActivityInBackground() async -> Bool {
         await recoverLiveActivity()
+        guard Task.isCancelled == false else { return false }
         guard isLiveActivityRunning, previewModeEnabled == false else {
             backgroundRefreshScheduler.cancel()
             return true
@@ -644,7 +661,8 @@ final class CodexiOSModel {
             }
         }
         await refresh()
-        return Task.isCancelled == false && errorMessage == nil && isLiveActivityStale == false
+        return Task.isCancelled == false && errorMessage == nil
+            && isLiveActivityRunning && snapshot != nil && isLiveActivityStale == false
     }
 
     func isSummarySnoozed(_ summary: PopupSummaryPresentation) -> Bool {
@@ -682,6 +700,11 @@ final class CodexiOSModel {
         let state = await liveActivityManager.recover()
         guard generation == liveActivityGeneration else { return }
         applyLiveActivityState(state)
+        if state.isRunning, previewModeEnabled == false {
+            await pushRegistrationManager.enable()
+        } else {
+            await pushRegistrationManager.disable()
+        }
     }
 
     private func startupIsCurrent(
@@ -740,7 +763,7 @@ final class CodexiOSModel {
     }
 
     private var showFiveHourInPresentation: Bool {
-        defaults.object(forKey: CodexiOSSettingsKeys.showFiveHourPresentation) as? Bool ?? false
+        snapshot?.showsFiveHourLimit ?? false
     }
 
     private var showUsedQuotaInPresentation: Bool {

@@ -3,34 +3,13 @@ import XCTest
 @testable import CodexMeterCore
 
 final class CodexQuotaPresentationRulesTests: XCTestCase {
-    func testOrdersPrimaryOtherThenSpark() {
+    func testOrdersPrimaryBeforeOther() {
         let ordered = CodexQuotaPresentationRules.orderedLimits([
-            makeLimit(id: "spark", bucket: .spark),
             makeLimit(id: "research", bucket: .other),
             makeLimit(id: "codex", bucket: .codex)
         ])
 
-        XCTAssertEqual(ordered.map(\.bucket), [.codex, .other, .spark])
-    }
-
-    func testIdleSparkCanBeHiddenAcrossPlatforms() {
-        let idleSpark = makeLimit(id: "spark", bucket: .spark, fiveHour: 0.1, weekly: 0.2)
-        let activeSpark = makeLimit(id: "spark", bucket: .spark, fiveHour: 0.6, weekly: 0.2)
-
-        XCTAssertFalse(
-            CodexQuotaPresentationRules.shouldShow(
-                idleSpark,
-                showSpark: true,
-                hideIdleSecondaryLimits: true
-            )
-        )
-        XCTAssertTrue(
-            CodexQuotaPresentationRules.shouldShow(
-                activeSpark,
-                showSpark: true,
-                hideIdleSecondaryLimits: true
-            )
-        )
+        XCTAssertEqual(ordered.map(\.bucket), [.codex, .other])
     }
 
     func testCreditsVisibilityIsShared() {

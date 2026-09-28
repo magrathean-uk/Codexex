@@ -50,7 +50,7 @@ struct LimitCardView: View {
     private var visibleWindows: [(title: String, window: CodexQuotaWindow)] {
         PopupPresentation.visibleWindowRows(
             for: limit,
-            includeInactive: limit.bucket == .spark,
+            includeInactive: false,
             showFiveHour: PopupPresentation.shouldShowFiveHour(
                 for: limit,
                 userEnabled: showFiveHour
@@ -137,27 +137,6 @@ struct LimitCardView: View {
     }
 }
 
-struct CompactLimitCardView: View {
-    let presentation: PopupLimitPresentation
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Text(presentation.compactDisplayName)
-                .font(.system(size: GlassTokens.popupMetaFontSize, weight: .semibold))
-                .foregroundStyle(CodexTheme.muted)
-                .lineLimit(1)
-                .minimumScaleFactor(0.82)
-
-            Spacer()
-
-            Text("Idle")
-                .font(.system(size: GlassTokens.popupMetaFontSize, weight: .medium))
-                .foregroundStyle(CodexTheme.dim)
-        }
-        .frame(minHeight: 18)
-    }
-}
-
 struct UsageBar: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var displayedProgress = 0.0
@@ -234,8 +213,6 @@ struct UsageBar: View {
 
 func limitAccentColor(for bucket: CodexLimitBucket) -> Color {
     switch bucket {
-    case .spark:
-        return CodexTheme.spark2
     case .codex, .other:
         return CodexTheme.accent
     }
@@ -243,11 +220,6 @@ func limitAccentColor(for bucket: CodexLimitBucket) -> Color {
 
 func limitGradient(for bucket: CodexLimitBucket) -> [Color] {
     switch bucket {
-    case .spark:
-        return [
-            CodexTheme.spark,
-            CodexTheme.spark2
-        ]
     case .codex, .other:
         return [
             CodexTheme.accent,
@@ -258,8 +230,6 @@ func limitGradient(for bucket: CodexLimitBucket) -> [Color] {
 
 func limitTrackColor(for bucket: CodexLimitBucket) -> Color {
     switch bucket {
-    case .spark:
-        return CodexTheme.control.opacity(0.86)
     case .codex, .other:
         return CodexTheme.control.opacity(0.86)
     }

@@ -197,7 +197,7 @@ struct CodexiOSOnboardingView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Quota, readable")
                         .font(.title2.weight(.bold))
-                    Text("Codex and Spark cards, reset times, and preview data in the same layout as the real app.")
+                    Text("Quota cards, reset times, and preview data in the same layout as the real app.")
                         .font(.body)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)

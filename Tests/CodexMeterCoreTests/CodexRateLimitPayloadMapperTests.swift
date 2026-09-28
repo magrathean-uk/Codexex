@@ -10,8 +10,8 @@ final class CodexRateLimitPayloadMapperTests: XCTestCase {
             account: CodexAccount(authType: "chatGPT", email: "user@example.com", planType: "PRO"),
             rawLimits: [
                 CodexRawQuotaLimit(
-                    id: "spark-week",
-                    rawLimitName: "Codex Spark",
+                    id: "other-week",
+                    rawLimitName: "Secondary",
                     primary: CodexRawQuotaWindow(
                         usedPercent: 66,
                         windowDurationMinutes: 10_080,
@@ -41,9 +41,9 @@ final class CodexRateLimitPayloadMapperTests: XCTestCase {
             ]
         )
 
-        XCTAssertEqual(snapshot.limits.map(\.id), ["codex-5h", "spark-week"])
+        XCTAssertEqual(snapshot.limits.map(\.id), ["codex-5h", "other-week"])
         XCTAssertEqual(snapshot.codexLimit?.credits?.balance, "8.40")
-        XCTAssertEqual(snapshot.sparkLimit?.weeklyWindow?.usedPercentText, "66%")
+        XCTAssertEqual(snapshot.limits.last?.weeklyWindow?.usedPercentText, "66%")
     }
 
     func testMapsWhamUsagePayloadIntoSnapshot() throws {
@@ -63,19 +63,6 @@ final class CodexRateLimitPayloadMapperTests: XCTestCase {
                   "reset_at": 1777508400
                 }
               },
-              "additional_rate_limits": [
-                {
-                  "limit_name": "Codex Spark",
-                  "metered_feature": "codex_spark",
-                  "rate_limit": {
-                    "primary_window": {
-                      "used_percent": 35,
-                      "limit_window_seconds": 604800,
-                      "reset_after_seconds": 3600
-                    }
-                  }
-                }
-              ],
               "credits": {
                 "has_credits": true,
                 "unlimited": false,
@@ -96,7 +83,6 @@ final class CodexRateLimitPayloadMapperTests: XCTestCase {
         XCTAssertEqual(snapshot.codexLimit?.fiveHourWindow?.usedPercentText, "13%")
         XCTAssertEqual(snapshot.codexLimit?.weeklyWindow?.usedPercentText, "70%")
         XCTAssertEqual(snapshot.codexLimit?.credits?.balance, "12.50")
-        XCTAssertEqual(snapshot.sparkLimit?.displayName, "Codex Spark")
-        XCTAssertEqual(snapshot.sparkLimit?.fiveHourWindow?.usedPercentText, "35%")
+        XCTAssertEqual(snapshot.limits.count, 1)
     }
 }

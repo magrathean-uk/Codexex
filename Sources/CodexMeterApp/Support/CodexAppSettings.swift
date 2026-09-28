@@ -102,8 +102,6 @@ enum CodexAppSettings {
         static let showHistoryEnabled = "codexex.showHistoryEnabled"
         static let showHistoryChartEnabled = "codexex.showHistoryChartEnabled"
         static let showInsightsEnabled = "codexex.showInsightsEnabled"
-        static let showSparkEnabled = "codexex.showSparkEnabled"
-        static let showFiveHourInMenubar = "codexex.showFiveHourInMenubar"
         static let showWeeklyInMenubar = "codexex.showWeeklyInMenubar"
         static let menuBarDisplayMode = "codexex.menuBarDisplayMode"
         static let resetDisplayStyle = "codexex.resetDisplayStyle"
@@ -127,8 +125,6 @@ enum CodexAppSettings {
             showHistoryEnabled,
             showHistoryChartEnabled,
             showInsightsEnabled,
-            showSparkEnabled,
-            showFiveHourInMenubar,
             showWeeklyInMenubar,
             menuBarDisplayMode,
             resetDisplayStyle,
@@ -240,30 +236,6 @@ enum CodexAppSettings {
         }
         set {
             UserDefaults.standard.set(newValue, forKey: Key.showHistoryChartEnabled)
-        }
-    }
-
-    static var showSparkEnabled: Bool {
-        get {
-            if UserDefaults.standard.object(forKey: Key.showSparkEnabled) == nil {
-                return true
-            }
-            return UserDefaults.standard.bool(forKey: Key.showSparkEnabled)
-        }
-        set {
-            UserDefaults.standard.set(newValue, forKey: Key.showSparkEnabled)
-        }
-    }
-
-    static var showFiveHourInMenubar: Bool {
-        get {
-            if UserDefaults.standard.object(forKey: Key.showFiveHourInMenubar) == nil {
-                return false
-            }
-            return UserDefaults.standard.bool(forKey: Key.showFiveHourInMenubar)
-        }
-        set {
-            UserDefaults.standard.set(newValue, forKey: Key.showFiveHourInMenubar)
         }
     }
 
@@ -490,8 +462,6 @@ struct CodexAppSettingsSnapshot: Equatable {
     let showHistoryEnabled: Bool
     let showHistoryChartEnabled: Bool
     let showInsightsEnabled: Bool
-    let showSparkEnabled: Bool
-    let showFiveHourInMenubar: Bool
     let showWeeklyInMenubar: Bool
     let menuBarDisplayMode: CodexMenuBarDisplayMode
     let resetDisplayStyle: CodexResetDisplayStyle
@@ -524,8 +494,6 @@ struct CodexAppSettingsStore {
             showHistoryEnabled: showHistoryEnabled,
             showHistoryChartEnabled: showHistoryChartEnabled,
             showInsightsEnabled: showInsightsEnabled,
-            showSparkEnabled: showSparkEnabled,
-            showFiveHourInMenubar: showFiveHourInMenubar,
             showWeeklyInMenubar: showWeeklyInMenubar,
             menuBarDisplayMode: menuBarDisplayMode,
             resetDisplayStyle: resetDisplayStyle,
@@ -572,14 +540,6 @@ struct CodexAppSettingsStore {
 
     var showInsightsEnabled: Bool {
         bool(forKey: CodexAppSettings.Key.showInsightsEnabled, defaultValue: true)
-    }
-
-    var showSparkEnabled: Bool {
-        bool(forKey: CodexAppSettings.Key.showSparkEnabled, defaultValue: true)
-    }
-
-    var showFiveHourInMenubar: Bool {
-        bool(forKey: CodexAppSettings.Key.showFiveHourInMenubar, defaultValue: false)
     }
 
     var showWeeklyInMenubar: Bool {
@@ -678,14 +638,6 @@ struct CodexAppSettingsStore {
 
     func setShowInsightsEnabled(_ value: Bool) {
         defaults.set(value, forKey: CodexAppSettings.Key.showInsightsEnabled)
-    }
-
-    func setShowSparkEnabled(_ value: Bool) {
-        defaults.set(value, forKey: CodexAppSettings.Key.showSparkEnabled)
-    }
-
-    func setShowFiveHourInMenubar(_ value: Bool) {
-        defaults.set(value, forKey: CodexAppSettings.Key.showFiveHourInMenubar)
     }
 
     func setShowWeeklyInMenubar(_ value: Bool) {

@@ -1,1 +1,1 @@
-codex,quota,usage,chatgpt,oauth,history,forecast,preview,ipad,iphone
+quota,chatgpt,oauth,reset,weekly,preview,ipad,iphone

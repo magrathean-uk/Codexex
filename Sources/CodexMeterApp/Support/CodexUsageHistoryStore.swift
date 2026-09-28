@@ -30,22 +30,19 @@ struct CodexUsageHistorySample: Codable, Identifiable, Sendable, Equatable {
     let fiveHour: CodexUsageHistoryWindow?
     let weekly: CodexUsageHistoryWindow?
     let codexCreditsBalance: String?
-    let sparkCreditsBalance: String?
 
     init(
         id: UUID = UUID(),
         capturedAt: Date,
         fiveHour: CodexUsageHistoryWindow?,
         weekly: CodexUsageHistoryWindow?,
-        codexCreditsBalance: String? = nil,
-        sparkCreditsBalance: String? = nil
+        codexCreditsBalance: String? = nil
     ) {
         self.id = id
         self.capturedAt = capturedAt
         self.fiveHour = fiveHour
         self.weekly = weekly
         self.codexCreditsBalance = codexCreditsBalance
-        self.sparkCreditsBalance = sparkCreditsBalance
     }
 }
 
@@ -120,15 +117,13 @@ actor CodexUsageHistoryStore {
         let fiveHour = snapshot.codexLimit?.fiveHourWindow.map(CodexUsageHistoryWindow.init(from:))
         let weekly = snapshot.codexLimit?.weeklyWindow.map(CodexUsageHistoryWindow.init(from:))
         let codexCreditsBalance = snapshot.codexLimit?.credits?.balance
-        let sparkCreditsBalance = snapshot.sparkLimit?.credits?.balance
         guard fiveHour != nil || weekly != nil else { return await load(now: now) }
 
         let newSample = CodexUsageHistorySample(
             capturedAt: snapshot.capturedAt,
             fiveHour: fiveHour,
             weekly: weekly,
-            codexCreditsBalance: codexCreditsBalance,
-            sparkCreditsBalance: sparkCreditsBalance
+            codexCreditsBalance: codexCreditsBalance
         )
 
         do {
@@ -170,8 +165,7 @@ actor CodexUsageHistoryStore {
         guard let existing else { return false }
         guard existing.fiveHour == incoming.fiveHour,
               existing.weekly == incoming.weekly,
-              existing.codexCreditsBalance == incoming.codexCreditsBalance,
-              existing.sparkCreditsBalance == incoming.sparkCreditsBalance else {
+              existing.codexCreditsBalance == incoming.codexCreditsBalance else {
             return false
         }
         return abs(existing.capturedAt.timeIntervalSince(incoming.capturedAt)) < duplicateSampleInterval
@@ -355,8 +349,7 @@ actor CodexUsageHistoryStore {
                             capturedAt: peak.capturedAt,
                             fiveHour: peak.fiveHour,
                             weekly: peak.weekly,
-                            codexCreditsBalance: peak.codexCreditsBalance,
-                            sparkCreditsBalance: peak.sparkCreditsBalance
+                            codexCreditsBalance: peak.codexCreditsBalance
                         )
                     )
                 }

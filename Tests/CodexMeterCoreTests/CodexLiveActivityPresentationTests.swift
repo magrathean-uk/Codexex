@@ -2,6 +2,31 @@ import XCTest
 @testable import CodexMeterCore
 
 final class CodexLiveActivityPresentationTests: XCTestCase {
+    func testRefreshTimestampChangesEvenWhenQuotaDoesNotAndOlderActivitiesStillDecode() throws {
+        let state = CodexLiveActivityAttributes.ContentState(
+            weeklyPercentLeft: 77, weeklyUsedFraction: 0.23, weeklyResetAt: nil,
+            fiveHourPercentLeft: nil, fiveHourResetAt: nil, isStale: false,
+            lastUpdatedAt: Date(timeIntervalSince1970: 1_700_000_000)
+        )
+        let refreshed = CodexLiveActivityAttributes.ContentState(
+            weeklyPercentLeft: 77, weeklyUsedFraction: 0.23, weeklyResetAt: nil,
+            fiveHourPercentLeft: nil, fiveHourResetAt: nil, isStale: false,
+            lastUpdatedAt: Date(timeIntervalSince1970: 1_700_001_800)
+        )
+        XCTAssertEqual(state.displayedWeeklyPercent, refreshed.displayedWeeklyPercent)
+        XCTAssertNotEqual(state, refreshed)
+
+        let encoded = try JSONEncoder().encode(state)
+        var legacy = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        legacy.removeValue(forKey: "lastUpdatedAt")
+        let decoded = try JSONDecoder().decode(
+            CodexLiveActivityAttributes.ContentState.self,
+            from: JSONSerialization.data(withJSONObject: legacy)
+        )
+        XCTAssertNil(decoded.lastUpdatedAt)
+        XCTAssertEqual(decoded.displayedWeeklyPercent, 77)
+    }
+
     func testMapsWeeklyAndOptionalFiveHourAndStaysSmall() throws {
         let now = Date(timeIntervalSince1970: 1_700_000_000)
         let snapshot = CodexSnapshot(capturedAt: now, executablePath: "local", account: .init(authType: "chatgpt", email: nil, planType: nil), limits: [
@@ -12,6 +37,7 @@ final class CodexLiveActivityPresentationTests: XCTestCase {
         let shown = try XCTUnwrap(CodexLiveActivityPresentation.state(snapshot: snapshot, showFiveHour: true))
         XCTAssertEqual(shown.weeklyPercentLeft, 68)
         XCTAssertEqual(shown.fiveHourPercentLeft, 32)
+        XCTAssertEqual(shown.lastUpdatedAt, now)
         let payloadSize = try JSONEncoder().encode(CodexLiveActivityAttributes()).count
             + JSONEncoder().encode(shown).count
         XCTAssertLessThan(payloadSize, 4_096)

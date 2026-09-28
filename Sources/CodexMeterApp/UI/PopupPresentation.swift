@@ -6,7 +6,6 @@ import CodexMeterCore
 enum PopupLimitCardStyle: Equatable {
     case hero
     case standard
-    case compact
 
     init(_ style: CodexQuotaPresentationStyle) {
         switch style {
@@ -14,8 +13,6 @@ enum PopupLimitCardStyle: Equatable {
             self = .hero
         case .standard:
             self = .standard
-        case .compact:
-            self = .compact
         }
     }
 }
@@ -26,9 +23,6 @@ struct PopupLimitPresentation: Equatable, Identifiable {
     let visibleCredits: CodexCredits?
 
     var id: String { limit.id }
-    var compactDisplayName: String {
-        limit.bucket == .spark ? "Spark" : limit.displayName
-    }
 }
 
 enum PopupSummaryAction: Equatable {
@@ -126,7 +120,7 @@ struct PopupSummaryPresentation: Equatable {
 
 enum PopupPresentation {
     static func shouldShowFiveHour(for limit: CodexLimit, userEnabled: Bool) -> Bool {
-        userEnabled || limit.bucket == .spark
+        userEnabled
     }
 
     static func historyLegendValue(for forecast: CodexUsageForecast) -> String {

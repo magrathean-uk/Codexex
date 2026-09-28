@@ -1,10 +1,10 @@
 # Codexex Privacy Policy
 
-Last updated: 25 May 2026
+Last updated: 22 September 2026
 
 Codexex is a local-first macOS and iOS companion for viewing Codex quota state, reset windows, local usage history, session burn, and forecasts.
 
-The important bit: Codexex does not run a Magrathean cloud service for your quota data. The app talks from your device to OpenAI/ChatGPT services for sign-in, token refresh, and quota lookup, and to Apple platform services for App Store operation. Local history, preferences, preview-mode data, and account state remain on your device unless you choose to send material to us for support.
+The important bit: Codexex does not run a Magrathean cloud service for your OpenAI account or quota data. The app talks from your device to OpenAI/ChatGPT services for sign-in, token refresh, and quota lookup, and to Apple platform services for App Store operation. An optional wake service for iOS Live Activities stores an encrypted APNs device token and a random app-installation credential, but receives no OpenAI credential, account identifier, email address, plan, quota value, or usage history. Local history, preferences, preview-mode data, and account state remain on your device unless you choose to send material to us for support.
 
 ## Controller
 
@@ -33,6 +33,8 @@ Magrathean does not collect Codexex analytics, behavioural tracking, advertising
 
 Codexex does not send your OpenAI password to Magrathean. The app does not operate a relay for your OpenAI account or quota data. We do not sell personal data.
 
+When you enable the iOS Live Activity, Codexex may register an APNs device token with `push.magrathean.uk`. The service stores the token encrypted at rest, a one-way token fingerprint, and a random installation credential. These values are not linked by us to your OpenAI account. The service sends content-free background wake notifications; your device then contacts OpenAI directly.
+
 ## Authentication
 
 Codexex uses a ChatGPT/OpenAI sign-in flow. The app requests a device/user code, asks you to complete approval through the OpenAI/ChatGPT flow, exchanges the approved code for tokens, and refreshes tokens when required. The app uses those tokens to request quota and usage information for the signed-in account.
@@ -45,10 +47,11 @@ Codexex may connect to:
 
 - OpenAI/ChatGPT endpoints for authentication, token refresh, quota lookup, account selection, and related responses;
 - Apple services for App Store distribution, purchase state where applicable, updates, platform crash reporting where handled by the operating system, and platform operation;
+- `push.magrathean.uk`, hosted on Cloudflare, to register or remove an encrypted APNs token and receive content-free iOS Live Activity wake notifications;
 - Magrathean websites only when you open legal, support, release-notes, or product links;
 - support channels only when you deliberately send us a message or support material.
 
-OpenAI, Apple, your network provider, and any infrastructure between your device and those endpoints may process connection metadata such as IP addresses under their own terms and privacy notices. Magrathean does not receive that network metadata unless you contact us or use our websites.
+OpenAI, Apple, Cloudflare, your network provider, and infrastructure between your device and those endpoints may process connection metadata such as IP addresses under their own terms and privacy notices. Magrathean does not add app analytics or behavioural tracking to the wake service.
 
 ## Support data
 
@@ -84,12 +87,14 @@ Local app data remains on your device until you clear it, sign out, remove the a
 
 OAuth tokens remain in Keychain or platform storage until sign-out, deletion, expiry, replacement, or app removal behaviour handled by the platform.
 
+The Live Activity wake registration is removed when the Live Activity is stopped and the removal request succeeds. A registration that cannot be removed immediately expires automatically after 30 days unless the app renews it. Invalid APNs tokens are removed when Apple rejects them.
+
 We keep support, security, legal, business, and communication records only for as long as needed for the purposes described in this policy, legal compliance, dispute handling, and auditability.
 
 For controller records we hold, retention depends on the type of record and the risk involved. Support and customer communications are kept only while needed to answer the request, maintain the relationship, handle disputes, or preserve auditability. Security records are kept for investigation, defence, and abuse-prevention periods. Accounting, tax, company, contract, licensing, and business records are kept for the period required by law or for ordinary limitation periods, normally up to six years where relevant. We delete or anonymise records when they are no longer needed.
 ## Security
 
-Codexex is designed around local storage, Apple sandboxing, Apple Keychain, a bundled helper/XPC model on macOS, no Magrathean quota relay, and no app analytics SDK. No method of storage or transmission is completely secure. You remain responsible for securing your device, Apple ID, OpenAI account, local logs, local history, backups, and any support material you send.
+Codexex is designed around local storage, Apple sandboxing, Apple Keychain, a bundled helper/XPC model on macOS, no Magrathean account or quota relay, encrypted APNs-token storage for optional Live Activity wakes, and no app analytics SDK. No method of storage or transmission is completely secure. You remain responsible for securing your device, Apple ID, OpenAI account, local logs, local history, backups, and any support material you send.
 
 ## App Tracking Transparency
 

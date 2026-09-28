@@ -3,11 +3,46 @@ import CodexMeterCore
 @testable import Codexex
 
 @MainActor
+private final class RecordingWakeRegistration: CodexiOSPushRegistering {
+    private(set) var disableCount = 0
+    func enable() async {}
+    func disable() async { disableCount += 1 }
+    func didRegister(deviceToken: Data) async {}
+}
+
+@MainActor
 final class CodexiOSModelTests: XCTestCase {
-    func testPreviewDataUsesCurrentSparkDisplayName() {
+    func testPreviewDataUsesPlusTierForFiveHourPresentation() {
         let snapshot = CodexiOSPreviewData.snapshot(now: Date(timeIntervalSince1970: 1_800_000_000))
 
-        XCTAssertEqual(snapshot.sparkLimit?.displayName, "Spark")
+        XCTAssertEqual(snapshot.account.displayPlan, "PLUS")
+        XCTAssertTrue(snapshot.showsFiveHourLimit)
+    }
+
+    func testPreviewDataUsesProTierForWeeklyPresentation() {
+        let snapshot = CodexiOSPreviewData.snapshot(
+            now: Date(timeIntervalSince1970: 1_800_000_000),
+            planType: "PRO"
+        )
+
+        XCTAssertEqual(snapshot.account.displayPlan, "PRO")
+        XCTAssertFalse(snapshot.showsFiveHourLimit)
+        XCTAssertNil(snapshot.codexLimit?.fiveHourWindow)
+        XCTAssertEqual(snapshot.codexLimit?.weeklyWindow?.remainingPercent, 60)
+    }
+
+    func testProAccountShowsReportedFiveHourWindow() {
+        let preview = CodexiOSPreviewData.snapshot(now: Date(timeIntervalSince1970: 1_800_000_000))
+        let snapshot = CodexSnapshot(
+            capturedAt: preview.capturedAt,
+            executablePath: preview.executablePath,
+            account: CodexAccount(authType: "chatgpt", email: nil, planType: "PRO"),
+            limits: preview.limits
+        )
+
+        XCTAssertTrue(snapshot.showsFiveHourLimit)
+        XCTAssertEqual(snapshot.codexLimit?.fiveHourWindow?.windowDurationMinutes, 300)
+        XCTAssertNotNil(snapshot.codexLimit?.weeklyWindow)
     }
 
     func testIOSHistoryModesExcludeCycle() {
@@ -293,13 +328,13 @@ final class CodexiOSModelTests: XCTestCase {
         XCTAssertTrue(model.isLiveActivityRunning)
         XCTAssertEqual(model.liveActivityID, "existing")
         let launchCalls = await liveActivity.recordedCalls()
-        XCTAssertEqual(launchCalls, [.recover, .update(showFiveHour: false)])
+        XCTAssertEqual(launchCalls, [.recover, .update(showFiveHour: true)])
 
         await liveActivity.resetCalls()
         await model.refresh()
 
         let refreshCalls = await liveActivity.recordedCalls()
-        XCTAssertEqual(refreshCalls, [.update(showFiveHour: false)])
+        XCTAssertEqual(refreshCalls, [.update(showFiveHour: true)])
         XCTAssertEqual(model.liveActivityID, "existing")
     }
 
@@ -330,7 +365,7 @@ final class CodexiOSModelTests: XCTestCase {
         XCTAssertFalse(model.isLiveActivityRunning)
         XCTAssertNil(model.liveActivityID)
         let startCalls = await liveActivity.recordedCalls()
-        XCTAssertEqual(startCalls, [.start(showFiveHour: false)])
+        XCTAssertEqual(startCalls, [.start(showFiveHour: true)])
         XCTAssertEqual(model.statusMessage, "Live Activities are unavailable on this device.")
     }
 
@@ -363,7 +398,7 @@ final class CodexiOSModelTests: XCTestCase {
         await firstStart.value
 
         let calls = await liveActivity.recordedCalls()
-        XCTAssertEqual(calls, [.start(showFiveHour: false)])
+        XCTAssertEqual(calls, [.start(showFiveHour: true)])
         XCTAssertFalse(model.isLiveActivityTransitioning)
         XCTAssertTrue(model.isLiveActivityRunning)
         XCTAssertEqual(model.liveActivityID, "started")
@@ -394,7 +429,7 @@ final class CodexiOSModelTests: XCTestCase {
         await model.refresh()
 
         let calls = await liveActivity.recordedCalls()
-        XCTAssertEqual(calls, [.update(showFiveHour: false)])
+        XCTAssertEqual(calls, [.update(showFiveHour: true)])
         XCTAssertTrue(model.isLiveActivityRunning)
         XCTAssertEqual(model.liveActivityID, "same-id")
     }
@@ -419,7 +454,7 @@ final class CodexiOSModelTests: XCTestCase {
 
         XCTAssertEqual(model.snapshot, lastGood)
         let calls = await liveActivity.recordedCalls()
-        XCTAssertEqual(calls, [.markStale(showFiveHour: false)])
+        XCTAssertEqual(calls, [.markStale(showFiveHour: true)])
         XCTAssertTrue(model.isLiveActivityRunning)
         XCTAssertEqual(model.liveActivityID, "same-id")
     }
@@ -653,8 +688,45 @@ final class CodexiOSModelTests: XCTestCase {
 
         XCTAssertTrue(didRefresh)
         XCTAssertEqual(fetchCount, 1)
-        XCTAssertEqual(calls, [.recover, .update(showFiveHour: false)])
+        XCTAssertEqual(calls, [.recover, .update(showFiveHour: true)])
         XCTAssertTrue(model.isLiveActivityRunning)
+    }
+
+    func testRecoveryOfEndedActivityRemovesWakeRegistration() async {
+        let push = RecordingWakeRegistration()
+        let service = StubCodexiOSService()
+        let model = CodexiOSModel(
+            service: service,
+            defaults: makeDefaults(),
+            liveActivityManager: StubCodexiOSLiveActivityManager(
+                state: .init(isAvailable: true, activityID: nil)
+            ),
+            pushRegistrationManager: push,
+            openURLAction: { _ in true }, copyTextAction: { _ in }
+        )
+
+        _ = await model.refreshLiveActivityInBackground()
+
+        XCTAssertEqual(push.disableCount, 1)
+        let fetchCount = await service.fetchCallCount()
+        XCTAssertEqual(fetchCount, 0)
+    }
+
+    func testBackgroundSignOutDoesNotReportSuccessfulRefresh() async {
+        let model = CodexiOSModel(
+            service: StubCodexiOSService(outcomeHandler: { .signedOut }),
+            defaults: makeDefaults(),
+            liveActivityManager: StubCodexiOSLiveActivityManager(
+                state: .init(isAvailable: true, activityID: "running")
+            ),
+            pushRegistrationManager: RecordingWakeRegistration(),
+            openURLAction: { _ in true }, copyTextAction: { _ in }
+        )
+
+        let success = await model.refreshLiveActivityInBackground()
+
+        XCTAssertFalse(success)
+        XCTAssertNil(model.lastUpdatedAt)
     }
 
     func testResetLocalDataClearsIOSSettings() throws {
@@ -910,7 +982,7 @@ final class CodexiOSModelTests: XCTestCase {
         model.enablePreviewMode()
         let previewSnapshot = model.snapshot
         await recoverGate.release()
-        while await liveActivity.recordedCalls().contains(.update(showFiveHour: false)) == false {
+        while await liveActivity.recordedCalls().contains(.update(showFiveHour: true)) == false {
             await Task.yield()
         }
         await start.value
@@ -1042,7 +1114,7 @@ final class CodexiOSModelTests: XCTestCase {
         _ = await backgroundRefresh.value
 
         let calls = await underlying.recordedCalls()
-        XCTAssertEqual(calls.filter { $0 == .update(showFiveHour: false) }.count, 1)
+        XCTAssertEqual(calls.filter { $0 == .update(showFiveHour: true) }.count, 1)
         XCTAssertEqual(calls.last, .recover)
     }
 
