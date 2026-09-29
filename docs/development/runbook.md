@@ -12,11 +12,9 @@ The checkout is configured for version `6.1.1`, build `26`. Keep `MARKETING_VERS
 
 ## Build loop
 
-Build and test commands are self-contained in this checkout. Use explicit
-derived-data and SwiftPM cache paths for Xcode commands instead of relying on a
-shared parent-directory environment script.
+The mandatory [Clean development](../../AGENTS.md#clean-development-mandatory) rules in `AGENTS.md` apply to every command below: run them through `clean-development run --session session-only -- <command>` and never unset, override or bypass the routed environment variables.
 
-For optional cache and build-output management, consider [Clean Development](https://github.com/magrathean-uk/clean-development). It is not required for the commands below.
+Xcode commands take their derived-data and SwiftPM cache locations from the routed `XCODE_DERIVED_DATA_PATH` and `SWIFTPM_SHARED_CACHE` variables and fall back to `/tmp` only when those are unset.
 
 Swift package tests:
 
@@ -79,8 +77,8 @@ Build or test the app target:
 ```bash
 xcodebuild -project CodexMeter.xcodeproj \
   -scheme CodexMeterApp \
-  -derivedDataPath /tmp/codexex-derived-data \
-  -clonedSourcePackagesDirPath /tmp/codexex-swiftpm-cache \
+  -derivedDataPath "${XCODE_DERIVED_DATA_PATH:-/tmp}/codexex-derived-data" \
+  -clonedSourcePackagesDirPath "${SWIFTPM_SHARED_CACHE:-/tmp}/codexex-swiftpm-cache" \
   test
 ```
 

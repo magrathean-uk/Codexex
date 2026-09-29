@@ -4,7 +4,10 @@ set -euo pipefail
 MODE="${1:-run}"
 APP_NAME="Codexex"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DERIVED_DATA="/tmp/codexex-macos-derived"
+# Clean Development: honour the routed derived-data and SwiftPM cache
+# locations; fall back to /tmp only when they are unset.
+DERIVED_DATA="${XCODE_DERIVED_DATA_PATH:-/tmp}/codexex-macos-derived"
+SWIFTPM_CACHE="${SWIFTPM_SHARED_CACHE:-/tmp}/codexex-swiftpm-cache"
 APP_BUNDLE="$DERIVED_DATA/Build/Products/Debug/$APP_NAME.app"
 APP_BINARY="$APP_BUNDLE/Contents/MacOS/$APP_NAME"
 
@@ -24,7 +27,7 @@ xcodebuild -quiet \
   -configuration Debug \
   -destination 'platform=macOS' \
   -derivedDataPath "$DERIVED_DATA" \
-  -clonedSourcePackagesDirPath /tmp/codexex-swiftpm-cache \
+  -clonedSourcePackagesDirPath "$SWIFTPM_CACHE" \
   build
 
 case "$MODE" in

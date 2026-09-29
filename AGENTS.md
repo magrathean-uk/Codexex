@@ -34,18 +34,30 @@ current task authorizes it.
 
 The Matrix prototype has its own guidance in `Prototypes/MatrixQuota/AGENTS.md`.
 
+<!-- clean-development-policy:v1 (canonical text: ~/dev/source/dev-bootstrap/snippets/clean-development-policy.md) -->
+## Clean development (mandatory)
+
+This project follows [Clean Development](https://github.com/magrathean-uk/clean-development) and the machine rule that nothing creates tool state under `~` (only the allow-listed agent homes).
+
+- The shell environment comes from `~/.zshenv`, which loads `~/dev/env.zsh`. It routes every tool home and cache (`CARGO_HOME`, `RUSTUP_HOME`, `XDG_*`, `BUNDLE_USER_HOME`, `npm_config_cache`, `XCODE_DERIVED_DATA_PATH`, ...) and switches telemetry off. Never unset, override or bypass those variables. If a script needs a scrubbed environment, re-export them with `source ~/dev/env.zsh`.
+- Run builds, tests, installs and anything else that writes caches or build output through Clean Development: `clean-development run --session session-only -- <command>`. Follow its docs and keep its receipts.
+- Do not add installers or scripts that default into `~` (`~/.cargo`, `~/.rustup`, `~/.cache`, `~/.npm`, `~/.swiftpm`, `~/.gradle`, ...) and do not hardcode `$HOME` paths for caches; use the routed variables.
+- Before finishing, run `dev-env-check` (must pass) and `dev-audit` (no new entries in `~`). If your work caused a violation, fix the cause in the repo and say so.
+
 ## Validation
 
-Run commands from the repository root. Xcode commands use local temporary
-caches so they do not rely on parent-directory scripts.
+Run commands from the repository root, through Clean Development as described
+above. Xcode commands take their derived-data and SwiftPM cache locations from
+the routed `XCODE_DERIVED_DATA_PATH` and `SWIFTPM_SHARED_CACHE` variables and
+fall back to `/tmp` only when those are unset.
 
 ```bash
 swift test
 cargo test --manifest-path Helper/CodexexHelper/Cargo.toml
 xcodegen generate --spec project.yml
 xcodebuild -project CodexMeter.xcodeproj -scheme CodexMeterApp \
-  -derivedDataPath /tmp/codexex-derived-data \
-  -clonedSourcePackagesDirPath /tmp/codexex-swiftpm-cache test
+  -derivedDataPath "${XCODE_DERIVED_DATA_PATH:-/tmp}/codexex-derived-data" \
+  -clonedSourcePackagesDirPath "${SWIFTPM_SHARED_CACHE:-/tmp}/codexex-swiftpm-cache" test
 bash Scripts/check-codexex-companions.sh
 bash Scripts/release-smoke.sh
 ```
