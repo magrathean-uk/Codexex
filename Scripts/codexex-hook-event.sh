@@ -2,7 +2,9 @@
 set -euo pipefail
 
 event_name="${1:-unknown}"
-output_dir="${CODEXEX_HOOK_LOG_DIR:-$HOME/Library/Application Support/Codexex/hooks}"
+# Hook logs are local diagnostics: CODEXEX_HOOK_LOG_DIR wins, then the routed
+# XDG_STATE_HOME; with neither set, use the temporary directory, never a path under ~.
+output_dir="${CODEXEX_HOOK_LOG_DIR:-${XDG_STATE_HOME:-${TMPDIR:-/tmp}}/codexex/hooks}"
 mkdir -p "$output_dir"
 raw_input="$(cat)"
 

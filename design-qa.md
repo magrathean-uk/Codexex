@@ -7,7 +7,7 @@
 
 **Evidence and comparison**
 
-- Source visual truth: `/Users/bolyki/.codex/generated_images/01a0c7b8-cc94-7893-a244-2ce376370d2f/exec-9e8ee3d0-da26-4e34-87e1-502177060de7.png` (853 × 1844 px).
+- Source visual truth: the supplied concept image `exec-9e8ee3d0-da26-4e34-87e1-502177060de7.png` from the Codex generated-images store (853 × 1844 px).
 - Rendered implementation: `/tmp/codexex-reset-after-final-dark.png` (1320 × 2868 px, physical iPhone 17 Pro Max, 440 × 956 pt at 3×).
 - State: signed in with real quota data; dark appearance; main dashboard at rest. The reference is a concept with sample data and no device status bar.
 - Normalization: cropped 180 px of OS status-bar area from the device capture, resized its 1320 × 2688 px app-content region to 853 × 1737 px, then padded to 853 × 1844 px. This aligns content width and removes device chrome; the source has no independent CSS viewport or device-scale factor.

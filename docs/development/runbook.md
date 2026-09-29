@@ -68,7 +68,7 @@ Scripts/check-codexex-companions.sh
 Scripts/install-codexex-companions.sh
 ```
 
-`codexex-status.sh` emits JSON derived from local session logs, including token totals, session summaries, usage signals, reset windows, plan type, and context-window pressure. The hook command records event metadata: event, working directory, tool, session ID, turn ID, and status. Working directory paths and identifiers can still be sensitive.
+`codexex-status.sh` emits JSON derived from local session logs, including token totals, session summaries, usage signals, reset windows, plan type, and context-window pressure. The hook command records event metadata: event, working directory, tool, session ID, turn ID, and status. Working directory paths and identifiers can still be sensitive. It appends one JSONL file per day under `CODEXEX_HOOK_LOG_DIR`, or `$XDG_STATE_HOME/codexex/hooks` when that is unset, or the temporary directory when neither is set.
 
 The installer uses `CODEX_HOME`, or `~/.codex` by default. It backs up an existing `hooks.json`, then replaces the `SessionStart`, `PermissionRequest`, `PostToolUse`, and `Stop` entries with Codexex commands. It may also back up and append a feature setting to an existing `config.toml`. Review those changes and the resulting TOML before using the hooks; installation is optional and changes user configuration. Keep this checkout available because installed commands reference its script paths.
 

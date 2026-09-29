@@ -101,14 +101,13 @@ final class PopupReferenceRenderTests: XCTestCase {
                 "popup should render readable glass/text highlights in \(appearanceMode.title)"
             )
 
-            let outputDirectory = try XCTUnwrap(
-                FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
-            )
+            let outputDirectory = FileManager.default.temporaryDirectory
+                .appendingPathComponent("codexex-reference-popup-\(UUID().uuidString)", isDirectory: true)
             try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
+            defer { try? FileManager.default.removeItem(at: outputDirectory) }
             let pngURL = outputDirectory.appendingPathComponent(
-                "codexex-reference-popup-\(appearanceMode.rawValue)-\(UUID().uuidString).png"
+                "codexex-reference-popup-\(appearanceMode.rawValue).png"
             )
-            defer { try? FileManager.default.removeItem(at: pngURL) }
             let pngData = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
             try pngData.write(to: pngURL, options: .atomic)
             XCTAssertTrue(FileManager.default.fileExists(atPath: pngURL.path))
