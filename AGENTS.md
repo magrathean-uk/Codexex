@@ -77,3 +77,7 @@ Use SwiftUI and existing project tokens/components for native app UI. For a
 Figma-driven native-app change, obtain the supplied context and screenshot
 before implementation, and reuse supplied assets. Do not add external crash
 telemetry; diagnostics stay local unless product documentation says otherwise.
+
+## Pending URL migration
+
+The next release must apply [NEXT-RELEASE-URLS.md](NEXT-RELEASE-URLS.md): product sites moved to `https://magrathean.uk/solutions/<slug>/` and support addresses to `contact+<slug>@magrathean.uk`. Remove this section with that file once released.
