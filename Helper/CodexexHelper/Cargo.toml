@@ -9,7 +9,7 @@ internal-env-overrides = []
 
 [dependencies]
 anyhow = "1"
-base64 = "0.22"
+base64 = "0.23"
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 codex-protocol = { git = "https://github.com/openai/codex", rev = "be6e8eac029b183056b7e4402879f15d2c85f61b", package = "codex-protocol" }
 codex-backend-client = { git = "https://github.com/openai/codex", rev = "be6e8eac029b183056b7e4402879f15d2c85f61b", package = "codex-backend-client" }
