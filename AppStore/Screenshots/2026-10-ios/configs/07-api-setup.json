@@ -1,0 +1,12 @@
+{
+  "source": "../raw/by-shot/07-api-setup",
+  "output_root": "../asc_out/07-api-setup",
+  "kind": "all-latest",
+  "template": "plain",
+  "copy_file": "../copy/07-api-setup.json",
+  "locale": "en-US",
+  "background": "#111713,#18261D,#20382A",
+  "frame_color": "Silver",
+  "validate": true
+}
+

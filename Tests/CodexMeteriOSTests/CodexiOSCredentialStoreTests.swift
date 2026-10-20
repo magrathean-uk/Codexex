@@ -105,7 +105,8 @@ final class CodexiOSCredentialStoreTests: XCTestCase {
                     throw CodexiOSError.secureStoreFailure("Token delete failed.")
                 },
                 clearPendingAuth: { didClearPending = true },
-                clearHistory: { didClearHistory = true }
+                clearHistory: { didClearHistory = true },
+                clearAPIKey: {}
             )
         )
 

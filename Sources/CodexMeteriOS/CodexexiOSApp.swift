@@ -30,10 +30,20 @@ final class CodexiOSAppDelegate: NSObject, UIApplicationDelegate {
         didFailToRegisterForRemoteNotificationsWithError error: any Error
     ) {
         Self.logger.error("APNs registration failed: \(error.localizedDescription, privacy: .private)")
+        codexiOSSharedPushRegistrationManager.didFailRemoteRegistration()
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {
+        codexiOSSharedPushRegistrationManager.recordSystemState()
         Task { await codexiOSSharedPushRegistrationManager.retryPendingRegistration() }
+    }
+
+    func applicationDidEnterBackground(_ application: UIApplication) {
+        codexiOSSharedPushRegistrationManager.recordSystemState()
+    }
+
+    func applicationWillEnterForeground(_ application: UIApplication) {
+        codexiOSSharedPushRegistrationManager.recordSystemState()
     }
 
     func application(
@@ -42,52 +52,60 @@ final class CodexiOSAppDelegate: NSObject, UIApplicationDelegate {
         fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
     ) {
         let receivedAt = Date()
-        Self.recordWake(receivedAt: receivedAt, outcome: "received")
+        let appState: String
+        switch application.applicationState {
+        case .active: appState = "active"
+        case .inactive: appState = "inactive"
+        case .background: appState = "background"
+        @unknown default: appState = "unknown"
+        }
+        let protectedDataAvailable = application.isProtectedDataAvailable
+        Self.recordWake(receivedAt: receivedAt, outcome: "received", appState: appState,
+                        protectedDataAvailable: protectedDataAvailable)
         guard Self.silentPushWakeThrottle.begin() else {
             Self.logger.notice("Background wake coalesced before quota refresh.")
-            Self.recordWake(receivedAt: receivedAt, outcome: "coalesced")
+            Self.recordWake(receivedAt: receivedAt, outcome: "coalesced", appState: appState,
+                            protectedDataAvailable: protectedDataAvailable)
             completionHandler(.noData)
             return
         }
         CodexiOSSilentPushWakeRunner.run {
             let model = CodexiOSModel()
-            let success = await model.refreshLiveActivityInBackground()
+            // Silent wakes have a short execution budget. Subscription quota
+            // takes priority; API widgets use the separately scheduled BG task.
+            let success = await model.refreshLiveActivityInBackground(refreshAPIWidgets: false)
             let updated = success && model.lastUpdatedAt != nil
             Self.logger.notice("Background wake completed; refreshed: \(updated, privacy: .public)")
             Self.recordWake(
                 receivedAt: receivedAt,
                 outcome: updated ? "refreshed" : (success ? "no-active-activity" : "failed"),
-                snapshotCapturedAt: updated ? model.lastUpdatedAt : nil
+                snapshotCapturedAt: updated ? model.lastUpdatedAt : nil,
+                appState: appState, protectedDataAvailable: protectedDataAvailable
             )
             return updated ? .newData : (success ? .noData : .failed)
         } onDeadline: {
             Self.logger.error("Background wake exceeded its local deadline.")
-            Self.recordWake(receivedAt: receivedAt, outcome: "timed-out")
+            Self.recordWake(receivedAt: receivedAt, outcome: "timed-out", appState: appState,
+                            protectedDataAvailable: protectedDataAvailable)
         } completion: { result in
             Self.silentPushWakeThrottle.finish()
             completionHandler(result)
         }
     }
 
-    /// A single local debug receipt verifies real delivery without exporting account or quota data.
-    private static func recordWake(receivedAt: Date, outcome: String, snapshotCapturedAt: Date? = nil) {
-        #if DEBUG
-        var receipt: [String: Any] = [
-            "receivedAt": receivedAt.timeIntervalSince1970,
-            "recordedAt": Date().timeIntervalSince1970,
-            "outcome": outcome,
-        ]
-        if let snapshotCapturedAt {
-            receipt["snapshotCapturedAt"] = snapshotCapturedAt.timeIntervalSince1970
-        }
+    /// A single local receipt is available in production without exporting account or quota data.
+    private static func recordWake(receivedAt: Date, outcome: String, snapshotCapturedAt: Date? = nil,
+                                   appState: String, protectedDataAvailable: Bool) {
+        guard let receipt = codexiOSSharedPushRegistrationManager.recordWake(
+            receivedAt: receivedAt, outcome: outcome, snapshotCapturedAt: snapshotCapturedAt,
+            appState: appState, protectedDataAvailable: protectedDataAvailable
+        ) else { return }
         do {
             let url = URL.cachesDirectory.appending(path: "CodexexAPNsWake.json")
-            try JSONSerialization.data(withJSONObject: receipt, options: .sortedKeys)
-                .write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+            try receipt.write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
         } catch {
             Self.logger.error("Could not save local background-wake receipt.")
         }
-        #endif
     }
 }
 
@@ -189,11 +207,27 @@ private final class CodexiOSSilentPushCompletionGate {
 @main
 struct CodexexiOSApp: App {
     @UIApplicationDelegateAdaptor(CodexiOSAppDelegate.self) private var appDelegate
-    @State private var model = CodexiOSModel()
+    @State private var model: CodexiOSModel?
+
+    init() {
+        #if DEBUG
+        // Hosted tests inject their own models and never start the saved account.
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+            || NSClassFromString("XCTestCase") != nil {
+            _model = State(initialValue: nil)
+            return
+        }
+        #endif
+        _model = State(initialValue: CodexiOSModel())
+    }
 
     var body: some Scene {
         WindowGroup {
-            CodexiOSShellView(model: model)
+            if let model {
+                CodexiOSShellView(model: model)
+            } else {
+                Color.clear
+            }
         }
     }
 }

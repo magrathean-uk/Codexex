@@ -1,0 +1,231 @@
+{
+  "locale": "en-US",
+  "count": 14,
+  "staging": "/Volumes/4TB/machine/cache/scratch/codexex-store-framing-tggcs3gc",
+  "screenshots": [
+    {
+      "id": "01-quota",
+      "view": "Quota dashboard with Codex credits",
+      "family": "iphone",
+      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/iphone/01-quota.png",
+      "source_sha256": "21fdaebfa86f5d7ec8a1059eda5cb23f8262ef9ce5aaede3d3377ebfe06e5dd8",
+      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/iphone/01-quota.png",
+      "size": [
+        1320,
+        2868
+      ],
+      "title": "Know your next reset",
+      "subtitle": "Codex quota and credits.",
+      "disclosure": "Sample data",
+      "output_sha256": "bbc71d871a93d3f6a0dfb27aa1f6844c5cf7fcbb37da7e16f73440754a622a9a"
+    },
+    {
+      "id": "01-quota",
+      "view": "Quota dashboard with Codex credits",
+      "family": "ipad",
+      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/ipad/01-quota.png",
+      "source_sha256": "4732c3b301a9b5c7283aec958e531ecabf6bba0dd416f05fdbafdce4d6a08193",
+      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/ipad/01-quota.png",
+      "size": [
+        2064,
+        2752
+      ],
+      "title": "Know your next reset",
+      "subtitle": "Codex quota and credits.",
+      "disclosure": "Sample data",
+      "output_sha256": "7184fa71849ddf6c4fefc6ddfb29ffb985f4188718ba53dec38c2dbfe3359ebb"
+    },
+    {
+      "id": "02-weekly",
+      "view": "Weekly-only quota dashboard",
+      "family": "iphone",
+      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/iphone/02-weekly.png",
+      "source_sha256": "aa256a5574d6ff049c67cd620e9f9201f389d5e8a076a07c64508b1450b25aab",
+      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/iphone/02-weekly.png",
+      "size": [
+        1320,
+        2868
+      ],
+      "title": "Your week at a glance",
+      "subtitle": "Weekly allowance and reset times.",
+      "disclosure": "Sample data",
+      "output_sha256": "623c03acc247e9a44e01dc591db967bb01a67daf9e51b62f14d37c03f89b3221"
+    },
+    {
+      "id": "02-weekly",
+      "view": "Weekly-only quota dashboard",
+      "family": "ipad",
+      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/ipad/02-weekly.png",
+      "source_sha256": "9d33ad9c15a6544b1bd5d5a80d7be702f78537fd9972a4a9645510a1411699ff",
+      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/ipad/02-weekly.png",
+      "size": [
+        2064,
+        2752
+      ],
+      "title": "Your week at a glance",
+      "subtitle": "Weekly allowance and reset times.",
+      "disclosure": "Sample data",
+      "output_sha256": "b9fc9d60d9052e843cd9e095d3ee44c8a087c6c357bdb868f6a5e3a85a53f3f2"
+    },
+    {
+      "id": "03-history",
+      "view": "Usage history",
+      "family": "iphone",
+      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/iphone/03-history.png",
+      "source_sha256": "4b5e00bdb4c7dcd8ec31d2a10d0944e08c19ba08cac95ebb0ea64373a47ca6d3",
+      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/iphone/03-history.png",
+      "size": [
+        1320,
+        2868
+      ],
+      "title": "See your usage history",
+      "subtitle": "Review peaks and monthly trends.",
+      "disclosure": "Sample data",
+      "output_sha256": "e0f4f2f84c2b89d650f12972cda56f1c86481299d9aef4ff1232b9a02b9cf3ea"
+    },
+    {
+      "id": "03-history",
+      "view": "Usage history",
+      "family": "ipad",
+      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/ipad/03-history.png",
+      "source_sha256": "cd3a209e93ae4771f36d1d8427a1cac0bd7e64526257b8d17aac5766f39e8fbe",
+      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/ipad/03-history.png",
+      "size": [
+        2064,
+        2752
+      ],
+      "title": "See your usage history",
+      "subtitle": "Review peaks and monthly trends.",
+      "disclosure": "Sample data",
+      "output_sha256": "f9bb85c0640060f301a403cf94e4d28cfb0abd553fda37a322b47d0589740613"
+    },
+    {
+      "id": "04-api-balance",
+      "view": "Connected prepaid API balance",
+      "family": "iphone",
+      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/iphone/04-api-balance.png",
+      "source_sha256": "72aa08c387ec1ff4bcfee3c6b227ef0d228664524d2bd19896566bfc0ecf8535",
+      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/iphone/04-api-balance.png",
+      "size": [
+        1320,
+        2868
+      ],
+      "title": "Keep API balance in view",
+      "subtitle": "API dollars, separate from Codex credits.",
+      "disclosure": "Sample data",
+      "output_sha256": "aec4d3e74a72a74e6d3dd6409ac742e9e6782ccddd2b397aac677f934abd4187"
+    },
+    {
+      "id": "04-api-balance",
+      "view": "Connected prepaid API balance",
+      "family": "ipad",
+      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/ipad/04-api-balance.png",
+      "source_sha256": "f22095a8466642a6edf39fc2e0e83bf7f119854ab9256975eadc89a7e6407c91",
+      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/ipad/04-api-balance.png",
+      "size": [
+        2064,
+        2752
+      ],
+      "title": "Keep API balance in view",
+      "subtitle": "API dollars, separate from Codex credits.",
+      "disclosure": "Sample data",
+      "output_sha256": "4ab0710da563612c0b4772100d3e010108dda6022c305a33c506b35637607725"
+    },
+    {
+      "id": "05-settings",
+      "view": "Settings",
+      "family": "iphone",
+      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/iphone/05-settings.png",
+      "source_sha256": "e4f54219b71519d3906628dd34123e431cb3ff28266e72bd426469e517a44f4f",
+      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/iphone/05-settings.png",
+      "size": [
+        1320,
+        2868
+      ],
+      "title": "Make it yours",
+      "subtitle": "Accounts, appearance and refresh.",
+      "disclosure": "Sample data",
+      "output_sha256": "16ba19d19d491a4d1abc90f2bf00b13fccee680f05533012aed6593b3d850e75"
+    },
+    {
+      "id": "05-settings",
+      "view": "Settings",
+      "family": "ipad",
+      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/ipad/05-settings.png",
+      "source_sha256": "f330a519b9889d5c01970cd54618e4a2c311379bb161f0eb251821a98cb2878f",
+      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/ipad/05-settings.png",
+      "size": [
+        2064,
+        2752
+      ],
+      "title": "Make it yours",
+      "subtitle": "Accounts, appearance and refresh.",
+      "disclosure": "Sample data",
+      "output_sha256": "2134cfa8c53e0e42981cc62a68a59def103e900883c3e1658d50b76801bae0c6"
+    },
+    {
+      "id": "06-onboarding",
+      "view": "Onboarding",
+      "family": "iphone",
+      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/iphone/06-onboarding.png",
+      "source_sha256": "7698f9a2a49f78140b0686961fe93eae50635079252dfceb94b15b6942eacc82",
+      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/iphone/06-onboarding.png",
+      "size": [
+        1320,
+        2868
+      ],
+      "title": "Start with what you need",
+      "subtitle": "Choose subscription or API monitoring.",
+      "disclosure": "Sample data",
+      "output_sha256": "a5fece50d926c9d4281bd566ef61fd2762f5a0594faa9d469d6de3717c9675f0"
+    },
+    {
+      "id": "06-onboarding",
+      "view": "Onboarding",
+      "family": "ipad",
+      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/ipad/06-onboarding.png",
+      "source_sha256": "d30719bb62f99f66f1a82b171e690a929586c311b54051312a9753f613070acf",
+      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/ipad/06-onboarding.png",
+      "size": [
+        2064,
+        2752
+      ],
+      "title": "Start with what you need",
+      "subtitle": "Choose subscription or API monitoring.",
+      "disclosure": "Sample data",
+      "output_sha256": "0d1aeb13645e76880f636aab7031acf8afef2494af3c6020fbc79fc8d60f6902"
+    },
+    {
+      "id": "07-api-setup",
+      "view": "Connected API setup",
+      "family": "iphone",
+      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/iphone/07-api-setup.png",
+      "source_sha256": "988c465fff5e39d0f2136f270a63f18eec4f132bda366f17180505f17a22e44a",
+      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/iphone/07-api-setup.png",
+      "size": [
+        1320,
+        2868
+      ],
+      "title": "Connect your API",
+      "subtitle": "Check access, usage and costs.",
+      "disclosure": "Sample data",
+      "output_sha256": "56b6a00a1da09c26ad6fcc00506a956eeb979f132b9eaaec6e565de89aef99d0"
+    },
+    {
+      "id": "07-api-setup",
+      "view": "Connected API setup",
+      "family": "ipad",
+      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/ipad/07-api-setup.png",
+      "source_sha256": "e6e1902e48aabc14459aa9d75e86af7ca9aba03b69ca66e346e95dfcd6192f6f",
+      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/ipad/07-api-setup.png",
+      "size": [
+        2064,
+        2752
+      ],
+      "title": "Connect your API",
+      "subtitle": "Check access, usage and costs.",
+      "disclosure": "Sample data",
+      "output_sha256": "c261c3d6cebd2bd076cec239fcaacc97d40c49a8e6c2f417775002a9fcb97a45"
+    }
+  ]
+}

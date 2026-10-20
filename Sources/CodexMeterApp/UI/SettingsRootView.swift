@@ -3,47 +3,25 @@ import AppKit
 import Observation
 import SwiftUI
 
-private enum SettingsSection: String, CaseIterable, Identifiable {
-    case general
-    case menuBar
-    case notifications
-    case about
-
+enum SettingsSection: String, CaseIterable, Identifiable {
+    case accounts, general, appearance, data, about
     var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .general:
-            return "General"
-        case .menuBar:
-            return "Menu Bar"
-        case .notifications:
-            return "Notifications"
-        case .about:
-            return "About"
-        }
-    }
-
+    var title: String { rawValue.capitalized }
     var systemImage: String {
         switch self {
-        case .general:
-            return "slider.horizontal.3"
-        case .menuBar:
-            return "menubar.rectangle"
-        case .notifications:
-            return "bell"
-        case .about:
-            return "info.circle"
+        case .accounts: "person.crop.circle"
+        case .general: "gearshape"
+        case .appearance: "paintbrush"
+        case .data: "folder"
+        case .about: "info.circle"
         }
-    }
-
-    var tint: Color {
-        SettingsTheme.accent
     }
 }
 
+enum SettingsAccountDestination: String { case subscription, api }
+
 private enum SettingsTheme {
-    static let accent = CodexTheme.accent
+    static let accent = CodexTheme.actionTint
     static let groupedBackground = color(light: ns(0xFAFAFB), dark: ns(0x1E1E20))
     static let sidebarBackground = color(light: ns(0xF0F1F3), dark: ns(0x252527))
     static let cardFill = color(light: ns(0xFFFFFF), dark: ns(0x242426))
@@ -52,17 +30,20 @@ private enum SettingsTheme {
     static let secondaryFill = color(light: ns(0xF1F2F4), dark: ns(0x303034))
     static let selectedFill = color(light: ns(0xE8F0FF), dark: ns(0x273654))
     static let hairline = color(light: ns(0x111827, alpha: 0.10), dark: ns(0xFFFFFF, alpha: 0.08))
-    static let hairlineStrong = color(light: ns(0x111827, alpha: 0.14), dark: ns(0xFFFFFF, alpha: 0.12))
+    static let hairlineStrong = color(
+        light: ns(0x111827, alpha: 0.14), dark: ns(0xFFFFFF, alpha: 0.12))
     static let destructiveText = color(light: ns(0xB42318), dark: ns(0xFFB4AB))
     static let destructiveFill = color(light: ns(0xFEE4E2), dark: ns(0x421815))
     static let destructivePressedFill = color(light: ns(0xFECACA), dark: ns(0x53211D))
-    static let destructiveBorder = color(light: ns(0xF04438, alpha: 0.38), dark: ns(0xFF6B61, alpha: 0.44))
+    static let destructiveBorder = color(
+        light: ns(0xF04438, alpha: 0.38), dark: ns(0xFF6B61, alpha: 0.44))
 
     private static func color(light: NSColor, dark: NSColor) -> Color {
-        Color(nsColor: NSColor(name: nil) { appearance in
-            let match = appearance.bestMatch(from: [.aqua, .darkAqua])
-            return match == .darkAqua ? dark : light
-        })
+        Color(
+            nsColor: NSColor(name: nil) { appearance in
+                let match = appearance.bestMatch(from: [.aqua, .darkAqua])
+                return match == .darkAqua ? dark : light
+            })
     }
 
     private static func ns(_ hex: UInt32, alpha: CGFloat = 1) -> NSColor {
@@ -76,7 +57,7 @@ private enum SettingsTheme {
 }
 
 private enum SettingsControlMetrics {
-    static let cornerRadius: CGFloat = 10
+    static let cornerRadius: CGFloat = 4
     static let controlHeight: CGFloat = 28
     static let actionMinWidth: CGFloat = 86
     static let contentMaxWidth: CGFloat = 600
@@ -89,61 +70,70 @@ private enum SettingsControlMetrics {
     }
 }
 
-private enum SettingsScrollTarget: Hashable {
-    case account
-}
-
 struct SettingsRootView: View {
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
     @Bindable var model: CodexMenuBarModel
-    @State private var selection: SettingsSection = .general
+    @State private var selection: SettingsSection
+    @State private var accountDestination: SettingsAccountDestination?
     @State private var isShowingResetConfirmation = false
-    @State private var accountScrollRequest = 0
-    @State private var pendingAccountScroll = false
     @State private var resetErrorMessage: String?
     @State private var isResetting = false
 
+    init(
+        model: CodexMenuBarModel, initialSection: SettingsSection = .accounts,
+        initialAccount: SettingsAccountDestination? = nil
+    ) {
+        self.model = model
+        _selection = State(initialValue: initialSection)
+        _accountDestination = State(initialValue: initialAccount)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            titleBar
-
+            Text(
+                accountDestination == .api && selection == .accounts
+                    ? "API monitoring" : selection.title
+            )
+            .font(.headline)
+            .frame(maxWidth: .infinity)
+            .frame(height: 38)
+            Divider()
             HStack(spacing: 0) {
-                sidebar
-                    .frame(width: 200)
-
-                Divider()
-                    .overlay(SettingsTheme.hairline)
-
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        content
-                            .padding(.horizontal, 28)
-                            .padding(.vertical, 26)
-                            .frame(maxWidth: SettingsControlMetrics.contentMaxWidth, alignment: .topLeading)
-                            .frame(maxWidth: .infinity, alignment: .topLeading)
-                    }
-                    .scrollIndicators(.hidden)
-                    .background(SettingsTheme.groupedBackground)
-                    .onChange(of: accountScrollRequest) { _, _ in
-                        scrollToAccount(using: proxy)
-                    }
-                    .onChange(of: selection) { _, newSelection in
-                        guard newSelection == .about, pendingAccountScroll else { return }
-                        scrollToAccount(using: proxy)
-                    }
+                List(
+                    SettingsSection.allCases,
+                    selection: Binding<SettingsSection?>(
+                        get: { selection }, set: { if let value = $0 { selection = value } }
+                    )
+                ) { section in
+                    Label(section.title, systemImage: section.systemImage).tag(section)
                 }
+                .listStyle(.sidebar)
+                .frame(width: 190)
+                Divider()
+                ScrollView {
+                    content
+                        .id(selection)
+                        .transition(.opacity)
+                        .frame(
+                            maxWidth: SettingsControlMetrics.contentMaxWidth, alignment: .topLeading
+                        )
+                        .padding(24)
+                        .frame(maxWidth: .infinity, alignment: .topLeading)
+                }
+                .background(Color(nsColor: .windowBackgroundColor))
             }
         }
         .frame(minWidth: 760, minHeight: 540)
-        .background(SettingsTheme.groupedBackground)
-        .foregroundStyle(.primary)
+        .background(Color(nsColor: .windowBackgroundColor))
+        .tint(CodexTheme.actionTint)
         .preferredColorScheme(model.appearanceMode.colorScheme)
-        .onAppear {
-            model.setReduceMotionEnabled(accessibilityReduceMotion)
-        }
-        .onChange(of: accessibilityReduceMotion) { _, newValue in
-            model.setReduceMotionEnabled(newValue)
-        }
+        .animation(accessibilityReduceMotion ? nil : .easeInOut(duration: 0.16), value: selection)
+        .animation(
+            accessibilityReduceMotion ? nil : .easeInOut(duration: 0.16), value: accountDestination
+        )
+        .onChange(of: selection) { _, _ in accountDestination = nil }
+        .onAppear { model.setReduceMotionEnabled(accessibilityReduceMotion) }
+        .onChange(of: accessibilityReduceMotion) { _, value in model.setReduceMotionEnabled(value) }
         .alert("Reset Codexex?", isPresented: $isShowingResetConfirmation) {
             Button("Cancel", role: .cancel) {}
             Button("Reset App", role: .destructive) {
@@ -162,7 +152,9 @@ struct SettingsRootView: View {
                 }
             }
         } message: {
-            Text("This deletes sign-in, settings, preview state, history, and helper data. Codexex will quit after reset.")
+            Text(
+                "This deletes sign-in, settings, preview state, history, and helper data. Codexex will quit after reset."
+            )
         }
         .alert(
             "Reset incomplete",
@@ -177,162 +169,166 @@ struct SettingsRootView: View {
         }
     }
 
-    private var titleBar: some View {
-        ZStack {
-            HStack(spacing: 6) {
-                Color.clear.frame(width: 70)
-
-                Spacer()
-            }
-            .padding(.horizontal, 12)
-
-            Text(selection.title)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.primary)
-        }
-        .frame(height: 38)
-        .background(SettingsTheme.groupedBackground)
-        .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(SettingsTheme.hairline)
-                .frame(height: 1)
-        }
-    }
-
-    private var sidebar: some View {
-        VStack(spacing: 0) {
-            VStack(spacing: 4) {
-                ForEach(SettingsSection.allCases) { section in
-                    sidebarItem(section)
-                }
-            }
-            .padding(8)
-
-            Spacer(minLength: 0)
-
-            sidebarAccount
-                .padding(8)
-        }
-        .background(SettingsTheme.sidebarBackground)
-    }
-
-    private func sidebarItem(_ section: SettingsSection) -> some View {
-        Button {
-            selection = section
-        } label: {
-            HStack(spacing: 11) {
-                Image(systemName: section.systemImage)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 22, height: 22)
-                    .background(
-                        section.tint,
-                        in: RoundedRectangle(
-                            cornerRadius: SettingsControlMetrics.iconRadius(for: 22),
-                            style: .continuous
-                        )
-                    )
-
-                Text(section.title)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.primary)
-
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 8)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: 32)
-            .background {
-                if selection == section {
-                    SettingsTheme.selectedFill
-                        .clipShape(RoundedRectangle(cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous))
-                }
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var sidebarAccount: some View {
-        Button {
-            openAccountSettings()
-        } label: {
-            HStack(spacing: 10) {
-                SettingsRowIcon(systemImage: "person.crop.circle")
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(model.accountHeadline)
-                        .font(.system(size: 12, weight: .semibold))
-                        .lineLimit(1)
-
-                    HStack(spacing: 5) {
-                        if model.snapshot?.account.displayPlan?.isEmpty == false {
-                            Text(model.snapshot?.account.displayPlan ?? "")
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 1)
-                                .background(SettingsTheme.accent, in: RoundedRectangle(cornerRadius: 3, style: .continuous))
-                        }
-
-                        Text("Account")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                }
-
-                Spacer(minLength: 0)
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.secondary)
-            }
-            .padding(8)
-            .background(
-                SettingsTheme.cardFill,
-                in: RoundedRectangle(cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous)
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous)
-                    .strokeBorder(selection == .about ? SettingsTheme.accent.opacity(0.35) : SettingsTheme.hairline, lineWidth: 1)
-            }
-            .contentShape(RoundedRectangle(cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Account")
-        .accessibilityHint("Opens About settings with account sign-in")
-    }
-
-    private func openAccountSettings() {
-        pendingAccountScroll = true
-        selection = .about
-        accountScrollRequest += 1
-    }
-
-    private func scrollToAccount(using proxy: ScrollViewProxy) {
-        Task { @MainActor in
-            await Task.yield()
-            await Task.yield()
-            withAnimation(.easeInOut(duration: 0.18)) {
-                proxy.scrollTo(SettingsScrollTarget.account, anchor: .center)
-            }
-            pendingAccountScroll = false
-        }
-    }
-
     @ViewBuilder
     private var content: some View {
         switch selection {
-        case .general:
-            generalSection
-        case .menuBar:
-            menuBarSection
-        case .notifications:
-            notificationsSection
-        case .about:
-            aboutSection
+        case .accounts: accountsSection
+        case .general: generalSection
+        case .appearance:
+            VStack(alignment: .leading, spacing: 26) {
+                themeSection
+                menuBarSection
+            }
+        case .data: dataSection
+        case .about: aboutSection
         }
+    }
+
+    private var accountsSection: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            if let destination = accountDestination {
+                Button {
+                    accountDestination = nil
+                } label: {
+                    Label("Accounts", systemImage: "chevron.left")
+                }
+                .buttonStyle(.borderless)
+                if destination == .api {
+                    OpenAIMonitorView(monitor: model.apiMonitor, preview: model.previewModeEnabled)
+                } else {
+                    Text("Approve sign-in in your browser, then return here.").font(.callout)
+                        .foregroundStyle(.secondary)
+
+                    SettingsListGroup(title: "ChatGPT subscription") {
+                        HStack(spacing: 14) {
+                            SettingsRowIcon(
+                                systemImage: "person.crop.circle", size: 40, imageSize: 18)
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(
+                                    model.isSignedIn
+                                        ? model.accountHeadline
+                                        : model.isSigningIn ? "Connecting…" : "Not connected"
+                                )
+                                .font(.system(size: 13, weight: .semibold))
+                                .lineLimit(1)
+
+                                Text(
+                                    model.isSignedIn
+                                        ? (model.accountDetail ?? "Subscription")
+                                        : "Subscription limits and resets"
+                                )
+                                .font(.system(size: 11.5))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                            }
+
+                            Spacer()
+
+                            accountPrimaryAction
+                        }
+                        .padding(.horizontal, 14)
+                        .frame(height: 66)
+
+                        if let code = model.authDeviceCode {
+                            SettingsDeviceCodeCallout(
+                                code: code,
+                                isCancelling: model.isCancellingPendingSignIn,
+                                openSafari: { model.openAuthVerificationPage() },
+                                copyCode: { model.copyAuthCode() },
+                                cancel: { model.cancelPendingChatGPTSignIn() }
+                            )
+                            .padding(14)
+                            .overlay(alignment: .bottom) {
+                                Rectangle()
+                                    .fill(SettingsTheme.hairline)
+                                    .frame(height: 1)
+                            }
+                        }
+
+                        if (model.isSignedIn && !model.previewModeEnabled) || model.isSigningOut {
+                            SettingsListRow(title: "Sign out", isLast: true) {
+                                if model.isSigningOut {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                        .accessibilityLabel("Signing out")
+                                } else if model.isSignedIn, model.previewModeEnabled == false {
+                                    Button("Sign Out") { model.signOut() }
+                                        .buttonStyle(.bordered)
+                                        .tint(.red)
+                                } else {
+                                    Text(
+                                        model.previewModeEnabled
+                                            ? "Sample data active" : "Not signed in"
+                                    )
+                                    .font(.system(size: 11.5))
+                                    .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                    }
+
+                    if let error = model.lastError {
+                        Text(error).font(.callout).foregroundStyle(.secondary)
+                    }
+                }
+            } else {
+                SettingsListGroup(title: "Connections") {
+                    connectionRow(
+                        "ChatGPT subscription",
+                        detail: model.previewModeEnabled
+                            ? "Preview"
+                            : model.isSignedIn ? model.accountHeadline : "Not connected",
+                        destination: .subscription)
+                    Divider()
+                    connectionRow(
+                        "OpenAI API",
+                        detail: model.apiMonitor.isValidated ? "Connected" : "Not connected",
+                        destination: .api)
+                }
+                SettingsListGroup(title: "Preview") {
+                    SettingsListRow(
+                        title: "Sample data", detail: "Explore the app without a connection.",
+                        isLast: true
+                    ) {
+                        CodexSwitch(
+                            isOn: Binding(
+                                get: { model.previewModeEnabled },
+                                set: { value in
+                                    if value {
+                                        model.enablePreviewMode()
+                                    } else {
+                                        model.disablePreviewMode()
+                                    }
+                                }), accessibilityLabel: "Sample data"
+                        )
+                        .disabled(model.isAuthBusy)
+                    }
+                }
+            }
+        }
+        .id(accountDestination)
+        .transition(.opacity)
+    }
+
+    private func connectionRow(
+        _ title: String, detail: String, destination: SettingsAccountDestination
+    ) -> some View {
+        Button {
+            accountDestination = destination
+        } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title).font(.body.weight(.medium)).foregroundStyle(.primary)
+                    Text(detail).font(.callout).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right").foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 14)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     private var generalSection: some View {
@@ -340,83 +336,82 @@ struct SettingsRootView: View {
             SettingsListGroup(title: "Startup") {
                 SettingsListRow(
                     title: "Launch at login",
-                    detail: model.launchAtLoginStatusMessage ?? "Open Codexex when your Mac starts.",
+                    detail: model.launchAtLoginStatusMessage
+                        ?? "Open Codexex when your Mac starts.",
                     isLast: true
                 ) {
-                    CodexSwitch(isOn: Binding(
-                        get: { model.launchAtLoginEnabled },
-                        set: { model.setLaunchAtLoginEnabled($0) }
-                    ), accessibilityLabel: "Launch at login")
+                    CodexSwitch(
+                        isOn: Binding(
+                            get: { model.launchAtLoginEnabled },
+                            set: { model.setLaunchAtLoginEnabled($0) }
+                        ), accessibilityLabel: "Launch at login")
                 }
             }
 
             SettingsListGroup(
                 title: "Refresh",
-                footer: "Background refresh keeps your menu bar meter up to date without opening the popup."
+                footer: nil
             ) {
                 SettingsListRow(title: "Auto-refresh") {
-                    CodexSwitch(isOn: Binding(
-                        get: { model.autoRefreshEnabled },
-                        set: { model.setAutoRefreshEnabled($0) }
-                    ), accessibilityLabel: "Auto-refresh")
+                    CodexSwitch(
+                        isOn: Binding(
+                            get: { model.autoRefreshEnabled },
+                            set: { model.setAutoRefreshEnabled($0) }
+                        ), accessibilityLabel: "Auto-refresh")
                 }
 
                 SettingsListRow(title: "Interval") {
-                    CodexSegmentedControl(selection: Binding(
-                        get: { model.refreshIntervalSeconds },
-                        set: { model.setRefreshIntervalSeconds($0) }
-                    ), segments: [
-                        ("5m", 300),
-                        ("10m", 600),
-                        ("60m", 3600)
-                    ])
+                    CodexSegmentedControl(
+                        selection: Binding(
+                            get: { model.refreshIntervalSeconds },
+                            set: { model.setRefreshIntervalSeconds($0) }
+                        ),
+                        segments: [
+                            ("5m", 300),
+                            ("10m", 600),
+                            ("60m", 3600),
+                        ], accessibilityLabel: "Refresh interval"
+                    )
                     .frame(width: 146, height: SettingsControlMetrics.controlHeight)
                     .disabled(model.autoRefreshEnabled == false)
                 }
 
-                SettingsListRow(title: "Refresh now", detail: "Pull the latest quota data.", isLast: true) {
+                SettingsListRow(
+                    title: "Refresh now", detail: "Pull the latest quota data.", isLast: true
+                ) {
                     Button {
                         Task { await model.refreshNow(manual: true) }
                     } label: {
-                        Label(model.isRefreshing ? "Refreshing" : "Refresh", systemImage: "arrow.clockwise")
+                        Label(
+                            model.isRefreshing ? "Refreshing" : "Refresh",
+                            systemImage: "arrow.clockwise")
                     }
-                    .buttonStyle(SettingsGhostButtonStyle())
+                    .buttonStyle(.bordered)
                     .disabled(model.isRefreshing)
                 }
             }
 
-            SettingsListGroup(
-                title: "Codex data",
-                footer: "Choose the Codex sessions folder if sandbox permissions block the default path."
-            ) {
-                SettingsListRow(
-                    title: "Sessions folder",
-                    detail: model.localUsageSettingsDetail,
-                    isLast: true
-                ) {
-                    Button("Choose") { model.chooseCodexSessionsFolder() }
-                        .buttonStyle(SettingsGhostButtonStyle())
-                }
-            }
-
-            appearanceSection
+            notificationsSection
         }
     }
 
-    private var appearanceSection: some View {
+    private var themeSection: some View {
         SettingsListGroup(
             title: "Theme",
-            footer: "System follows macOS. Light and Dark force Codexex only."
+            footer: nil
         ) {
             SettingsListRow(title: "Appearance", isLast: true) {
-                CodexSegmentedControl(selection: Binding(
-                    get: { model.appearanceMode },
-                    set: { model.setAppearanceMode($0) }
-                ), segments: [
-                    ("System", .system),
-                    ("Light", .light),
-                    ("Dark", .dark)
-                ])
+                CodexSegmentedControl(
+                    selection: Binding(
+                        get: { model.appearanceMode },
+                        set: { model.setAppearanceMode($0) }
+                    ),
+                    segments: [
+                        ("System", .system),
+                        ("Light", .light),
+                        ("Dark", .dark),
+                    ], accessibilityLabel: "Appearance"
+                )
                 .frame(width: 198, height: SettingsControlMetrics.controlHeight)
             }
         }
@@ -425,21 +420,26 @@ struct SettingsRootView: View {
     private var menuBarSection: some View {
         SettingsListGroup(
             title: "Quota presentation",
-            footer: "The 5-hour window appears automatically for Plus accounts when the account provides it. Weekly visibility is menu-bar only."
+            footer: nil
         ) {
-            SettingsListRow(title: "Mode", detail: "Menu bar usage, remaining quota, or weekly pace.") {
-                CodexSegmentedControl(selection: Binding(
-                    get: { model.menuBarDisplayMode },
-                    set: { model.setMenuBarDisplayMode($0) }
-                ), segments: [
-                    ("Used", .used),
-                    ("Left", .remaining),
-                    ("Pace", .pace)
-                ])
+            SettingsListRow(
+                title: "Mode", detail: "Menu bar usage, remaining quota, or weekly pace."
+            ) {
+                CodexSegmentedControl(
+                    selection: Binding(
+                        get: { model.menuBarDisplayMode },
+                        set: { model.setMenuBarDisplayMode($0) }
+                    ),
+                    segments: [
+                        ("Used", .used),
+                        ("Left", .remaining),
+                        ("Pace", .pace),
+                    ], accessibilityLabel: "Menu bar display"
+                )
                 .frame(width: 174, height: SettingsControlMetrics.controlHeight)
             }
 
-            SettingsListRow(title: "Weekly window") {
+            SettingsListRow(title: "Weekly window", isLast: true) {
                 CodexSwitch(
                     isOn: Binding(
                         get: { model.showWeeklyInMenubar },
@@ -455,7 +455,7 @@ struct SettingsRootView: View {
     private var notificationsSection: some View {
         SettingsListGroup(
             title: "Quota notifications",
-            footer: "Optional local alerts for 5-hour pressure, reset, and weekly risk."
+            footer: nil
         ) {
             SettingsListRow(
                 title: "Quota notifications",
@@ -463,11 +463,55 @@ struct SettingsRootView: View {
                     ?? "Opt-in alerts for 5-hour pressure, reset, and weekly risk.",
                 isLast: true
             ) {
-                CodexSwitch(isOn: Binding(
-                    get: { model.quotaNotificationsEnabled },
-                    set: { model.setQuotaNotificationsEnabled($0) }
-                ), accessibilityLabel: "Quota notifications")
+                CodexSwitch(
+                    isOn: Binding(
+                        get: { model.quotaNotificationsEnabled },
+                        set: { model.setQuotaNotificationsEnabled($0) }
+                    ), accessibilityLabel: "Quota notifications")
             }
+        }
+    }
+
+    private var dataSection: some View {
+        VStack(alignment: .leading, spacing: 26) {
+            SettingsListGroup(title: "Local activity") {
+                SettingsListRow(
+                    title: "Sessions folder", detail: model.localUsageSettingsDetail, isLast: true
+                ) {
+                    Button("Choose…") { model.chooseCodexSessionsFolder() }.buttonStyle(.bordered)
+                }
+            }
+            SettingsListGroup(
+                title: "Diagnostics",
+                footer: "Copies a redacted support report."
+            ) {
+                SettingsListRow(
+                    title: "Copy diagnostics",
+                    detail: model.diagnosticsStatusMessage
+                        ?? "Useful when reporting quota or refresh issues.",
+                    isLast: true
+                ) {
+                    Button("Copy") { model.copyDiagnosticsReport() }
+                        .buttonStyle(.bordered)
+                }
+            }
+
+            SettingsListGroup(
+                title: "Reset",
+                footer: "Remove all local data and return to first launch."
+            ) {
+                SettingsListRow(
+                    title: "Reset app", detail: "Return Codexex to first launch.", isLast: true
+                ) {
+                    Button(isResetting ? "Resetting…" : "Reset") {
+                        isShowingResetConfirmation = true
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.red)
+                    .disabled(isResetting)
+                }
+            }
+
         }
     }
 
@@ -495,113 +539,26 @@ struct SettingsRootView: View {
                 .frame(height: 72)
 
                 SettingsListRow(title: "Terms of Use") {
-                    Button { NSWorkspace.shared.open(CodexAppLinks.termsURL) } label: {
+                    Button {
+                        NSWorkspace.shared.open(CodexAppLinks.termsURL)
+                    } label: {
                         Label("Open", systemImage: "chevron.right")
                             .labelStyle(.titleAndIcon)
                     }
-                    .buttonStyle(SettingsGhostButtonStyle())
+                    .buttonStyle(.bordered)
                 }
 
                 SettingsListRow(title: "Privacy Policy", isLast: true) {
-                    Button { NSWorkspace.shared.open(CodexAppLinks.privacyURL) } label: {
+                    Button {
+                        NSWorkspace.shared.open(CodexAppLinks.privacyURL)
+                    } label: {
                         Label("Open", systemImage: "chevron.right")
                             .labelStyle(.titleAndIcon)
                     }
-                    .buttonStyle(SettingsGhostButtonStyle())
+                    .buttonStyle(.bordered)
                 }
             }
 
-            SettingsListGroup(
-                title: "Diagnostics",
-                footer: "Copies a redacted report. No email, device code, cookies, or tokens."
-            ) {
-                SettingsListRow(
-                    title: "Copy diagnostics",
-                    detail: model.diagnosticsStatusMessage ?? "Useful when reporting quota or refresh issues.",
-                    isLast: true
-                ) {
-                    Button("Copy") { model.copyDiagnosticsReport() }
-                        .buttonStyle(SettingsGhostButtonStyle())
-                }
-            }
-
-            SettingsListGroup(
-                title: "Reset",
-                footer: "Deletes sign-in, settings, preview state, history, and helper data. Codexex quits when done."
-            ) {
-                SettingsListRow(title: "Reset app", detail: "Return Codexex to first launch.", isLast: true) {
-                    Button(isResetting ? "Resetting…" : "Reset") { isShowingResetConfirmation = true }
-                        .buttonStyle(CodexDestructiveButtonStyle())
-                        .disabled(isResetting)
-                }
-            }
-
-            SettingsListGroup(title: "Account") {
-                HStack(spacing: 14) {
-                    SettingsRowIcon(systemImage: "person.crop.circle", size: 40, imageSize: 18)
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(model.accountHeadline)
-                            .font(.system(size: 13, weight: .semibold))
-                            .lineLimit(1)
-
-                        Text(model.accountDetail ?? "Account")
-                            .font(.system(size: 11.5))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-
-                    Spacer()
-
-                    accountPrimaryAction
-                }
-                .padding(.horizontal, 14)
-                .frame(height: 66)
-
-                if let code = model.authDeviceCode {
-                    SettingsDeviceCodeCallout(
-                        code: code,
-                        isCancelling: model.isCancellingPendingSignIn,
-                        openSafari: { model.openAuthVerificationPage() },
-                        copyCode: { model.copyAuthCode() },
-                        cancel: { model.cancelPendingChatGPTSignIn() }
-                    )
-                    .padding(14)
-                    .overlay(alignment: .bottom) {
-                        Rectangle()
-                            .fill(SettingsTheme.hairline)
-                            .frame(height: 1)
-                    }
-                }
-
-                SettingsListRow(title: "Sample data", detail: "Inspect the UI without touching live usage.") {
-                    Button(model.previewModeEnabled ? "Disable" : "Enable") {
-                        if model.previewModeEnabled {
-                            model.disablePreviewMode()
-                        } else {
-                            model.enablePreviewMode()
-                        }
-                    }
-                    .buttonStyle(SettingsGhostButtonStyle())
-                    .disabled(model.isAuthBusy)
-                }
-
-                SettingsListRow(title: "Sign out", isLast: true) {
-                    if model.isSigningOut {
-                        ProgressView()
-                            .controlSize(.small)
-                            .accessibilityLabel("Signing out")
-                    } else if model.isSignedIn, model.previewModeEnabled == false {
-                        Button("Sign Out") { model.signOut() }
-                            .buttonStyle(CodexDestructiveButtonStyle())
-                    } else {
-                        Text(model.previewModeEnabled ? "Sample data active" : "Not signed in")
-                            .font(.system(size: 11.5))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-            .id(SettingsScrollTarget.account)
         }
     }
 
@@ -613,14 +570,18 @@ struct SettingsRootView: View {
                 .foregroundStyle(.secondary)
         } else if model.isSignedIn, model.previewModeEnabled == false {
             Button("Manage") { model.openManageSubscription() }
-                .buttonStyle(CodexPrimaryButtonStyle())
+                .buttonStyle(.borderedProminent)
+                .tint(CodexTheme.prominentTint)
         } else if model.authDeviceCode != nil {
-            Button(model.isCancellingPendingSignIn ? "Clearing…" : "Clear Code") { model.clearAuthCode() }
-                .buttonStyle(SettingsGhostButtonStyle())
-                .disabled(model.isCancellingPendingSignIn)
+            Button(model.isCancellingPendingSignIn ? "Clearing…" : "Clear Code") {
+                model.clearAuthCode()
+            }
+            .buttonStyle(.bordered)
+            .disabled(model.isCancellingPendingSignIn)
         } else {
             Button("Sign In") { model.startChatGPTSignIn() }
-                .buttonStyle(CodexPrimaryButtonStyle())
+                .buttonStyle(.borderedProminent)
+                .tint(CodexTheme.prominentTint)
                 .disabled(model.canStartChatGPTSignIn == false)
         }
     }
@@ -634,19 +595,14 @@ private struct SettingsListGroup<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.system(size: 11, weight: .semibold))
-                .textCase(.uppercase)
+                .font(.headline)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 4)
 
             VStack(spacing: 0) {
                 content
             }
-            .background(SettingsTheme.cardFill, in: RoundedRectangle(cornerRadius: GlassTokens.groupRadius, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: GlassTokens.groupRadius, style: .continuous)
-                    .strokeBorder(SettingsTheme.hairlineStrong, lineWidth: 1)
-            }
+            .overlay(alignment: .top) { Divider() }
 
             if let footer {
                 Text(footer)
@@ -677,7 +633,7 @@ private struct SettingsListRow<Accessory: View>: View {
                     Text(detail)
                         .font(.system(size: 11.5))
                         .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
             .padding(.vertical, detail == nil ? 0 : 8)
@@ -702,21 +658,13 @@ private struct SettingsListRow<Accessory: View>: View {
 
 private struct SettingsRowIcon: View {
     let systemImage: String
-    var size: CGFloat = 30
+    var size: CGFloat = 20
     var imageSize: CGFloat = 14
-
     var body: some View {
         Image(systemName: systemImage)
-            .font(.system(size: imageSize, weight: .semibold))
-            .foregroundStyle(.white)
+            .font(.system(size: imageSize))
+            .foregroundStyle(.secondary)
             .frame(width: size, height: size)
-            .background(
-                SettingsTheme.accent,
-                in: RoundedRectangle(
-                    cornerRadius: SettingsControlMetrics.iconRadius(for: size),
-                    style: .continuous
-                )
-            )
             .accessibilityHidden(true)
     }
 }
@@ -731,7 +679,10 @@ private struct SettingsAppIconView: View {
             .interpolation(.high)
             .aspectRatio(contentMode: .fit)
             .frame(width: size, height: size)
-            .clipShape(RoundedRectangle(cornerRadius: SettingsControlMetrics.iconRadius(for: size), style: .continuous))
+            .clipShape(
+                RoundedRectangle(
+                    cornerRadius: SettingsControlMetrics.iconRadius(for: size), style: .continuous)
+            )
             .accessibilityHidden(true)
     }
 
@@ -741,7 +692,8 @@ private struct SettingsAppIconView: View {
         }
 
         if let iconURL = Bundle.main.url(forResource: "AppIcon", withExtension: "icns"),
-           let image = NSImage(contentsOf: iconURL) {
+            let image = NSImage(contentsOf: iconURL)
+        {
             return prepared(image)
         }
 
@@ -843,9 +795,12 @@ private struct SettingsDeviceCodeCallout: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 9)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(SettingsTheme.secondaryFill, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .background(
+                    SettingsTheme.secondaryFill,
+                    in: RoundedRectangle(cornerRadius: 4, style: .continuous)
+                )
                 .overlay {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: 4, style: .continuous)
                         .strokeBorder(SettingsTheme.hairline, lineWidth: 1)
                 }
 
@@ -855,7 +810,8 @@ private struct SettingsDeviceCodeCallout: View {
                 } label: {
                     Label("Open", systemImage: "safari")
                 }
-                .buttonStyle(CodexPrimaryButtonStyle())
+                .buttonStyle(.borderedProminent)
+                .tint(CodexTheme.prominentTint)
                 .keyboardShortcut(.defaultAction)
                 .disabled(isCancelling)
 
@@ -864,7 +820,7 @@ private struct SettingsDeviceCodeCallout: View {
                 } label: {
                     Label("Copy", systemImage: "doc.on.doc")
                 }
-                .buttonStyle(SettingsGhostButtonStyle())
+                .buttonStyle(.bordered)
                 .disabled(isCancelling)
 
                 Spacer(minLength: 0)
@@ -874,7 +830,7 @@ private struct SettingsDeviceCodeCallout: View {
                 } label: {
                     Label(isCancelling ? "Cancelling…" : "Cancel", systemImage: "xmark")
                 }
-                .buttonStyle(SettingsGhostButtonStyle())
+                .buttonStyle(.bordered)
                 .disabled(isCancelling)
             }
         }
@@ -885,86 +841,27 @@ private struct SettingsDeviceCodeCallout: View {
 private struct CodexSwitch: View {
     @Binding var isOn: Bool
     let accessibilityLabel: String
-    @Environment(\.isEnabled) private var isEnabled
-
     var body: some View {
-        Button {
-            isOn.toggle()
-        } label: {
-            ZStack {
-                Capsule(style: .continuous)
-                    .fill(isOn ? SettingsTheme.accent : SettingsTheme.secondaryFill)
-                    .overlay {
-                        Capsule(style: .continuous)
-                            .strokeBorder(isOn ? SettingsTheme.accent.opacity(0.35) : SettingsTheme.hairlineStrong, lineWidth: 1)
-                    }
-
-                Circle()
-                    .fill(Color.white)
-                    .frame(width: SettingsControlMetrics.switchKnobSize, height: SettingsControlMetrics.switchKnobSize)
-                    .offset(x: isOn ? 9 : -9)
-            }
-            .frame(width: SettingsControlMetrics.switchWidth, height: SettingsControlMetrics.switchHeight)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .opacity(isEnabled ? 1 : 0.45)
-        .accessibilityElement(children: .ignore)
+        Toggle(accessibilityLabel, isOn: $isOn).toggleStyle(.switch).labelsHidden().controlSize(
+            .small
+        )
         .accessibilityLabel(accessibilityLabel)
-        .accessibilityValue(isOn ? "On" : "Off")
-        .accessibilityRepresentation {
-            Toggle(accessibilityLabel, isOn: $isOn)
-                .toggleStyle(.switch)
-        }
     }
 }
 
 private struct CodexSegmentedControl<Value: Hashable>: View {
     @Binding var selection: Value
     let segments: [(String, Value)]
-    @Environment(\.isEnabled) private var isEnabled
-
+    var accessibilityLabel = "Options"
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(Array(segments.enumerated()), id: \.offset) { index, segment in
-                Button {
-                    selection = segment.1
-                } label: {
-                    Text(segment.0)
-                        .font(.system(size: 12.5, weight: selection == segment.1 ? .semibold : .medium))
-                        .foregroundStyle(selection == segment.1 ? Color.white : Color.secondary)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(selection == segment.1 ? .isSelected : [])
-                .background {
-                    if selection == segment.1 {
-                        RoundedRectangle(cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous)
-                            .fill(SettingsTheme.accent)
-                    }
-                }
-
-                if index < segments.count - 1 {
-                    Rectangle()
-                        .fill(SettingsTheme.hairline)
-                        .frame(width: 1, height: 16)
-                        .opacity(selection == segment.1 || selection == segments[index + 1].1 ? 0 : 1)
-                }
+        Picker(accessibilityLabel, selection: $selection) {
+            ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
+                Text(segment.0).tag(segment.1)
             }
         }
-        .padding(2)
-        .background(
-            SettingsTheme.controlFill,
-            in: RoundedRectangle(cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous)
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous)
-                .strokeBorder(SettingsTheme.hairline, lineWidth: 1)
-        }
-        .opacity(isEnabled ? 1 : 0.45)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Options")
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .controlSize(.small)
     }
 }
 
@@ -979,12 +876,16 @@ struct SettingsGhostButtonStyle: ButtonStyle {
             .frame(minWidth: SettingsControlMetrics.actionMinWidth)
             .frame(height: SettingsControlMetrics.controlHeight)
             .background(
-                configuration.isPressed ? SettingsTheme.pressedControlFill : SettingsTheme.controlFill,
-                in: RoundedRectangle(cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous)
+                configuration.isPressed
+                    ? SettingsTheme.pressedControlFill : SettingsTheme.controlFill,
+                in: RoundedRectangle(
+                    cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous)
             )
             .overlay {
-                RoundedRectangle(cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous)
-                    .strokeBorder(SettingsTheme.hairlineStrong, lineWidth: 1)
+                RoundedRectangle(
+                    cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous
+                )
+                .strokeBorder(SettingsTheme.hairlineStrong, lineWidth: 1)
             }
             .opacity(isEnabled ? 1 : 0.45)
     }
@@ -1001,8 +902,9 @@ struct CodexPrimaryButtonStyle: ButtonStyle {
             .frame(minWidth: SettingsControlMetrics.actionMinWidth)
             .frame(height: SettingsControlMetrics.controlHeight)
             .background(
-                SettingsTheme.accent.opacity(configuration.isPressed ? 0.88 : 1),
-                in: RoundedRectangle(cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous)
+                CodexTheme.prominentTint.opacity(configuration.isPressed ? 0.88 : 1),
+                in: RoundedRectangle(
+                    cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous)
             )
             .opacity(isEnabled ? (configuration.isPressed ? 0.82 : 1) : 0.45)
     }
@@ -1017,12 +919,16 @@ struct CodexDestructiveButtonStyle: ButtonStyle {
             .frame(minWidth: SettingsControlMetrics.actionMinWidth)
             .frame(height: SettingsControlMetrics.controlHeight)
             .background(
-                configuration.isPressed ? SettingsTheme.destructivePressedFill : SettingsTheme.destructiveFill,
-                in: RoundedRectangle(cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous)
+                configuration.isPressed
+                    ? SettingsTheme.destructivePressedFill : SettingsTheme.destructiveFill,
+                in: RoundedRectangle(
+                    cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous)
             )
             .overlay {
-                RoundedRectangle(cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous)
-                    .strokeBorder(SettingsTheme.destructiveBorder, lineWidth: 1)
+                RoundedRectangle(
+                    cornerRadius: SettingsControlMetrics.cornerRadius, style: .continuous
+                )
+                .strokeBorder(SettingsTheme.destructiveBorder, lineWidth: 1)
             }
     }
 }

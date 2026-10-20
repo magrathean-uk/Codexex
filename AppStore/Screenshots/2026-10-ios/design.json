@@ -1,0 +1,94 @@
+{
+  "locale": "en-US",
+  "disclosure": "Sample data",
+  "background": [
+    "#111713",
+    "#18261D",
+    "#20382A"
+  ],
+  "title_color": "#FFFFFF",
+  "subtitle_color": "#CFD9D1",
+  "disclosure_color": "#AEBDB2",
+  "frame_color": "Silver",
+  "families": {
+    "iphone": {
+      "size": [
+        1320,
+        2868
+      ],
+      "frame_fit": [
+        1040,
+        2130
+      ],
+      "frame_center_y": 1602,
+      "title_y": 150,
+      "subtitle_y": 280,
+      "disclosure_bottom": 58,
+      "title_font_size": 74,
+      "subtitle_font_size": 42,
+      "disclosure_font_size": 30
+    },
+    "ipad": {
+      "size": [
+        2064,
+        2752
+      ],
+      "frame_fit": [
+        1760,
+        2070
+      ],
+      "frame_center_y": 1546,
+      "title_y": 145,
+      "subtitle_y": 295,
+      "disclosure_bottom": 58,
+      "title_font_size": 112,
+      "subtitle_font_size": 64,
+      "disclosure_font_size": 44
+    }
+  },
+  "screens": [
+    {
+      "id": "01-quota",
+      "title": "Know your next reset",
+      "subtitle": "Codex quota and credits.",
+      "view": "Quota dashboard with Codex credits"
+    },
+    {
+      "id": "02-weekly",
+      "title": "Your week at a glance",
+      "subtitle": "Weekly allowance and reset times.",
+      "view": "Weekly-only quota dashboard"
+    },
+    {
+      "id": "03-history",
+      "title": "See your usage history",
+      "subtitle": "Review peaks and monthly trends.",
+      "view": "Usage history"
+    },
+    {
+      "id": "04-api-balance",
+      "title": "Keep API balance in view",
+      "subtitle": "API dollars, separate from Codex credits.",
+      "view": "Connected prepaid API balance"
+    },
+    {
+      "id": "05-settings",
+      "title": "Make it yours",
+      "subtitle": "Accounts, appearance and refresh.",
+      "view": "Settings"
+    },
+    {
+      "id": "06-onboarding",
+      "title": "Start with what you need",
+      "subtitle": "Choose subscription or API monitoring.",
+      "view": "Onboarding"
+    },
+    {
+      "id": "07-api-setup",
+      "title": "Connect your API",
+      "subtitle": "Check access, usage and costs.",
+      "view": "Connected API setup"
+    }
+  ]
+}
+

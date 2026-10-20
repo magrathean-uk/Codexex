@@ -4,10 +4,18 @@ set -euo pipefail
 MODE="${1:-run}"
 APP_NAME="Codexex"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# Clean Development: honour the routed derived-data and SwiftPM cache
-# locations; fall back to /tmp only when they are unset.
-DERIVED_DATA="${XCODE_DERIVED_DATA_PATH:-/tmp}/codexex-macos-derived"
-SWIFTPM_CACHE="${SWIFTPM_SHARED_CACHE:-/tmp}/codexex-swiftpm-cache"
+# Keep explicit caller paths; load machine routing when either path is missing.
+DERIVED_DATA_ROOT="${XCODE_DERIVED_DATA_PATH:-}"
+SWIFTPM_CACHE_ROOT="${SWIFTPM_SHARED_CACHE:-}"
+if [[ -z "$DERIVED_DATA_ROOT" || -z "$SWIFTPM_CACHE_ROOT" ]]; then
+  if [[ -r "$HOME/dev/machine/env.zsh" ]]; then
+    source "$HOME/dev/machine/env.zsh"
+  fi
+fi
+DERIVED_DATA_ROOT="${DERIVED_DATA_ROOT:-${XCODE_DERIVED_DATA_PATH:?Load ~/dev/machine/env.zsh or supply XCODE_DERIVED_DATA_PATH}}"
+SWIFTPM_CACHE_ROOT="${SWIFTPM_CACHE_ROOT:-${SWIFTPM_SHARED_CACHE:?Load ~/dev/machine/env.zsh or supply SWIFTPM_SHARED_CACHE}}"
+DERIVED_DATA="$DERIVED_DATA_ROOT/codexex-macos-derived"
+SWIFTPM_CACHE="$SWIFTPM_CACHE_ROOT/codexex-swiftpm-cache"
 APP_BUNDLE="$DERIVED_DATA/Build/Products/Debug/$APP_NAME.app"
 APP_BINARY="$APP_BUNDLE/Contents/MacOS/$APP_NAME"
 
@@ -18,6 +26,38 @@ case "$MODE" in
     exit 2
     ;;
 esac
+
+output_ready() {
+  local output="$1" parent="$1" mount_root="" mount_device parent_device
+  case "$output" in
+    /*) ;;
+    *) echo "Codexex: output path must be absolute: $output" >&2; return 1 ;;
+  esac
+  case "$output" in
+    /Volumes/*)
+      mount_root="${output#/Volumes/}"
+      mount_root="/Volumes/${mount_root%%/*}"
+      /sbin/mount | /usr/bin/awk -v target="$mount_root" 'index($0, " on " target " (") { found=1 } END { exit !found }' || {
+        echo "Codexex: external output volume is not mounted: $mount_root" >&2; return 1;
+      } ;;
+  esac
+  while [[ ! -e "$parent" ]]; do
+    parent="${parent%/*}"
+    [[ -n "$parent" ]] || parent=/
+  done
+  [[ -d "$parent" && -w "$parent" && -x "$parent" ]] || {
+    echo "Codexex: output parent is not writable: $parent" >&2; return 1;
+  }
+  if [[ -n "${mount_root:-}" ]]; then
+    mount_device="$(/usr/bin/stat -L -f %d "$mount_root")" || return 1
+    parent_device="$(/usr/bin/stat -L -f %d "$parent")" || return 1
+    [[ "$mount_device" = "$parent_device" ]] || {
+      echo "Codexex: output parent is outside the mounted volume: $parent" >&2; return 1;
+    }
+  fi
+}
+output_ready "$DERIVED_DATA"
+output_ready "$SWIFTPM_CACHE"
 
 pkill -x "$APP_NAME" >/dev/null 2>&1 || true
 

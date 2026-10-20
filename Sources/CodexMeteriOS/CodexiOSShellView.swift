@@ -2,10 +2,11 @@ import SwiftUI
 
 struct CodexiOSShellView: View {
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage(CodexiOSSettingsKeys.autoCheckSignInOnReturn) private var autoCheckSignInOnReturn = true
     @AppStorage(CodexiOSSettingsKeys.refreshWhenActive) private var refreshWhenActive = true
     @AppStorage(CodexiOSSettingsKeys.refreshIntervalSeconds) private var refreshIntervalSeconds = 300
-    @AppStorage(CodexiOSSettingsKeys.appearanceMode) private var appearanceMode = CodexiOSAppearanceMode.dark.rawValue
+    @AppStorage(CodexiOSSettingsKeys.appearanceMode) private var appearanceMode = CodexiOSAppearanceMode.system.rawValue
     @AppStorage(CodexiOSSettingsKeys.hasCompletedOnboarding) private var storedHasCompletedOnboarding = false
     @Bindable var model: CodexiOSModel
 
@@ -13,23 +14,17 @@ struct CodexiOSShellView: View {
         Group {
             if model.isCheckingSavedAccount {
                 CodexiOSLaunchLoadingView(message: model.statusMessage)
-                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
+                    .transition(.opacity)
             } else if hasCompletedOnboarding {
                 CodexiOSRootView(model: model)
-                    .transition(.asymmetric(
-                        insertion: .opacity.combined(with: .move(edge: .trailing)).combined(with: .scale(scale: 0.98)),
-                        removal: .opacity.combined(with: .move(edge: .leading)).combined(with: .scale(scale: 1.02))
-                    ))
+                    .transition(.opacity)
             } else {
                 CodexiOSOnboardingView(model: model)
-                    .transition(.asymmetric(
-                        insertion: .opacity.combined(with: .move(edge: .leading)).combined(with: .scale(scale: 0.98)),
-                        removal: .opacity.combined(with: .move(edge: .leading)).combined(with: .scale(scale: 0.98))
-                    ))
+                    .transition(.opacity)
             }
         }
-        .animation(.spring(response: 0.5, dampingFraction: 0.86), value: hasCompletedOnboarding)
-        .animation(.spring(response: 0.5, dampingFraction: 0.86), value: model.isCheckingSavedAccount)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: hasCompletedOnboarding)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: model.isCheckingSavedAccount)
         .task {
             await model.start()
         }
@@ -46,6 +41,12 @@ struct CodexiOSShellView: View {
             }
         }
         .onOpenURL { url in
+            #if DEBUG
+            if url.scheme == "codexex", url.host == "background-test" {
+                Task { await runBackgroundTest() }
+                return
+            }
+            #endif
             guard url.scheme == "codexex", url.host == "refresh" else { return }
             Task { await model.refresh() }
         }
@@ -60,12 +61,57 @@ struct CodexiOSShellView: View {
         "\(refreshWhenActive)-\(max(refreshIntervalSeconds, 300))"
     }
 
+    #if DEBUG
+    private func runBackgroundTest() async {
+        let push = codexiOSSharedPushRegistrationManager
+        push.recordDebugTestPhase("waiting-for-startup")
+        let startupDeadline = Date().addingTimeInterval(10)
+        while model.isCheckingSavedAccount || model.isRefreshing || model.isSigningIn || model.isLiveActivityTransitioning {
+            guard !Task.isCancelled, Date() < startupDeadline else {
+                push.recordDebugTestPhase("startup-not-ready")
+                return
+            }
+            do { try await Task.sleep(for: .milliseconds(200)) } catch { return }
+        }
+        push.recordDebugTestPhase("refreshing-quota")
+        await model.refresh()
+        guard !Task.isCancelled, !model.previewModeEnabled, model.isSignedIn, model.snapshot != nil else {
+            push.recordDebugTestPhase("signed-in-quota-unavailable")
+            return
+        }
+        if !model.isLiveActivityRunning {
+            push.recordDebugTestPhase("starting-activity")
+            await model.startLiveActivity()
+        }
+        guard !Task.isCancelled, model.isLiveActivityRunning else {
+            push.recordDebugTestPhase("activity-unavailable")
+            return
+        }
+        push.recordDebugTestPhase("waiting-for-registration")
+        let registrationDeadline = Date().addingTimeInterval(10)
+        while push.registrationState != .registered {
+            guard !Task.isCancelled, Date() < registrationDeadline else {
+                push.recordDebugTestPhase("registration-not-ready")
+                return
+            }
+            do { try await Task.sleep(for: .milliseconds(200)) } catch { return }
+        }
+        guard !push.isTestWakeCoolingDown else {
+            push.recordDebugTestPhase("test-cooldown")
+            return
+        }
+        push.recordDebugTestPhase("requesting-wake")
+        await push.requestTestWake()
+        push.recordDebugTestPhase(push.testWakeStatus?.hasPrefix("Requested") == true ? "wake-requested" : "wake-request-failed")
+    }
+    #endif
+
     private func runAutoRefreshLoop() async {
         guard refreshWhenActive else { return }
         while Task.isCancelled == false {
             try? await Task.sleep(for: .seconds(Double(max(refreshIntervalSeconds, 300))))
             guard Task.isCancelled == false else { return }
-            if scenePhase == .active, model.canAutoRefresh {
+            if scenePhase == .active, model.canAutoRefresh || model.apiMonitor.hasKey {
                 await model.refresh()
             }
         }
@@ -74,33 +120,16 @@ struct CodexiOSShellView: View {
 
 private struct CodexiOSLaunchLoadingView: View {
     let message: String
-
     var body: some View {
-        ZStack {
-            CodexiOSTheme.background
-                .ignoresSafeArea()
-
-            VStack(alignment: .leading, spacing: 18) {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 12) {
-                        CodexiOSLoadingPulse(tint: CodexiOSTheme.secondary)
-
-                        Text("Codexex")
-                            .font(.system(size: 38, weight: .bold))
-                            .lineLimit(1)
-                    }
-
-                    Text(message)
-                        .font(.callout.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                }
-
-                CodexiOSLoadingBar(tint: CodexiOSTheme.secondary)
-                    .accessibilityLabel("Loading quota")
-            }
-            .padding(22)
-            .frame(maxWidth: 520, alignment: .leading)
+        VStack(spacing: 16) {
+            ProgressView().controlSize(.large)
+            Text("Codexex").font(.largeTitle.bold())
+            Text(message).font(.callout).foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
         }
+        .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(uiColor: .systemBackground))
     }
 }
 

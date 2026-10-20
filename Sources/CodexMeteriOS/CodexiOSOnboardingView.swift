@@ -1,259 +1,63 @@
 import SwiftUI
 
 struct CodexiOSOnboardingView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Bindable var model: CodexiOSModel
-    @State private var step: Step = .welcome
-    @State private var hasAppeared = false
-
-    private enum Step: Int {
-        case welcome
-        case login
-    }
+    @State private var path: [Connection] = []
+    private enum Connection: Hashable { case subscription, api }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                CodexiOSOnboardingBackground()
-                    .ignoresSafeArea()
-
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 22) {
-                        header
-
-                        Group {
-                            switch step {
-                            case .welcome:
-                                welcomeStep
-                            case .login:
-                                loginStep
-                            }
-                        }
-                        .transition(.opacity.combined(with: .move(edge: .trailing)))
-                    }
-                    .padding(.horizontal, 22)
-                    .padding(.top, 34)
-                    .padding(.bottom, 120)
-                    .frame(maxWidth: 760, alignment: .topLeading)
-                    .frame(maxWidth: .infinity)
+        NavigationStack(path: $path) {
+            Form {
+                Section {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Welcome to Codexex").font(.title.bold()).accessibilityAddTraits(.isHeader)
+                        Text("What would you like to monitor?").foregroundStyle(.secondary)
+                    }.padding(.vertical, 12)
+                        .listRowBackground(Color.clear)
+                }
+                Section {
+                    NavigationLink(value: Connection.subscription) {
+                        choice("ChatGPT subscription", detail: "Codex limits and reset times", icon: "gauge.with.dots.needle.bottom.50percent")
+                    }.accessibilityIdentifier("ios.onboarding.subscription")
+                    NavigationLink(value: Connection.api) {
+                        choice("API monitoring", detail: "API access, costs and credits", icon: "chart.bar.xaxis")
+                    }.accessibilityIdentifier("ios.onboarding.api")
+                }
+                Section {
+                    Button("Try preview") { model.enablePreviewMode() }
+                        .frame(minHeight: 44).accessibilityIdentifier("ios.onboarding.preview")
+                } footer: { Text("Explore with sample data.") }
+            }
+            .listStyle(.insetGrouped)
+            .navigationTitle("Get started").navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(for: Connection.self) { connection in
+                switch connection {
+                case .subscription: CodexiOSSubscriptionConnectionView(model: model)
+                case .api: CodexiOSAPIConnectionView(monitor: model.apiMonitor, onContinue: { model.completeOnboarding() })
                 }
             }
         }
-        .animation(.spring(response: 0.45, dampingFraction: 0.9), value: step)
-        .onAppear {
-            if model.hasPendingSignIn {
-                step = .login
-            }
-            withAnimation(.spring(response: 0.7, dampingFraction: 0.82)) {
-                hasAppeared = true
-            }
-        }
-        .onChange(of: model.hasPendingSignIn) { _, hasPendingSignIn in
-            if hasPendingSignIn {
-                withAnimation { step = .login }
+        .tint(CodexiOSTheme.actionTint)
+        .onAppear { if model.hasPendingSignIn { path = [.subscription] } }
+        .onChange(of: model.hasPendingSignIn) { _, pending in
+            if pending && path.last != .subscription {
+                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.18)) { path = [.subscription] }
             }
         }
     }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 8) {
-                progressDot(active: true)
-                progressDot(active: step == .login)
-                Text(step == .welcome ? "Step 1 of 2" : "Step 2 of 2")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+    private func choice(_ title: String, detail: String, icon: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon).font(.title2).frame(width: 28).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(.headline)
+                Text(detail).font(.subheadline).foregroundStyle(.secondary)
             }
-
-            Text(step == .welcome ? "Welcome to Codexex" : "Sign in with ChatGPT")
-                .font(.system(size: 44, weight: .black, design: .rounded))
-                .fixedSize(horizontal: false, vertical: true)
-
-            Text(step == .welcome ? "Track Codex quota from this device. No server, no Mac bridge, no browser cookies." : "Approve the device code in Safari. When you return, Codexex checks status automatically.")
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    private var welcomeStep: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            heroCard
-
-            onboardingCard {
-                VStack(alignment: .leading, spacing: 14) {
-                    Text("Choose how to start")
-                        .font(.title2.weight(.bold))
-
-                    Text("Preview mode uses local sample data so anyone can test the layout before signing in.")
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Button {
-                        withAnimation(.spring(response: 0.5, dampingFraction: 0.86)) {
-                            model.enablePreviewMode()
-                        }
-                    } label: {
-                        Text("Try Preview Mode")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(CodexiOSPrimaryButtonStyle())
-                    .contentShape(Rectangle())
-
-                    Button {
-                        withAnimation { step = .login }
-                    } label: {
-                        Text("Continue to Login")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(CodexiOSSecondaryButtonStyle())
-                    .contentShape(Rectangle())
-                }
-            }
-        }
-    }
-
-    private var loginStep: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            onboardingCard {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Connect account")
-                        .font(.title2.weight(.bold))
-
-                    Text(loginMessage)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    if let code = model.deviceCode {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Device code")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                            Text(code)
-                                .font(.system(.title2, design: .monospaced, weight: .bold))
-                                .textSelection(.enabled)
-                        }
-                        .padding(14)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(CodexiOSTheme.inset, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    }
-
-                    FlowLayout(spacing: 10) {
-                        if model.deviceCode == nil {
-                            Button(model.isSigningIn ? "Starting" : "Sign In") {
-                                Task { await model.beginSignIn() }
-                            }
-                            .buttonStyle(CodexiOSPrimaryButtonStyle())
-                            .disabled(model.isSigningIn)
-                        } else {
-                            Button("Open Safari") { Task { await model.openSignInPage() } }
-                                .buttonStyle(CodexiOSPrimaryButtonStyle())
-                            Button("Copy Code") { model.copyCode() }
-                                .buttonStyle(CodexiOSSecondaryButtonStyle())
-                            Button("Check Status") { Task { await model.checkSignIn() } }
-                                .buttonStyle(CodexiOSSecondaryButtonStyle())
-                                .disabled(model.isSigningIn)
-                            Button("Start Over") { Task { await model.restartSignIn() } }
-                                .buttonStyle(CodexiOSSecondaryButtonStyle())
-                                .disabled(model.isSigningIn)
-                            Button("Cancel") {
-                                Task {
-                                    await model.cancelSignIn()
-                                    withAnimation { step = .welcome }
-                                }
-                            }
-                            .buttonStyle(CodexiOSSecondaryButtonStyle())
-                            .disabled(model.isSigningIn)
-                        }
-                    }
-                }
-            }
-
-            Button {
-                withAnimation { step = .welcome }
-            } label: {
-                Label("Back", systemImage: "chevron.left")
-            }
-            .buttonStyle(CodexiOSSecondaryButtonStyle())
-        }
-    }
-
-    private var heroCard: some View {
-        onboardingCard {
-            HStack(alignment: .top, spacing: 16) {
-                ZStack {
-                    Circle()
-                        .fill(CodexiOSTheme.primary.opacity(0.18))
-                    Image(systemName: "gauge.with.dots.needle.bottom.50percent")
-                        .font(.system(size: 32, weight: .bold))
-                        .foregroundStyle(CodexiOSTheme.secondary)
-                }
-                .frame(width: 68, height: 68)
-                .scaleEffect(hasAppeared ? 1 : 0.84)
-                .rotationEffect(.degrees(hasAppeared ? 0 : -8))
-                .animation(.spring(response: 0.65, dampingFraction: 0.72).delay(0.08), value: hasAppeared)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Quota, readable")
-                        .font(.title2.weight(.bold))
-                    Text("Quota cards, reset times, and preview data in the same layout as the real app.")
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-        }
-        .opacity(hasAppeared ? 1 : 0)
-        .offset(y: hasAppeared ? 0 : 12)
-        .animation(.easeOut(duration: 0.45), value: hasAppeared)
-    }
-
-    private var loginMessage: String {
-        if model.deviceCode != nil {
-            return model.statusMessage
-        }
-        if let error = model.errorMessage {
-            return error
-        }
-        return "Start device login. Safari opens, then Codexex finishes when you return."
-    }
-
-    private func progressDot(active: Bool) -> some View {
-        Capsule()
-            .fill(active ? CodexiOSTheme.secondary : .white.opacity(0.16))
-            .frame(width: active ? 28 : 10, height: 10)
-    }
-
-    private func onboardingCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        content()
-            .padding(20)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(CodexiOSTheme.card, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
-                    .strokeBorder(CodexiOSTheme.border, lineWidth: 1)
-            }
-            .modifier(CodexiOSOnboardingGlassModifier())
+        }.padding(.vertical, 8).frame(minHeight: 44)
     }
 }
 
 struct CodexiOSOnboardingBackground: View {
-    var body: some View {
-        CodexiOSTheme.background
-    }
-}
-
-private struct CodexiOSOnboardingGlassModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content
-                .glassEffect(.regular.tint(CodexiOSTheme.card), in: .rect(cornerRadius: 28))
-                .shadow(color: .black.opacity(0.30), radius: 24, y: 14)
-        } else {
-            content
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-                .shadow(color: .black.opacity(0.30), radius: 24, y: 14)
-        }
-    }
+    var body: some View { Color(uiColor: .systemGroupedBackground) }
 }

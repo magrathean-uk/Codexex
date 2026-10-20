@@ -46,7 +46,7 @@ struct PopupResetDashboardView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     header
-                        .padding(.bottom, 30)
+                        .padding(.bottom, 24)
 
                     Text(activeFiveHourWindow == nil && weeklyWindow != nil ? "Weekly allowance" : "Your next reset")
                         .font(.system(size: 27, weight: .bold))
@@ -68,7 +68,23 @@ struct PopupResetDashboardView: View {
                             now: context.date,
                             showsAllowance: activeFiveHourWindow != nil
                         )
-                        .padding(.top, 38)
+                        .padding(.top, 28)
+                    }
+
+                    if let credits = CodexQuotaPresentationRules.visibleCredits(snapshot.codexLimit?.credits) {
+                        HStack(alignment: .firstTextBaseline, spacing: 12) {
+                            Text("Codex credits")
+                                .foregroundStyle(.secondary)
+                            Spacer(minLength: 8)
+                            Text(credits.displayText)
+                                .fontWeight(.semibold)
+                                .monospacedDigit()
+                                .foregroundStyle(credits.isNegativeBalance ? Color.red : .primary)
+                        }
+                        .font(.system(size: 13))
+                        .accessibilityElement(children: .combine)
+                        .accessibilityIdentifier("mac.popup.codexCredits")
+                        .padding(.top, 16)
                     }
 
                     if model.lastError != nil {
@@ -78,8 +94,11 @@ struct PopupResetDashboardView: View {
                             .padding(.top, 22)
                     }
 
+                    if model.apiMonitor.hasKey && !model.previewModeEnabled {
+                        OpenAIMonitorView(monitor: model.apiMonitor, configuration: false)
+                    }
                     footer
-                        .padding(.top, 35)
+                        .padding(.top, 20)
                 }
                 .padding(20)
                 .frame(maxWidth: .infinity, alignment: .leading)

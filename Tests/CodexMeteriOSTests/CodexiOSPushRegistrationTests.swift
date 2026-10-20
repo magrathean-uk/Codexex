@@ -25,7 +25,7 @@ final class CodexiOSPushRegistrationTests: XCTestCase {
         let manager = CodexiOSPushRegistrationManager(
             store: store,
             defaults: defaults,
-            session: session,
+            session: session, diagnosticsFileURL: nil,
             registerForRemoteNotifications: { didRequestRemoteRegistration = true }
         )
 
@@ -60,7 +60,7 @@ final class CodexiOSPushRegistrationTests: XCTestCase {
         let manager = CodexiOSPushRegistrationManager(
             store: store,
             defaults: makeDefaults(),
-            session: makeSession(),
+            session: makeSession(), diagnosticsFileURL: nil,
             registerForRemoteNotifications: {}
         )
 
@@ -92,7 +92,7 @@ final class CodexiOSPushRegistrationTests: XCTestCase {
         let manager = CodexiOSPushRegistrationManager(
             store: store,
             defaults: makeDefaults(),
-            session: makeSession(),
+            session: makeSession(), diagnosticsFileURL: nil,
             registerForRemoteNotifications: {}
         )
 
@@ -139,7 +139,7 @@ final class CodexiOSPushRegistrationTests: XCTestCase {
         let manager = CodexiOSPushRegistrationManager(
             store: store,
             defaults: makeDefaults(),
-            session: makeSession(),
+            session: makeSession(), diagnosticsFileURL: nil,
             registerForRemoteNotifications: {}
         )
 
@@ -175,7 +175,7 @@ final class CodexiOSPushRegistrationTests: XCTestCase {
         let manager = CodexiOSPushRegistrationManager(
             store: store,
             defaults: makeDefaults(),
-            session: makeSession(),
+            session: makeSession(), diagnosticsFileURL: nil,
             registerForRemoteNotifications: {}
         )
 
@@ -203,7 +203,7 @@ final class CodexiOSPushRegistrationTests: XCTestCase {
         let manager = CodexiOSPushRegistrationManager(
             store: store,
             defaults: makeDefaults(),
-            session: makeSession(),
+            session: makeSession(), diagnosticsFileURL: nil,
             registrationRetryDelay: .milliseconds(1),
             registerForRemoteNotifications: {}
         )
@@ -229,7 +229,7 @@ final class CodexiOSPushRegistrationTests: XCTestCase {
         let manager = CodexiOSPushRegistrationManager(
             store: store,
             defaults: makeDefaults(),
-            session: makeSession(),
+            session: makeSession(), diagnosticsFileURL: nil,
             registrationRetryDelay: .milliseconds(50),
             registerForRemoteNotifications: {}
         )
@@ -240,6 +240,183 @@ final class CodexiOSPushRegistrationTests: XCTestCase {
         try await Task.sleep(for: .milliseconds(100))
 
         XCTAssertEqual(requestCount, 2, "Only the failed PUT and deletion may run after disable.")
+    }
+
+    func testRepeatedRecoveryDoesNotOrphanInFlightRegistrationRetry() async {
+        let started = expectation(description: "first registration started")
+        let retried = expectation(description: "transient failure retried after recovery")
+        var count = 0
+        CodexiOSPushURLProtocolStub.handler = { request in
+            count += 1
+            if count == 1 {
+                started.fulfill()
+                return nil
+            }
+            retried.fulfill()
+            return Self.response(for: request, status: 201)
+        }
+        let manager = CodexiOSPushRegistrationManager(
+            store: CodexiOSPushRegistrationStore(backend: InMemorySecureDataStore()),
+            defaults: makeDefaults(), session: makeSession(), diagnosticsFileURL: nil,
+            registrationRetryDelay: .milliseconds(1), registerForRemoteNotifications: {}
+        )
+        await manager.enable()
+        let registration = Task { await manager.didRegister(deviceToken: Data([1, 2, 3])) }
+        await fulfillment(of: [started], timeout: 1)
+        await manager.enable() // A second model recovered the same activity.
+        CodexiOSPushURLProtocolStub.completeNextPendingRequest(status: 500)
+        await registration.value
+        await fulfillment(of: [retried], timeout: 1)
+        XCTAssertEqual(count, 2)
+    }
+
+    func testReadinessRequiresRelayAcceptanceAndRestoresWithoutProviderData() async throws {
+        let defaults = makeDefaults()
+        let store = CodexiOSPushRegistrationStore(backend: InMemorySecureDataStore())
+        let manager = CodexiOSPushRegistrationManager(store: store, defaults: defaults,
+            session: makeSession(), diagnosticsFileURL: nil, registerForRemoteNotifications: {})
+        XCTAssertEqual(manager.registrationState, .disabled)
+        await manager.enable()
+        XCTAssertEqual(manager.registrationState, .pending)
+        CodexiOSPushURLProtocolStub.handler = { Self.response(for: $0, status: 201) }
+        await manager.didRegister(deviceToken: Data([1, 2, 3]))
+        XCTAssertEqual(manager.registrationState, .registered)
+        XCTAssertNotNil(manager.registeredAt)
+        let restored = CodexiOSPushRegistrationManager(store: store, defaults: defaults,
+            session: makeSession(), diagnosticsFileURL: nil, registerForRemoteNotifications: {})
+        XCTAssertEqual(restored.registrationState, .registered)
+        await manager.disable()
+        XCTAssertEqual(manager.registrationState, .disabled)
+    }
+
+    func testForegroundRetriesAPNsFailureBeforeADeviceTokenExists() async {
+        var sdkRegistrationCalls = 0
+        let manager = CodexiOSPushRegistrationManager(
+            store: CodexiOSPushRegistrationStore(backend: InMemorySecureDataStore()),
+            defaults: makeDefaults(), session: makeSession(), diagnosticsFileURL: nil,
+            registerForRemoteNotifications: { sdkRegistrationCalls += 1 })
+        await manager.enable()
+        manager.didFailRemoteRegistration()
+        await manager.retryPendingRegistration()
+        XCTAssertEqual(sdkRegistrationCalls, 2)
+        XCTAssertEqual(manager.registrationState, .pending)
+        await manager.disable()
+        await manager.retryPendingRegistration()
+        XCTAssertEqual(sdkRegistrationCalls, 2)
+    }
+
+    func testLocalWakeReceiptContainsOnlyOutcomeAndTimestamps() throws {
+        let defaults = makeDefaults()
+        let manager = CodexiOSPushRegistrationManager(
+            store: CodexiOSPushRegistrationStore(backend: InMemorySecureDataStore()),
+            defaults: defaults, session: makeSession(), diagnosticsFileURL: nil, registerForRemoteNotifications: {})
+        let received = Date(timeIntervalSince1970: 1_000)
+        let captured = received.addingTimeInterval(2)
+        let data = try XCTUnwrap(manager.recordWake(receivedAt: received,
+            outcome: "refreshed", snapshotCapturedAt: captured, appState: "background", protectedDataAvailable: false))
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        XCTAssertEqual(Set(object.keys), ["receivedAt", "recordedAt", "outcome", "snapshotCapturedAt",
+            "appState", "protectedDataAvailable"])
+        XCTAssertEqual(object["appState"] as? String, "background")
+        XCTAssertEqual(object["protectedDataAvailable"] as? Bool, false)
+        XCTAssertEqual(object["outcome"] as? String, "refreshed")
+        XCTAssertGreaterThan(try XCTUnwrap(object["snapshotCapturedAt"] as? Double),
+                             try XCTUnwrap(object["receivedAt"] as? Double))
+        let restored = CodexiOSPushRegistrationManager(defaults: defaults,
+            session: makeSession(), diagnosticsFileURL: nil, registerForRemoteNotifications: {})
+        XCTAssertEqual(restored.lastWake, manager.lastWake)
+    }
+
+    func testBackgroundTestPostsOnlyToOwnInstallationWithEmptyBody() async throws {
+        let store = CodexiOSPushRegistrationStore(backend: InMemorySecureDataStore())
+        let manager = CodexiOSPushRegistrationManager(store: store, defaults: makeDefaults(),
+            session: makeSession(), diagnosticsFileURL: nil, registerForRemoteNotifications: {})
+        var testRequest: URLRequest?
+        var testBody: Data?
+        CodexiOSPushURLProtocolStub.handler = { request in
+            if request.httpMethod == "PUT" { return Self.response(for: request, status: 201) }
+            testRequest = request
+            testBody = Self.bodyData(from: request)
+            return (Self.response(for: request, status: 202).0,
+                    Data(#"{"requested":true,"delaySeconds":15}"#.utf8))
+        }
+        await manager.enable()
+        await manager.didRegister(deviceToken: Data([1, 2, 3]))
+        let ownRecord = try XCTUnwrap(store.load())
+        await manager.requestTestWake()
+        let request = try XCTUnwrap(testRequest)
+        XCTAssertEqual(request.httpMethod, "POST")
+        XCTAssertEqual(request.url?.host, "push.magrathean.uk")
+        XCTAssertEqual(request.url?.path, "/v1/codexex/installations/\(ownRecord.installationID)/wake")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer \(ownRecord.installationSecret)")
+        XCTAssertNil(testBody)
+        XCTAssertEqual(manager.registrationState, .registered)
+        XCTAssertTrue(manager.testWakeStatus?.contains("15 seconds") == true)
+        XCTAssertTrue(manager.isTestWakeCoolingDown)
+    }
+
+    func testBackgroundTestFailureDoesNotDisableNormalRegistration() async {
+        let manager = CodexiOSPushRegistrationManager(
+            store: CodexiOSPushRegistrationStore(backend: InMemorySecureDataStore()),
+            defaults: makeDefaults(), session: makeSession(), diagnosticsFileURL: nil, registerForRemoteNotifications: {})
+        CodexiOSPushURLProtocolStub.handler = { Self.response(for: $0, status: 201) }
+        await manager.enable()
+        await manager.didRegister(deviceToken: Data([1, 2, 3]))
+        CodexiOSPushURLProtocolStub.handler = { Self.response(for: $0, status: 429) }
+        await manager.requestTestWake()
+        XCTAssertEqual(manager.registrationState, .registered)
+        XCTAssertEqual(manager.testWakeStatus, "Wait a minute before testing again.")
+        XCTAssertTrue(manager.isTestWakeCoolingDown)
+        XCTAssertFalse(manager.isRequestingTestWake)
+    }
+
+    func testAcceptedTestCooldownSurvivesRelaunchAndBlocksDuplicatePOST() async {
+        let store = CodexiOSPushRegistrationStore(backend: InMemorySecureDataStore())
+        let defaults = makeDefaults()
+        var postCount = 0
+        CodexiOSPushURLProtocolStub.handler = { request in
+            if request.httpMethod == "PUT" { return Self.response(for: request, status: 201) }
+            postCount += 1
+            return (Self.response(for: request, status: 202).0,
+                    Data(#"{"requested":true,"delaySeconds":15}"#.utf8))
+        }
+        let manager = CodexiOSPushRegistrationManager(store: store, defaults: defaults,
+            session: makeSession(), diagnosticsFileURL: nil, registerForRemoteNotifications: {})
+        await manager.enable()
+        await manager.didRegister(deviceToken: Data([1, 2, 3]))
+        await manager.requestTestWake()
+        await manager.requestTestWake()
+        let restored = CodexiOSPushRegistrationManager(store: store, defaults: defaults,
+            session: makeSession(), diagnosticsFileURL: nil, registerForRemoteNotifications: {})
+        XCTAssertTrue(restored.isTestWakeCoolingDown)
+        await restored.requestTestWake()
+        XCTAssertEqual(postCount, 1)
+    }
+
+    func testDiagnosticExportHasReadinessActivityAndHTTPStatusWithoutIdentifiers() async throws {
+        let url = URL.temporaryDirectory.appendingPathComponent("wake-diagnostics-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let manager = CodexiOSPushRegistrationManager(
+            store: CodexiOSPushRegistrationStore(backend: InMemorySecureDataStore()),
+            defaults: makeDefaults(), session: makeSession(), diagnosticsFileURL: url,
+            registerForRemoteNotifications: {})
+        CodexiOSPushURLProtocolStub.handler = { Self.response(for: $0, status: 201) }
+        await manager.enable()
+        await manager.didRegister(deviceToken: Data([1, 2, 3]))
+        manager.recordLiveActivityState(isRunning: true)
+        let data = try Data(contentsOf: url)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        XCTAssertEqual(Set(object.keys), ["registrationState", "recordedAt", "isLiveActivityRunning",
+            "registeredAt", "lastRequestMethod", "lastHTTPStatus", "lastRequestAt",
+            "currentAppState", "backgroundRefreshStatus", "currentProtectedDataAvailable", "lowPowerModeEnabled"])
+        XCTAssertNotNil(object["currentProtectedDataAvailable"] as? Bool)
+        XCTAssertNotNil(object["lowPowerModeEnabled"] as? Bool)
+        XCTAssertTrue(["active", "inactive", "background", "unknown"].contains(object["currentAppState"] as? String ?? ""))
+        XCTAssertTrue(["available", "denied", "restricted", "unknown"].contains(object["backgroundRefreshStatus"] as? String ?? ""))
+        XCTAssertEqual(object["registrationState"] as? String, "registered")
+        XCTAssertEqual(object["isLiveActivityRunning"] as? Bool, true)
+        XCTAssertEqual(object["lastRequestMethod"] as? String, "PUT")
+        XCTAssertEqual(object["lastHTTPStatus"] as? Int, 201)
     }
 
     func testSilentPushDeadlineCompletesExactlyOnce() async throws {

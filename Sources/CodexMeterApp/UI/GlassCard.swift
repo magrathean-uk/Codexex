@@ -3,28 +3,35 @@ import AppKit
 import SwiftUI
 
 enum CodexTheme {
-    static let windowNSColor = adaptiveNS(light: ns(0xF7F8FA), dark: ns(0x060914))
+    private static let windowLight = NSColor(red: 0.97, green: 0.98, blue: 0.97, alpha: 1)
+    private static let windowDark = NSColor(red: 0.10, green: 0.11, blue: 0.11, alpha: 1)
+    static let windowNSColor = adaptiveNS(light: windowLight, dark: windowDark)
 
-    static let desktopTop = color(light: ns(0xF7F8FA), dark: ns(0x060914))
-    static let desktopBottom = color(light: ns(0xF7F8FA), dark: ns(0x05141F))
+    static let desktopTop = color(light: windowLight, dark: windowDark)
+    static let desktopBottom = color(light: ns(0xF5F7F5), dark: ns(0x171B19))
     static let window = Color(nsColor: windowNSColor)
-    static let titlebar = color(light: ns(0xFAFAFB), dark: ns(0x081021))
-    static let sidebar = color(light: ns(0xF0F2F5), dark: ns(0x050D1A))
-    static let surface = color(light: ns(0xFFFFFF).withAlphaComponent(0.90), dark: ns(0x081021).withAlphaComponent(0.88))
-    static let surfaceRaised = color(light: ns(0xFFFFFF), dark: ns(0x0A1426))
-    static let control = color(light: ns(0xEEF1F6), dark: ns(0x0F1A2E))
-    static let hairline = color(light: ns(0x101727).withAlphaComponent(0.10), dark: ns(0x5FAAFF).withAlphaComponent(0.12))
-    static let hairlineStrong = color(light: ns(0x101727).withAlphaComponent(0.16), dark: ns(0x5FAAFF).withAlphaComponent(0.20))
-    static let text = color(light: ns(0x101727).withAlphaComponent(0.94), dark: ns(0xFFFFFF).withAlphaComponent(0.94))
-    static let muted = color(light: ns(0x101727).withAlphaComponent(0.62), dark: ns(0xFFFFFF).withAlphaComponent(0.62))
-    static let dim = color(light: ns(0x101727).withAlphaComponent(0.44), dark: ns(0xFFFFFF).withAlphaComponent(0.42))
+    static let titlebar = color(light: windowLight, dark: ns(0x1C201E))
+    static let sidebar = color(light: ns(0xF0F3F0), dark: ns(0x171C19))
+    static let surface = color(light: ns(0xFFFFFF).withAlphaComponent(0.90), dark: ns(0x202522).withAlphaComponent(0.88))
+    static let surfaceRaised = color(light: ns(0xFFFFFF), dark: ns(0x262C28))
+    static let control = color(light: ns(0xEEF2EE), dark: ns(0x2C332E))
+    static let hairline = color(light: ns(0x141C16).withAlphaComponent(0.10), dark: ns(0xBFD0C3).withAlphaComponent(0.12))
+    static let hairlineStrong = color(light: ns(0x141C16).withAlphaComponent(0.16), dark: ns(0xBFD0C3).withAlphaComponent(0.20))
+    static let text = color(light: ns(0x141C16).withAlphaComponent(0.94), dark: ns(0xFFFFFF).withAlphaComponent(0.94))
+    static let muted = color(light: ns(0x141C16).withAlphaComponent(0.68), dark: ns(0xFFFFFF).withAlphaComponent(0.70))
+    static let dim = color(light: ns(0x141C16).withAlphaComponent(0.60), dark: ns(0xFFFFFF).withAlphaComponent(0.60))
     static let accent = Color(red: 0.10, green: 0.15, blue: 1.00)
+    static let actionTint = color(
+        light: NSColor(red: 0.05, green: 0.35, blue: 0.72, alpha: 1),
+        dark: NSColor(red: 0.45, green: 0.73, blue: 1.00, alpha: 1)
+    )
+    static let prominentTint = Color(red: 0.05, green: 0.35, blue: 0.72)
     static let accent2 = Color(red: 0.13, green: 0.84, blue: 0.91)
     static let amber = Color(red: 1.00, green: 0.65, blue: 0.08)
     static let danger = Color(red: 1.00, green: 0.27, blue: 0.32)
     static let success = Color(red: 0.35, green: 0.82, blue: 0.44)
-    static let shadow = color(light: ns(0x5C6F93).withAlphaComponent(0.16), dark: ns(0x000000).withAlphaComponent(0.32))
-    static let popupShadow = color(light: ns(0x5C6F93).withAlphaComponent(0.24), dark: ns(0x000000).withAlphaComponent(0.42))
+    static let shadow = color(light: ns(0x44614C).withAlphaComponent(0.16), dark: ns(0x000000).withAlphaComponent(0.32))
+    static let popupShadow = color(light: ns(0x44534A).withAlphaComponent(0.24), dark: ns(0x000000).withAlphaComponent(0.42))
 
     static let desktopGradient = LinearGradient(
         colors: [desktopTop, desktopBottom],
@@ -34,7 +41,7 @@ enum CodexTheme {
 
     static func windowNSColor(for appearance: NSAppearance) -> NSColor {
         let match = appearance.bestMatch(from: [.aqua, .darkAqua])
-        return match == .darkAqua ? ns(0x060914) : ns(0xF7F8FA)
+        return match == .darkAqua ? windowDark : windowLight
     }
 
     private static func ns(_ hex: UInt32) -> NSColor {

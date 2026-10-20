@@ -140,8 +140,21 @@ final class PopupReferenceRenderTests: XCTestCase {
             limits: plus.limits
         )
 
-        for (name, snapshot) in [("plus", plus), ("pro-weekly-only", pro), ("pro-five-hour", proWithFiveHour)] {
-            XCTAssertEqual(snapshot.showsFiveHourLimit, name != "pro-weekly-only")
+        let creditSnapshots: [(String, CodexSnapshot)] = [
+            ("zero-credits", CodexCredits(hasCredits: false, unlimited: false, balance: "0")),
+            ("unlimited-credits", CodexCredits(hasCredits: true, unlimited: true, balance: nil)),
+        ].map { name, credits in
+            (name, CodexSnapshot(
+                capturedAt: now,
+                executablePath: plus.executablePath,
+                account: pro.account,
+                limits: [CodexLimit(id: "codex", rawLimitName: "Codex", bucket: .codex, primary: weekly, secondary: nil, credits: credits)]
+            ))
+        }
+
+        let fixtures = [("plus", plus), ("pro-weekly-only", pro), ("pro-five-hour", proWithFiveHour)] + creditSnapshots
+        for (name, snapshot) in fixtures {
+            XCTAssertEqual(snapshot.showsFiveHourLimit, name == "plus" || name == "pro-five-hour")
             let suiteName = "PopupResetDashboardTests.\(UUID().uuidString)"
             let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
             defaults.removePersistentDomain(forName: suiteName)
@@ -159,6 +172,9 @@ final class PopupReferenceRenderTests: XCTestCase {
 
             XCTAssertGreaterThan(PixelSample(bitmap: bitmap).nonBlackShare, 0.05)
             let data = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+            if let outputDirectory = ProcessInfo.processInfo.environment["CODEXEX_RESET_RENDER_OUTPUT"] {
+                try data.write(to: URL(fileURLWithPath: outputDirectory).appendingPathComponent("codexex-mac-reset-\(name).png"), options: .atomic)
+            }
             let attachment = XCTAttachment(data: data, uniformTypeIdentifier: "public.png")
             attachment.name = "codexex-mac-reset-\(name)"
             attachment.lifetime = .keepAlways
@@ -429,6 +445,7 @@ final class PopupReferenceRenderTests: XCTestCase {
                 store: CodexUsageHistoryStore(fileURL: historyURL)
             )
         )
+        model.setAppearanceMode(.dark)
         model.setShowHistoryEnabled(false)
 
         await model.refreshNow(manual: true)
@@ -467,10 +484,16 @@ final class PopupReferenceRenderTests: XCTestCase {
 
     func testWindowHostedPopupFooterRendersVisibleActionRail() async throws {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let suiteName = "PopupReferenceRenderTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defaults.removePersistentDomain(forName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
         let model = CodexMenuBarModel(
             service: RenderSuccessfulService(now: now),
-            localUsageProvider: RenderLocalUsageProvider()
+            localUsageProvider: RenderLocalUsageProvider(),
+            settingsStore: CodexAppSettingsStore(defaults: defaults)
         )
+        model.setAppearanceMode(.dark)
         await model.refreshNow(manual: true)
 
         let view = PopupRootView(

@@ -37,8 +37,8 @@ final class CodexiOSMatrixSpeedTests: XCTestCase {
     }
 
     func testLegalLinksUseCodexexPages() {
-        XCTAssertEqual(CodexiOSLegalLinks.privacyPolicy.absoluteString, "https://codexex.eu/privacy/")
-        XCTAssertEqual(CodexiOSLegalLinks.termsOfService.absoluteString, "https://codexex.eu/terms/")
+        XCTAssertEqual(CodexiOSLegalLinks.privacyPolicy.absoluteString, "https://magrathean.uk/solutions/codexex/privacy/")
+        XCTAssertEqual(CodexiOSLegalLinks.termsOfService.absoluteString, "https://magrathean.uk/solutions/codexex/terms/")
     }
 
     func testDownwardPullSlowsRainToHalfSpeed() {

@@ -62,15 +62,10 @@ public enum CodexQuotaPresentationRules {
 
     public static func visibleCredits(_ credits: CodexCredits?) -> CodexCredits? {
         guard let credits else { return nil }
-        guard credits.unlimited == false else { return nil }
 
         let text = credits.displayText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard text.isEmpty == false else { return nil }
         guard text.caseInsensitiveCompare("None") != .orderedSame else { return nil }
-
-        if let numericValue = normalizedNumber(from: text), numericValue == 0 {
-            return nil
-        }
 
         return credits
     }
@@ -114,8 +109,4 @@ public enum CodexQuotaPresentationRules {
         return .standard
     }
 
-    private static func normalizedNumber(from text: String) -> Double? {
-        let cleaned = text.replacingOccurrences(of: ",", with: "")
-        return Double(cleaned)
-    }
 }

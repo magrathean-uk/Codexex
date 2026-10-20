@@ -1,6 +1,6 @@
 # Codexex Privacy Policy
 
-Last updated: 22 September 2026
+Last updated: 14 October 2026
 
 Codexex is a local-first macOS and iOS companion for viewing Codex quota state, reset windows, local usage history, session burn, and forecasts.
 
@@ -23,9 +23,18 @@ Codexex may store or process the following on your device:
 - preview-mode settings and sample preview data;
 - appearance, onboarding, menu-bar, window, notification, and app preferences;
 - local helper/XPC state needed by the macOS app and bundled helper;
-- error messages and local logs visible on your machine.
+- error messages and local logs visible on your machine;
+- optional OpenAI API keys, billing-session credentials and selected organization identifiers;
+- API validation results, usage and cost reports, and prepaid balance observations;
+- optional billing sign-in cookies and website data in the app's own browser storage.
 
 OAuth tokens are stored using Apple Keychain or platform-protected storage. Local history and preferences are stored in the app sandbox or equivalent local storage.
+
+Saved API credentials use device-only Keychain storage with synchronization disabled. API monitoring is separate from ChatGPT subscription sign-in. Optional billing sign-in uses a dedicated persistent browser inside the app. It observes outgoing billing authorization from `platform.openai.com`, stores the verified credential locally, and does not import another browser's cookies or inspect password fields.
+
+On iOS, the app shares quota percentages, reset times, observation timestamps, API balance and preview/stale indicators with its widget extension through a local App Group. This cache contains no credentials, account identifiers, email addresses or session-log paths. The extension does not contact OpenAI.
+
+Local iOS background diagnostics contain timestamps, registration and refresh outcomes, HTTP status codes, app state, background-refresh availability, protected-data availability and low-power status. They contain no provider credentials, installation secrets, account identifiers, quota values or usage history, and are not uploaded automatically.
 
 ## Data we do not collect from the app
 
@@ -45,7 +54,7 @@ Your OpenAI password is handled by OpenAI's sign-in flow. Magrathean does not re
 
 Codexex may connect to:
 
-- OpenAI/ChatGPT endpoints for authentication, token refresh, quota lookup, account selection, and related responses;
+- OpenAI/ChatGPT endpoints for authentication, token refresh, quota lookup, account selection, API access validation, organization usage and cost reports, optional billing reads, and related responses;
 - Apple services for App Store distribution, purchase state where applicable, updates, platform crash reporting where handled by the operating system, and platform operation;
 - `push.magrathean.uk`, hosted on Cloudflare, to register or remove an encrypted APNs token and receive content-free iOS Live Activity wake notifications;
 - Magrathean websites only when you open legal, support, release-notes, or product links;
@@ -86,6 +95,8 @@ You can contact us for more information about the safeguards used for a relevant
 Local app data remains on your device until you clear it, sign out, remove the app, delete local history, or the operating system removes it.
 
 OAuth tokens remain in Keychain or platform storage until sign-out, deletion, expiry, replacement, or app removal behaviour handled by the platform.
+
+ChatGPT Sign out removes subscription sign-in; API monitoring is managed separately. Disable automatic balance stops monitoring and retains browser sign-in. Disconnect monitoring attempts to remove the API credential and clears its browser data. Remove saved browser sign-in clears browser website data, and Reset App attempts to clear both. Browser sign-in can persist across retries and restarts until cleared.
 
 The Live Activity wake registration is removed when the Live Activity is stopped and the removal request succeeds. A registration that cannot be removed immediately expires automatically after 30 days unless the app renews it. Invalid APNs tokens are removed when Apple rejects them.
 

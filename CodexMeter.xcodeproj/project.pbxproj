@@ -12,12 +12,14 @@
 		0350F768560D8A4EB52D2596 /* PopupSummaryCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D15D66529D9E2B5CCB5D169 /* PopupSummaryCardView.swift */; };
 		0493BC9F7D55E2EECFDEEEB5 /* CodexLiveActivityPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1620954B18099D9EFB53363 /* CodexLiveActivityPresentation.swift */; };
 		05F26FC7CCC52F85B67FBA8A /* CodexHelperLineReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = D698FB4C9A50CA554B0550C8 /* CodexHelperLineReader.swift */; };
+		06DB69123A15F7049D9B0FF3 /* MonitoringWidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DA0618BDAD0B953728E4F91 /* MonitoringWidgetSnapshot.swift */; };
 		0765115329C9513687009A1F /* CodexLocalUsageCardPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E6C164A4C2C1BB0E5FC686D /* CodexLocalUsageCardPolicyTests.swift */; };
 		087306CE7BFE6CE626E4441A /* CodexAppResetter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D4643340C8B906668F199F8 /* CodexAppResetter.swift */; };
 		091F0761036C0B660CAF4F4F /* CodexFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28C8C0A190E2CBBFBD0F5242 /* CodexFormatting.swift */; };
 		0971E071CD764A0F13F50574 /* CodexMeterCoreiOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 64A4FA0C1E3AFD300012B57A /* CodexMeterCoreiOS.framework */; };
 		09875EDDEE74692B8803B381 /* CodexSensitiveRedactorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80C480AB90B2EB2573803A43 /* CodexSensitiveRedactorTests.swift */; };
 		0B4C80DD15E0974A1C293062 /* OnboardingRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39EDD9819BF6B9A3204E3F0F /* OnboardingRootView.swift */; };
+		0C01402B36ECD18B39524CBC /* MonitoringWidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DA0618BDAD0B953728E4F91 /* MonitoringWidgetSnapshot.swift */; };
 		0D1EDC1B9A047BE21A729FEA /* PopupPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7DC9461D5A89DDD41915EB /* PopupPresentation.swift */; };
 		0D5147B0A0D575B227E2C660 /* CodexFormattingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFA0B71CFFD2820EA439D76C /* CodexFormattingTests.swift */; };
 		0D82E69093B19642898C2603 /* CodexDashboardState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 305AAF2B86E0F73329DCBC56 /* CodexDashboardState.swift */; };
@@ -29,12 +31,14 @@
 		137ADD0ED54B9BEAB08EC276 /* CodexiOSMatrixQuotaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 411B69AF5441D8514617C5B4 /* CodexiOSMatrixQuotaView.swift */; };
 		14552F1B2EEB7E4530B179B2 /* CodexRefreshCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC9E3D0D765146EDEEA25054 /* CodexRefreshCoordinator.swift */; };
 		148B3445AF8CF0D4BA52770E /* CodexiOSPushRegistrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C1A89CCFBDE0DDF2167A4FC /* CodexiOSPushRegistrationTests.swift */; };
+		14E9CEDA2B01842CBDEB72FE /* OpenAIMonitorModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34DC6953FD3D0C03A7CE70C3 /* OpenAIMonitorModelTests.swift */; };
 		17640F87C09FECBB553D5520 /* CodexAppLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E5F053505E884FBD559ACCC /* CodexAppLinks.swift */; };
 		181A3BEAEEE1855FF052F319 /* CodexHistoryRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEF19D5BC8BD43C5743F981C /* CodexHistoryRepository.swift */; };
 		193EC7AFFB032DFA821500B6 /* CodexAuthSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = D24D957C6CAB61789A1C7AD1 /* CodexAuthSession.swift */; };
 		1BF94E136A807E6684341548 /* CodexMeterCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6869618B2897346A3AB60D26 /* CodexMeterCore.framework */; };
 		1C0D0CDDE7501BCAD59D3BC1 /* CodexMeterCoreiOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 64A4FA0C1E3AFD300012B57A /* CodexMeterCoreiOS.framework */; };
 		1DE8CA42D34331DA5D73EB2D /* CodexexiOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A729D4E01BB7C27D032909ED /* CodexexiOSApp.swift */; };
+		1EFC0D199718AB92971AF168 /* OpenAIMonitorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F0AE4487635A4E64CD34285 /* OpenAIMonitorView.swift */; };
 		1F716FB31CC97F437C153AD1 /* SettingsForecastCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7A0915351DD97681A213FCB /* SettingsForecastCardView.swift */; };
 		1FB1CD389834B848B7FF7A63 /* CodexiOSPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B99D28DCEF73F61E20CA25CA /* CodexiOSPresentationTests.swift */; };
 		2036B60D86528A7C1F7A8DD4 /* PopupLimitCardViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E944DBB615061BEA8E462D9 /* PopupLimitCardViews.swift */; };
@@ -45,7 +49,9 @@
 		2464986D9560A0BD07E6C0F2 /* CodexDeviceAuthCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2532C9697CC6730FC45790DE /* CodexDeviceAuthCoordinator.swift */; };
 		2612BDEDDA88004D9176D78D /* GlassCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE2909B5F3DAB30B7BDCACD5 /* GlassCard.swift */; };
 		27A9B3C611933865DF8185D5 /* PopupPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7DC9461D5A89DDD41915EB /* PopupPresentation.swift */; };
+		28A6E91BB5307C3CF57E315B /* OpenAIAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65448BC129FBAD0E56312EAC /* OpenAIAPIClient.swift */; };
 		2A9FA8C8305FFE6F3423C08F /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 4E1FF620CBA13A034D978DAD /* PrivacyInfo.xcprivacy */; };
+		2C775ABAD0B7653C9404EA13 /* CodexMeterWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D722F5F0365F7196E20D6F0 /* CodexMeterWidgets.swift */; };
 		2DD7F4B32FDD59E6D23C78E7 /* CodexMeterCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6869618B2897346A3AB60D26 /* CodexMeterCore.framework */; };
 		2E1D74ECA4CEC3C04222DFE4 /* CodexXPCServiceCancellationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDD4677A503EBA71DF2933D7 /* CodexXPCServiceCancellationTests.swift */; };
 		2E9FDA240C252B85DD619C6C /* CodexiOSMatrixSpeedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A092CDBC525B474DC8DEE8D4 /* CodexiOSMatrixSpeedTests.swift */; };
@@ -54,6 +60,7 @@
 		33841CD2E70AFE0A22CB83AA /* CodexXPCRequestGuards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F4A03C91A093F6B25E2FE65 /* CodexXPCRequestGuards.swift */; };
 		3485B4D8947D184E1E4785A1 /* CodexQuotaSnapshotBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2763F8999C44DE7A51CB688F /* CodexQuotaSnapshotBuilder.swift */; };
 		36D12549C8CAB472B2F8813D /* CodexiOSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 410E8DD13157EB9F9DA4D77D /* CodexiOSService.swift */; };
+		3786BEC1F2DCDE7529BEF3A5 /* MonitoringWidgetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EE58D5660234BD1D3C9A645 /* MonitoringWidgetTests.swift */; };
 		37DFC407356074296938AAC4 /* CodexHelperSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9B6AEA0C51A476054836FAF /* CodexHelperSession.swift */; };
 		389005E5E19EE8E4C4AB2CBF /* CodexHelperProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F11D4461703FF707B59579E /* CodexHelperProcess.swift */; };
 		3BF14FF505CC670D0B0C1E1B /* CodexAccountTierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC09961F979574DBE8ACB85B /* CodexAccountTierTests.swift */; };
@@ -67,14 +74,20 @@
 		49CA232E5B819EC369F25345 /* CodexAppServerProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59BF4687D491CA6035EC1E43 /* CodexAppServerProbe.swift */; };
 		4B1A1E766C201D31CDE00E6E /* StatusBarLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3134479F012B906A7D8DD00F /* StatusBarLabel.swift */; };
 		4DBB1B07B795DDAEED280F65 /* CodexMeterCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6869618B2897346A3AB60D26 /* CodexMeterCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		50CCD479DA8D7A82B6CA8671 /* CodexiOSWidgetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27CA138032EA0256123468A0 /* CodexiOSWidgetTests.swift */; };
+		5115A56D64D42E321C837EC7 /* OpenAIMonitorModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9857579CEAC5FEDB2692441 /* OpenAIMonitorModel.swift */; };
+		567252550890F36C036B171D /* CodexWidgetDesignRenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD72BA1D616DD86CD01B0A76 /* CodexWidgetDesignRenderTests.swift */; };
 		56C8905D73B2CC46E5960B35 /* CodexXPCRequestGuards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F4A03C91A093F6B25E2FE65 /* CodexXPCRequestGuards.swift */; };
 		589F77FEADA1044E87EFEAC6 /* CodexServiceContractsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1861D53A1F57EB01F26800B /* CodexServiceContractsTests.swift */; };
 		5A13627707CE7F2EAE3E380B /* CodexQuotaNotificationPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12859210F9737A253371CADC /* CodexQuotaNotificationPlanner.swift */; };
 		5BAE4B5C186FFE637C10305F /* CodexLocalUsageModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DCB68BA3D1440CD077F896F /* CodexLocalUsageModels.swift */; };
+		5C28AABE7C11287A2046DE55 /* OpenAIAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65448BC129FBAD0E56312EAC /* OpenAIAPIClient.swift */; };
 		5D66AAF61CB0544A6778A318 /* CodexAuthFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 663EB7F700A461322CFB2123 /* CodexAuthFlow.swift */; };
+		5F9ED3276DA3A9E4E04F2EBD /* CodexiOSWidgetPublisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 295D954EC0543BF657520000 /* CodexiOSWidgetPublisher.swift */; };
 		6033EEC6BFF316AA629BF8B0 /* CodexLocalConfigDoctor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C93F9E8D666046B633329ED /* CodexLocalConfigDoctor.swift */; };
 		60668C2C9AFF17B52B25AF43 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B4B18F174DC46CE37BD5F200 /* LaunchScreen.storyboard */; };
 		6092EF48D5067D3AEA443F7A /* PopupStatusCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5BFA2D05C17A74BBBB6DF3E /* PopupStatusCardView.swift */; };
+		60A9278E8541D23BD820137F /* CodexiOSConnectionViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 524C063FEACA5B657FD8841D /* CodexiOSConnectionViews.swift */; };
 		60BAB253D539CB5D5B3EAC1F /* CodexPopoverSizingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE5366DEE91A1A176EEB2337 /* CodexPopoverSizingTests.swift */; };
 		60FDC5DB302DDBA630D4C40C /* CodexAppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3341C9D3222116EB47334518 /* CodexAppSettings.swift */; };
 		6218766B3C3BFDD2072BD229 /* CodexSecureAtomicFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = E81F5FEC69949A4D8551D423 /* CodexSecureAtomicFile.swift */; };
@@ -88,7 +101,9 @@
 		667546F85A7A45C96A8F0FC4 /* CodexServiceContracts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276FBBA17CA2600B367DBC25 /* CodexServiceContracts.swift */; };
 		6681CD2BF38A4A5A14EF3ADD /* CodexRefreshCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF2448A9CDCA1876C462E525 /* CodexRefreshCoordinatorTests.swift */; };
 		678650CBD8EE762E44A93264 /* CodexLocalUsageModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DCB68BA3D1440CD077F896F /* CodexLocalUsageModels.swift */; };
+		691E873ED79D58132927FE15 /* OpenAIMonitorModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9857579CEAC5FEDB2692441 /* OpenAIMonitorModel.swift */; };
 		6BF3CA164FBA64B561253B53 /* CodexUsageHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3209217BB7F873DF4FF8D1AF /* CodexUsageHistoryStore.swift */; };
+		6C4A4AF93A49A51262F89558 /* OpenAIBillingLoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEFB8155297293C99546196C /* OpenAIBillingLoginView.swift */; };
 		6D858EAFD7F1BEFFE1039843 /* CodexLocalUsageAggregator.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE3DF6C43EAD9B9663EFCD58 /* CodexLocalUsageAggregator.swift */; };
 		6E5C01E077ACA8C5A75C1DF3 /* CodexLocalUsageIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D189A266835AA0CBBB09BD0 /* CodexLocalUsageIndex.swift */; };
 		71B3E39977240A141201FC7A /* CodexPreviewData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0F373CE46619902781235BE /* CodexPreviewData.swift */; };
@@ -101,6 +116,8 @@
 		7CBC557D3EBEE8CA7F57E6D4 /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B85225D5F3B2A1899DCF5C6 /* SettingsWindowController.swift */; };
 		7CD6D1020EA328DC2FB91341 /* CodexMenuBarModel+UI.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7B21E431498D1F93FE20578 /* CodexMenuBarModel+UI.swift */; };
 		7F89E5F27D60DD0CEFA9CDBB /* PopupUsageHistoryCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D4239A5022878524982EB35 /* PopupUsageHistoryCardView.swift */; };
+		80AE43E969DBD926ECC503FC /* CodexHomeWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 323FD52461A0170A01970802 /* CodexHomeWidgets.swift */; };
+		8168516B5800CD2F431D0F96 /* OpenAIMonitorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F0AE4487635A4E64CD34285 /* OpenAIMonitorView.swift */; };
 		831CF45C2BBFB9E33426D4F7 /* CodexRateLimitPayloadMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F296DCDAEEC79A9BB221618 /* CodexRateLimitPayloadMapper.swift */; };
 		8402ACA7B5FD9E63B3747C88 /* CodexXPCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FFF781EDCCE50F5B04750C6 /* CodexXPCService.swift */; };
 		85A399D0C72AD6691C4B641C /* CodexiOSUsageHistoryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7DB82C15DD7819ADDD370A7 /* CodexiOSUsageHistoryStoreTests.swift */; };
@@ -113,15 +130,18 @@
 		8B944EC71A661E1310E2D184 /* PopupRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6337B4BF12C9256AF34E241 /* PopupRootView.swift */; };
 		8C9251383795975C3B7A1818 /* CodexLocalUsageAggregator.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE3DF6C43EAD9B9663EFCD58 /* CodexLocalUsageAggregator.swift */; };
 		8DC11928547AC258492A54B4 /* CodexLaunchAtLoginManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2912FA060561F4B750A662B /* CodexLaunchAtLoginManager.swift */; };
+		8EF101EB366AA9F56B3056B4 /* OpenAIAPICredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D8A9059BD6D7CACA2E15A4C /* OpenAIAPICredentialStore.swift */; };
 		90E733EA912DCB2D3E1A768E /* CodexStatusItemController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE114164113759D2DF5B3823 /* CodexStatusItemController.swift */; };
 		922F786C08CD8970EC3C1370 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9AADE08E274111411DA1BFE4 /* Assets.xcassets */; };
 		9249DF78079A398BA71C36F4 /* CodexexXPCService.xpc in CopyFiles */ = {isa = PBXBuildFile; fileRef = B735A3B02D954FDEAE629D2C /* CodexexXPCService.xpc */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		92B17F30F210EDC85FFD6D63 /* CodexiOSStoreRenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF4180B0C9B0A29E4900659D /* CodexiOSStoreRenderTests.swift */; };
 		94BECB050814AF28C05E0BF9 /* PopupReferenceRenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5DC009383356D24C83AE015 /* PopupReferenceRenderTests.swift */; };
 		970A3CB0C7B63B028585167D /* CodexAllowedHosts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3469C8A35F6C28E5EE7E6A5A /* CodexAllowedHosts.swift */; };
 		99ABB6DAC94055696EE03C1D /* CodexUsageInsightsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED32CC566DD1E354396E4024 /* CodexUsageInsightsTests.swift */; };
 		9A4D02C4FBEBAF3542616A75 /* CodexBinaryLocatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6295BEFAAD3C4835D1687CFA /* CodexBinaryLocatorTests.swift */; };
 		9ADA0C62958EF9E8F0B4A5FD /* CodexiOSBackgroundRefresh.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98CDEDA4610A0BA8199A8E61 /* CodexiOSBackgroundRefresh.swift */; };
 		9B84CC609C813BD6753FD295 /* CodexRateLimitPayloadMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B0FE703A7C9226E39929552 /* CodexRateLimitPayloadMapperTests.swift */; };
+		9C6D9F5C8D8975F820F820C3 /* OpenAIBillingLoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEFB8155297293C99546196C /* OpenAIBillingLoginView.swift */; };
 		9DEC29136332A64E508EB8E6 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = EDFEA62AA7FD3E39825168C3 /* PrivacyInfo.xcprivacy */; };
 		9E0455EA692C494496954E90 /* CodexDesignToneAdditions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67C9F733631C82380A528E06 /* CodexDesignToneAdditions.swift */; };
 		A017AD1316030F6B5913A786 /* CodexAllowedHosts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3469C8A35F6C28E5EE7E6A5A /* CodexAllowedHosts.swift */; };
@@ -129,6 +149,7 @@
 		A2AC45369C257DA306B41DD3 /* CodexLocalUsageTextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5676B8C7B25641D050D81287 /* CodexLocalUsageTextTests.swift */; };
 		A3DC66D7496BE3918B6BD4C1 /* CodexXPCClientIdentityRequirementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28B7443C1DFA45611DC9D51A /* CodexXPCClientIdentityRequirementTests.swift */; };
 		A4609AF211727EC12E2AA27E /* CodexXPCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FFF781EDCCE50F5B04750C6 /* CodexXPCService.swift */; };
+		A4769C8F51FFA4CC06CBD691 /* SettingsDesignRenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B806B47FE9B5856A94BE6B4 /* SettingsDesignRenderTests.swift */; };
 		A7DA0363F2056E47A1DC57D9 /* CodexiOSResetDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AD3BAEA3F363027C5D03B46 /* CodexiOSResetDashboardView.swift */; };
 		A9636E332CD0846B2CCDBC69 /* CodexQuotaNotificationPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68141175DF080F1F7BF92C37 /* CodexQuotaNotificationPlannerTests.swift */; };
 		A9676A237AA1DF125B7DA512 /* CodexUsageHistoryStoreCachedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B295ADF856E04F34AE48C376 /* CodexUsageHistoryStoreCachedTests.swift */; };
@@ -150,12 +171,14 @@
 		BCD03358EEC5E49FA0EA557A /* CodexLocalIntelligence.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE1B97CE70B6F6BA70CD458A /* CodexLocalIntelligence.swift */; };
 		BD5771A6DC0098064F95FBA9 /* CodexQuotaPresentationRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F7CC244BD026232606AE671 /* CodexQuotaPresentationRules.swift */; };
 		BDBBCE7428BACC97F66E03B7 /* CodexRefreshBackoff.swift in Sources */ = {isa = PBXBuildFile; fileRef = 655B400A2C8921DB7C16A4C3 /* CodexRefreshBackoff.swift */; };
+		C10844F412986B3986A40E35 /* CodexHomeWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 323FD52461A0170A01970802 /* CodexHomeWidgets.swift */; };
 		C12091F1FC2EF1E4C5A57DBC /* SettingsAccountCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1FDAFB849CE5DF61B0DFC7E /* SettingsAccountCardView.swift */; };
 		C12CD61D80218EB9FA4D0A22 /* SettingsPreferencesCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8C076A9585FA44E239EAE67 /* SettingsPreferencesCardView.swift */; };
 		C1E2FA3C5A90C0CA6AC14439 /* CodexiOSSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E38C10501C5C72133474E3D /* CodexiOSSettingsView.swift */; };
 		C242F26BBDF0AA76CF026103 /* CodexRefreshBackoffTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4722D98A17612B568ACEA0E /* CodexRefreshBackoffTests.swift */; };
 		C3C3DF9B62B0301D445D4327 /* CodexMeterCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6869618B2897346A3AB60D26 /* CodexMeterCore.framework */; };
 		C43B02F97D41EF39DB75A23C /* CodexAppSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCB6B7530865AEDFA9D5203D /* CodexAppSettingsTests.swift */; };
+		C53D42FDFE7B397CCFACC811 /* CodexiOSDesignRenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7AD65D6DEC390846F69F4CA /* CodexiOSDesignRenderTests.swift */; };
 		C76BCA0E924E1B8753F68881 /* CodexHelperProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F11D4461703FF707B59579E /* CodexHelperProcess.swift */; };
 		C92550BAA1324E910C20E91C /* CodexSensitiveRedactor.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3DBB954773D3757B108C00B /* CodexSensitiveRedactor.swift */; };
 		CA7B3A9B4DE9EEC78DA3FBD3 /* CodexMeterCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6869618B2897346A3AB60D26 /* CodexMeterCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -180,6 +203,7 @@
 		EEF3FBB667330AC39D0617F6 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00DEADCC4A6A1910F07EC9CC /* main.swift */; };
 		EF24F34CDE2523FA8E311794 /* CodexAppServerProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59BF4687D491CA6035EC1E43 /* CodexAppServerProbe.swift */; };
 		EF64C65F2EC4865805CC2A34 /* CodexLocalUsageTranscriptParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA3F90D7B2C969E9A9289D91 /* CodexLocalUsageTranscriptParser.swift */; };
+		F054E97182BE41997DA9A368 /* OpenAIAPICredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D8A9059BD6D7CACA2E15A4C /* OpenAIAPICredentialStore.swift */; };
 		F06B50BF36A35008D884B1FE /* CodexSummarySnooze.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2BFEE1CA9B1960DAE83434B /* CodexSummarySnooze.swift */; };
 		F0F5DD831ECB4286A230F18D /* CodexLocalUsageIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D189A266835AA0CBBB09BD0 /* CodexLocalUsageIndex.swift */; };
 		F21B4C1F8C5378293119ADAB /* CodexChatGPTAuthParsingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A58E44E82E08336BA8201819 /* CodexChatGPTAuthParsingTests.swift */; };
@@ -194,6 +218,7 @@
 		F8ED4E0F636294445478971B /* CodexSnapshotParsingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B56802AB05B67B2A4F883DA3 /* CodexSnapshotParsingTests.swift */; };
 		F9130A4420C79C4986DAE766 /* CodexiOSAppResetter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F71A43B620EED6061EFF23C8 /* CodexiOSAppResetter.swift */; };
 		F9E83DD2E157817570A0D05C /* CodexMeterCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 6869618B2897346A3AB60D26 /* CodexMeterCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		FC07F2E231CE65A49004661F /* OpenAIAPIClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F3F31CED833BA2E0467F62C /* OpenAIAPIClientTests.swift */; };
 		FC55C31870893D02641000D1 /* CodexXPCClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE6B79C4A71C89D19D67F4A /* CodexXPCClient.swift */; };
 		FD4188EA9253F1B034BD599E /* CodexBinaryLocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55540A16D4495A09BD25A98F /* CodexBinaryLocator.swift */; };
 		FFB0D2F0D9A7D4BFFC8C9216 /* CodexiOSRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49B4391C527FAE3FB893DF3A /* CodexiOSRootView.swift */; };
@@ -390,31 +415,38 @@
 		1A7DC9461D5A89DDD41915EB /* PopupPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupPresentation.swift; sourceTree = "<group>"; };
 		1B0D1E829EFE4D009291F307 /* CodexMeteriOSTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CodexMeteriOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1B61AAE1DA3B39D0AD2CB203 /* CodexLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexLog.swift; sourceTree = "<group>"; };
+		1B806B47FE9B5856A94BE6B4 /* SettingsDesignRenderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsDesignRenderTests.swift; sourceTree = "<group>"; };
 		1C1A89CCFBDE0DDF2167A4FC /* CodexiOSPushRegistrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexiOSPushRegistrationTests.swift; sourceTree = "<group>"; };
 		231B176B0CB7C478BD570492 /* CodexLocalUsageCoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexLocalUsageCoreTests.swift; sourceTree = "<group>"; };
 		2532C9697CC6730FC45790DE /* CodexDeviceAuthCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexDeviceAuthCoordinator.swift; sourceTree = "<group>"; };
 		2763F8999C44DE7A51CB688F /* CodexQuotaSnapshotBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexQuotaSnapshotBuilder.swift; sourceTree = "<group>"; };
 		276FBBA17CA2600B367DBC25 /* CodexServiceContracts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexServiceContracts.swift; sourceTree = "<group>"; };
+		27CA138032EA0256123468A0 /* CodexiOSWidgetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexiOSWidgetTests.swift; sourceTree = "<group>"; };
 		282EC3F8E6C7DB689A97C36D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		288B30A983334DB695B1EA43 /* CodexSummarySnoozeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexSummarySnoozeTests.swift; sourceTree = "<group>"; };
 		28B7443C1DFA45611DC9D51A /* CodexXPCClientIdentityRequirementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexXPCClientIdentityRequirementTests.swift; sourceTree = "<group>"; };
 		28C8C0A190E2CBBFBD0F5242 /* CodexFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexFormatting.swift; sourceTree = "<group>"; };
+		295D954EC0543BF657520000 /* CodexiOSWidgetPublisher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexiOSWidgetPublisher.swift; sourceTree = "<group>"; };
 		2D4239A5022878524982EB35 /* PopupUsageHistoryCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupUsageHistoryCardView.swift; sourceTree = "<group>"; };
+		2F0AE4487635A4E64CD34285 /* OpenAIMonitorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIMonitorView.swift; sourceTree = "<group>"; };
 		2F11D4461703FF707B59579E /* CodexHelperProcess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexHelperProcess.swift; sourceTree = "<group>"; };
 		2FFF781EDCCE50F5B04750C6 /* CodexXPCService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexXPCService.swift; sourceTree = "<group>"; };
 		305AAF2B86E0F73329DCBC56 /* CodexDashboardState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexDashboardState.swift; sourceTree = "<group>"; };
 		30FA00E5AFF9B1C21950BAC4 /* CodexiOSShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexiOSShellView.swift; sourceTree = "<group>"; };
 		3134479F012B906A7D8DD00F /* StatusBarLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarLabel.swift; sourceTree = "<group>"; };
 		3209217BB7F873DF4FF8D1AF /* CodexUsageHistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexUsageHistoryStore.swift; sourceTree = "<group>"; };
+		323FD52461A0170A01970802 /* CodexHomeWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexHomeWidgets.swift; sourceTree = "<group>"; };
 		3341C9D3222116EB47334518 /* CodexAppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexAppSettings.swift; sourceTree = "<group>"; };
 		33DB43B2CFC76618984DEC66 /* CodexMeterAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CodexMeterAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3469C8A35F6C28E5EE7E6A5A /* CodexAllowedHosts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexAllowedHosts.swift; sourceTree = "<group>"; };
+		34DC6953FD3D0C03A7CE70C3 /* OpenAIMonitorModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIMonitorModelTests.swift; sourceTree = "<group>"; };
 		35CBA154C102DFED745F319D /* CodexAuthSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexAuthSessionTests.swift; sourceTree = "<group>"; };
 		39EDD9819BF6B9A3204E3F0F /* OnboardingRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingRootView.swift; sourceTree = "<group>"; };
 		3A7C55E1352DA60FB7CCDD77 /* CodexHelperLineReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexHelperLineReaderTests.swift; sourceTree = "<group>"; };
 		3B0FE703A7C9226E39929552 /* CodexRateLimitPayloadMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexRateLimitPayloadMapperTests.swift; sourceTree = "<group>"; };
 		3B7136BEC6127CE9C04C446E /* CodexMeteriOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CodexMeteriOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3DCB68BA3D1440CD077F896F /* CodexLocalUsageModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexLocalUsageModels.swift; sourceTree = "<group>"; };
+		3EE58D5660234BD1D3C9A645 /* MonitoringWidgetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitoringWidgetTests.swift; sourceTree = "<group>"; };
 		410E8DD13157EB9F9DA4D77D /* CodexiOSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexiOSService.swift; sourceTree = "<group>"; };
 		411B69AF5441D8514617C5B4 /* CodexiOSMatrixQuotaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexiOSMatrixQuotaView.swift; sourceTree = "<group>"; };
 		4210E40BC9A4833AE97FD5A9 /* CodexAuthFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexAuthFlowTests.swift; sourceTree = "<group>"; };
@@ -426,6 +458,7 @@
 		4E1FF620CBA13A034D978DAD /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		4E75A58577491FB73E1AC4BF /* SettingsFormRows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsFormRows.swift; sourceTree = "<group>"; };
 		4F296DCDAEEC79A9BB221618 /* CodexRateLimitPayloadMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexRateLimitPayloadMapper.swift; sourceTree = "<group>"; };
+		524C063FEACA5B657FD8841D /* CodexiOSConnectionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexiOSConnectionViews.swift; sourceTree = "<group>"; };
 		55540A16D4495A09BD25A98F /* CodexBinaryLocator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexBinaryLocator.swift; sourceTree = "<group>"; };
 		5676B8C7B25641D050D81287 /* CodexLocalUsageTextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexLocalUsageTextTests.swift; sourceTree = "<group>"; };
 		5995BBB6A6A916972A573E87 /* CodexMenuBarModelAuthRestoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexMenuBarModelAuthRestoreTests.swift; sourceTree = "<group>"; };
@@ -438,6 +471,7 @@
 		5FF2F47904F3343A31F70E84 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		6295BEFAAD3C4835D1687CFA /* CodexBinaryLocatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexBinaryLocatorTests.swift; sourceTree = "<group>"; };
 		64A4FA0C1E3AFD300012B57A /* CodexMeterCoreiOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CodexMeterCoreiOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		65448BC129FBAD0E56312EAC /* OpenAIAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIAPIClient.swift; sourceTree = "<group>"; };
 		655B400A2C8921DB7C16A4C3 /* CodexRefreshBackoff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexRefreshBackoff.swift; sourceTree = "<group>"; };
 		663EB7F700A461322CFB2123 /* CodexAuthFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexAuthFlow.swift; sourceTree = "<group>"; };
 		67971912B9EC671915157EBB /* CodexiOSLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexiOSLiveActivity.swift; sourceTree = "<group>"; };
@@ -447,7 +481,9 @@
 		6D722F5F0365F7196E20D6F0 /* CodexMeterWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexMeterWidgets.swift; sourceTree = "<group>"; };
 		76C70A444F90564AD40EA87B /* GlassTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassTokens.swift; sourceTree = "<group>"; };
 		7C93F9E8D666046B633329ED /* CodexLocalConfigDoctor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexLocalConfigDoctor.swift; sourceTree = "<group>"; };
+		7DA0618BDAD0B953728E4F91 /* MonitoringWidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitoringWidgetSnapshot.swift; sourceTree = "<group>"; };
 		7DA33B4078836DE67FB6AA58 /* CodexSnapshotParityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexSnapshotParityTests.swift; sourceTree = "<group>"; };
+		7F3F31CED833BA2E0467F62C /* OpenAIAPIClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIAPIClientTests.swift; sourceTree = "<group>"; };
 		80C480AB90B2EB2573803A43 /* CodexSensitiveRedactorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexSensitiveRedactorTests.swift; sourceTree = "<group>"; };
 		860CE9F28C35128F6FCA40E9 /* icon-1024.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon-1024.png"; sourceTree = "<group>"; };
 		86EB3FCD60DEA0CD7A63464A /* CodexXPCClientIdentityRequirement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexXPCClientIdentityRequirement.swift; sourceTree = "<group>"; };
@@ -458,6 +494,7 @@
 		9AD3BAEA3F363027C5D03B46 /* CodexiOSResetDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexiOSResetDashboardView.swift; sourceTree = "<group>"; };
 		9BEF8CE905AE0EFC05C3B95E /* CodexiOSCredentialStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexiOSCredentialStoreTests.swift; sourceTree = "<group>"; };
 		9D4643340C8B906668F199F8 /* CodexAppResetter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexAppResetter.swift; sourceTree = "<group>"; };
+		9D8A9059BD6D7CACA2E15A4C /* OpenAIAPICredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIAPICredentialStore.swift; sourceTree = "<group>"; };
 		9E5F053505E884FBD559ACCC /* CodexAppLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexAppLinks.swift; sourceTree = "<group>"; };
 		9EA9608437403B5F6BEC1FC2 /* CodexiOSBackgroundRefreshTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexiOSBackgroundRefreshTests.swift; sourceTree = "<group>"; };
 		9F7CC244BD026232606AE671 /* CodexQuotaPresentationRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexQuotaPresentationRules.swift; sourceTree = "<group>"; };
@@ -471,6 +508,7 @@
 		A58E44E82E08336BA8201819 /* CodexChatGPTAuthParsingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexChatGPTAuthParsingTests.swift; sourceTree = "<group>"; };
 		A6006DA1C920A31C12C2BB4E /* CodexMeterApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CodexMeterApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A729D4E01BB7C27D032909ED /* CodexexiOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexexiOSApp.swift; sourceTree = "<group>"; };
+		AD72BA1D616DD86CD01B0A76 /* CodexWidgetDesignRenderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexWidgetDesignRenderTests.swift; sourceTree = "<group>"; };
 		AE5366DEE91A1A176EEB2337 /* CodexPopoverSizingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexPopoverSizingTests.swift; sourceTree = "<group>"; };
 		AE6B26C897C050086555E22C /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		B118D1A5EE8336B55ECE8996 /* CodexiOSServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexiOSServiceTests.swift; sourceTree = "<group>"; };
@@ -483,11 +521,13 @@
 		B5DC009383356D24C83AE015 /* PopupReferenceRenderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupReferenceRenderTests.swift; sourceTree = "<group>"; };
 		B735A3B02D954FDEAE629D2C /* CodexexXPCService.xpc */ = {isa = PBXFileReference; explicitFileType = "wrapper.xpc-service"; includeInIndex = 0; path = CodexexXPCService.xpc; sourceTree = BUILT_PRODUCTS_DIR; };
 		B7DB82C15DD7819ADDD370A7 /* CodexiOSUsageHistoryStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexiOSUsageHistoryStoreTests.swift; sourceTree = "<group>"; };
+		B9857579CEAC5FEDB2692441 /* OpenAIMonitorModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIMonitorModel.swift; sourceTree = "<group>"; };
 		B99D28DCEF73F61E20CA25CA /* CodexiOSPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexiOSPresentationTests.swift; sourceTree = "<group>"; };
 		BCB4FE21B88B0399C5E302AF /* CodexLocalUsageCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexLocalUsageCardView.swift; sourceTree = "<group>"; };
 		BDAD19C107E25B335856C22D /* CodexiOSModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexiOSModel.swift; sourceTree = "<group>"; };
 		BDD4677A503EBA71DF2933D7 /* CodexXPCServiceCancellationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexXPCServiceCancellationTests.swift; sourceTree = "<group>"; };
 		BE0F92247012FF410F0C204B /* CodexPerformanceLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexPerformanceLog.swift; sourceTree = "<group>"; };
+		BEFB8155297293C99546196C /* OpenAIBillingLoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIBillingLoginView.swift; sourceTree = "<group>"; };
 		C15019DEB1216ABB27FF4B76 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		C3DBB954773D3757B108C00B /* CodexSensitiveRedactor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexSensitiveRedactor.swift; sourceTree = "<group>"; };
 		C4669C1614F876F713F88760 /* OnboardingWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWindowController.swift; sourceTree = "<group>"; };
@@ -512,6 +552,7 @@
 		DCB6B7530865AEDFA9D5203D /* CodexAppSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexAppSettingsTests.swift; sourceTree = "<group>"; };
 		DE1B97CE70B6F6BA70CD458A /* CodexLocalIntelligence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexLocalIntelligence.swift; sourceTree = "<group>"; };
 		DE3DF6C43EAD9B9663EFCD58 /* CodexLocalUsageAggregator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexLocalUsageAggregator.swift; sourceTree = "<group>"; };
+		DF4180B0C9B0A29E4900659D /* CodexiOSStoreRenderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexiOSStoreRenderTests.swift; sourceTree = "<group>"; };
 		DF4843FCF7F84A94F22875FB /* CodexLiveActivityPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexLiveActivityPresentationTests.swift; sourceTree = "<group>"; };
 		E1FDAFB849CE5DF61B0DFC7E /* SettingsAccountCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsAccountCardView.swift; sourceTree = "<group>"; };
 		E550924959BE9581E19825FF /* CodexMicroInteractionKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexMicroInteractionKit.swift; sourceTree = "<group>"; };
@@ -531,6 +572,7 @@
 		F33BB53B6CA6F1CD3C0A9498 /* CodexChatGPTAuthParsing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexChatGPTAuthParsing.swift; sourceTree = "<group>"; };
 		F71A43B620EED6061EFF23C8 /* CodexiOSAppResetter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexiOSAppResetter.swift; sourceTree = "<group>"; };
 		F7A0915351DD97681A213FCB /* SettingsForecastCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsForecastCardView.swift; sourceTree = "<group>"; };
+		F7AD65D6DEC390846F69F4CA /* CodexiOSDesignRenderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexiOSDesignRenderTests.swift; sourceTree = "<group>"; };
 		FA3F90D7B2C969E9A9289D91 /* CodexLocalUsageTranscriptParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexLocalUsageTranscriptParser.swift; sourceTree = "<group>"; };
 		FE2909B5F3DAB30B7BDCACD5 /* GlassCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassCard.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -606,6 +648,7 @@
 		1F89584289113A784F4440C9 /* CodexMeterWidgets */ = {
 			isa = PBXGroup;
 			children = (
+				323FD52461A0170A01970802 /* CodexHomeWidgets.swift */,
 				6D722F5F0365F7196E20D6F0 /* CodexMeterWidgets.swift */,
 				A0CBAF74B8C68B66AEB0E1E1 /* Info.plist */,
 				E485552AF1F46D35F78F8B9F /* Resources */,
@@ -653,6 +696,9 @@
 				C3DBB954773D3757B108C00B /* CodexSensitiveRedactor.swift */,
 				276FBBA17CA2600B367DBC25 /* CodexServiceContracts.swift */,
 				86EB3FCD60DEA0CD7A63464A /* CodexXPCClientIdentityRequirement.swift */,
+				7DA0618BDAD0B953728E4F91 /* MonitoringWidgetSnapshot.swift */,
+				65448BC129FBAD0E56312EAC /* OpenAIAPIClient.swift */,
+				9D8A9059BD6D7CACA2E15A4C /* OpenAIAPICredentialStore.swift */,
 				E634F7A460DDEFBA77A8D6C2 /* TestSupport.swift */,
 			);
 			name = CodexMeterCore;
@@ -677,8 +723,10 @@
 				288B30A983334DB695B1EA43 /* CodexSummarySnoozeTests.swift */,
 				B295ADF856E04F34AE48C376 /* CodexUsageHistoryStoreCachedTests.swift */,
 				ED32CC566DD1E354396E4024 /* CodexUsageInsightsTests.swift */,
+				34DC6953FD3D0C03A7CE70C3 /* OpenAIMonitorModelTests.swift */,
 				45ECD99179170D7137CE6A6B /* PopupPresentationTests.swift */,
 				B5DC009383356D24C83AE015 /* PopupReferenceRenderTests.swift */,
+				1B806B47FE9B5856A94BE6B4 /* SettingsDesignRenderTests.swift */,
 				B50B52D38EBDD1E7DEC2CFFE /* StatusBarLabelTests.swift */,
 			);
 			name = CodexMeterAppTests;
@@ -696,6 +744,8 @@
 				FE2909B5F3DAB30B7BDCACD5 /* GlassCard.swift */,
 				76C70A444F90564AD40EA87B /* GlassTokens.swift */,
 				39EDD9819BF6B9A3204E3F0F /* OnboardingRootView.swift */,
+				BEFB8155297293C99546196C /* OpenAIBillingLoginView.swift */,
+				2F0AE4487635A4E64CD34285 /* OpenAIMonitorView.swift */,
 				D85320EC804D1E5A66FA96B1 /* PopupAppKitButton.swift */,
 				8E944DBB615061BEA8E462D9 /* PopupLimitCardViews.swift */,
 				1A7DC9461D5A89DDD41915EB /* PopupPresentation.swift */,
@@ -723,6 +773,7 @@
 				A729D4E01BB7C27D032909ED /* CodexexiOSApp.swift */,
 				F71A43B620EED6061EFF23C8 /* CodexiOSAppResetter.swift */,
 				98CDEDA4610A0BA8199A8E61 /* CodexiOSBackgroundRefresh.swift */,
+				524C063FEACA5B657FD8841D /* CodexiOSConnectionViews.swift */,
 				A55F19807CCB95D24A252FBC /* CodexiOSCredentialStore.swift */,
 				67971912B9EC671915157EBB /* CodexiOSLiveActivity.swift */,
 				411B69AF5441D8514617C5B4 /* CodexiOSMatrixQuotaView.swift */,
@@ -735,6 +786,7 @@
 				410E8DD13157EB9F9DA4D77D /* CodexiOSService.swift */,
 				0E38C10501C5C72133474E3D /* CodexiOSSettingsView.swift */,
 				30FA00E5AFF9B1C21950BAC4 /* CodexiOSShellView.swift */,
+				295D954EC0543BF657520000 /* CodexiOSWidgetPublisher.swift */,
 				282EC3F8E6C7DB689A97C36D /* Info.plist */,
 				B4B18F174DC46CE37BD5F200 /* LaunchScreen.storyboard */,
 				EDFEA62AA7FD3E39825168C3 /* PrivacyInfo.xcprivacy */,
@@ -769,6 +821,8 @@
 				7DA33B4078836DE67FB6AA58 /* CodexSnapshotParityTests.swift */,
 				B56802AB05B67B2A4F883DA3 /* CodexSnapshotParsingTests.swift */,
 				28B7443C1DFA45611DC9D51A /* CodexXPCClientIdentityRequirementTests.swift */,
+				3EE58D5660234BD1D3C9A645 /* MonitoringWidgetTests.swift */,
+				7F3F31CED833BA2E0467F62C /* OpenAIAPIClientTests.swift */,
 			);
 			name = CodexMeterCoreTests;
 			path = Tests/CodexMeterCoreTests;
@@ -833,6 +887,7 @@
 				A52CF560D83450EF83AB67DA /* CodexUsageHistoryAnalytics.swift */,
 				3209217BB7F873DF4FF8D1AF /* CodexUsageHistoryStore.swift */,
 				CDE6B79C4A71C89D19D67F4A /* CodexXPCClient.swift */,
+				B9857579CEAC5FEDB2692441 /* OpenAIMonitorModel.swift */,
 			);
 			path = Support;
 			sourceTree = "<group>";
@@ -851,12 +906,16 @@
 			children = (
 				9EA9608437403B5F6BEC1FC2 /* CodexiOSBackgroundRefreshTests.swift */,
 				9BEF8CE905AE0EFC05C3B95E /* CodexiOSCredentialStoreTests.swift */,
+				F7AD65D6DEC390846F69F4CA /* CodexiOSDesignRenderTests.swift */,
 				A092CDBC525B474DC8DEE8D4 /* CodexiOSMatrixSpeedTests.swift */,
 				C56D6F6EAAF8E18B5234FE95 /* CodexiOSModelTests.swift */,
 				B99D28DCEF73F61E20CA25CA /* CodexiOSPresentationTests.swift */,
 				1C1A89CCFBDE0DDF2167A4FC /* CodexiOSPushRegistrationTests.swift */,
 				B118D1A5EE8336B55ECE8996 /* CodexiOSServiceTests.swift */,
+				DF4180B0C9B0A29E4900659D /* CodexiOSStoreRenderTests.swift */,
 				B7DB82C15DD7819ADDD370A7 /* CodexiOSUsageHistoryStoreTests.swift */,
+				27CA138032EA0256123468A0 /* CodexiOSWidgetTests.swift */,
+				AD72BA1D616DD86CD01B0A76 /* CodexWidgetDesignRenderTests.swift */,
 			);
 			name = CodexMeteriOSTests;
 			path = Tests/CodexMeteriOSTests;
@@ -1354,6 +1413,9 @@
 				3E4271A0C7BEE3807FDACFC4 /* GlassTokens.swift in Sources */,
 				0B4C80DD15E0974A1C293062 /* OnboardingRootView.swift in Sources */,
 				0F1ABA1AE10DC28793A2B00F /* OnboardingWindowController.swift in Sources */,
+				9C6D9F5C8D8975F820F820C3 /* OpenAIBillingLoginView.swift in Sources */,
+				691E873ED79D58132927FE15 /* OpenAIMonitorModel.swift in Sources */,
+				8168516B5800CD2F431D0F96 /* OpenAIMonitorView.swift in Sources */,
 				7340F5E13BD54E00F55F4A20 /* PopupAppKitButton.swift in Sources */,
 				2036B60D86528A7C1F7A8DD4 /* PopupLimitCardViews.swift in Sources */,
 				0D1EDC1B9A047BE21A729FEA /* PopupPresentation.swift in Sources */,
@@ -1395,8 +1457,10 @@
 				ACD2515368196DC9D4DD8111 /* CodexSummarySnoozeTests.swift in Sources */,
 				A9676A237AA1DF125B7DA512 /* CodexUsageHistoryStoreCachedTests.swift in Sources */,
 				99ABB6DAC94055696EE03C1D /* CodexUsageInsightsTests.swift in Sources */,
+				14E9CEDA2B01842CBDEB72FE /* OpenAIMonitorModelTests.swift in Sources */,
 				E906DEEB74DBB7C138F0283E /* PopupPresentationTests.swift in Sources */,
 				94BECB050814AF28C05E0BF9 /* PopupReferenceRenderTests.swift in Sources */,
+				A4769C8F51FFA4CC06CBD691 /* SettingsDesignRenderTests.swift in Sources */,
 				BBE13929F9BB653DEE20AB8B /* StatusBarLabelTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1405,14 +1469,20 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				80AE43E969DBD926ECC503FC /* CodexHomeWidgets.swift in Sources */,
+				2C775ABAD0B7653C9404EA13 /* CodexMeterWidgets.swift in Sources */,
+				567252550890F36C036B171D /* CodexWidgetDesignRenderTests.swift in Sources */,
 				32B46407E8879120A0236062 /* CodexiOSBackgroundRefreshTests.swift in Sources */,
 				AF21208C40A331F1D014D124 /* CodexiOSCredentialStoreTests.swift in Sources */,
+				C53D42FDFE7B397CCFACC811 /* CodexiOSDesignRenderTests.swift in Sources */,
 				2E9FDA240C252B85DD619C6C /* CodexiOSMatrixSpeedTests.swift in Sources */,
 				AB2FE6A4B740DD6D70A380AF /* CodexiOSModelTests.swift in Sources */,
 				1FB1CD389834B848B7FF7A63 /* CodexiOSPresentationTests.swift in Sources */,
 				148B3445AF8CF0D4BA52770E /* CodexiOSPushRegistrationTests.swift in Sources */,
 				AD489A42B8323866A5E05F47 /* CodexiOSServiceTests.swift in Sources */,
+				92B17F30F210EDC85FFD6D63 /* CodexiOSStoreRenderTests.swift in Sources */,
 				85A399D0C72AD6691C4B641C /* CodexiOSUsageHistoryStoreTests.swift in Sources */,
+				50CCD479DA8D7A82B6CA8671 /* CodexiOSWidgetTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1426,6 +1496,7 @@
 				1DE8CA42D34331DA5D73EB2D /* CodexexiOSApp.swift in Sources */,
 				F9130A4420C79C4986DAE766 /* CodexiOSAppResetter.swift in Sources */,
 				9ADA0C62958EF9E8F0B4A5FD /* CodexiOSBackgroundRefresh.swift in Sources */,
+				60A9278E8541D23BD820137F /* CodexiOSConnectionViews.swift in Sources */,
 				F7A80FF943E572469F8A0761 /* CodexiOSCredentialStore.swift in Sources */,
 				BA0E6FA856252F6B706A853A /* CodexiOSLiveActivity.swift in Sources */,
 				137ADD0ED54B9BEAB08EC276 /* CodexiOSMatrixQuotaView.swift in Sources */,
@@ -1438,6 +1509,10 @@
 				36D12549C8CAB472B2F8813D /* CodexiOSService.swift in Sources */,
 				C1E2FA3C5A90C0CA6AC14439 /* CodexiOSSettingsView.swift in Sources */,
 				E89A3AEC81CD97A517303EA6 /* CodexiOSShellView.swift in Sources */,
+				5F9ED3276DA3A9E4E04F2EBD /* CodexiOSWidgetPublisher.swift in Sources */,
+				6C4A4AF93A49A51262F89558 /* OpenAIBillingLoginView.swift in Sources */,
+				5115A56D64D42E321C837EC7 /* OpenAIMonitorModel.swift in Sources */,
+				1EFC0D199718AB92971AF168 /* OpenAIMonitorView.swift in Sources */,
 				27A9B3C611933865DF8185D5 /* PopupPresentation.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1467,6 +1542,9 @@
 				AE1D281C6962CCDCFC059912 /* CodexSensitiveRedactor.swift in Sources */,
 				D70F0751EFCDADB2666D1D63 /* CodexServiceContracts.swift in Sources */,
 				F38D9E4617D04F5580AB3F95 /* CodexXPCClientIdentityRequirement.swift in Sources */,
+				0C01402B36ECD18B39524CBC /* MonitoringWidgetSnapshot.swift in Sources */,
+				5C28AABE7C11287A2046DE55 /* OpenAIAPIClient.swift in Sources */,
+				8EF101EB366AA9F56B3056B4 /* OpenAIAPICredentialStore.swift in Sources */,
 				B421A2A4926ED0971E359253 /* TestSupport.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1508,6 +1586,9 @@
 				C92550BAA1324E910C20E91C /* CodexSensitiveRedactor.swift in Sources */,
 				667546F85A7A45C96A8F0FC4 /* CodexServiceContracts.swift in Sources */,
 				3CAB9D5219BA0D3F215CF15B /* CodexXPCClientIdentityRequirement.swift in Sources */,
+				06DB69123A15F7049D9B0FF3 /* MonitoringWidgetSnapshot.swift in Sources */,
+				28A6E91BB5307C3CF57E315B /* OpenAIAPIClient.swift in Sources */,
+				F054E97182BE41997DA9A368 /* OpenAIAPICredentialStore.swift in Sources */,
 				468FBC25524EC0A57F88215D /* TestSupport.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1516,6 +1597,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C10844F412986B3986A40E35 /* CodexHomeWidgets.swift in Sources */,
 				8A02BDC44291E7FB6E05D44F /* CodexMeterWidgets.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1538,6 +1620,8 @@
 				CD116997DA122E934905992A /* CodexSnapshotParityTests.swift in Sources */,
 				F8ED4E0F636294445478971B /* CodexSnapshotParsingTests.swift in Sources */,
 				A3DC66D7496BE3918B6BD4C1 /* CodexXPCClientIdentityRequirementTests.swift in Sources */,
+				3786BEC1F2DCDE7529BEF3A5 /* MonitoringWidgetTests.swift in Sources */,
+				FC07F2E231CE65A49004661F /* OpenAIAPIClientTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1651,12 +1735,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = iOSAppIcon;
 				CODE_SIGN_ENTITLEMENTS = AppStore/CodexexiOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 27;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Sources/CodexMeteriOS/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 6.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.magrathean.CodexexApp;
 				PRODUCT_NAME = Codexex;
 				SDKROOT = iphoneos;
@@ -1687,12 +1773,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = iOSAppIcon;
 				CODE_SIGN_ENTITLEMENTS = AppStore/CodexexiOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 27;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Sources/CodexMeteriOS/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 6.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.magrathean.CodexexApp;
 				PRODUCT_NAME = Codexex;
 				SDKROOT = iphoneos;
@@ -1809,6 +1897,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = AppStore/CodexexWidgets.entitlements;
+				CURRENT_PROJECT_VERSION = 27;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Sources/CodexMeterWidgets/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1816,6 +1906,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
+				MARKETING_VERSION = 6.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.magrathean.CodexexApp.widgets;
 				PRODUCT_NAME = CodexMeterWidgets;
 				SDKROOT = iphoneos;
@@ -1897,6 +1988,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.magrathean.CodexexApp.CodexMeteriOSTests;
 				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG WIDGET_DESIGN_CAPTURE";
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Codexex.app/Codexex";
 			};
@@ -1945,6 +2037,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = AppStore/CodexexWidgets.entitlements;
+				CURRENT_PROJECT_VERSION = 27;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Sources/CodexMeterWidgets/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1952,6 +2046,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
+				MARKETING_VERSION = 6.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.magrathean.CodexexApp.widgets;
 				PRODUCT_NAME = CodexMeterWidgets;
 				SDKROOT = iphoneos;
@@ -2096,6 +2191,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.magrathean.CodexexApp.CodexMeteriOSTests;
 				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG WIDGET_DESIGN_CAPTURE";
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Codexex.app/Codexex";
 			};

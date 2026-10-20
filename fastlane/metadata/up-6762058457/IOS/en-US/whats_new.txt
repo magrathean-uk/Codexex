@@ -1,5 +1,5 @@
-Codexex 6.1.1 brings a clearer reset dashboard:
+New OpenAI API monitoring, quota and API balance widgets, and Codex credits shown to two decimal places.
 
-- Any account leads with the next 5-hour reset when OpenAI reports one; otherwise weekly allowance and progress lead.
-- Larger text is easier to read without losing key reset details.
-- Live Activity background wakes and registration recover more reliably after interruptions.
+Onboarding and Settings now use native iPhone and iPad navigation, with clearer light and dark themes and larger text layouts. Open usage history directly from the dashboard.
+
+Live Activity settings show background registration and the last update. iOS controls background refresh timing.

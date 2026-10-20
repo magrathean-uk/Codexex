@@ -21,7 +21,8 @@ enum CodexPreviewData {
                     rawLimitName: "Codex",
                     bucket: .codex,
                     primary: CodexQuotaWindow(usedPercent: 8, windowDurationMinutes: 300, resetsAt: fiveHourReset),
-                    secondary: CodexQuotaWindow(usedPercent: 5, windowDurationMinutes: 10_080, resetsAt: weeklyReset)
+                    secondary: CodexQuotaWindow(usedPercent: 5, windowDurationMinutes: 10_080, resetsAt: weeklyReset),
+                    credits: CodexCredits(hasCredits: true, unlimited: false, balance: "12.50")
                 )
             ]
         )

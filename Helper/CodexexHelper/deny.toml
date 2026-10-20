@@ -30,4 +30,4 @@ wildcards = "allow"
 unknown-registry = "deny"
 unknown-git = "deny"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
-allow-git = ["https://github.com/openai/codex", "https://github.com/openai-oss-forks/tokio-tungstenite", "https://github.com/openai-oss-forks/tungstenite-rs"]
+allow-git = ["https://github.com/openai/codex", "https://github.com/openai-oss-forks/tokio-tungstenite", "https://github.com/openai-oss-forks/tungstenite-rs", "https://github.com/helix-editor/nucleo"]

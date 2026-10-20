@@ -4,9 +4,15 @@ import SwiftUI
 import UIKit
 import WidgetKit
 
+#if !WIDGET_DESIGN_CAPTURE
 @main
+#endif
 struct CodexMeterWidgets: WidgetBundle {
-    var body: some Widget { CodexQuotaLiveActivity() }
+    var body: some Widget {
+        CodexSubscriptionWidget()
+        CodexAPIBalanceWidget()
+        CodexQuotaLiveActivity()
+    }
 }
 
 struct CodexQuotaLiveActivity: Widget {
@@ -61,67 +67,49 @@ struct CodexQuotaLiveActivity: Widget {
 }
 
 private struct QuotaUsageView: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let state: CodexLiveActivityAttributes.ContentState
     let isStale: Bool
 
     static let backgroundColor = Color(red: 0.12, green: 0.12, blue: 0.13)
     static let accentColor = Color(red: 0.32, green: 0.89, blue: 0.60)
+    private var compactText: Bool { dynamicTypeSize.isAccessibilitySize }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 8) {
-                ActivityIcon(size: 24)
-                Text("CODEXEX")
-                    .font(.caption.weight(.semibold))
-                    .tracking(1)
-                    .lineLimit(1)
-                Spacer(minLength: 8)
-                if isStale {
-                    Label("Tap to update", systemImage: "arrow.clockwise")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.orange)
-                        .lineLimit(1)
-                } else if let lastUpdatedAt = state.lastUpdatedAt {
-                    Text("Updated \(lastUpdatedAt, style: .time)")
-                        .font(.caption2)
-                        .foregroundStyle(.white.opacity(0.65))
-                        .monospacedDigit()
-                        .lineLimit(1)
+            header.padding(.bottom, 8)
+            if compactText {
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        weeklyAmount.fixedSize()
+                        Spacer(minLength: 4)
+                        compactWeeklyReset.fixedSize()
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        weeklyAmount
+                        compactWeeklyReset
+                    }
                 }
-            }
-            .padding(.bottom, 8)
-
-            HStack(alignment: .firstTextBaseline, spacing: 5) {
-                Text("\(state.displayedWeeklyPercent)%")
-                    .font(.system(.title, design: .rounded, weight: .bold))
-                    .foregroundStyle(Self.accentColor)
-                Text(state.displaysUsedQuota ? "used" : "left")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white)
-                Spacer(minLength: 0)
-            }
-            .monospacedDigit()
-
-            HStack(spacing: 8) {
-                Text("Weekly quota")
-                Spacer(minLength: 4)
-                if let resetAt = state.weeklyResetAt {
-                    Text("Resets \(resetAt, style: .relative)")
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
+                .padding(.bottom, 8)
+            } else {
+                weeklyAmount
+                HStack(spacing: 8) {
+                    Text("Weekly quota")
+                    Spacer(minLength: 4)
+                    if let resetAt = state.weeklyResetAt {
+                        resetText(resetAt, weekly: true)
+                    }
                 }
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.72))
+                .padding(.top, 1)
+                .padding(.bottom, 10)
             }
-            .font(.caption)
-            .foregroundStyle(.white.opacity(0.65))
-            .padding(.top, 1)
-            .padding(.bottom, 10)
 
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(.white.opacity(0.2))
-                    Capsule()
-                        .fill(Self.accentColor)
+                    Capsule().fill(.white.opacity(0.2))
+                    Capsule().fill(Self.accentColor)
                         .frame(width: geometry.size.width * state.displayedWeeklyFraction)
                 }
             }
@@ -129,19 +117,23 @@ private struct QuotaUsageView: View {
             .accessibilityHidden(true)
 
             if let fiveHourPercent = state.displayedFiveHourPercent {
-                HStack(spacing: 8) {
-                    Text("5-hour · \(fiveHourPercent)% \(state.displaysUsedQuota ? "used" : "left")")
-                        .font(.caption.weight(.medium))
-                        .monospacedDigit()
-                    Spacer(minLength: 4)
-                    if let resetAt = state.fiveHourResetAt {
-                        Text("Resets \(resetAt, style: .relative)")
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 8) {
+                        fiveHourAmount(fiveHourPercent).fixedSize()
+                        Spacer(minLength: 4)
+                        if let resetAt = state.fiveHourResetAt {
+                            resetText(resetAt, weekly: false).fixedSize()
+                        }
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        fiveHourAmount(fiveHourPercent)
+                        if let resetAt = state.fiveHourResetAt {
+                            resetText(resetAt, weekly: false)
+                        }
                     }
                 }
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.72))
+                .font(compactText ? .caption2 : .caption)
+                .foregroundStyle(.white.opacity(0.78))
                 .padding(.top, 9)
             }
         }
@@ -150,9 +142,101 @@ private struct QuotaUsageView: View {
         .padding(.vertical, 13)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Codexex Usage")
-        .accessibilityValue(state.accessibilityDescription(isStale: isStale))
+        .accessibilityValue(accessibilitySummary)
+        .accessibilityHint("Opens Codexex to refresh")
+    }
+
+    private var header: some View {
+        HStack(spacing: 8) {
+            ActivityIcon(size: compactText ? 16 : 24)
+            Text(compactText ? "Weekly" : "CODEXEX")
+                .font((compactText ? Font.caption2 : .caption).weight(.semibold))
+                .tracking(compactText ? 0 : 1)
+                .lineLimit(1)
+            Spacer(minLength: 8)
+            if isStale {
+                Text(compactText ? "Stale" : "Tap to update")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.orange)
+                    .lineLimit(1)
+            } else if let lastUpdatedAt = state.lastUpdatedAt {
+                if compactText {
+                    Text("Updated").font(.caption2).foregroundStyle(.white.opacity(0.72))
+                } else {
+                    Text("Updated \(lastUpdatedAt, style: .time)")
+                        .font(.caption2).foregroundStyle(.white.opacity(0.72))
+                        .monospacedDigit().lineLimit(1)
+                }
+            }
+        }
+    }
+
+    private var weeklyAmount: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 5) {
+            Text("\(state.displayedWeeklyPercent)%")
+                .font((compactText ? Font.title2 : .title).weight(.bold))
+                .foregroundStyle(Self.accentColor)
+            Text(state.displaysUsedQuota ? "used" : "left")
+                .font((compactText ? Font.caption2 : .subheadline).weight(.semibold))
+        }
+        .monospacedDigit()
+    }
+
+    @ViewBuilder private var compactWeeklyReset: some View {
+        if let resetAt = state.weeklyResetAt {
+            resetText(resetAt, weekly: true)
+                .font(.caption2).foregroundStyle(.white.opacity(0.78))
+        }
+    }
+
+    private func fiveHourAmount(_ percent: Int) -> some View {
+        Text("\(compactText ? "5h " : "5-hour · ")\(percent)% \(state.displaysUsedQuota ? "used" : "left")")
+            .fontWeight(.medium).monospacedDigit()
+    }
+
+    @ViewBuilder private func resetText(_ resetAt: Date, weekly: Bool) -> some View {
+        if resetAt <= Date() {
+            Text("Reset passed")
+        } else if compactText {
+            Label {
+                Text(weekly
+                    ? resetAt.formatted(.dateTime.weekday(.abbreviated))
+                    : resetAt.formatted(date: .omitted, time: .shortened))
+                    .monospacedDigit()
+            } icon: {
+                Image(systemName: "clock").accessibilityHidden(true)
+            }
+        } else {
+            Text("Resets \(resetAt, style: .relative)")
+        }
+    }
+
+    private var accessibilitySummary: String {
+        [
+                state.weeklyDisplayDescription,
+                state.fiveHourDisplayDescription,
+                isStale ? "Update needed" : "Up to date",
+                state.lastUpdatedAt.map { "Checked \($0.formatted(date: .complete, time: .shortened))" },
+                state.weeklyResetAt.map { "Weekly resets \($0.formatted(date: .complete, time: .shortened))" },
+                state.fiveHourResetAt.map { "5-hour resets \($0.formatted(date: .complete, time: .shortened))" }
+            ].compactMap { $0 }
+            .joined(separator: ". ")
     }
 }
+
+#if DEBUG
+extension CodexWidgetDesignFixtures {
+    static var activityBackground: Color { QuotaUsageView.backgroundColor }
+
+    /// The exact lock-screen and expanded-island content; no ActivityKit request is made.
+    static func activity(
+        state: CodexLiveActivityAttributes.ContentState,
+        isStale: Bool
+    ) -> some View {
+        QuotaUsageView(state: state, isStale: isStale)
+    }
+}
+#endif
 
 private struct ActivityIcon: View {
     let size: CGFloat

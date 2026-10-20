@@ -1,0 +1,110 @@
+Test Suite 'Selected tests' started at 2026-10-14 04:00:38.977.
+Test Suite 'CodexMeterAppTests.xctest' started at 2026-10-14 04:00:38.978.
+Test Suite 'CodexUsageInsightsTests' started at 2026-10-14 04:00:38.979.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testMonthlyHistoryUsesLastThirtyDailyWeeklyPeaks]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testMonthlyHistoryUsesLastThirtyDailyWeeklyPeaks]' passed (0.001 seconds).
+Test Suite 'CodexUsageInsightsTests' passed at 2026-10-14 04:00:38.980.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+Test Suite 'CodexMeterAppTests.xctest' passed at 2026-10-14 04:00:38.980.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+Test Suite 'Selected tests' passed at 2026-10-14 04:00:38.980.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.003) seconds
+Test Suite 'Selected tests' started at 2026-10-14 11:00:39.123.
+Test Suite 'CodexMeterAppTests.xctest' started at 2026-10-14 11:00:39.125.
+Test Suite 'CodexUsageInsightsTests' started at 2026-10-14 11:00:39.125.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testMonthlyHistoryUsesLastThirtyDailyWeeklyPeaks]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testMonthlyHistoryUsesLastThirtyDailyWeeklyPeaks]' passed (0.001 seconds).
+Test Suite 'CodexUsageInsightsTests' passed at 2026-10-14 11:00:39.127.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+Test Suite 'CodexMeterAppTests.xctest' passed at 2026-10-14 11:00:39.127.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+Test Suite 'Selected tests' passed at 2026-10-14 11:00:39.127.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.004) seconds
+Test Suite 'Selected tests' started at 2026-10-14 04:03:35.954.
+Test Suite 'CodexMeterAppTests.xctest' started at 2026-10-14 04:03:35.965.
+Test Suite 'CodexUsageInsightsTests' started at 2026-10-14 04:03:35.967.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testMonthlyHistoryUsesLastThirtyDailyWeeklyPeaks]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testMonthlyHistoryUsesLastThirtyDailyWeeklyPeaks]' passed (0.003 seconds).
+Test Suite 'CodexUsageInsightsTests' passed at 2026-10-14 04:03:35.975.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.003 (0.008) seconds
+Test Suite 'CodexMeterAppTests.xctest' passed at 2026-10-14 04:03:35.976.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.003 (0.010) seconds
+Test Suite 'Selected tests' passed at 2026-10-14 04:03:35.979.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.003 (0.025) seconds
+Test Suite 'Selected tests' started at 2026-10-14 11:03:36.671.
+Test Suite 'CodexMeterAppTests.xctest' started at 2026-10-14 11:03:36.676.
+Test Suite 'CodexUsageInsightsTests' started at 2026-10-14 11:03:36.679.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testMonthlyHistoryUsesLastThirtyDailyWeeklyPeaks]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testMonthlyHistoryUsesLastThirtyDailyWeeklyPeaks]' passed (0.003 seconds).
+Test Suite 'CodexUsageInsightsTests' passed at 2026-10-14 11:03:36.685.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.003 (0.006) seconds
+Test Suite 'CodexMeterAppTests.xctest' passed at 2026-10-14 11:03:36.687.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.003 (0.010) seconds
+Test Suite 'Selected tests' passed at 2026-10-14 11:03:36.688.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.003 (0.017) seconds
+Test Suite 'Selected tests' started at 2026-10-14 04:06:02.364.
+Test Suite 'CodexMeterAppTests.xctest' started at 2026-10-14 04:06:02.365.
+Test Suite 'CodexUsageInsightsTests' started at 2026-10-14 04:06:02.365.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testMonthlyHistoryUsesLastThirtyDailyWeeklyPeaks]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testMonthlyHistoryUsesLastThirtyDailyWeeklyPeaks]' passed (0.001 seconds).
+Test Suite 'CodexUsageInsightsTests' passed at 2026-10-14 04:06:02.367.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'CodexMeterAppTests.xctest' passed at 2026-10-14 04:06:02.367.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+Test Suite 'Selected tests' passed at 2026-10-14 04:06:02.367.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.004) seconds
+Test Suite 'Selected tests' started at 2026-10-14 11:06:02.533.
+Test Suite 'CodexMeterAppTests.xctest' started at 2026-10-14 11:06:02.534.
+Test Suite 'CodexUsageInsightsTests' started at 2026-10-14 11:06:02.534.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testMonthlyHistoryUsesLastThirtyDailyWeeklyPeaks]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testMonthlyHistoryUsesLastThirtyDailyWeeklyPeaks]' passed (0.001 seconds).
+Test Suite 'CodexUsageInsightsTests' passed at 2026-10-14 11:06:02.536.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+Test Suite 'CodexMeterAppTests.xctest' passed at 2026-10-14 11:06:02.536.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+Test Suite 'Selected tests' passed at 2026-10-14 11:06:02.537.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.004) seconds
+Test Suite 'Selected tests' started at 2026-10-14 04:08:39.823.
+Test Suite 'CodexMeterAppTests.xctest' started at 2026-10-14 04:08:39.824.
+Test Suite 'CodexUsageInsightsTests' started at 2026-10-14 04:08:39.825.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testMonthlyHistoryUsesLastThirtyDailyWeeklyPeaks]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testMonthlyHistoryUsesLastThirtyDailyWeeklyPeaks]' passed (0.001 seconds).
+Test Suite 'CodexUsageInsightsTests' passed at 2026-10-14 04:08:39.827.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+Test Suite 'CodexMeterAppTests.xctest' passed at 2026-10-14 04:08:39.827.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.003) seconds
+Test Suite 'Selected tests' passed at 2026-10-14 04:08:39.827.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.005) seconds
+Test Suite 'Selected tests' started at 2026-10-14 11:08:39.984.
+Test Suite 'CodexMeterAppTests.xctest' started at 2026-10-14 11:08:39.989.
+Test Suite 'CodexUsageInsightsTests' started at 2026-10-14 11:08:39.989.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testMonthlyHistoryUsesLastThirtyDailyWeeklyPeaks]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testMonthlyHistoryUsesLastThirtyDailyWeeklyPeaks]' passed (0.001 seconds).
+Test Suite 'CodexUsageInsightsTests' passed at 2026-10-14 11:08:39.991.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+Test Suite 'CodexMeterAppTests.xctest' passed at 2026-10-14 11:08:39.991.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+Test Suite 'Selected tests' passed at 2026-10-14 11:08:39.992.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.008) seconds
+Test Suite 'Selected tests' started at 2026-10-14 04:20:36.694.
+Test Suite 'CodexMeterAppTests.xctest' started at 2026-10-14 04:20:36.696.
+Test Suite 'CodexUsageInsightsTests' started at 2026-10-14 04:20:36.696.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testMonthlyHistoryUsesLastThirtyDailyWeeklyPeaks]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testMonthlyHistoryUsesLastThirtyDailyWeeklyPeaks]' passed (0.001 seconds).
+Test Suite 'CodexUsageInsightsTests' passed at 2026-10-14 04:20:36.698.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+Test Suite 'CodexMeterAppTests.xctest' passed at 2026-10-14 04:20:36.698.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+Test Suite 'Selected tests' passed at 2026-10-14 04:20:36.698.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.004) seconds
+Test Suite 'Selected tests' started at 2026-10-14 11:20:36.840.
+Test Suite 'CodexMeterAppTests.xctest' started at 2026-10-14 11:20:36.842.
+Test Suite 'CodexUsageInsightsTests' started at 2026-10-14 11:20:36.842.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testMonthlyHistoryUsesLastThirtyDailyWeeklyPeaks]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testMonthlyHistoryUsesLastThirtyDailyWeeklyPeaks]' passed (0.001 seconds).
+Test Suite 'CodexUsageInsightsTests' passed at 2026-10-14 11:20:36.844.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+Test Suite 'CodexMeterAppTests.xctest' passed at 2026-10-14 11:20:36.845.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.003) seconds
+Test Suite 'Selected tests' passed at 2026-10-14 11:20:36.845.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.005) seconds

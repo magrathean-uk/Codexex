@@ -21,18 +21,18 @@ enum GlassTokens {
     static let popupBodyFontSize: CGFloat = 12.5
     static let popupMetaFontSize: CGFloat = 11
 
-    static let cardRadius: CGFloat = 10
-    static let popupSectionRadius: CGFloat = 10
-    static let popupRadius: CGFloat = 10
-    static let settingsRadius: CGFloat = 10
-    static let groupRadius: CGFloat = 10
-    static let insetRadius: CGFloat = 10
+    static let cardRadius: CGFloat = 4
+    static let popupSectionRadius: CGFloat = 4
+    static let popupRadius: CGFloat = 6
+    static let settingsRadius: CGFloat = 6
+    static let groupRadius: CGFloat = 4
+    static let insetRadius: CGFloat = 4
 
     static let pillHeight: CGFloat = 28
-    static let pillRadius: CGFloat = 10
+    static let pillRadius: CGFloat = 4
     static let infoChipHeight: CGFloat = 50
     static let emptyStateHeight: CGFloat = 66
-    static let infoChipRadius: CGFloat = 10
+    static let infoChipRadius: CGFloat = 4
     static let statusIconSize: CGFloat = 34
     static let summaryBannerMinHeight: CGFloat = 0
     static let summaryIconSize: CGFloat = 32

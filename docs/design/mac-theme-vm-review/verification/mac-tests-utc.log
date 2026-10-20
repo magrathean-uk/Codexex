@@ -1,0 +1,399 @@
+Test Suite 'All tests' started at 2026-10-14 10:54:51.596.
+Test Suite 'CodexMeterAppTests.xctest' started at 2026-10-14 10:54:51.635.
+Test Suite 'CodexAppLinksTests' started at 2026-10-14 10:54:51.640.
+Test Case '-[CodexMeterAppTests.CodexAppLinksTests testExternalLinksAreValid]' started.
+Test Case '-[CodexMeterAppTests.CodexAppLinksTests testExternalLinksAreValid]' passed (0.013 seconds).
+Test Suite 'CodexAppLinksTests' passed at 2026-10-14 10:54:51.703.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.013 (0.062) seconds
+Test Suite 'CodexAppSettingsTests' started at 2026-10-14 10:54:51.705.
+Test Case '-[CodexMeterAppTests.CodexAppSettingsTests testCodexSessionsFolderSelectionKeepsSessionsFolder]' started.
+Test Case '-[CodexMeterAppTests.CodexAppSettingsTests testCodexSessionsFolderSelectionKeepsSessionsFolder]' passed (0.100 seconds).
+Test Case '-[CodexMeterAppTests.CodexAppSettingsTests testCodexSessionsFolderSelectionNormalizesCodexHome]' started.
+Test Case '-[CodexMeterAppTests.CodexAppSettingsTests testCodexSessionsFolderSelectionNormalizesCodexHome]' passed (0.035 seconds).
+Test Case '-[CodexMeterAppTests.CodexAppSettingsTests testCodexSessionsPathPersistsAndClears]' started.
+Test Case '-[CodexMeterAppTests.CodexAppSettingsTests testCodexSessionsPathPersistsAndClears]' passed (0.033 seconds).
+Test Case '-[CodexMeterAppTests.CodexAppSettingsTests testNewPopupSettingsPersist]' started.
+Test Case '-[CodexMeterAppTests.CodexAppSettingsTests testNewPopupSettingsPersist]' passed (0.243 seconds).
+Test Case '-[CodexMeterAppTests.CodexAppSettingsTests testPopupSettingsDefaults]' started.
+Test Case '-[CodexMeterAppTests.CodexAppSettingsTests testPopupSettingsDefaults]' passed (0.002 seconds).
+Test Case '-[CodexMeterAppTests.CodexAppSettingsTests testQuotaNotificationSettingsPersistAndClear]' started.
+Test Case '-[CodexMeterAppTests.CodexAppSettingsTests testQuotaNotificationSettingsPersistAndClear]' passed (0.005 seconds).
+Test Case '-[CodexMeterAppTests.CodexAppSettingsTests testResetDoesNotQuitWhenLaunchAtLoginCannotBeDisabled]' started.
+Test Case '-[CodexMeterAppTests.CodexAppSettingsTests testResetDoesNotQuitWhenLaunchAtLoginCannotBeDisabled]' passed (0.001 seconds).
+Test Case '-[CodexMeterAppTests.CodexAppSettingsTests testResetLocalDataClearsSettingsAndApplicationSupport]' started.
+Test Case '-[CodexMeterAppTests.CodexAppSettingsTests testResetLocalDataClearsSettingsAndApplicationSupport]' passed (0.154 seconds).
+Test Case '-[CodexMeterAppTests.CodexAppSettingsTests testResetReportsApplicationSupportDeletionFailure]' started.
+Test Case '-[CodexMeterAppTests.CodexAppSettingsTests testResetReportsApplicationSupportDeletionFailure]' passed (0.217 seconds).
+Test Case '-[CodexMeterAppTests.CodexAppSettingsTests testStaleCodexSessionsBookmarkRequiresFolderSelectionAgain]' started.
+Test Case '-[CodexMeterAppTests.CodexAppSettingsTests testStaleCodexSessionsBookmarkRequiresFolderSelectionAgain]' passed (0.003 seconds).
+Test Case '-[CodexMeterAppTests.CodexAppSettingsTests testSummarySnoozeSettingsPersistAndClear]' started.
+Test Case '-[CodexMeterAppTests.CodexAppSettingsTests testSummarySnoozeSettingsPersistAndClear]' passed (0.011 seconds).
+Test Suite 'CodexAppSettingsTests' passed at 2026-10-14 10:54:52.669.
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.805 (0.964) seconds
+Test Suite 'CodexAuthFlowTests' started at 2026-10-14 10:54:52.676.
+Test Case '-[CodexMeterAppTests.CodexAuthFlowTests testBeginFailureTurnsRateLimitIntoShortCooldown]' started.
+Test Case '-[CodexMeterAppTests.CodexAuthFlowTests testBeginFailureTurnsRateLimitIntoShortCooldown]' passed (0.005 seconds).
+Test Case '-[CodexMeterAppTests.CodexAuthFlowTests testPollingFailureClassificationKeepsTransientFlowAndClearsTerminalFlow]' started.
+Test Case '-[CodexMeterAppTests.CodexAuthFlowTests testPollingFailureClassificationKeepsTransientFlowAndClearsTerminalFlow]' passed (0.013 seconds).
+Test Case '-[CodexMeterAppTests.CodexAuthFlowTests testSignedOutMessageFallsBackToSignInCopy]' started.
+Test Case '-[CodexMeterAppTests.CodexAuthFlowTests testSignedOutMessageFallsBackToSignInCopy]' passed (0.002 seconds).
+Test Case '-[CodexMeterAppTests.CodexAuthFlowTests testSnapshotResponseKeepsPendingDeviceCodeWhenAuthModeUnknown]' started.
+Test Case '-[CodexMeterAppTests.CodexAuthFlowTests testSnapshotResponseKeepsPendingDeviceCodeWhenAuthModeUnknown]' passed (0.001 seconds).
+Test Suite 'CodexAuthFlowTests' passed at 2026-10-14 10:54:52.730.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.021 (0.054) seconds
+Test Suite 'CodexAuthSessionTests' started at 2026-10-14 10:54:52.733.
+Test Case '-[CodexMeterAppTests.CodexAuthSessionTests testPollingFailureKeepsRecoveryContext]' started.
+Test Case '-[CodexMeterAppTests.CodexAuthSessionTests testPollingFailureKeepsRecoveryContext]' passed (0.006 seconds).
+Test Case '-[CodexMeterAppTests.CodexAuthSessionTests testSuccessfulDeviceCodeLifecyclePreservesContextUntilSignedIn]' started.
+Test Case '-[CodexMeterAppTests.CodexAuthSessionTests testSuccessfulDeviceCodeLifecyclePreservesContextUntilSignedIn]' passed (0.005 seconds).
+Test Suite 'CodexAuthSessionTests' passed at 2026-10-14 10:54:52.756.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.011 (0.024) seconds
+Test Suite 'CodexLocalIntelligenceTests' started at 2026-10-14 10:54:52.759.
+Test Case '-[CodexMeterAppTests.CodexLocalIntelligenceTests testBurnSignalRaisesSafeForecastToWatch]' started.
+Test Case '-[CodexMeterAppTests.CodexLocalIntelligenceTests testBurnSignalRaisesSafeForecastToWatch]' passed (0.008 seconds).
+Test Case '-[CodexMeterAppTests.CodexLocalIntelligenceTests testDangerForecastKeepsDangerTitle]' started.
+Test Case '-[CodexMeterAppTests.CodexLocalIntelligenceTests testDangerForecastKeepsDangerTitle]' passed (0.001 seconds).
+Test Case '-[CodexMeterAppTests.CodexLocalIntelligenceTests testPopupHeaderDoesNotClipLongLocalDetailIntoSummaryLine]' started.
+Test Case '-[CodexMeterAppTests.CodexLocalIntelligenceTests testPopupHeaderDoesNotClipLongLocalDetailIntoSummaryLine]' passed (0.009 seconds).
+Test Case '-[CodexMeterAppTests.CodexLocalIntelligenceTests testSummaryDoesNotPromoteZeroProjectionAsLikelyByReset]' started.
+Test Case '-[CodexMeterAppTests.CodexLocalIntelligenceTests testSummaryDoesNotPromoteZeroProjectionAsLikelyByReset]' passed (0.001 seconds).
+Test Case '-[CodexMeterAppTests.CodexLocalIntelligenceTests testSummaryShowsLikelyRangeForSafeForecast]' started.
+Test Case '-[CodexMeterAppTests.CodexLocalIntelligenceTests testSummaryShowsLikelyRangeForSafeForecast]' passed (0.002 seconds).
+Test Suite 'CodexLocalIntelligenceTests' passed at 2026-10-14 10:54:52.792.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.021 (0.033) seconds
+Test Suite 'CodexLocalUsageCardPolicyTests' started at 2026-10-14 10:54:52.792.
+Test Case '-[CodexMeterAppTests.CodexLocalUsageCardPolicyTests testContextPressureWinsOverConfidencePill]' started.
+Test Case '-[CodexMeterAppTests.CodexLocalUsageCardPolicyTests testContextPressureWinsOverConfidencePill]' passed (0.052 seconds).
+Test Case '-[CodexMeterAppTests.CodexLocalUsageCardPolicyTests testMissingSessionAccessStillShowsConfidencePillInHeader]' started.
+Test Case '-[CodexMeterAppTests.CodexLocalUsageCardPolicyTests testMissingSessionAccessStillShowsConfidencePillInHeader]' passed (0.004 seconds).
+Test Suite 'CodexLocalUsageCardPolicyTests' passed at 2026-10-14 10:54:52.874.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.056 (0.081) seconds
+Test Suite 'CodexLocalUsageTextTests' started at 2026-10-14 10:54:52.875.
+Test Case '-[CodexMeterAppTests.CodexLocalUsageTextTests testHeaderSummaryUsesTargetReferenceWording]' started.
+Test Case '-[CodexMeterAppTests.CodexLocalUsageTextTests testHeaderSummaryUsesTargetReferenceWording]' passed (0.001 seconds).
+Test Suite 'CodexLocalUsageTextTests' passed at 2026-10-14 10:54:52.885.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.011) seconds
+Test Suite 'CodexMenuBarModelAuthRestoreTests' started at 2026-10-14 10:54:52.898.
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testAppResetClearsHelperAuthenticationBeforeLocalReset]' started.
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testAppResetClearsHelperAuthenticationBeforeLocalReset]' passed (4.765 seconds).
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testAppResetSurfacesHelperSignOutFailure]' started.
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testAppResetSurfacesHelperSignOutFailure]' passed (1.408 seconds).
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testCancelDeviceCodeFailurePreservesCodeAndAllowsRetry]' started.
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testCancelDeviceCodeFailurePreservesCodeAndAllowsRetry]' passed (0.372 seconds).
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testClearingDeviceCodeStopsAutoPolling]' started.
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testClearingDeviceCodeStopsAutoPolling]' passed (0.283 seconds).
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testDeviceAuthAutoPollingRefreshesSnapshotAfterApproval]' started.
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testDeviceAuthAutoPollingRefreshesSnapshotAfterApproval]' passed (0.587 seconds).
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testDiagnosticsReportIncludesAllSessionLocalUsage]' started.
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testDiagnosticsReportIncludesAllSessionLocalUsage]' passed (0.449 seconds).
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testDiagnosticsReportRedactsEmail]' started.
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testDiagnosticsReportRedactsEmail]' passed (0.194 seconds).
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testIncompleteLocalIndexingStopsAfterBoundedBurstAndResumesOnNextRefresh]' started.
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testIncompleteLocalIndexingStopsAfterBoundedBurstAndResumesOnNextRefresh]' passed (0.167 seconds).
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testNotificationEnableReflectsDeniedSystemPermission]' started.
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testNotificationEnableReflectsDeniedSystemPermission]' passed (0.261 seconds).
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testPreviewModeWithSampleQuotaStartsOnSafeSummary]' started.
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testPreviewModeWithSampleQuotaStartsOnSafeSummary]' passed (0.364 seconds).
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testRefreshAppliesLocalCodexUsageSummary]' started.
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testRefreshAppliesLocalCodexUsageSummary]' passed (0.150 seconds).
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testRefreshDeliversQuotaNotificationOncePerFingerprint]' started.
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testRefreshDeliversQuotaNotificationOncePerFingerprint]' passed (0.202 seconds).
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testRefreshFailureDoesNotResolveAuthToSignedOut]' started.
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testRefreshFailureDoesNotResolveAuthToSignedOut]' passed (0.152 seconds).
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testRefreshFailureStillAppliesLocalCodexUsageSummary]' started.
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testRefreshFailureStillAppliesLocalCodexUsageSummary]' passed (0.190 seconds).
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testRepeatedCancelDeviceCodeSendsOneHelperRequest]' started.
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testRepeatedCancelDeviceCodeSendsOneHelperRequest]' passed (0.236 seconds).
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testRepeatedSignInStartCreatesOnlyOneFlow]' started.
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testRepeatedSignInStartCreatesOnlyOneFlow]' passed (0.085 seconds).
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testSignedOutQuotaRefreshDoesNotDiscardActiveDeviceCode]' started.
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testSignedOutQuotaRefreshDoesNotDiscardActiveDeviceCode]' passed (0.058 seconds).
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testSignedOutResponseIsAccountStateInsteadOfRefreshError]' started.
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testSignedOutResponseIsAccountStateInsteadOfRefreshError]' passed (0.045 seconds).
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testSignOutBusyStateBlocksRefreshAndDuplicateSignOut]' started.
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testSignOutBusyStateBlocksRefreshAndDuplicateSignOut]' passed (0.207 seconds).
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testSlowLocalUsageDoesNotBlockRemoteSnapshot]' started.
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testSlowLocalUsageDoesNotBlockRemoteSnapshot]' passed (0.151 seconds).
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testSnoozeCurrentSummaryNotifiesObservers]' started.
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testSnoozeCurrentSummaryNotifiesObservers]' passed (0.167 seconds).
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testStartingDeviceAuthOpensVerificationURL]' started.
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testStartingDeviceAuthOpensVerificationURL]' passed (0.075 seconds).
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testStructuredTransientFailurePreservesLastGoodSnapshot]' started.
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testStructuredTransientFailurePreservesLastGoodSnapshot]' passed (0.412 seconds).
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testTrueSignedOutResponseClearsLastGoodSnapshot]' started.
+Test Case '-[CodexMeterAppTests.CodexMenuBarModelAuthRestoreTests testTrueSignedOutResponseClearsLastGoodSnapshot]' passed (0.206 seconds).
+Test Suite 'CodexMenuBarModelAuthRestoreTests' passed at 2026-10-14 10:55:04.541.
+	 Executed 24 tests, with 0 failures (0 unexpected) in 11.186 (11.643) seconds
+Test Suite 'CodexPopoverSizingTests' started at 2026-10-14 10:55:04.546.
+Test Case '-[CodexMeterAppTests.CodexPopoverSizingTests testClampedPreferredHeightKeepsSmallAvailableHeight]' started.
+Test Case '-[CodexMeterAppTests.CodexPopoverSizingTests testClampedPreferredHeightKeepsSmallAvailableHeight]' passed (0.044 seconds).
+Test Case '-[CodexMeterAppTests.CodexPopoverSizingTests testClampedPreferredHeightRespectsPopupMaxHeight]' started.
+Test Case '-[CodexMeterAppTests.CodexPopoverSizingTests testClampedPreferredHeightRespectsPopupMaxHeight]' passed (0.005 seconds).
+Test Case '-[CodexMeterAppTests.CodexPopoverSizingTests testCompactPopupSizingContractStaysBelowMenuBarReferenceLimit]' started.
+Test Case '-[CodexMeterAppTests.CodexPopoverSizingTests testCompactPopupSizingContractStaysBelowMenuBarReferenceLimit]' passed (0.007 seconds).
+Test Case '-[CodexMeterAppTests.CodexPopoverSizingTests testGlassTokensMatchCompactMenuBarReferenceDesign]' started.
+Test Case '-[CodexMeterAppTests.CodexPopoverSizingTests testGlassTokensMatchCompactMenuBarReferenceDesign]' passed (0.003 seconds).
+Test Case '-[CodexMeterAppTests.CodexPopoverSizingTests testHeightClampsToMaxHeight]' started.
+Test Case '-[CodexMeterAppTests.CodexPopoverSizingTests testHeightClampsToMaxHeight]' passed (0.007 seconds).
+Test Case '-[CodexMeterAppTests.CodexPopoverSizingTests testHeightRoundsFittingHeightUp]' started.
+Test Case '-[CodexMeterAppTests.CodexPopoverSizingTests testHeightRoundsFittingHeightUp]' passed (0.003 seconds).
+Test Case '-[CodexMeterAppTests.CodexPopoverSizingTests testMaxHeightUsesSafeScreenBounds]' started.
+Test Case '-[CodexMeterAppTests.CodexPopoverSizingTests testMaxHeightUsesSafeScreenBounds]' passed (1.030 seconds).
+Test Suite 'CodexPopoverSizingTests' passed at 2026-10-14 10:55:05.686.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 1.099 (1.141) seconds
+Test Suite 'CodexQuotaNotificationPlannerTests' started at 2026-10-14 10:55:05.687.
+Test Case '-[CodexMeterAppTests.CodexQuotaNotificationPlannerTests testDoesNotPlanWhenDisabledOrMissingSnapshot]' started.
+Test Case '-[CodexMeterAppTests.CodexQuotaNotificationPlannerTests testDoesNotPlanWhenDisabledOrMissingSnapshot]' passed (0.011 seconds).
+Test Case '-[CodexMeterAppTests.CodexQuotaNotificationPlannerTests testPercentChangesDoNotRepeatWithinSameResetCycle]' started.
+Test Case '-[CodexMeterAppTests.CodexQuotaNotificationPlannerTests testPercentChangesDoNotRepeatWithinSameResetCycle]' passed (0.001 seconds).
+Test Case '-[CodexMeterAppTests.CodexQuotaNotificationPlannerTests testPlansFiveHourNotificationsForProWhenWindowIsReported]' started.
+Test Case '-[CodexMeterAppTests.CodexQuotaNotificationPlannerTests testPlansFiveHourNotificationsForProWhenWindowIsReported]' passed (0.003 seconds).
+Test Case '-[CodexMeterAppTests.CodexQuotaNotificationPlannerTests testPlansFiveHourPressureWhenHighUseAndResetNotSoon]' started.
+Test Case '-[CodexMeterAppTests.CodexQuotaNotificationPlannerTests testPlansFiveHourPressureWhenHighUseAndResetNotSoon]' passed (0.005 seconds).
+Test Case '-[CodexMeterAppTests.CodexQuotaNotificationPlannerTests testPlansResetSoonWhenHeavyWindowIsAboutToReset]' started.
+Test Case '-[CodexMeterAppTests.CodexQuotaNotificationPlannerTests testPlansResetSoonWhenHeavyWindowIsAboutToReset]' passed (0.003 seconds).
+Test Case '-[CodexMeterAppTests.CodexQuotaNotificationPlannerTests testPlansWeeklyForecastRiskWhenProjectionWillHitLimit]' started.
+Test Case '-[CodexMeterAppTests.CodexQuotaNotificationPlannerTests testPlansWeeklyForecastRiskWhenProjectionWillHitLimit]' passed (0.004 seconds).
+Test Case '-[CodexMeterAppTests.CodexQuotaNotificationPlannerTests testSuppressesAlreadyDeliveredFingerprint]' started.
+Test Case '-[CodexMeterAppTests.CodexQuotaNotificationPlannerTests testSuppressesAlreadyDeliveredFingerprint]' passed (0.009 seconds).
+Test Suite 'CodexQuotaNotificationPlannerTests' passed at 2026-10-14 10:55:05.776.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.036 (0.089) seconds
+Test Suite 'CodexRefreshBackoffTests' started at 2026-10-14 10:55:05.778.
+Test Case '-[CodexMeterAppTests.CodexRefreshBackoffTests testOtherFailuresDoNotThrottleRefreshLoop]' started.
+Test Case '-[CodexMeterAppTests.CodexRefreshBackoffTests testOtherFailuresDoNotThrottleRefreshLoop]' passed (0.005 seconds).
+Test Case '-[CodexMeterAppTests.CodexRefreshBackoffTests testRateLimitedFailuresBackOffAndSuccessClears]' started.
+Test Case '-[CodexMeterAppTests.CodexRefreshBackoffTests testRateLimitedFailuresBackOffAndSuccessClears]' passed (0.005 seconds).
+Test Suite 'CodexRefreshBackoffTests' passed at 2026-10-14 10:55:05.808.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.010 (0.029) seconds
+Test Suite 'CodexRefreshCoordinatorTests' started at 2026-10-14 10:55:05.818.
+Test Case '-[CodexMeterAppTests.CodexRefreshCoordinatorTests testInvalidateCanCancelHelperWork]' started.
+Test Case '-[CodexMeterAppTests.CodexRefreshCoordinatorTests testInvalidateCanCancelHelperWork]' passed (0.003 seconds).
+Test Case '-[CodexMeterAppTests.CodexRefreshCoordinatorTests testInvalidationCancelsOldTokens]' started.
+Test Case '-[CodexMeterAppTests.CodexRefreshCoordinatorTests testInvalidationCancelsOldTokens]' passed (0.005 seconds).
+Test Case '-[CodexMeterAppTests.CodexRefreshCoordinatorTests testRefreshScheduleReactsImmediatelyAndHasNoDisabledWake]' started.
+Test Case '-[CodexMeterAppTests.CodexRefreshCoordinatorTests testRefreshScheduleReactsImmediatelyAndHasNoDisabledWake]' passed (0.353 seconds).
+Test Case '-[CodexMeterAppTests.CodexRefreshCoordinatorTests testStaleDeadlineUpdatesWithoutRefreshLoop]' started.
+Test Case '-[CodexMeterAppTests.CodexRefreshCoordinatorTests testStaleDeadlineUpdatesWithoutRefreshLoop]' passed (0.135 seconds).
+Test Suite 'CodexRefreshCoordinatorTests' passed at 2026-10-14 10:55:06.419.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.496 (0.601) seconds
+Test Suite 'CodexSummarySnoozeTests' started at 2026-10-14 10:55:06.427.
+Test Case '-[CodexMeterAppTests.CodexSummarySnoozeTests testExpiryUsesTwentyFourHours]' started.
+Test Case '-[CodexMeterAppTests.CodexSummarySnoozeTests testExpiryUsesTwentyFourHours]' passed (0.004 seconds).
+Test Case '-[CodexMeterAppTests.CodexSummarySnoozeTests testSnoozeExpiresAtReset]' started.
+Test Case '-[CodexMeterAppTests.CodexSummarySnoozeTests testSnoozeExpiresAtReset]' passed (0.003 seconds).
+Test Case '-[CodexMeterAppTests.CodexSummarySnoozeTests testSnoozeMatchesSameAlertBeforeExpiryEvenWhenNumbersChange]' started.
+Test Case '-[CodexMeterAppTests.CodexSummarySnoozeTests testSnoozeMatchesSameAlertBeforeExpiryEvenWhenNumbersChange]' passed (0.001 seconds).
+Test Suite 'CodexSummarySnoozeTests' passed at 2026-10-14 10:55:06.443.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.008 (0.016) seconds
+Test Suite 'CodexUsageHistoryStorePersistenceTests' started at 2026-10-14 10:55:06.444.
+Test Case '-[CodexMeterAppTests.CodexUsageHistoryStorePersistenceTests testAppendDoesNotOverwriteCorruptExistingHistory]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageHistoryStorePersistenceTests testAppendDoesNotOverwriteCorruptExistingHistory]' passed (0.037 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageHistoryStorePersistenceTests testAppendSkipsDuplicateWithoutGrowingHistory]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageHistoryStorePersistenceTests testAppendSkipsDuplicateWithoutGrowingHistory]' passed (0.031 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageHistoryStorePersistenceTests testConcurrentStoreInstancesMergeEveryAppend]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageHistoryStorePersistenceTests testConcurrentStoreInstancesMergeEveryAppend]' passed (0.431 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageHistoryStorePersistenceTests testLoadReloadsChangesWrittenByAnotherStoreInstance]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageHistoryStorePersistenceTests testLoadReloadsChangesWrittenByAnotherStoreInstance]' passed (0.205 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageHistoryStorePersistenceTests testOversizedHistoryIsRejectedWithoutReadingOrReplacingIt]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageHistoryStorePersistenceTests testOversizedHistoryIsRejectedWithoutReadingOrReplacingIt]' passed (0.003 seconds).
+Test Suite 'CodexUsageHistoryStorePersistenceTests' passed at 2026-10-14 10:55:07.167.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.706 (0.723) seconds
+Test Suite 'CodexUsageInsightsTests' started at 2026-10-14 10:55:07.168.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testFiveHourPressureUsesCautionWhenResetIsUnknown]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testFiveHourPressureUsesCautionWhenResetIsUnknown]' passed (0.010 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testFiveHourPressureUsesFixedThresholds]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testFiveHourPressureUsesFixedThresholds]' passed (0.001 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testHistoryCompactionPreservesIndependentFiveHourAndWeeklyPeaks]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testHistoryCompactionPreservesIndependentFiveHourAndWeeklyPeaks]' passed (0.022 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testHistoryCompactionRepairsDuplicateIDsWithoutDroppingDivergentPeaks]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testHistoryCompactionRepairsDuplicateIDsWithoutDroppingDivergentPeaks]' passed (0.049 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testHistoryRepositoryReturnsSavedSamplesAndInsights]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testHistoryRepositoryReturnsSavedSamplesAndInsights]' passed (0.016 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testInsightsAreNilWithoutCodexLimit]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testInsightsAreNilWithoutCodexLimit]' passed (0.001 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testInsightsHandleCreditsOnlyCodexLimitAsEmptyQuotaState]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testInsightsHandleCreditsOnlyCodexLimitAsEmptyQuotaState]' passed (0.008 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testModelReadinessReportsMlGateProgress]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testModelReadinessReportsMlGateProgress]' passed (0.001 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testMonthlyHistoryUsesLastThirtyDailyWeeklyPeaks]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testMonthlyHistoryUsesLastThirtyDailyWeeklyPeaks]' passed (0.001 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testPointsCollapseMultipleSamplesFromSameDayIntoDailyPeak]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testPointsCollapseMultipleSamplesFromSameDayIntoDailyPeak]' passed (0.002 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testPreviewDataMatchesReferenceQuotaCards]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testPreviewDataMatchesReferenceQuotaCards]' passed (0.003 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testPreviewDataProducesInsights]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testPreviewDataProducesInsights]' passed (0.016 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testPreviewLocalUsageMatchesReferenceEmptyState]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testPreviewLocalUsageMatchesReferenceEmptyState]' passed (0.025 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testRecentPeaksFallBackWhenHistoryIsThin]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testRecentPeaksFallBackWhenHistoryIsThin]' passed (0.014 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testRecentPeaksUse24HourAnd7DayWindows]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testRecentPeaksUse24HourAnd7DayWindows]' passed (0.006 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testUsageHistoryStoreAppendsWhenCreditsBalanceChanges]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testUsageHistoryStoreAppendsWhenCreditsBalanceChanges]' passed (0.040 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testUsageHistoryStoreIgnoresClockFutureSamples]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testUsageHistoryStoreIgnoresClockFutureSamples]' passed (0.048 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testUsageHistoryStoreKeepsAtMostNinetyDays]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testUsageHistoryStoreKeepsAtMostNinetyDays]' passed (0.015 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testUsageHistoryStoreRecordsPersistenceFailure]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testUsageHistoryStoreRecordsPersistenceFailure]' passed (0.027 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testUsageHistoryStoreSkipsDuplicateSamplesAndUsesInjectedFileURL]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testUsageHistoryStoreSkipsDuplicateSamplesAndUsesInjectedFileURL]' passed (0.012 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testUsageHistoryStoreUsesOwnerOnlyFileAndDirectoryPermissions]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testUsageHistoryStoreUsesOwnerOnlyFileAndDirectoryPermissions]' passed (0.042 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testWeeklyForecastIgnoresSamplesMissingWeeklyWindow]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testWeeklyForecastIgnoresSamplesMissingWeeklyWindow]' passed (0.005 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testWeeklyForecastKeepsCurrentCycleSamplesWhenResetTimeSkewsSlightly]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testWeeklyForecastKeepsCurrentCycleSamplesWhenResetTimeSkewsSlightly]' passed (0.003 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testWeeklyPaceFlagsHotStartBeforeMinimumCoverage]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testWeeklyPaceFlagsHotStartBeforeMinimumCoverage]' passed (0.005 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testWeeklyPaceIgnoresSingleMatchingPatternCycle]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testWeeklyPaceIgnoresSingleMatchingPatternCycle]' passed (0.004 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testWeeklyPaceMarksVolatileProjectionWhenProjectionSwings]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testWeeklyPaceMarksVolatileProjectionWhenProjectionSwings]' passed (0.002 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testWeeklyPaceUsesElapsedFractionProjectionForCautionForecast]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testWeeklyPaceUsesElapsedFractionProjectionForCautionForecast]' passed (0.003 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testWeeklyPaceUsesElapsedFractionProjectionForDangerForecast]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testWeeklyPaceUsesElapsedFractionProjectionForDangerForecast]' passed (0.003 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testWeeklyPaceUsesElapsedFractionProjectionForSafeForecast]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testWeeklyPaceUsesElapsedFractionProjectionForSafeForecast]' passed (0.014 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testWeeklyPaceUsesMachineLearningAfterEnoughHistory]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testWeeklyPaceUsesMachineLearningAfterEnoughHistory]' passed (0.004 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testWeeklyPaceUsesMatchingLocalPatternWhenHistoryIsStrong]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testWeeklyPaceUsesMatchingLocalPatternWhenHistoryIsStrong]' passed (0.001 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testWeeklyPaceUsesPriorCyclesAsBrakeForHotEarlyProjection]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testWeeklyPaceUsesPriorCyclesAsBrakeForHotEarlyProjection]' passed (0.018 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testWeeklyPaceUsesPriorCyclesForEarlyEstimate]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testWeeklyPaceUsesPriorCyclesForEarlyEstimate]' passed (0.006 seconds).
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testWeeklyPaceWaitsUntilCycleHasEnoughCoverage]' started.
+Test Case '-[CodexMeterAppTests.CodexUsageInsightsTests testWeeklyPaceWaitsUntilCycleHasEnoughCoverage]' passed (0.012 seconds).
+Test Suite 'CodexUsageInsightsTests' passed at 2026-10-14 10:55:07.879.
+	 Executed 34 tests, with 0 failures (0 unexpected) in 0.438 (0.712) seconds
+Test Suite 'PopupPresentationTests' started at 2026-10-14 10:55:07.887.
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testFiveHourVisibilityFiltersRowsAndHeadline]' started.
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testFiveHourVisibilityFiltersRowsAndHeadline]' passed (0.032 seconds).
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testHiddenFiveHourDoesNotBecomeWeeklyFallback]' started.
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testHiddenFiveHourDoesNotBecomeWeeklyFallback]' passed (0.005 seconds).
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testHighCountHistoryGraphBarsFitCompactChartWidth]' started.
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testHighCountHistoryGraphBarsFitCompactChartWidth]' passed (0.002 seconds).
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testHistoryGraphAccessibilityValueSummarizesVisibleSeriesData]' started.
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testHistoryGraphAccessibilityValueSummarizesVisibleSeriesData]' passed (0.035 seconds).
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testHistoryGraphBarsAreBottomAligned]' started.
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testHistoryGraphBarsAreBottomAligned]' passed (0.004 seconds).
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testHistoryLegendUsesCurrentPercentNotForecastWarning]' started.
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testHistoryLegendUsesCurrentPercentNotForecastWarning]' passed (0.002 seconds).
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testHistorySeriesHideAndRestoreFiveHour]' started.
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testHistorySeriesHideAndRestoreFiveHour]' passed (0.010 seconds).
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testLimitHeadlineUsesLowestRemainingWindow]' started.
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testLimitHeadlineUsesLowestRemainingWindow]' passed (0.001 seconds).
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testMeaningfulCreditsStayVisible]' started.
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testMeaningfulCreditsStayVisible]' passed (0.032 seconds).
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testQuotaWindowDisplayUsesRemainingPercentLikeAccountPage]' started.
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testQuotaWindowDisplayUsesRemainingPercentLikeAccountPage]' passed (0.002 seconds).
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testSummaryEscalatesToFiveHourPressureWhenWeeklyLooksSafe]' started.
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testSummaryEscalatesToFiveHourPressureWhenWeeklyLooksSafe]' passed (0.002 seconds).
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testSummaryIgnoresFiveHourPressureWhenHidden]' started.
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testSummaryIgnoresFiveHourPressureWhenHidden]' passed (0.004 seconds).
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testSummaryRestoresFiveHourPressureWhenEnabled]' started.
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testSummaryRestoresFiveHourPressureWhenEnabled]' passed (0.001 seconds).
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testSummaryUsesCompactForecastInsteadOfRepeatingCurrentUsage]' started.
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testSummaryUsesCompactForecastInsteadOfRepeatingCurrentUsage]' passed (0.004 seconds).
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testSummaryUsesTooEarlySeverityForLearningForecast]' started.
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testSummaryUsesTooEarlySeverityForLearningForecast]' passed (0.002 seconds).
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testZeroAndUnlimitedCreditsStayVisible]' started.
+Test Case '-[CodexMeterAppTests.PopupPresentationTests testZeroAndUnlimitedCreditsStayVisible]' passed (0.001 seconds).
+Test Suite 'PopupPresentationTests' passed at 2026-10-14 10:55:08.095.
+	 Executed 16 tests, with 0 failures (0 unexpected) in 0.139 (0.207) seconds
+Test Suite 'PopupReferenceRenderTests' started at 2026-10-14 10:55:08.095.
+Test Case '-[CodexMeterAppTests.PopupReferenceRenderTests testDesktopStoreScreenshotsRenderPlusAndPro]' started.
+Test Case '-[CodexMeterAppTests.PopupReferenceRenderTests testDesktopStoreScreenshotsRenderPlusAndPro]' passed (112.739 seconds).
+Test Case '-[CodexMeterAppTests.PopupReferenceRenderTests testFailurePopupRendersReadablePrimaryAction]' started.
+Test Case '-[CodexMeterAppTests.PopupReferenceRenderTests testFailurePopupRendersReadablePrimaryAction]' passed (11.131 seconds).
+Test Case '-[CodexMeterAppTests.PopupReferenceRenderTests testHistoryModeSelectorRendersCompactCurrentModeInBothAppearances]' started.
+Test Case '-[CodexMeterAppTests.PopupReferenceRenderTests testHistoryModeSelectorRendersCompactCurrentModeInBothAppearances]' passed (1.141 seconds).
+Test Case '-[CodexMeterAppTests.PopupReferenceRenderTests testLivePopupFooterRendersVisibleActionRail]' started.
+Test Case '-[CodexMeterAppTests.PopupReferenceRenderTests testLivePopupFooterRendersVisibleActionRail]' passed (5.057 seconds).
+Test Case '-[CodexMeterAppTests.PopupReferenceRenderTests testPopupAppKitButtonsParticipateInKeyTraversalAndActivateWithKeyboard]' started.
+Test Case '-[CodexMeterAppTests.PopupReferenceRenderTests testPopupAppKitButtonsParticipateInKeyTraversalAndActivateWithKeyboard]' passed (3.026 seconds).
+Test Case '-[CodexMeterAppTests.PopupReferenceRenderTests testPreviewModePopupFitsUnder600PointsInAllHistoryModes]' started.
+Test Case '-[CodexMeterAppTests.PopupReferenceRenderTests testPreviewModePopupFitsUnder600PointsInAllHistoryModes]' passed (0.197 seconds).
+Test Case '-[CodexMeterAppTests.PopupReferenceRenderTests testReferencePopupRendersNonBlackGlassFrameInLightAndDark]' started.
+Test Case '-[CodexMeterAppTests.PopupReferenceRenderTests testReferencePopupRendersNonBlackGlassFrameInLightAndDark]' passed (13.946 seconds).
+Test Case '-[CodexMeterAppTests.PopupReferenceRenderTests testResetDashboardRendersPlusAndPro]' started.
+Test Case '-[CodexMeterAppTests.PopupReferenceRenderTests testResetDashboardRendersPlusAndPro]' passed (30.750 seconds).
+Test Case '-[CodexMeterAppTests.PopupReferenceRenderTests testSignedOutPopupUsesOneRefreshAndEqualActionWidths]' started.
+Test Case '-[CodexMeterAppTests.PopupReferenceRenderTests testSignedOutPopupUsesOneRefreshAndEqualActionWidths]' passed (20.636 seconds).
+Test Case '-[CodexMeterAppTests.PopupReferenceRenderTests testStaleSnapshotErrorPopupRendersResetDashboard]' started.
+Test Case '-[CodexMeterAppTests.PopupReferenceRenderTests testStaleSnapshotErrorPopupRendersResetDashboard]' passed (5.541 seconds).
+Test Case '-[CodexMeterAppTests.PopupReferenceRenderTests testStateBadgeSymbolsExist]' started.
+Test Case '-[CodexMeterAppTests.PopupReferenceRenderTests testStateBadgeSymbolsExist]' passed (0.694 seconds).
+Test Case '-[CodexMeterAppTests.PopupReferenceRenderTests testWindowHostedPopupFooterRendersVisibleActionRail]' started.
+Test Case '-[CodexMeterAppTests.PopupReferenceRenderTests testWindowHostedPopupFooterRendersVisibleActionRail]' passed (11.446 seconds).
+Test Suite 'PopupReferenceRenderTests' passed at 2026-10-14 10:58:44.915.
+	 Executed 12 tests, with 0 failures (0 unexpected) in 216.303 (216.819) seconds
+Test Suite 'SettingsDesignRenderTests' started at 2026-10-14 10:58:44.916.
+Test Case '-[CodexMeterAppTests.SettingsDesignRenderTests testSettingsAndWelcomeRenderAtSupportedWindowSize]' started.
+Test Case '-[CodexMeterAppTests.SettingsDesignRenderTests testSettingsAndWelcomeRenderAtSupportedWindowSize]' passed (16.602 seconds).
+Test Suite 'SettingsDesignRenderTests' passed at 2026-10-14 10:59:01.525.
+	 Executed 1 test, with 0 failures (0 unexpected) in 16.602 (16.609) seconds
+Test Suite 'StatusBarLabelTests' started at 2026-10-14 10:59:01.529.
+Test Case '-[CodexMeterAppTests.StatusBarLabelTests testMenuBarPaceModeShowsWeeklyProjection]' started.
+Test Case '-[CodexMeterAppTests.StatusBarLabelTests testMenuBarPaceModeShowsWeeklyProjection]' passed (0.006 seconds).
+Test Case '-[CodexMeterAppTests.StatusBarLabelTests testMenuBarRemainingModeShowsRemainingPercentages]' started.
+Test Case '-[CodexMeterAppTests.StatusBarLabelTests testMenuBarRemainingModeShowsRemainingPercentages]' passed (0.006 seconds).
+Test Case '-[CodexMeterAppTests.StatusBarLabelTests testMenuBarUsedModeShowsUsedPercentages]' started.
+Test Case '-[CodexMeterAppTests.StatusBarLabelTests testMenuBarUsedModeShowsUsedPercentages]' passed (0.005 seconds).
+Test Case '-[CodexMeterAppTests.StatusBarLabelTests testNormalMenuBarImageIsNilWithoutSeverity]' started.
+Test Case '-[CodexMeterAppTests.StatusBarLabelTests testNormalMenuBarImageIsNilWithoutSeverity]' passed (0.005 seconds).
+Test Case '-[CodexMeterAppTests.StatusBarLabelTests testNormalMenuBarImageUsesSeverityDot]' started.
+Test Case '-[CodexMeterAppTests.StatusBarLabelTests testNormalMenuBarImageUsesSeverityDot]' passed (0.006 seconds).
+Test Case '-[CodexMeterAppTests.StatusBarLabelTests testWeeklyOnlyMenuBarUsesTheOpenAILogoSlot]' started.
+Test Case '-[CodexMeterAppTests.StatusBarLabelTests testWeeklyOnlyMenuBarUsesTheOpenAILogoSlot]' passed (0.004 seconds).
+Test Case '-[CodexMeterAppTests.StatusBarLabelTests testWeeklyOnlyPaceMenuBarUsesTheOpenAILogoSlot]' started.
+Test Case '-[CodexMeterAppTests.StatusBarLabelTests testWeeklyOnlyPaceMenuBarUsesTheOpenAILogoSlot]' passed (0.007 seconds).
+Test Suite 'StatusBarLabelTests' passed at 2026-10-14 10:59:01.603.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.039 (0.074) seconds
+Test Suite 'CodexMeterAppTests.xctest' passed at 2026-10-14 10:59:01.608.
+	 Executed 148 tests, with 0 failures (0 unexpected) in 247.992 (249.974) seconds
+Test Suite 'All tests' passed at 2026-10-14 10:59:01.614.
+	 Executed 148 tests, with 0 failures (0 unexpected) in 247.992 (250.018) seconds
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite OpenAIMonitorModelTests started.
+◇ Test previewCannotSaveRefreshOrDisconnectCredentials() started.
+✔ Test previewCannotSaveRefreshOrDisconnectCredentials() passed after 0.001 seconds.
+✔ Suite OpenAIMonitorModelTests passed after 0.004 seconds.
+◇ Suite OpenAIMonitorLifecycleTests started.
+◇ Test savedCredentialBecomesUsableAfterUnlock() started.
+✔ Test savedCredentialBecomesUsableAfterUnlock() passed after 0.007 seconds.
+◇ Test standardKeyIsPersistedOnlyAfterSuccessfulReadOnlyValidation() started.
+✔ Test standardKeyIsPersistedOnlyAfterSuccessfulReadOnlyValidation() passed after 0.002 seconds.
+◇ Test standardKeyUsesOnlyDocumentedModelsAndDoesNotInventBalance() started.
+✔ Test standardKeyUsesOnlyDocumentedModelsAndDoesNotInventBalance() passed after 0.001 seconds.
+◇ Test storedBillingSessionIsNeverSentAndCanBeDisconnected() started.
+✔ Test storedBillingSessionIsNeverSentAndCanBeDisconnected() passed after 0.001 seconds.
+◇ Test newBillingSessionIsRejectedBeforeNetworkingOrPersistence() started.
+✔ Test newBillingSessionIsRejectedBeforeNetworkingOrPersistence() passed after 0.001 seconds.
+◇ Test deniedAdminCapabilityDoesNotPersistCredential() started.
+✔ Test deniedAdminCapabilityDoesNotPersistCredential() passed after 0.001 seconds.
+◇ Test enteringPreviewWhileValidationWaitsPreventsPersistence() started.
+✔ Test enteringPreviewWhileValidationWaitsPreventsPersistence() passed after 0.002 seconds.
+◇ Test disconnectWhileValidationWaitsPreventsPersistence() started.
+✔ Test disconnectWhileValidationWaitsPreventsPersistence() passed after 0.001 seconds.
+◇ Test failedKeyDeletionStopsMonitoringAndCanBeRetried() started.
+✔ Test failedKeyDeletionStopsMonitoringAndCanBeRetried() passed after 0.001 seconds.
+◇ Test cooldownPreventsRepeatedRefreshAfterSavingValidatedKey() started.
+✔ Test cooldownPreventsRepeatedRefreshAfterSavingValidatedKey() passed after 0.001 seconds.
+◇ Test explicitConsentPersistsBeforeSessionBalanceAndCanBeRevoked() started.
+✔ Test explicitConsentPersistsBeforeSessionBalanceAndCanBeRevoked() passed after 0.008 seconds.
+◇ Test withdrawalWhileBalanceWaitsCannotPublishOrPersistItsResult() started.
+✔ Test withdrawalWhileBalanceWaitsCannotPublishOrPersistItsResult() passed after 0.001 seconds.
+◇ Test withdrawalDuringPublicValidationPreventsLaterPrivateRequest() started.
+✔ Test withdrawalDuringPublicValidationPreventsLaterPrivateRequest() passed after 0.001 seconds.
+◇ Test failedConsentPersistenceCannotEnableAccess() started.
+✔ Test failedConsentPersistenceCannotEnableAccess() passed after 0.001 seconds.
+◇ Test failedRevocationWriteStillBlocksAccessAfterPreviewExit() started.
+✔ Test failedRevocationWriteStillBlocksAccessAfterPreviewExit() passed after 0.001 seconds.
+✔ Suite OpenAIMonitorLifecycleTests passed after 0.050 seconds.
+✔ Test run with 16 tests in 2 suites passed after 0.060 seconds.

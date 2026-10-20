@@ -1,0 +1,12 @@
+{
+  "source": "../raw/by-shot/01-quota",
+  "output_root": "../asc_out/01-quota",
+  "kind": "all-latest",
+  "template": "plain",
+  "copy_file": "../copy/01-quota.json",
+  "locale": "en-US",
+  "background": "#111713,#18261D,#20382A",
+  "frame_color": "Silver",
+  "validate": true
+}
+

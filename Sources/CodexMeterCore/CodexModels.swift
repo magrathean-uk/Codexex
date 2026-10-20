@@ -123,6 +123,19 @@ public struct CodexCredits: Sendable, Equatable, Codable {
             return "Unlimited"
         }
         if let balance, balance.isEmpty == false {
+            let numericText = balance.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !numericText.isEmpty,
+               let amount = Decimal(string: numericText, locale: Locale(identifier: "en_US_POSIX")),
+               !amount.isNaN {
+                let formatter = NumberFormatter()
+                formatter.locale = Locale(identifier: "en_US_POSIX")
+                formatter.numberStyle = .decimal
+                formatter.usesGroupingSeparator = false
+                formatter.minimumFractionDigits = 2
+                formatter.maximumFractionDigits = 2
+                formatter.roundingMode = .halfUp
+                return formatter.string(from: NSDecimalNumber(decimal: amount)) ?? balance
+            }
             return balance
         }
         if hasCredits {

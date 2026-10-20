@@ -79,7 +79,7 @@ final class PopupPresentationTests: XCTestCase {
         XCTAssertEqual(PopupPresentation.headlineWindow(for: other, showFiveHour: true)?.remainingPercentText, "36%")
     }
 
-    func testZeroAndUnlimitedCreditsStayHidden() {
+    func testZeroAndUnlimitedCreditsStayVisible() {
         let zeroCredits = PopupPresentation.presentation(
             for: makeLimit(
                 id: "codex",
@@ -101,8 +101,8 @@ final class PopupPresentationTests: XCTestCase {
             )
         )
 
-        XCTAssertNil(zeroCredits.visibleCredits)
-        XCTAssertNil(unlimitedCredits.visibleCredits)
+        XCTAssertEqual(zeroCredits.visibleCredits?.displayText, "0.00")
+        XCTAssertEqual(unlimitedCredits.visibleCredits?.displayText, "Unlimited")
     }
 
     func testMeaningfulCreditsStayVisible() {

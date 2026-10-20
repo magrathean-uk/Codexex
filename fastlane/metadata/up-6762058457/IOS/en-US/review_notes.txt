@@ -1,0 +1,7 @@
+No demo account is required. On the welcome screen, tap Try preview to inspect sample subscription quota, reset times, Codex credits and local history offline. Open Settings using the gear button. Preview mode is also available in Settings > Data.
+
+Open Settings > Accounts > OpenAI API to inspect API setup and preview monitoring. Standard API keys verify API access; organization Admin keys provide usage and cost reports. The app does not generate content. Optional prepaid balance monitoring has a separate billing sign-in and an explicit notice before it is enabled.
+
+The widget extension offers subscription quota and API balance in small and medium Home Screen widgets. Live Activities display subscription quota and start explicitly from Settings after a real account reading. Background updates use content-free app wake notifications; the phone obtains readings directly from the provider. Delivery timing is controlled by iOS.
+
+Saved credentials and browser sign-in remain on the device. The optional wake service does not receive provider credentials, account identity, quota values or usage history. Diagnostics remain local.

@@ -7,6 +7,7 @@ final class CodexHelperProcess: @unchecked Sendable {
     private let maxResponseBytes = 1_048_576
     private let responseTimeout: TimeInterval = 15
     private let helperURLProvider: (() throws -> URL)?
+    private let helperCandidateURLsProvider: (() -> [URL])?
     private let beforePublishingLaunch: (() -> Void)?
     private var process: Process?
     private var stdinHandle: FileHandle?
@@ -16,9 +17,11 @@ final class CodexHelperProcess: @unchecked Sendable {
 
     init(
         helperURLProvider: (() throws -> URL)? = nil,
+        helperCandidateURLsProvider: (() -> [URL])? = nil,
         beforePublishingLaunch: (() -> Void)? = nil
     ) {
         self.helperURLProvider = helperURLProvider
+        self.helperCandidateURLsProvider = helperCandidateURLsProvider
         self.beforePublishingLaunch = beforePublishingLaunch
     }
 
@@ -149,9 +152,10 @@ final class CodexHelperProcess: @unchecked Sendable {
 
     private func locateHelperURL() throws -> URL {
         let fileManager = FileManager.default
-        let candidateURLs = helperCandidateURLs()
+        let candidateURLs = helperCandidateURLsProvider?() ?? helperCandidateURLs()
 
-        if let helperURL = candidateURLs.first(where: { fileManager.fileExists(atPath: $0.path()) }) {
+        // FileManager takes a decoded filesystem path, including spaces and %.
+        if let helperURL = candidateURLs.first(where: { fileManager.fileExists(atPath: $0.path) }) {
             return helperURL
         }
 

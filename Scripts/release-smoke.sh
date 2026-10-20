@@ -99,11 +99,25 @@ require_text "com.apple.security.inherit" AppStore/CodexexHelper.entitlements
 require_text "ChatGPT/OpenAI sign-in" PRIVACY.md
 require_text "Paid packaging" docs/development/runbook.md
 require_text "paid-upfront App Store pricing" docs/development/runbook.md
-require_text "MARKETING_VERSION: 6.1.1" project.yml
-require_text "CURRENT_PROJECT_VERSION: 26" project.yml
+grep -Eq 'MARKETING_VERSION: [0-9]+\.[0-9]+\.[0-9]+' project.yml || fail "missing marketing version"
+grep -Eq 'CURRENT_PROJECT_VERSION: [1-9][0-9]*' project.yml || fail "missing positive build number"
 require_text "OpenAILogo" Sources/CodexMeterApp/UI/StatusBarLabel.swift
-require_text "Codexex 6.1.1" fastlane/metadata/up-6762058457/IOS/en-US/whats_new.txt
-require_text "Codexex 6.1.1" fastlane/metadata/up-6762058457/MACOS/en-US/whats_new.txt
+for release_platform in IOS MACOS; do
+  release_metadata="fastlane/metadata/up-6762058457/$release_platform/en-US"
+  for release_field in description whats_new promotional_text keywords; do
+    require_file "$release_metadata/$release_field.txt"
+    [[ -s "$release_metadata/$release_field.txt" ]] || fail "empty $release_platform $release_field"
+  done
+done
+python3 - <<'PY'
+from pathlib import Path
+for platform in ("IOS", "MACOS"):
+    root = Path("fastlane/metadata/up-6762058457") / platform / "en-US"
+    for field, limit in (("description", 4000), ("whats_new", 4000), ("promotional_text", 170), ("keywords", 100)):
+        value = (root / f"{field}.txt").read_text().strip()
+        if len(value) > limit:
+            raise SystemExit(f"release-smoke: {platform} {field} exceeds {limit} characters")
+PY
 
 # Keep the removed quota product out of source, tests, and documentation. Store
 # release notes intentionally mention the removal for App Store review context.
@@ -132,8 +146,15 @@ fi
 if ! rustdoc_bin="$("$rustup_bin" which --toolchain "$rustup_toolchain" rustdoc 2>/dev/null)"; then
   fail "rustdoc is unavailable for rustup toolchain '$rustup_toolchain'"
 fi
-RUSTC="$rustc_bin" RUSTDOC="$rustdoc_bin" "$cargo_bin" test --locked \
-  --manifest-path Helper/CodexexHelper/Cargo.toml
+(
+  cd "$repo_root/Helper/CodexexHelper"
+  # The adapter dispatches the literal tool name. Pin its resolved executable
+  # to the selected rustup toolchain without changing the caller's global PATH.
+  release_cargo_directory="$(dirname "$cargo_bin")"
+  PATH="$release_cargo_directory:$PATH" RUSTC="$rustc_bin" RUSTDOC="$rustdoc_bin" \
+    clean-development run --session session-only -- cargo test --locked \
+      --manifest-path Cargo.toml
+)
 
 if command -v xcodebuild >/dev/null 2>&1; then
   xcodebuild -project CodexMeter.xcodeproj \
@@ -143,9 +164,23 @@ if command -v xcodebuild >/dev/null 2>&1; then
     -showBuildSettings >/dev/null
   xcodebuild -project CodexMeter.xcodeproj \
     -scheme CodexMeteriOS \
-    -configuration Debug \
-    -sdk iphonesimulator \
-    -showBuildSettings >/dev/null
+    -configuration Release \
+    -sdk iphoneos \
+    -showBuildSettings -json | python3 -c '
+import json, re, sys
+targets = {row["target"]: row["buildSettings"] for row in json.load(sys.stdin)}
+pairs = []
+for name in ("CodexMeteriOS", "CodexMeterWidgets"):
+    settings = targets.get(name, {})
+    version = settings.get("MARKETING_VERSION", "")
+    build = settings.get("CURRENT_PROJECT_VERSION", "")
+    if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version) or not re.fullmatch(r"[1-9][0-9]*", build):
+        raise SystemExit(f"release-smoke: invalid Release version for {name}")
+    pairs.append((version, build))
+if pairs[0] != pairs[1]:
+    raise SystemExit("release-smoke: iOS app and widget versions differ")
+print(f"release-smoke: iOS app and widget Release version {pairs[0][0]} ({pairs[0][1]})")
+'
 else
   echo "release-smoke: xcodebuild unavailable; skipped Xcode build-settings smoke"
 fi

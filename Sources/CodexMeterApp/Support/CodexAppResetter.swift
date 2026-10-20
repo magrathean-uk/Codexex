@@ -1,6 +1,7 @@
 #if os(macOS)
 import AppKit
 import Foundation
+import CodexMeterCore
 
 struct CodexAppResetResult: Equatable {
     let errors: [String]
@@ -49,6 +50,9 @@ enum CodexAppResetter {
         removeItem: ((URL) throws -> Void)? = nil
     ) -> CodexAppResetResult {
         var errors: [String] = []
+        defaults.removeObject(forKey: "codexex.unofficialOpenAIBalanceConsent.v1")
+        defaults.removeObject(forKey: "codexex.unofficialOpenAIBalanceConsent.v2")
+        do { try OpenAIAPICredentialStore().delete() } catch { errors.append("API key could not be removed from Keychain.") }
         if let bundleIdentifier {
             defaults.removePersistentDomain(forName: bundleIdentifier)
         }

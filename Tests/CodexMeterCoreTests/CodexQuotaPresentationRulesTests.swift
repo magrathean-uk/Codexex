@@ -14,13 +14,36 @@ final class CodexQuotaPresentationRulesTests: XCTestCase {
 
     func testCreditsVisibilityIsShared() {
         XCTAssertNil(CodexQuotaPresentationRules.visibleCredits(nil))
-        XCTAssertNil(CodexQuotaPresentationRules.visibleCredits(.init(hasCredits: true, unlimited: true, balance: nil)))
-        XCTAssertNil(CodexQuotaPresentationRules.visibleCredits(.init(hasCredits: true, unlimited: false, balance: "0")))
         XCTAssertNil(CodexQuotaPresentationRules.visibleCredits(.init(hasCredits: false, unlimited: false, balance: nil)))
+        XCTAssertNil(CodexQuotaPresentationRules.visibleCredits(.init(hasCredits: true, unlimited: false, balance: "  ")))
 
         XCTAssertEqual(
-            CodexQuotaPresentationRules.visibleCredits(.init(hasCredits: true, unlimited: false, balance: "12.50"))?.displayText,
-            "12.50"
+            CodexQuotaPresentationRules.visibleCredits(.init(hasCredits: true, unlimited: false, balance: "12.345678901234"))?.displayText,
+            "12.35"
+        )
+    }
+
+    func testReportedZeroAndUnlimitedCreditsStayVisible() {
+        for balance in ["0", "0.00", "-0.00"] {
+            XCTAssertEqual(
+                CodexQuotaPresentationRules.visibleCredits(.init(hasCredits: false, unlimited: false, balance: balance))?.displayText,
+                "0.00"
+            )
+        }
+        XCTAssertEqual(
+            CodexQuotaPresentationRules.visibleCredits(.init(hasCredits: true, unlimited: true, balance: nil))?.displayText,
+            "Unlimited"
+        )
+    }
+
+    func testMissingCreditBalanceIsNotPresentedAsZero() {
+        XCTAssertEqual(
+            CodexQuotaPresentationRules.visibleCredits(.init(hasCredits: true, unlimited: false, balance: nil))?.displayText,
+            "Unavailable"
+        )
+        XCTAssertEqual(
+            CodexQuotaPresentationRules.visibleCredits(.init(hasCredits: true, unlimited: false, balance: "-12.50"))?.displayText,
+            "-12.50"
         )
     }
 

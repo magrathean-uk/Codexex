@@ -1,0 +1,242 @@
+{
+  "date": "2026-10-14",
+  "guest": "macos26-agent",
+  "guestOS": "26.6.2 (25G83)",
+  "captures": [
+    {
+      "path": "fixtures/codexex-account-api-dark.png",
+      "caption": "Account api dark",
+      "kind": "fixture",
+      "activation": {
+        "keyWindow": false,
+        "appActive": false,
+        "appearance": "dark"
+      },
+      "sha256": "d54e12d8ff9eb3fc4f223f08c7236289b66f4064af7d31865c71b55686e6e81b"
+    },
+    {
+      "path": "fixtures/codexex-account-api-light.png",
+      "caption": "Account api light",
+      "kind": "fixture",
+      "activation": {
+        "keyWindow": false,
+        "appActive": false,
+        "appearance": "light"
+      },
+      "sha256": "6f37d70164234730ef4c2a385fceb281797852deaa32771bf73de106852bf35c"
+    },
+    {
+      "path": "fixtures/codexex-account-subscription-dark.png",
+      "caption": "Account subscription dark",
+      "kind": "fixture",
+      "activation": {
+        "keyWindow": false,
+        "appActive": false,
+        "appearance": "dark"
+      },
+      "sha256": "d6bff51f6bd7bb27654855d448d0a013ce213f8b01431c9068d3d63f02eab7f9"
+    },
+    {
+      "path": "fixtures/codexex-account-subscription-light.png",
+      "caption": "Account subscription light",
+      "kind": "fixture",
+      "activation": {
+        "keyWindow": false,
+        "appActive": false,
+        "appearance": "light"
+      },
+      "sha256": "1b9e16b60afe605f6b3aa13c93c504b76d9679fce224a8ce27344dc74abc7703"
+    },
+    {
+      "path": "fixtures/codexex-onboarding-api-dark.png",
+      "caption": "Onboarding api dark",
+      "kind": "fixture",
+      "activation": {
+        "keyWindow": false,
+        "appActive": false,
+        "appearance": "dark"
+      },
+      "sha256": "d0b882c53b6ef307568fabf72682dcaed2b9fa151efb75ef5ce92858905eac83"
+    },
+    {
+      "path": "fixtures/codexex-onboarding-api-light.png",
+      "caption": "Onboarding api light",
+      "kind": "fixture",
+      "activation": {
+        "keyWindow": false,
+        "appActive": false,
+        "appearance": "light"
+      },
+      "sha256": "1bee8f17cde6963fd4b012388b4ced9ef7dad4cb1d7b0851996983b03ee42e32"
+    },
+    {
+      "path": "fixtures/codexex-onboarding-subscription-dark.png",
+      "caption": "Onboarding subscription dark",
+      "kind": "fixture",
+      "activation": {
+        "keyWindow": false,
+        "appActive": false,
+        "appearance": "dark"
+      },
+      "sha256": "f94cfc0d53926df6a07e18861db8a2cdbd1ba7942196e97666165f649d32710c"
+    },
+    {
+      "path": "fixtures/codexex-onboarding-subscription-light.png",
+      "caption": "Onboarding subscription light",
+      "kind": "fixture",
+      "activation": {
+        "keyWindow": false,
+        "appActive": false,
+        "appearance": "light"
+      },
+      "sha256": "996412385045de21e63bcd69ce759cb0fd6e563e3c11fc70daa578085e738b33"
+    },
+    {
+      "path": "fixtures/codexex-onboarding-welcome-dark.png",
+      "caption": "Onboarding welcome dark",
+      "kind": "fixture",
+      "activation": {
+        "keyWindow": false,
+        "appActive": false,
+        "appearance": "dark"
+      },
+      "sha256": "0ba6717dd7a0b32cea7d45447a0c0baf2698d05a98a6be1a7f37d02c31094cc9"
+    },
+    {
+      "path": "fixtures/codexex-onboarding-welcome-light.png",
+      "caption": "Onboarding welcome light",
+      "kind": "fixture",
+      "activation": {
+        "keyWindow": false,
+        "appActive": false,
+        "appearance": "light"
+      },
+      "sha256": "d34edf0add146d00961db2e5a0fe286a06fac7b561c9f42fdeb2563ee3ed9f61"
+    },
+    {
+      "path": "fixtures/codexex-settings-about-dark.png",
+      "caption": "Settings about dark",
+      "kind": "fixture",
+      "activation": {
+        "keyWindow": false,
+        "appActive": false,
+        "appearance": "dark"
+      },
+      "sha256": "186259027984d7792d349517d74e25d0d58af19dc67c63defb0ac30f02071a77"
+    },
+    {
+      "path": "fixtures/codexex-settings-about-light.png",
+      "caption": "Settings about light",
+      "kind": "fixture",
+      "activation": {
+        "keyWindow": false,
+        "appActive": false,
+        "appearance": "light"
+      },
+      "sha256": "32caae1e393600396e01d9ce3ee5f7ea3863f320ff2aa43748d46962d8c52158"
+    },
+    {
+      "path": "fixtures/codexex-settings-accounts-dark.png",
+      "caption": "Settings accounts dark",
+      "kind": "fixture",
+      "activation": {
+        "keyWindow": false,
+        "appActive": false,
+        "appearance": "dark"
+      },
+      "sha256": "4d88aab8a65cef114fc8d2546dfd2cee629308ad32a3f08b408f45d87ddaa383"
+    },
+    {
+      "path": "fixtures/codexex-settings-accounts-light.png",
+      "caption": "Settings accounts light",
+      "kind": "fixture",
+      "activation": {
+        "keyWindow": false,
+        "appActive": false,
+        "appearance": "light"
+      },
+      "sha256": "7858c7826ee3b4e221a38ee2a710f3b1feca8c8bac4fa7a196a734fa49af2172"
+    },
+    {
+      "path": "fixtures/codexex-settings-appearance-dark.png",
+      "caption": "Settings appearance dark",
+      "kind": "fixture",
+      "activation": {
+        "keyWindow": false,
+        "appActive": false,
+        "appearance": "dark"
+      },
+      "sha256": "204c7f970f75d3e6a0efe957edf13e2e1c228d8a3a03a613f83491f160287f00"
+    },
+    {
+      "path": "fixtures/codexex-settings-appearance-light.png",
+      "caption": "Settings appearance light",
+      "kind": "fixture",
+      "activation": {
+        "keyWindow": false,
+        "appActive": false,
+        "appearance": "light"
+      },
+      "sha256": "102824c690c943dbde6503f91f40dcc4a121ac479e99e41575c81f1ae91a755b"
+    },
+    {
+      "path": "fixtures/codexex-settings-data-dark.png",
+      "caption": "Settings data dark",
+      "kind": "fixture",
+      "activation": {
+        "keyWindow": false,
+        "appActive": false,
+        "appearance": "dark"
+      },
+      "sha256": "842fe0706018b785ea31b740dc73d813723d19a843a0a73ecb7bd01b10fdf7c0"
+    },
+    {
+      "path": "fixtures/codexex-settings-data-light.png",
+      "caption": "Settings data light",
+      "kind": "fixture",
+      "activation": {
+        "keyWindow": false,
+        "appActive": false,
+        "appearance": "light"
+      },
+      "sha256": "a59319b78a342e760c93ae7bf8fe6c9aa04953978b4213093864a51e58d8a85b"
+    },
+    {
+      "path": "fixtures/codexex-settings-general-dark.png",
+      "caption": "Settings general dark",
+      "kind": "fixture",
+      "activation": {
+        "keyWindow": false,
+        "appActive": false,
+        "appearance": "dark"
+      },
+      "sha256": "13f0ce865aade6e4bd11092cce529daa6b13f52d197918d28bc70a5f8146ec28"
+    },
+    {
+      "path": "fixtures/codexex-settings-general-light.png",
+      "caption": "Settings general light",
+      "kind": "fixture",
+      "activation": {
+        "keyWindow": false,
+        "appActive": false,
+        "appearance": "light"
+      },
+      "sha256": "4f898401d92585ad41f0f615188f263dcd279af6809fde10c8d64678a7e10ac8"
+    },
+    {
+      "path": "live/signed-native-welcome-20261014.png",
+      "caption": "Signed app \u2014 native Welcome, light appearance",
+      "kind": "live",
+      "sha256": "6fec9844dc0ae51b8e10ab0026906cb73f22e202babc22ac482499bdb92ce5da"
+    }
+  ],
+  "sourceSHA256": {
+    "Sources/CodexMeterApp/UI/GlassCard.swift": "ae1a552127f183d83b16fdf1ec0289313753079248f2b7a385eb42a5773db2f7",
+    "Sources/CodexMeterApp/UI/SettingsRootView.swift": "37684f536cddb2e062b0664ed5b1ce7386285d9c3e45b7ca3340d32f26100174",
+    "Sources/CodexMeterApp/UI/OnboardingRootView.swift": "26140c3d1bd6c25fd668b60feb0b0b5e5d0b9ea06df61d28d30e277252dbb042",
+    "Tests/CodexMeterAppTests/SettingsDesignRenderTests.swift": "980a46e15fa0a279a7e06598f60596c0ae27f5bd1f3100529f32d6549c9e7aaf",
+    "Sources/CodexexXPCService/CodexHelperProcess.swift": "b892e44439f70681a77dab4a4a1013c028a0e2e777f952f596dfa91c0f9e213c",
+    "Tests/CodexexXPCServiceTests/CodexXPCServiceCancellationTests.swift": "58188cf07ec4d6ad2f7f2f3b8efc9c01ec21640eb69ce313be6ba3432a6c577a",
+    "Tests/CodexMeterAppTests/CodexUsageInsightsTests.swift": "a97db0f247e7508375c949b6f39123fba59637814ee7b9b42d151124012a955f"
+  }
+}

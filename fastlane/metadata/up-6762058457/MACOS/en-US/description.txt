@@ -8,5 +8,5 @@ Codexex keeps the menu bar popup and Settings focused on a clean, readable nativ
 
 Codexex supports ChatGPT sign-in, Preview Mode for App Review and offline testing, and a compact helper/XPC release flow that keeps the app self-contained. Optional local-session analysis reads official Codex session logs on device and does not use browser cookies or scraping.
 
-EULA / Terms of Use: https://codexex.eu/terms
-Privacy Policy: https://codexex.eu/privacy/
+EULA / Terms of Use: https://magrathean.uk/solutions/codexex/terms/
+Privacy Policy: https://magrathean.uk/solutions/codexex/privacy/

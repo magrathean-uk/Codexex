@@ -15,8 +15,6 @@ and `Package.swift` for Swift package work.
   contracts belong in core.
 - Keep device authentication and quota helper work in `Helper/CodexexHelper/`.
   Keep the sandbox bridge in `Sources/CodexexXPCService/`.
-- Do not add browser scraping, private APIs, cookie access, or an alternate
-  authentication flow.
 - Keep release metadata in `fastlane/metadata/` and privacy copy in
   `PRIVACY.md`.
 - Legal files (`LICENSE`, `NOTICE`, `docs/legal/`, contributor terms, copyright and
@@ -34,30 +32,35 @@ current task authorizes it.
 
 The Matrix prototype has its own guidance in `Prototypes/MatrixQuota/AGENTS.md`.
 
-<!-- clean-development-policy:v1 (canonical text: ~/dev/source/dev-bootstrap/snippets/clean-development-policy.md) -->
+<!-- clean-development-policy:v2 (canonical text: ~/dev/source/dev-bootstrap/snippets/clean-development-policy.md) -->
 ## Clean development (mandatory)
 
 This project follows [Clean Development](https://github.com/magrathean-uk/clean-development) and the machine rule that nothing creates tool state under `~` (only the allow-listed agent homes).
 
-- The shell environment comes from `~/.zshenv`, which loads `~/dev/env.zsh`. It routes every tool home and cache (`CARGO_HOME`, `RUSTUP_HOME`, `XDG_*`, `BUNDLE_USER_HOME`, `npm_config_cache`, `XCODE_DERIVED_DATA_PATH`, ...) and switches telemetry off. Never unset, override or bypass those variables. If a script needs a scrubbed environment, re-export them with `source ~/dev/env.zsh`.
+- Load `~/dev/machine/env.zsh`; `~/.zshenv` does this for every zsh. Machine storage preferences live in `~/dev/machine/storage.conf`; workspace navigation is in `~/dev/START-HERE.md`.
+- New sessions select `/Volumes/4TB/machine/cache` when the configured volume is actually mounted and writable, otherwise `~/dev/machine/cache` for ordinary smaller work. Use routed `DEVCACHE`, `CLEAN_DEVELOPMENT_{ROOT,CACHE_ROOT,BUILD_ROOT,SCRATCH_ROOT}`, `BOLYKI_DEV_LIBS` and `TMPDIR`; builds and scratch are beneath the selected cache. Keep active-session destinations fixed; stop if required storage disappears. Other users configure their own volume and fallback.
+- SpecieX, large video/model jobs and VMs require external storage; never use internal fallback. Persistent labs, credentials, installed toolchains, source and final deliverables are not disposable caches.
+- All active Git entry points belong under `~/dev/source/`, third-party repositories in `source/third-party/`, websites in `source/magrathean/`, and Teslatlas products/docs in `source/teslatlas-service/`. Do not read, scan, move or edit `~/dev/porn`.
+- Preserve routed tool homes/caches, caller overrides and SDK/toolchain choices. Never unset or bypass routing. Scrubbed environments must restore the reviewed routing before cache-writing tools run; preserve intentional hermetic Git/Cargo isolation.
 - Run builds, tests, installs and anything else that writes caches or build output through Clean Development: `clean-development run --session session-only -- <command>`. Follow its docs and keep its receipts.
 - Do not add installers or scripts that default into `~` (`~/.cargo`, `~/.rustup`, `~/.cache`, `~/.npm`, `~/.swiftpm`, `~/.gradle`, ...) and do not hardcode `$HOME` paths for caches; use the routed variables.
-- Before finishing, run `dev-env-check` (must pass) and `dev-audit` (no new entries in `~`). If your work caused a violation, fix the cause in the repo and say so.
+- Before finishing, run `dev-env-check`, `dev-projects-check` and `dev-audit`; require passing environment/project checks and no new home-audit entries compared with the task baseline. Fix violations your work caused.
 
 ## Validation
 
 Run commands from the repository root, through Clean Development as described
 above. Xcode commands take their derived-data and SwiftPM cache locations from
-the routed `XCODE_DERIVED_DATA_PATH` and `SWIFTPM_SHARED_CACHE` variables and
-fall back to `/tmp` only when those are unset.
+the routed `XCODE_DERIVED_DATA_PATH` and `SWIFTPM_SHARED_CACHE` variables.
+Load `~/dev/machine/env.zsh` first; missing routing is an error rather than a `/tmp` fallback.
 
 ```bash
+source "$HOME/dev/machine/env.zsh"
 swift test
 cargo test --manifest-path Helper/CodexexHelper/Cargo.toml
 xcodegen generate --spec project.yml
 xcodebuild -project CodexMeter.xcodeproj -scheme CodexMeterApp \
-  -derivedDataPath "${XCODE_DERIVED_DATA_PATH:-/tmp}/codexex-derived-data" \
-  -clonedSourcePackagesDirPath "${SWIFTPM_SHARED_CACHE:-/tmp}/codexex-swiftpm-cache" test
+  -derivedDataPath "${XCODE_DERIVED_DATA_PATH:?Load ~/dev/machine/env.zsh}/codexex-derived-data" \
+  -clonedSourcePackagesDirPath "${SWIFTPM_SHARED_CACHE:?Load ~/dev/machine/env.zsh}/codexex-swiftpm-cache" test
 bash Scripts/check-codexex-companions.sh
 bash Scripts/release-smoke.sh
 ```

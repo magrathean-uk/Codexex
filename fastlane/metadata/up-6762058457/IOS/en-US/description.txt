@@ -1,12 +1,15 @@
-Codexex is a native iPhone and iPad utility for keeping Codex usage readable at a glance.
+Codexex keeps Codex quota and OpenAI API monitoring together on iPhone and iPad.
 
-It shows the next 5-hour reset when your account reports one, plus weekly allowance and reset timing. When only a weekly window is reported, weekly allowance and progress lead instead. Preview Mode lets you check the layout before signing in.
+Sign in with ChatGPT to see your 5-hour and weekly allowance, reset times and provider-reported Codex credits. Accounts that report only a weekly limit get a weekly view. Codex credits are shown separately from API dollars.
 
-Start a compact Live Activity after a foreground refresh to see your weekly percentage left and progress bar from the Lock Screen or Dynamic Island.
+Connect a standard OpenAI API key to verify API access, or an organization Admin key for usage and cost reports. Optional prepaid balance monitoring uses a separate billing sign-in.
 
-Codexex keeps the iPhone and iPad experience focused on clear quota status and quick refresh controls.
+Add quota and API balance widgets to your Home Screen. Start a Live Activity for subscription quota on your Lock Screen and Dynamic Island. Readings come from app refreshes; iOS decides when background updates run. Widgets show the last observation and mark older data as stale.
 
-Codexex supports ChatGPT sign-in through Safari and a device-code flow. Quota reads stay on this device, with no browser cookies and no scraping.
+Native onboarding, clear account settings, light and dark appearances, larger text support, preview data and local usage history make it easy to get started.
 
-EULA / Terms of Use: https://codexex.eu/terms
-Privacy Policy: https://codexex.eu/privacy/
+Saved API keys and subscription tokens use this device's Keychain. Provider requests run on your device. The optional background wake service receives delivery details, not your OpenAI credentials or quota values. Codexex monitors usage without generating content.
+
+Support: contact+codexex@magrathean.uk
+EULA / Terms of Use: https://magrathean.uk/solutions/codexex/terms/
+Privacy Policy: https://magrathean.uk/solutions/codexex/privacy/

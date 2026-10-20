@@ -6,7 +6,7 @@ struct CodexiOSRootView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @AppStorage(CodexiOSSettingsKeys.showHistory) private var showHistory = true
     @AppStorage(CodexiOSSettingsKeys.resetDisplayStyle) private var resetDisplayStyle = CodexiOSResetDisplayStyle.relative.rawValue
-    @AppStorage(CodexiOSSettingsKeys.appearanceMode) private var appearanceMode = CodexiOSAppearanceMode.dark.rawValue
+    @AppStorage(CodexiOSSettingsKeys.appearanceMode) private var appearanceMode = CodexiOSAppearanceMode.system.rawValue
     @AppStorage(CodexiOSSettingsKeys.defaultHistoryMode) private var defaultHistoryMode = CodexiOSHistoryMode.dailyPeaks.rawValue
     @AppStorage(CodexiOSSettingsKeys.showUsedQuota) private var showUsedQuota = false
     @AppStorage(CodexiOSSettingsKeys.matrixThemeEnabled) private var matrixThemeEnabled = false
@@ -21,19 +21,63 @@ struct CodexiOSRootView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    if model.apiMonitor.hasKey && !model.previewModeEnabled {
+                        VStack(alignment: .leading, spacing: 16) {
+                            OpenAIMonitorView(monitor: model.apiMonitor, configuration: false)
+                            if model.snapshot == nil {
+                                HStack(spacing: 10) {
+                                    settingsActionButton
+                                    Button {
+                                        model.apiMonitor.refresh()
+                                    } label: {
+                                        Label("Refresh", systemImage: "arrow.clockwise")
+                                    }
+                                    .buttonStyle(CodexiOSTopButtonStyle())
+                                    .disabled(model.apiMonitor.isRefreshing)
+                                    .accessibilityIdentifier("ios.dashboard.refresh")
+                                }
+                            }
+                        }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 16)
+                            .frame(maxWidth: 760, alignment: .leading)
+                            .frame(maxWidth: .infinity)
+                    }
+
                 if let snapshot = model.snapshot {
                     CodexiOSResetDashboardView(
                         model: model,
                         snapshot: snapshot,
                         onMatrixThemeEnabled: { isShowingMatrixQuota = true }
                     )
-                } else if #available(iOS 26.0, *) {
-                    GlassEffectContainer(spacing: 12) {
+                    if showHistory {
+                        NavigationLink {
+                            CodexiOSHistoryScreen(model: model)
+                        } label: {
+                            HStack {
+                                Label("Usage history", systemImage: "chart.xyaxis.line")
+                                Spacer(minLength: 8)
+                                Image(systemName: "chevron.right").foregroundStyle(.secondary)
+                            }
+                            .frame(minHeight: 44)
+                        }
+                        .accessibilityIdentifier("ios.dashboard.history")
+                        .padding(.horizontal, 24)
+                        .frame(maxWidth: 620)
+                        .frame(maxWidth: .infinity)
+                        .padding(.bottom, 24)
+                    }
+                } else if !model.apiMonitor.hasKey || model.previewModeEnabled {
+                    if #available(iOS 26.0, *) {
+                        GlassEffectContainer(spacing: 12) {
+                            responsiveLayout
+                        }
+                    } else {
                         responsiveLayout
                     }
-                } else {
-                    responsiveLayout
                 }
+            }
             }
             .background {
                 if model.snapshot != nil {
@@ -44,6 +88,7 @@ struct CodexiOSRootView: View {
             }
         }
         .preferredColorScheme(CodexiOSAppearanceMode(rawValue: appearanceMode)?.colorScheme)
+        .tint(CodexiOSTheme.actionTint)
         .onAppear {
             normalizeHistoryMode()
             isShowingMatrixQuota = matrixThemeEnabled
@@ -145,7 +190,7 @@ struct CodexiOSRootView: View {
                 if let error = model.errorMessage, error != model.statusMessage {
                     Text(error)
                         .font(.callout)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(.primary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
@@ -161,7 +206,7 @@ struct CodexiOSRootView: View {
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(CodexiOSTheme.inset, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .background(CodexiOSTheme.inset, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
                 }
 
                 authButtons
@@ -697,6 +742,30 @@ enum CodexiOSQuotaPresentation {
     }
 }
 
+struct CodexiOSHistoryScreen: View {
+    @AppStorage(CodexiOSSettingsKeys.defaultHistoryMode) private var mode = CodexiOSHistoryMode.dailyPeaks.rawValue
+    @Bindable var model: CodexiOSModel
+
+    var body: some View {
+        ScrollView {
+            CodexiOSHistoryCard(
+                samples: model.usageHistory,
+                mode: CodexiOSHistoryMode(rawValue: mode) ?? .dailyPeaks,
+                showFiveHour: model.snapshot?.showsFiveHourLimit ?? false,
+                onModeChange: { mode = $0.rawValue }
+            )
+            .padding(16)
+            .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 4))
+            .padding(24)
+            .frame(maxWidth: 760)
+            .frame(maxWidth: .infinity)
+        }
+        .background(Color(uiColor: .systemGroupedBackground))
+        .navigationTitle("Usage history")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
 private struct CodexiOSHistoryCard: View {
     let samples: [CodexUsageHistorySample]
     let mode: CodexiOSHistoryMode
@@ -775,7 +844,7 @@ private struct CodexiOSHistoryCard: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
-        .background(CodexiOSTheme.inset, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(CodexiOSTheme.inset, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
     }
 }
 
@@ -896,6 +965,12 @@ private struct CodexiOSHistoryGraph: View {
 }
 
 enum CodexiOSTheme {
+    static let prominentTint = Color(red: 0.05, green: 0.35, blue: 0.72)
+    static let actionTint = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 0.45, green: 0.73, blue: 1.00, alpha: 1)
+            : UIColor(red: 0.05, green: 0.35, blue: 0.72, alpha: 1)
+    })
     static let primary = Color(red: 0.10, green: 0.15, blue: 1.00)
     static let secondary = Color(red: 0.13, green: 0.84, blue: 0.91)
     static let tertiary = Color(red: 0.42, green: 0.85, blue: 1.00)
@@ -939,7 +1014,7 @@ enum CodexiOSTheme {
 
 private struct CodexiOSGlassCardModifier: ViewModifier {
     func body(content: Content) -> some View {
-        let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: 8, style: .continuous)
 
         if #available(iOS 26.0, *) {
             content
@@ -978,9 +1053,9 @@ struct CodexiOSTopButtonStyle: ButtonStyle {
             .padding(.horizontal, 13)
             .frame(minHeight: 44)
             .scaleEffect(configuration.isPressed && reduceMotion == false ? 0.98 : 1)
-            .background(CodexiOSTheme.card.opacity(configuration.isPressed ? 0.72 : 1), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .background(CodexiOSTheme.card.opacity(configuration.isPressed ? 0.72 : 1), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
                     .strokeBorder(CodexiOSTheme.border, lineWidth: 1)
             }
             .contentShape(Rectangle())
@@ -1003,9 +1078,9 @@ private struct CodexiOSModeTabs: View {
             }
         }
         .padding(3)
-        .background(CodexiOSTheme.inset, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(CodexiOSTheme.inset, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
                 .strokeBorder(CodexiOSTheme.border.opacity(0.9), lineWidth: 1)
         }
     }
@@ -1047,7 +1122,7 @@ struct CodexiOSPrimaryButtonStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed && reduceMotion == false ? 0.97 : 1)
             .background(
                 Color.primary.opacity(isEnabled ? (configuration.isPressed ? 0.78 : 1) : 0.42),
-                in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+                in: RoundedRectangle(cornerRadius: 4, style: .continuous)
             )
             .contentShape(Rectangle())
             .animation(.spring(response: 0.22, dampingFraction: 0.78), value: configuration.isPressed)
@@ -1063,9 +1138,9 @@ struct CodexiOSSecondaryButtonStyle: ButtonStyle {
             .padding(.horizontal, 16)
             .frame(minHeight: 44)
             .scaleEffect(configuration.isPressed && reduceMotion == false ? 0.97 : 1)
-            .background(CodexiOSTheme.inset.opacity(configuration.isPressed ? 0.70 : 1), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .background(CodexiOSTheme.inset.opacity(configuration.isPressed ? 0.70 : 1), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
                     .strokeBorder(CodexiOSTheme.border, lineWidth: 1)
             }
             .contentShape(Rectangle())

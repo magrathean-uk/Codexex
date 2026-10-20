@@ -279,6 +279,11 @@ final class CodexStatusItemController: NSObject {
     }
 
     private func trackPopupModelState() {
+        _ = model.apiMonitor.unofficialBalanceEnabled
+        _ = model.apiMonitor.hasKey
+        _ = model.apiMonitor.balance
+        _ = model.apiMonitor.balanceError
+        _ = model.apiMonitor.isRefreshing
         _ = model.snapshot
         _ = model.localUsageSummary
         _ = model.localUsageLoadState
@@ -372,9 +377,9 @@ final class CodexStatusItemController: NSObject {
         let button = statusItem.button
         button?.title = state.title
         button?.toolTip = state.title
-        button?.setAccessibilityLabel("Codexex quota")
+        button?.setAccessibilityLabel("Codexex usage")
         button?.setAccessibilityValue(state.accessibilityValue)
-        button?.setAccessibilityHelp("Opens Codexex quota details")
+        button?.setAccessibilityHelp("Opens Codexex usage details")
         button?.image = StatusBarLabel.menuBarImage(
             isRefreshing: state.isRefreshing,
             hasError: state.hasError,

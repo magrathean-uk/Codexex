@@ -40,6 +40,10 @@ final class CodexiOSModel {
     let liveActivityManager: any CodexiOSLiveActivityManaging
     private let backgroundRefreshScheduler: any CodexiOSBackgroundRefreshScheduling
     private let pushRegistrationManager: any CodexiOSPushRegistering
+    private let widgetPublisher: any CodexiOSWidgetPublishing
+    private var hasInstalledWidgets = false
+
+    let apiMonitor: OpenAIMonitorModel
 
     var hasCompletedOnboarding: Bool
     var previewModeEnabled: Bool
@@ -78,6 +82,8 @@ final class CodexiOSModel {
         liveActivityCoordinator: any CodexiOSLiveActivityManaging = codexiOSSharedLiveActivityManager,
         backgroundRefreshScheduler: any CodexiOSBackgroundRefreshScheduling = CodexiOSSystemBackgroundRefreshScheduler(),
         pushRegistrationManager: any CodexiOSPushRegistering = codexiOSSharedPushRegistrationManager,
+        widgetPublisher: any CodexiOSWidgetPublishing = CodexiOSWidgetPublisher(),
+        apiMonitor: OpenAIMonitorModel? = nil,
         openURLAction: @escaping CodexiOSOpenURLAction = { url in
             await UIApplication.shared.open(url)
         },
@@ -103,13 +109,17 @@ final class CodexiOSModel {
         }
         self.backgroundRefreshScheduler = backgroundRefreshScheduler
         self.pushRegistrationManager = pushRegistrationManager
+        self.widgetPublisher = widgetPublisher
+        self.apiMonitor = apiMonitor ?? OpenAIMonitorModel()
         let storedPreviewModeEnabled = defaults.bool(forKey: CodexiOSSettingsKeys.previewModeEnabled)
         hasCompletedOnboarding = defaults.bool(forKey: CodexiOSSettingsKeys.hasCompletedOnboarding)
         previewModeEnabled = storedPreviewModeEnabled
         liveAccountState = storedPreviewModeEnabled ? .signedOut : .checking
+        self.apiMonitor.setPreview(storedPreviewModeEnabled)
         if storedPreviewModeEnabled {
             applyPreviewSnapshot()
         }
+        observeWidgetData()
     }
 
     var isSignedIn: Bool {
@@ -145,6 +155,7 @@ final class CodexiOSModel {
         let accountGeneration = accountOperationGeneration
         let previewModeAtStart = previewModeEnabled
         await recoverLiveActivity()
+        await synchronizeWidgetAvailability()
         guard startupIsCurrent(
             accountGeneration: accountGeneration,
             previewModeAtStart: previewModeAtStart
@@ -155,6 +166,7 @@ final class CodexiOSModel {
             previewModeAtStart: previewModeAtStart
         ) else { return }
         usageHistory = restoredHistory
+        apiMonitor.setPreview(previewModeEnabled)
         if previewModeEnabled {
             applyPreviewSnapshot()
             await updateLiveActivity(with: snapshot)
@@ -197,20 +209,41 @@ final class CodexiOSModel {
     }
 
     func refresh() async {
+        await refresh(includeAPIMonitor: true, prioritizeQuota: false)
+    }
+
+    private func refresh(includeAPIMonitor: Bool, prioritizeQuota: Bool) async {
         guard isRefreshing == false else { return }
         guard previewModeEnabled == false else {
             applyPreviewSnapshot()
             await updateLiveActivity(with: snapshot)
             return
         }
+        let generation = accountOperationGeneration
+        isRefreshing = true
+        defer {
+            isRefreshing = false
+            publishWidgetData()
+            scheduleBackgroundLiveActivityRefreshIfNeeded()
+        }
+        if includeAPIMonitor && !prioritizeQuota {
+            apiMonitor.refresh()
+            await apiMonitor.waitForPendingRequest()
+        }
+        guard !Task.isCancelled, generation == accountOperationGeneration, !previewModeEnabled else { return }
+        await refreshSubscription(generation: generation)
+        guard !Task.isCancelled, generation == accountOperationGeneration, !previewModeEnabled else { return }
+        if includeAPIMonitor && prioritizeQuota {
+            apiMonitor.refresh()
+            await apiMonitor.waitForPendingRequest()
+        }
+    }
+
+    private func refreshSubscription(generation: UInt64) async {
         if let retryAvailableAt, retryAvailableAt > Date() {
             statusMessage = "Try again \(Self.relativeDescription(for: retryAvailableAt))."
             return
         }
-        let generation = accountOperationGeneration
-        isRefreshing = true
-        defer { isRefreshing = false }
-
         do {
             let outcome = try await service.fetchSnapshot()
             guard Task.isCancelled == false,
@@ -330,6 +363,7 @@ final class CodexiOSModel {
         autoCheckSignInOnReturn: Bool,
         refreshWhenActive: Bool
     ) async {
+        await synchronizeWidgetAvailability()
         guard previewModeEnabled == false else { return }
         if autoCheckSignInOnReturn, hasPendingSignIn {
             await checkSignInAfterReturn()
@@ -373,6 +407,7 @@ final class CodexiOSModel {
         snapshot = nil
         lastUpdatedAt = nil
         clearPendingSignIn()
+        publishWidgetData()
         await stopLiveActivity(announce: false)
         do {
             try await service.signOut()
@@ -392,6 +427,7 @@ final class CodexiOSModel {
         guard isResetting == false else { return }
         let wasOnboarded = hasCompletedOnboarding
         isResetting = true
+        widgetPublisher.clear()
         defer { isResetting = false }
         accountOperationGeneration &+= 1
         invalidateLiveActivityOperations()
@@ -399,6 +435,13 @@ final class CodexiOSModel {
         await stopLiveActivity(announce: false)
 
         var failures: [String] = []
+        apiMonitor.setPreview(false)
+        apiMonitor.disconnect()
+        if apiMonitor.deletionPending {
+            failures.append("API key could not be removed from Keychain.")
+        }
+        apiMonitor.setUnofficialBalanceEnabled(false)
+        await OpenAIBillingWebsiteData.clear()
         do { try await service.signOut() } catch { failures.append(message(for: error)) }
         do { try await historyStore.clear() } catch { failures.append(message(for: error)) }
 
@@ -407,13 +450,15 @@ final class CodexiOSModel {
                 defaults: defaults,
                 clearTokens: {},
                 clearPendingAuth: {},
-                clearHistory: {}
+                clearHistory: {},
+                clearAPIKey: {} // The injected monitor owns credential removal above.
             )
         } catch {
             failures.append(message(for: error))
         }
 
         previewModeEnabled = false
+        apiMonitor.setPreview(false)
         snapshot = nil
         usageHistory = []
         lastUpdatedAt = nil
@@ -443,10 +488,12 @@ final class CodexiOSModel {
     }
 
     func enablePreviewMode() {
+        backgroundRefreshScheduler.cancel()
         accountOperationGeneration &+= 1
         let generation = accountOperationGeneration
         invalidateLiveActivityOperations()
         previewModeEnabled = true
+        apiMonitor.setPreview(true)
         defaults.set(true, forKey: CodexiOSSettingsKeys.previewModeEnabled)
         completeOnboarding()
         applyPreviewSnapshot()
@@ -471,6 +518,7 @@ final class CodexiOSModel {
         let generation = accountOperationGeneration
         invalidateLiveActivityOperations()
         previewModeEnabled = false
+        apiMonitor.setPreview(false)
         defaults.set(false, forKey: CodexiOSSettingsKeys.previewModeEnabled)
         snapshot = nil
         usageHistory = []
@@ -605,6 +653,7 @@ final class CodexiOSModel {
         }
         backgroundRefreshScheduler.cancel()
         await pushRegistrationManager.disable()
+        scheduleBackgroundLiveActivityRefreshIfNeeded()
     }
 
     func updateLiveActivityPresentation(showFiveHour: Bool) async {
@@ -645,24 +694,24 @@ final class CodexiOSModel {
         defaults.set(CodexSummarySnooze.expiryDate(snapshot: snapshot), forKey: CodexiOSSettingsKeys.summarySnoozeExpiresAt)
     }
 
-    func refreshLiveActivityInBackground() async -> Bool {
+    func refreshLiveActivityInBackground(refreshAPIWidgets: Bool = true) async -> Bool {
+        isHandlingBackgroundRefresh = true
+        defer {
+            isHandlingBackgroundRefresh = false
+            scheduleBackgroundLiveActivityRefreshIfNeeded()
+        }
         await recoverLiveActivity()
+        await synchronizeWidgetAvailability()
         guard Task.isCancelled == false else { return false }
-        guard isLiveActivityRunning, previewModeEnabled == false else {
+        guard (isLiveActivityRunning || hasInstalledWidgets), previewModeEnabled == false else {
             backgroundRefreshScheduler.cancel()
             return true
         }
 
-        isHandlingBackgroundRefresh = true
-        defer {
-            isHandlingBackgroundRefresh = false
-            if isLiveActivityRunning, previewModeEnabled == false {
-                backgroundRefreshScheduler.schedule(cadence: liveActivityCadence)
-            }
-        }
-        await refresh()
-        return Task.isCancelled == false && errorMessage == nil
-            && isLiveActivityRunning && snapshot != nil && isLiveActivityStale == false
+        await refresh(includeAPIMonitor: refreshAPIWidgets && hasInstalledWidgets, prioritizeQuota: true)
+        let quotaFresh = errorMessage == nil && snapshot != nil && (!isLiveActivityRunning || !isLiveActivityStale)
+        let balanceFresh = apiMonitor.balance != nil && apiMonitor.error == nil && apiMonitor.balanceError == nil
+        return !Task.isCancelled && (quotaFresh || (hasInstalledWidgets && balanceFresh))
     }
 
     func isSummarySnoozed(_ summary: PopupSummaryPresentation) -> Bool {
@@ -698,7 +747,7 @@ final class CodexiOSModel {
     private func recoverLiveActivity() async {
         let generation = liveActivityGeneration
         let state = await liveActivityManager.recover()
-        guard generation == liveActivityGeneration else { return }
+        guard !Task.isCancelled, generation == liveActivityGeneration else { return }
         applyLiveActivityState(state)
         if state.isRunning, previewModeEnabled == false {
             await pushRegistrationManager.enable()
@@ -751,6 +800,9 @@ final class CodexiOSModel {
         isLiveActivityAvailable = state.isAvailable
         isLiveActivityRunning = state.isRunning
         liveActivityID = state.activityID
+        if let push = pushRegistrationManager as? CodexiOSPushRegistrationManager {
+            push.recordLiveActivityState(isRunning: state.isRunning)
+        }
     }
 
     private var liveActivityCadence: TimeInterval {
@@ -772,9 +824,48 @@ final class CodexiOSModel {
 
     private func scheduleBackgroundLiveActivityRefreshIfNeeded() {
         guard isHandlingBackgroundRefresh == false,
-              isLiveActivityRunning,
-              previewModeEnabled == false else { return }
+              (isLiveActivityRunning || (hasInstalledWidgets && hasWidgetRefreshSource)),
+              !previewModeEnabled, !isResetting else { return }
         backgroundRefreshScheduler.schedule(cadence: liveActivityCadence)
+    }
+
+    private func synchronizeWidgetAvailability() async {
+        hasInstalledWidgets = await widgetPublisher.hasInstalledWidgets()
+        guard !Task.isCancelled else { return }
+        if previewModeEnabled || (!isLiveActivityRunning && (!hasInstalledWidgets || !hasWidgetRefreshSource)) {
+            backgroundRefreshScheduler.cancel()
+        }
+        scheduleBackgroundLiveActivityRefreshIfNeeded()
+    }
+
+    private func publishWidgetData() {
+        guard !isResetting else { widgetPublisher.clear(); return }
+        let lastBalance = apiMonitor.balance == nil && apiMonitor.error != nil
+            ? widgetPublisher.currentSnapshot() : nil
+        widgetPublisher.publish(.init(snapshot: snapshot, quotaStale: errorMessage != nil,
+            apiRemainingUSD: apiMonitor.balance?.remainingUSD ?? lastBalance?.apiRemainingUSD,
+            apiUpdatedAt: apiMonitor.balance?.fetchedAt ?? lastBalance?.apiUpdatedAt,
+            apiStale: apiMonitor.error != nil || apiMonitor.balanceError != nil,
+            isPreview: previewModeEnabled))
+    }
+
+    private var hasWidgetRefreshSource: Bool {
+        snapshot != nil || apiMonitor.hasKey
+            || (apiMonitor.error != nil && widgetPublisher.currentSnapshot()?.apiRemainingUSD != nil)
+    }
+
+    private func observeWidgetData() {
+        withObservationTracking {
+            _ = snapshot; _ = errorMessage; _ = previewModeEnabled; _ = isResetting
+            _ = apiMonitor.balance; _ = apiMonitor.error; _ = apiMonitor.balanceError; _ = apiMonitor.hasKey
+        } onChange: { [weak self] in
+            Task { @MainActor in
+                guard let self else { return }
+                self.publishWidgetData()
+                self.observeWidgetData()
+                await self.synchronizeWidgetAvailability()
+            }
+        }
     }
 
     private func applyPendingSignIn(_ auth: CodexiOSDeviceAuthStart, message: String) {

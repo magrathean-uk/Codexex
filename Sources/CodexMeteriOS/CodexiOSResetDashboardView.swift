@@ -41,11 +41,8 @@ struct CodexiOSResetDashboardView: View {
             let activeFiveHourWindow = activeFiveHourWindow(now: context.date)
 
             VStack(alignment: .leading, spacing: 0) {
-                header
-                    .padding(.bottom, 38)
-
                 Text(activeFiveHourWindow == nil && weeklyWindow != nil ? "Weekly allowance" : "Your next reset")
-                    .font(.system(size: dashboardTitleSize, weight: .bold))
+                    .font(dynamicTypeSize.isAccessibilitySize ? .title2.weight(.bold) : .system(size: dashboardTitleSize, weight: .bold))
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityAddTraits(.isHeader)
                     .padding(.bottom, 22)
@@ -67,10 +64,15 @@ struct CodexiOSResetDashboardView: View {
                         .padding(.top, 62)
                 }
 
+                if let credits = CodexQuotaPresentationRules.visibleCredits(snapshot.codexLimit?.credits) {
+                    creditsRow(credits)
+                        .padding(.top, 28)
+                }
+
                 if let errorMessage = model.errorMessage {
-                    Text("Could not refresh. Showing the last check. \(errorMessage)")
+                    Label("Could not refresh. Showing the last check. \(errorMessage)", systemImage: "exclamationmark.circle")
                         .font(.callout)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(.primary)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, 24)
                 }
@@ -85,16 +87,35 @@ struct CodexiOSResetDashboardView: View {
             .frame(maxWidth: .infinity, alignment: .top)
         }
         .foregroundStyle(.primary)
+        .navigationTitle("Codexex")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar { navigationActions }
     }
 
-    private var header: some View {
-        HStack(spacing: 14) {
-            Text("Codexex")
-                .font(.title3.weight(.semibold))
-                .accessibilityAddTraits(.isHeader)
+    private func creditsRow(_ credits: CodexCredits) -> some View {
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
+            : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 12))
 
-            Spacer(minLength: 12)
+        return layout {
+            Text("Codex credits")
+                .foregroundStyle(.secondary)
+            if !dynamicTypeSize.isAccessibilitySize {
+                Spacer(minLength: 8)
+            }
+            Text(credits.displayText)
+                .fontWeight(.semibold)
+                .monospacedDigit()
+                .foregroundStyle(credits.isNegativeBalance ? Color.red : .primary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .font(.body)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("ios.dashboard.codexCredits")
+    }
 
+    private var navigationActions: some ToolbarContent {
+        ToolbarItemGroup(placement: .topBarTrailing) {
             NavigationLink {
                 CodexiOSSettingsView(model: model, onMatrixThemeEnabled: onMatrixThemeEnabled)
             } label: {
@@ -120,14 +141,15 @@ struct CodexiOSResetDashboardView: View {
             .accessibilityLabel(model.isRefreshing ? "Refreshing quota" : "Refresh quota")
             .accessibilityIdentifier("ios.dashboard.refresh")
         }
-        .buttonStyle(.plain)
     }
 
     private func resetHero(window: CodexQuotaWindow, name: String, now: Date) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             if let resetsAt = window.resetsAt {
                 Text(resetsAt.formatted(date: .omitted, time: .shortened))
-                    .font(.system(size: resetTimeSize, weight: .semibold))
+                    .font(dynamicTypeSize.isAccessibilitySize ? .largeTitle.weight(.semibold) : .system(size: resetTimeSize, weight: .semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                     .monospacedDigit()
                     .foregroundStyle(accent)
                     .fixedSize(horizontal: false, vertical: true)
@@ -141,7 +163,7 @@ struct CodexiOSResetDashboardView: View {
 
             if let resetsAt = window.resetsAt {
                 Text(relativeReset(resetsAt, now: now))
-                    .font(.system(size: relativeResetSize, weight: .semibold))
+                    .font(dynamicTypeSize.isAccessibilitySize ? .title2.weight(.semibold) : .system(size: relativeResetSize, weight: .semibold))
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.top, 20)
             }
@@ -150,6 +172,7 @@ struct CodexiOSResetDashboardView: View {
                 .font(.headline)
                 .foregroundStyle(accent)
                 .fixedSize(horizontal: false, vertical: true)
+                .accessibilityLabel("\(name) allowance: \(availabilityText(for: window, name: name))")
                 .padding(.top, 18)
         }
     }
@@ -167,7 +190,9 @@ struct CodexiOSResetDashboardView: View {
     private func weeklyAllowanceHero(_ window: CodexQuotaWindow) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(percentageText(for: window))
-                .font(.system(size: allowanceSize, weight: .semibold))
+                .font(dynamicTypeSize.isAccessibilitySize ? .largeTitle.weight(.semibold) : .system(size: allowanceSize, weight: .semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
                 .monospacedDigit()
                 .foregroundStyle(accent)
                 .fixedSize(horizontal: false, vertical: true)
@@ -250,6 +275,8 @@ struct CodexiOSResetDashboardView: View {
             Task { await model.refresh() }
         }
         .foregroundStyle(accent)
+        .frame(minWidth: 44, minHeight: 44)
+        .contentShape(Rectangle())
         .disabled(model.isRefreshing)
         .accessibilityIdentifier("ios.dashboard.refreshFooter")
     }
@@ -299,13 +326,7 @@ struct CodexiOSResetDashboardView: View {
     }
 
     private func availabilityText(for window: CodexQuotaWindow, name: String) -> String {
-        if showUsedQuota {
-            return "\(window.usedPercentText) of your \(name) allowance has been used."
-        }
-        if window.remainingPercent <= 0 {
-            return "Your \(name) allowance is currently used up."
-        }
-        return "\(window.remainingPercentText) of your \(name) allowance is still available."
+        percentageText(for: window)
     }
 
     private func dayLabel(for date: Date?, now: Date) -> String {

@@ -1,0 +1,268 @@
+Test Suite 'All tests' started at 2026-10-14 03:51:49.742.
+Test Suite 'CodexMeterCoreTests.xctest' started at 2026-10-14 03:51:49.744.
+Test Suite 'CodexAccountTierTests' started at 2026-10-14 03:51:49.744.
+Test Case '-[CodexMeterCoreTests.CodexAccountTierTests testBusinessVariantsAreDisplayed]' started.
+Test Case '-[CodexMeterCoreTests.CodexAccountTierTests testBusinessVariantsAreDisplayed]' passed (0.002 seconds).
+Test Case '-[CodexMeterCoreTests.CodexAccountTierTests testPlusIsDisplayed]' started.
+Test Case '-[CodexMeterCoreTests.CodexAccountTierTests testPlusIsDisplayed]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexAccountTierTests testProIsDisplayed]' started.
+Test Case '-[CodexMeterCoreTests.CodexAccountTierTests testProIsDisplayed]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexAccountTierTests testSnapshotDoesNotInventFiveHourWindowWhenOnlyWeeklyIsReported]' started.
+Test Case '-[CodexMeterCoreTests.CodexAccountTierTests testSnapshotDoesNotInventFiveHourWindowWhenOnlyWeeklyIsReported]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexAccountTierTests testSnapshotShowsReportedFiveHourWindowRegardlessOfPlan]' started.
+Test Case '-[CodexMeterCoreTests.CodexAccountTierTests testSnapshotShowsReportedFiveHourWindowRegardlessOfPlan]' passed (0.001 seconds).
+Test Case '-[CodexMeterCoreTests.CodexAccountTierTests testTaggedSingleWindowIsNotMislabelledAsAnotherDuration]' started.
+Test Case '-[CodexMeterCoreTests.CodexAccountTierTests testTaggedSingleWindowIsNotMislabelledAsAnotherDuration]' passed (0.001 seconds).
+Test Suite 'CodexAccountTierTests' passed at 2026-10-14 03:51:49.751.
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.004 (0.007) seconds
+Test Suite 'CodexBinaryLocatorTests' started at 2026-10-14 03:51:49.751.
+Test Case '-[CodexMeterCoreTests.CodexBinaryLocatorTests testApplicationsBundlePathIncluded]' started.
+Test Case '-[CodexMeterCoreTests.CodexBinaryLocatorTests testApplicationsBundlePathIncluded]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexBinaryLocatorTests testOverrideComesFirst]' started.
+Test Case '-[CodexMeterCoreTests.CodexBinaryLocatorTests testOverrideComesFirst]' passed (0.000 seconds).
+Test Suite 'CodexBinaryLocatorTests' passed at 2026-10-14 03:51:49.753.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+Test Suite 'CodexChatGPTAuthParsingTests' started at 2026-10-14 03:51:49.753.
+Test Case '-[CodexMeterCoreTests.CodexChatGPTAuthParsingTests testDeviceUserCodeAcceptsCodexPayloadShape]' started.
+Test Case '-[CodexMeterCoreTests.CodexChatGPTAuthParsingTests testDeviceUserCodeAcceptsCodexPayloadShape]' passed (0.001 seconds).
+Test Case '-[CodexMeterCoreTests.CodexChatGPTAuthParsingTests testDeviceUserCodeAcceptsLegacyUsercodeAliasAndNumericInterval]' started.
+Test Case '-[CodexMeterCoreTests.CodexChatGPTAuthParsingTests testDeviceUserCodeAcceptsLegacyUsercodeAliasAndNumericInterval]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexChatGPTAuthParsingTests testTokenExchangeAcceptsStringExpiresInAndNestedChatGPTClaims]' started.
+Test Case '-[CodexMeterCoreTests.CodexChatGPTAuthParsingTests testTokenExchangeAcceptsStringExpiresInAndNestedChatGPTClaims]' passed (0.000 seconds).
+Test Suite 'CodexChatGPTAuthParsingTests' passed at 2026-10-14 03:51:49.756.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.002 (0.003) seconds
+Test Suite 'CodexFormattingTests' started at 2026-10-14 03:51:49.756.
+Test Case '-[CodexMeterCoreTests.CodexFormattingTests testBucketInference]' started.
+Test Case '-[CodexMeterCoreTests.CodexFormattingTests testBucketInference]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexFormattingTests testCompactDuration]' started.
+Test Case '-[CodexMeterCoreTests.CodexFormattingTests testCompactDuration]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexFormattingTests testLimitDisplayNamePreservesOfficialNamesForNamingDrift]' started.
+Test Case '-[CodexMeterCoreTests.CodexFormattingTests testLimitDisplayNamePreservesOfficialNamesForNamingDrift]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexFormattingTests testWindowFormatting]' started.
+Test Case '-[CodexMeterCoreTests.CodexFormattingTests testWindowFormatting]' passed (0.000 seconds).
+Test Suite 'CodexFormattingTests' passed at 2026-10-14 03:51:49.759.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+Test Suite 'CodexHelperLineReaderTests' started at 2026-10-14 03:51:49.759.
+Test Case '-[CodexMeterCoreTests.CodexHelperLineReaderTests testReadLineRejectsOversizedHelperOutput]' started.
+Test Case '-[CodexMeterCoreTests.CodexHelperLineReaderTests testReadLineRejectsOversizedHelperOutput]' passed (0.001 seconds).
+Test Case '-[CodexMeterCoreTests.CodexHelperLineReaderTests testReadLineTimesOutWhenHelperDoesNotEmitNewline]' started.
+Test Case '-[CodexMeterCoreTests.CodexHelperLineReaderTests testReadLineTimesOutWhenHelperDoesNotEmitNewline]' passed (0.051 seconds).
+Test Suite 'CodexHelperLineReaderTests' passed at 2026-10-14 03:51:49.812.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.052 (0.053) seconds
+Test Suite 'CodexLiveActivityPresentationTests' started at 2026-10-14 03:51:49.812.
+Test Case '-[CodexMeterCoreTests.CodexLiveActivityPresentationTests testCarriesUsedQuotaDisplayMode]' started.
+Test Case '-[CodexMeterCoreTests.CodexLiveActivityPresentationTests testCarriesUsedQuotaDisplayMode]' passed (0.001 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLiveActivityPresentationTests testContentStateDescribesOptionalFiveHourAndStaleness]' started.
+Test Case '-[CodexMeterCoreTests.CodexLiveActivityPresentationTests testContentStateDescribesOptionalFiveHourAndStaleness]' passed (0.001 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLiveActivityPresentationTests testLegacyUntaggedWindowsPreservePrimaryFiveHourAndSecondaryWeeklyRoles]' started.
+Test Case '-[CodexMeterCoreTests.CodexLiveActivityPresentationTests testLegacyUntaggedWindowsPreservePrimaryFiveHourAndSecondaryWeeklyRoles]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLiveActivityPresentationTests testMapsWeeklyAndOptionalFiveHourAndStaysSmall]' started.
+Test Case '-[CodexMeterCoreTests.CodexLiveActivityPresentationTests testMapsWeeklyAndOptionalFiveHourAndStaysSmall]' passed (0.001 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLiveActivityPresentationTests testRecoveryPlanKeepsFirstAndEndsEveryDuplicate]' started.
+Test Case '-[CodexMeterCoreTests.CodexLiveActivityPresentationTests testRecoveryPlanKeepsFirstAndEndsEveryDuplicate]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLiveActivityPresentationTests testRefreshTimestampChangesEvenWhenQuotaDoesNotAndOlderActivitiesStillDecode]' started.
+Test Case '-[CodexMeterCoreTests.CodexLiveActivityPresentationTests testRefreshTimestampChangesEvenWhenQuotaDoesNotAndOlderActivitiesStillDecode]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLiveActivityPresentationTests testStaleDateAllowsBackgroundRefreshBeforeBecomingStale]' started.
+Test Case '-[CodexMeterCoreTests.CodexLiveActivityPresentationTests testStaleDateAllowsBackgroundRefreshBeforeBecomingStale]' passed (0.001 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLiveActivityPresentationTests testSystemStalenessOverridesFreshContentStateAndAccessibility]' started.
+Test Case '-[CodexMeterCoreTests.CodexLiveActivityPresentationTests testSystemStalenessOverridesFreshContentStateAndAccessibility]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLiveActivityPresentationTests testTaggedFiveHourNeverSubstitutesForMissingWeeklyWindow]' started.
+Test Case '-[CodexMeterCoreTests.CodexLiveActivityPresentationTests testTaggedFiveHourNeverSubstitutesForMissingWeeklyWindow]' passed (0.000 seconds).
+Test Suite 'CodexLiveActivityPresentationTests' passed at 2026-10-14 03:51:49.819.
+	 Executed 9 tests, with 0 failures (0 unexpected) in 0.004 (0.007) seconds
+Test Suite 'CodexLocalUsageCoreTests' started at 2026-10-14 03:51:49.819.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testAggregatorBuildsAllSessionsAutopsyAndHighAttributionConfidence]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testAggregatorBuildsAllSessionsAutopsyAndHighAttributionConfidence]' passed (0.001 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testAggregatorBuildsProjectsModelsBlocksAndWasteSignals]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testAggregatorBuildsProjectsModelsBlocksAndWasteSignals]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testAggregatorKeepsLatestContextWindowPressure]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testAggregatorKeepsLatestContextWindowPressure]' passed (0.002 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testAggregatorMarksPartialAttributionWhenLocalContextIsMissing]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testAggregatorMarksPartialAttributionWhenLocalContextIsMissing]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testAggregatorMarksUnknownAttributionWhenNoSessionDataExists]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testAggregatorMarksUnknownAttributionWhenNoSessionDataExists]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testCandidateSelectionBoundsRetainedStateWhileCountingAllFiles]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testCandidateSelectionBoundsRetainedStateWhileCountingAllFiles]' passed (0.037 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testConfigDoctorFlagsMissingHooksAndSessionData]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testConfigDoctorFlagsMissingHooksAndSessionData]' passed (0.001 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testConfigDoctorFlagsStaleSessionData]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testConfigDoctorFlagsStaleSessionData]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testContextWindowPercentUsesNormalizedTokenTotalWhenRawTotalIsMissing]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testContextWindowPercentUsesNormalizedTokenTotalWhenRawTotalIsMissing]' passed (0.001 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testCoverageDecodesOlderPayloadWithoutClaimingOmittedRows]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testCoverageDecodesOlderPayloadWithoutClaimingOmittedRows]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testDefaultSessionsURLUsesLoginHomeInsteadOfSandboxHome]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testDefaultSessionsURLUsesLoginHomeInsteadOfSandboxHome]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testDirectoryReaderCanLimitToNewestSessionFiles]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testDirectoryReaderCanLimitToNewestSessionFiles]' passed (0.005 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testDirectoryReaderRejectsJSONLSymlinkOutsideSessionsRoot]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testDirectoryReaderRejectsJSONLSymlinkOutsideSessionsRoot]' passed (0.002 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testExtremeTranscriptCountersSaturateInsteadOfOverflowing]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testExtremeTranscriptCountersSaturateInsteadOfOverflowing]' passed (0.002 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testIncrementalReaderBoundsRetainedRowsAndReportsPartialTotals]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testIncrementalReaderBoundsRetainedRowsAndReportsPartialTotals]' passed (0.005 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testIncrementalReaderContinuesAfterBudgetCutWithoutDuplicatesOrLoss]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testIncrementalReaderContinuesAfterBudgetCutWithoutDuplicatesOrLoss]' passed (0.004 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testIncrementalReaderReadsOnlyAppendedBytes]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testIncrementalReaderReadsOnlyAppendedBytes]' passed (0.002 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testIncrementalReaderRebuildsAfterInPlaceTruncate]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testIncrementalReaderRebuildsAfterInPlaceTruncate]' passed (0.002 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testIncrementalReaderRebuildsAfterLargerInPlaceRewrite]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testIncrementalReaderRebuildsAfterLargerInPlaceRewrite]' passed (0.003 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testIncrementalReaderRebuildsAfterRotation]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testIncrementalReaderRebuildsAfterRotation]' passed (0.002 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testIndexStoreDoesNotRewriteUnchangedIndex]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testIndexStoreDoesNotRewriteUnchangedIndex]' passed (0.003 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testIndexStoreRebuildsLegacyIndexVersion]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testIndexStoreRebuildsLegacyIndexVersion]' passed (0.005 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testIndexStoreRecoversFromCorruptIndex]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testIndexStoreRecoversFromCorruptIndex]' passed (0.003 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testIndexStoreSurfacesPersistenceFailure]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testIndexStoreSurfacesPersistenceFailure]' passed (0.004 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testIndexStoreUsesOwnerOnlyFileAndDirectoryPermissions]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testIndexStoreUsesOwnerOnlyFileAndDirectoryPermissions]' passed (0.003 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testParserExtractsTokenCountEntriesWithProjectAndModelContext]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testParserExtractsTokenCountEntriesWithProjectAndModelContext]' passed (0.001 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testParserRejectsOversizedPersistedContextFields]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testParserRejectsOversizedPersistedContextFields]' passed (0.001 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testParserStateStaysBoundedAcrossManyTurns]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testParserStateStaysBoundedAcrossManyTurns]' passed (0.017 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testPartialLineIndexSerializationNeverContainsRawTranscriptText]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testPartialLineIndexSerializationNeverContainsRawTranscriptText]' passed (0.003 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testPersistentIndexPlansAppendAndRebuildsOnShrink]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testPersistentIndexPlansAppendAndRebuildsOnShrink]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testSafeSessionOpenRejectsFileSwappedAfterEnumeration]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testSafeSessionOpenRejectsFileSwappedAfterEnumeration]' passed (0.002 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testSecureAtomicFileReadRejectsOversizedAndSymlinkedFiles]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testSecureAtomicFileReadRejectsOversizedAndSymlinkedFiles]' passed (0.001 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testSecureAtomicFileReplacesContentAndKeepsOwnerOnlyPermissions]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testSecureAtomicFileReplacesContentAndKeepsOwnerOnlyPermissions]' passed (0.001 seconds).
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testUnknownCoverageDoesNotClaimAnEmptyOrCompleteIndex]' started.
+Test Case '-[CodexMeterCoreTests.CodexLocalUsageCoreTests testUnknownCoverageDoesNotClaimAnEmptyOrCompleteIndex]' passed (0.000 seconds).
+Test Suite 'CodexLocalUsageCoreTests' passed at 2026-10-14 03:51:49.948.
+	 Executed 34 tests, with 0 failures (0 unexpected) in 0.116 (0.129) seconds
+Test Suite 'CodexQuotaPresentationRulesTests' started at 2026-10-14 03:51:49.948.
+Test Case '-[CodexMeterCoreTests.CodexQuotaPresentationRulesTests testCreditsVisibilityIsShared]' started.
+Test Case '-[CodexMeterCoreTests.CodexQuotaPresentationRulesTests testCreditsVisibilityIsShared]' passed (0.001 seconds).
+Test Case '-[CodexMeterCoreTests.CodexQuotaPresentationRulesTests testMissingCreditBalanceIsNotPresentedAsZero]' started.
+Test Case '-[CodexMeterCoreTests.CodexQuotaPresentationRulesTests testMissingCreditBalanceIsNotPresentedAsZero]' passed (0.001 seconds).
+Test Case '-[CodexMeterCoreTests.CodexQuotaPresentationRulesTests testOrdersPrimaryBeforeOther]' started.
+Test Case '-[CodexMeterCoreTests.CodexQuotaPresentationRulesTests testOrdersPrimaryBeforeOther]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexQuotaPresentationRulesTests testReportedZeroAndUnlimitedCreditsStayVisible]' started.
+Test Case '-[CodexMeterCoreTests.CodexQuotaPresentationRulesTests testReportedZeroAndUnlimitedCreditsStayVisible]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexQuotaPresentationRulesTests testResetTextModesAreShared]' started.
+Test Case '-[CodexMeterCoreTests.CodexQuotaPresentationRulesTests testResetTextModesAreShared]' passed (0.000 seconds).
+Test Suite 'CodexQuotaPresentationRulesTests' passed at 2026-10-14 03:51:49.952.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.003 (0.004) seconds
+Test Suite 'CodexRateLimitPayloadMapperTests' started at 2026-10-14 03:51:49.953.
+Test Case '-[CodexMeterCoreTests.CodexRateLimitPayloadMapperTests testMapsWhamUsagePayloadIntoSnapshot]' started.
+Test Case '-[CodexMeterCoreTests.CodexRateLimitPayloadMapperTests testMapsWhamUsagePayloadIntoSnapshot]' passed (0.001 seconds).
+Test Case '-[CodexMeterCoreTests.CodexRateLimitPayloadMapperTests testQuotaSnapshotBuilderDropsEmptyLimitsAndSortsBuckets]' started.
+Test Case '-[CodexMeterCoreTests.CodexRateLimitPayloadMapperTests testQuotaSnapshotBuilderDropsEmptyLimitsAndSortsBuckets]' passed (0.000 seconds).
+Test Suite 'CodexRateLimitPayloadMapperTests' passed at 2026-10-14 03:51:49.955.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+Test Suite 'CodexSensitiveRedactorTests' started at 2026-10-14 03:51:49.955.
+Test Case '-[CodexMeterCoreTests.CodexSensitiveRedactorTests testRedactsAuthMaterialAndKeepsOperationalContext]' started.
+Test Case '-[CodexMeterCoreTests.CodexSensitiveRedactorTests testRedactsAuthMaterialAndKeepsOperationalContext]' passed (0.001 seconds).
+Test Suite 'CodexSensitiveRedactorTests' passed at 2026-10-14 03:51:49.957.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+Test Suite 'CodexServiceContractsTests' started at 2026-10-14 03:51:49.958.
+Test Case '-[CodexMeterCoreTests.CodexServiceContractsTests testCancelDeviceAuthRequestAndResponseUseTypedWireContract]' started.
+Test Case '-[CodexMeterCoreTests.CodexServiceContractsTests testCancelDeviceAuthRequestAndResponseUseTypedWireContract]' passed (0.001 seconds).
+Test Case '-[CodexMeterCoreTests.CodexServiceContractsTests testDeviceAuthEnvelopeBuildsTypedPayload]' started.
+Test Case '-[CodexMeterCoreTests.CodexServiceContractsTests testDeviceAuthEnvelopeBuildsTypedPayload]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexServiceContractsTests testHelperErrorEnvelopeThrowsHelpfulError]' started.
+Test Case '-[CodexMeterCoreTests.CodexServiceContractsTests testHelperErrorEnvelopeThrowsHelpfulError]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexServiceContractsTests testMismatchedRequestIDThrowsBeforePayloadDecode]' started.
+Test Case '-[CodexMeterCoreTests.CodexServiceContractsTests testMismatchedRequestIDThrowsBeforePayloadDecode]' passed (0.001 seconds).
+Test Case '-[CodexMeterCoreTests.CodexServiceContractsTests testPendingDeviceAuthEnvelopeBuildsTypedPollResult]' started.
+Test Case '-[CodexMeterCoreTests.CodexServiceContractsTests testPendingDeviceAuthEnvelopeBuildsTypedPollResult]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexServiceContractsTests testPollDeviceAuthRequestEncodesVersionAndLegacyFlowKey]' started.
+Test Case '-[CodexMeterCoreTests.CodexServiceContractsTests testPollDeviceAuthRequestEncodesVersionAndLegacyFlowKey]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexServiceContractsTests testSnapshotEnvelopeDecodesEmbeddedPayload]' started.
+Test Case '-[CodexMeterCoreTests.CodexServiceContractsTests testSnapshotEnvelopeDecodesEmbeddedPayload]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexServiceContractsTests testTypedWireResponseRejectsMissingDeviceAuthFields]' started.
+Test Case '-[CodexMeterCoreTests.CodexServiceContractsTests testTypedWireResponseRejectsMissingDeviceAuthFields]' passed (0.001 seconds).
+Test Case '-[CodexMeterCoreTests.CodexServiceContractsTests testTypedWireResponseValidatesPayloadShape]' started.
+Test Case '-[CodexMeterCoreTests.CodexServiceContractsTests testTypedWireResponseValidatesPayloadShape]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexServiceContractsTests testUnsupportedProtocolVersionThrowsBeforePayloadDecode]' started.
+Test Case '-[CodexMeterCoreTests.CodexServiceContractsTests testUnsupportedProtocolVersionThrowsBeforePayloadDecode]' passed (0.000 seconds).
+Test Suite 'CodexServiceContractsTests' passed at 2026-10-14 03:51:49.967.
+	 Executed 10 tests, with 0 failures (0 unexpected) in 0.005 (0.009) seconds
+Test Suite 'CodexSnapshotParityTests' started at 2026-10-14 03:51:49.967.
+Test Case '-[CodexMeterCoreTests.CodexSnapshotParityTests testSnapshotReducerBuildsSnapshotFromAccountAndRateLimits]' started.
+Test Case '-[CodexMeterCoreTests.CodexSnapshotParityTests testSnapshotReducerBuildsSnapshotFromAccountAndRateLimits]' passed (0.001 seconds).
+Test Case '-[CodexMeterCoreTests.CodexSnapshotParityTests testSnapshotReducerThrowsForNonChatGPTAccount]' started.
+Test Case '-[CodexMeterCoreTests.CodexSnapshotParityTests testSnapshotReducerThrowsForNonChatGPTAccount]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexSnapshotParityTests testSnapshotReducerThrowsForUnauthenticatedAccount]' started.
+Test Case '-[CodexMeterCoreTests.CodexSnapshotParityTests testSnapshotReducerThrowsForUnauthenticatedAccount]' passed (0.000 seconds).
+Test Suite 'CodexSnapshotParityTests' passed at 2026-10-14 03:51:49.969.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+Test Suite 'CodexSnapshotParsingTests' started at 2026-10-14 03:51:49.969.
+Test Case '-[CodexMeterCoreTests.CodexSnapshotParsingTests testCodexBucketParsesAndSorts]' started.
+Test Case '-[CodexMeterCoreTests.CodexSnapshotParsingTests testCodexBucketParsesAndSorts]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexSnapshotParsingTests testNonChatGPTAuthRejected]' started.
+Test Case '-[CodexMeterCoreTests.CodexSnapshotParsingTests testNonChatGPTAuthRejected]' passed (0.000 seconds).
+Test Suite 'CodexSnapshotParsingTests' passed at 2026-10-14 03:51:49.971.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+Test Suite 'CodexXPCClientIdentityRequirementTests' started at 2026-10-14 03:51:49.971.
+Test Case '-[CodexMeterCoreTests.CodexXPCClientIdentityRequirementTests testDevelopmentBypassDoesNotApplyInReleasePolicy]' started.
+Test Case '-[CodexMeterCoreTests.CodexXPCClientIdentityRequirementTests testDevelopmentBypassDoesNotApplyInReleasePolicy]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexXPCClientIdentityRequirementTests testDevelopmentBypassRequiresDebugBuildAndExplicitOptIn]' started.
+Test Case '-[CodexMeterCoreTests.CodexXPCClientIdentityRequirementTests testDevelopmentBypassRequiresDebugBuildAndExplicitOptIn]' passed (0.000 seconds).
+Test Case '-[CodexMeterCoreTests.CodexXPCClientIdentityRequirementTests testMainAppRequirementMatchesSignedAppIdentity]' started.
+Test Case '-[CodexMeterCoreTests.CodexXPCClientIdentityRequirementTests testMainAppRequirementMatchesSignedAppIdentity]' passed (0.000 seconds).
+Test Suite 'CodexXPCClientIdentityRequirementTests' passed at 2026-10-14 03:51:49.974.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+Test Suite 'CodexMeterCoreTests.xctest' passed at 2026-10-14 03:51:49.974.
+	 Executed 86 tests, with 0 failures (0 unexpected) in 0.193 (0.230) seconds
+Test Suite 'All tests' passed at 2026-10-14 03:51:49.974.
+	 Executed 86 tests, with 0 failures (0 unexpected) in 0.193 (0.232) seconds
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite MonitoringWidgetTests started.
+◇ Test cachedValuesExcludeIdentityAndCredentials() started.
+✔ Test cachedValuesExcludeIdentityAndCredentials() passed after 0.001 seconds.
+◇ Test missingBalanceNeverBecomesZeroAndEmptyWalletIsValid() started.
+✔ Test missingBalanceNeverBecomesZeroAndEmptyWalletIsValid() passed after 0.001 seconds.
+◇ Test atomicStoreClearsOldValuesAndRejectsUnknownSchema() started.
+✔ Test atomicStoreClearsOldValuesAndRejectsUnknownSchema() passed after 0.002 seconds.
+✔ Suite MonitoringWidgetTests passed after 0.005 seconds.
+◇ Suite OpenAIAPIClientTests started.
+◇ Test standardValidationIsReadOnlyAndHostPinned() started.
+✔ Test standardValidationIsReadOnlyAndHostPinned() passed after 0.001 seconds.
+◇ Test wrongProviderKeyCannotReachTransport() started.
+✔ Test wrongProviderKeyCannotReachTransport() passed after 0.001 seconds.
+◇ Test invalidKeyCannotReachTransport() started.
+✔ Test invalidKeyCannotReachTransport() passed after 0.001 seconds.
+◇ Test providerBodyAndTransportErrorsNeverAppearInErrors() started.
+✔ Test providerBodyAndTransportErrorsNeverAppearInErrors() passed after 0.001 seconds.
+◇ Test crossHostResponseIsRejected() started.
+✔ Test crossHostResponseIsRejected() passed after 0.001 seconds.
+◇ Test adminReportUsesHourBucketsAndDecimalCurrency() started.
+✔ Test adminReportUsesHourBucketsAndDecimalCurrency() passed after 0.001 seconds.
+◇ Test repeatedPaginationCursorFailsWithoutReturningPartialReport() started.
+✔ Test repeatedPaginationCursorFailsWithoutReturningPartialReport() passed after 0.001 seconds.
+◇ Test integerOverflowIsRejected() started.
+✔ Test integerOverflowIsRejected() passed after 0.001 seconds.
+◇ Test sessionCannotBeSentToModelsOrAdminReporting() started.
+✔ Test sessionCannotBeSentToModelsOrAdminReporting() passed after 0.001 seconds.
+◇ Test billingCredentialRequiresSessionSyntax() started.
+✔ Test billingCredentialRequiresSessionSyntax() passed after 0.001 seconds.
+◇ Test existingCredentialWithoutOrganizationDecodesWithoutChangingScope() started.
+✔ Test existingCredentialWithoutOrganizationDecodesWithoutChangingScope() passed after 0.001 seconds.
+◇ Test obsoleteStoredCredentialRemainsDecodableForRemoval() started.
+✔ Test obsoleteStoredCredentialRemainsDecodableForRemoval() passed after 0.001 seconds.
+◇ Test unofficialBalanceIsDeniedByDefaultBeforeTransport() started.
+✔ Test unofficialBalanceIsDeniedByDefaultBeforeTransport() passed after 0.001 seconds.
+◇ Test enabledBalancePreservesDecimalAndSelectedOrganization() started.
+✔ Test enabledBalancePreservesDecimalAndSelectedOrganization() passed after 0.001 seconds.
+◇ Test unknownBalanceDoesNotBecomeZeroOrCostEstimate() started.
+✔ Test unknownBalanceDoesNotBecomeZeroOrCostEstimate() passed after 0.001 seconds.
+◇ Test zeroAndNegativeReportedBalancesArePreserved() started.
+✔ Test zeroAndNegativeReportedBalancesArePreserved() passed after 0.001 seconds.
+◇ Test invalidBillingScopeIsRejectedBeforeTransport() started.
+✔ Test invalidBillingScopeIsRejectedBeforeTransport() passed after 0.001 seconds.
+✔ Suite OpenAIAPIClientTests passed after 0.015 seconds.
+✔ Test run with 20 tests in 2 suites passed after 0.022 seconds.

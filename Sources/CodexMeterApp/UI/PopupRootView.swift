@@ -34,7 +34,9 @@ struct PopupRootView: View {
 
     var body: some View {
         Group {
-            if let snapshot = presentedSnapshot {
+            if displayMode == .live, !model.previewModeEnabled, presentedSnapshot == nil, model.apiMonitor.hasKey {
+                compactAPIPopup
+            } else if let snapshot = presentedSnapshot {
                 PopupResetDashboardView(
                     model: model,
                     snapshot: snapshot,
@@ -54,6 +56,19 @@ struct PopupRootView: View {
                 guard reduceMotionOverride == nil else { return }
                 model.setReduceMotionEnabled(newValue)
             }
+    }
+
+    private var compactAPIPopup: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            OpenAIMonitorView(monitor: model.apiMonitor, configuration: false)
+            HStack(spacing: 8) {
+                PopupFooterControl(title: "Settings", systemImage: "gearshape", tone: .secondary, accessibilityIdentifier: "mac.popup.settings") { onOpenSettings() }
+                PopupFooterControl(title: model.apiMonitor.isRefreshing ? "Checking…" : "Refresh", systemImage: "arrow.clockwise", tone: .secondary, accessibilityIdentifier: "mac.popup.refresh") { model.apiMonitor.refresh() }
+                    .disabled(model.apiMonitor.isRefreshing)
+            }
+        }
+        .padding(14)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private var reduceMotionEnabled: Bool {
@@ -111,7 +126,10 @@ struct PopupRootView: View {
 
     private var mainContent: some View {
         VStack(alignment: .leading, spacing: GlassTokens.contentSpacing) {
-            if shouldShowStatusCard {
+            if model.apiMonitor.hasKey && !model.previewModeEnabled {
+                OpenAIMonitorView(monitor: model.apiMonitor, configuration: false)
+            }
+            if shouldShowStatusCard, model.isSignedIn || model.previewModeEnabled || !model.apiMonitor.hasKey {
                 PopupStatusCardView(model: model)
             }
 

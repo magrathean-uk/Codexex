@@ -109,9 +109,9 @@ struct CodexDeviceCodeCallout: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 9)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(CodexTheme.window, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .background(CodexTheme.window, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
                         .strokeBorder(CodexTheme.hairline, lineWidth: 1)
                 }
 

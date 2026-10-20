@@ -141,7 +141,7 @@ async fn fetch_snapshot_payload() -> Result<ServiceSnapshotPayload> {
             Err(RefreshTokenError::Permanent(_)) => {
                 return Ok(expired_sign_in_payload());
             }
-            Err(RefreshTokenError::Transient(_)) => {
+            Err(RefreshTokenError::Transient(_) | RefreshTokenError::Policy(_)) => {
                 return Ok(signed_in_error_payload(
                     "Could not refresh ChatGPT sign-in. Check your connection and try again.",
                 ));

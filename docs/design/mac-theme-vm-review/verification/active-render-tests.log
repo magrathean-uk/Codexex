@@ -1,0 +1,11 @@
+Test Suite 'Selected tests' started at 2026-10-14 04:20:29.178.
+Test Suite 'CodexMeterAppTests.xctest' started at 2026-10-14 04:20:29.179.
+Test Suite 'SettingsDesignRenderTests' started at 2026-10-14 04:20:29.180.
+Test Case '-[CodexMeterAppTests.SettingsDesignRenderTests testSettingsAndWelcomeRenderAtSupportedWindowSize]' started.
+Test Case '-[CodexMeterAppTests.SettingsDesignRenderTests testSettingsAndWelcomeRenderAtSupportedWindowSize]' passed (7.307 seconds).
+Test Suite 'SettingsDesignRenderTests' passed at 2026-10-14 04:20:36.488.
+	 Executed 1 test, with 0 failures (0 unexpected) in 7.307 (7.309) seconds
+Test Suite 'CodexMeterAppTests.xctest' passed at 2026-10-14 04:20:36.489.
+	 Executed 1 test, with 0 failures (0 unexpected) in 7.307 (7.309) seconds
+Test Suite 'Selected tests' passed at 2026-10-14 04:20:36.489.
+	 Executed 1 test, with 0 failures (0 unexpected) in 7.307 (7.311) seconds

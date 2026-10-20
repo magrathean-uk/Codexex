@@ -51,6 +51,8 @@ final class CodexMenuBarModel {
     private var summarySnoozeFingerprint = CodexAppSettings.summarySnoozeFingerprint
     private var summarySnoozeExpiresAt = CodexAppSettings.summarySnoozeExpiresAt
 
+    let apiMonitor = OpenAIMonitorModel()
+
     private let service: any CodexServiceClient
     private let localUsageProvider: any CodexLocalUsageProviding
     private let settingsStore: CodexAppSettingsStore
@@ -105,6 +107,7 @@ final class CodexMenuBarModel {
         summarySnoozeFingerprint = settings.summarySnoozeFingerprint
         summarySnoozeExpiresAt = settings.summarySnoozeExpiresAt
         launchAtLoginEnabled = CodexLaunchAtLoginManager.syncStoredState()
+        apiMonitor.setPreview(previewModeEnabled)
     }
 
     var snapshot: CodexSnapshot? { dashboard.snapshot }
@@ -206,6 +209,7 @@ final class CodexMenuBarModel {
             return
         }
 
+        apiMonitor.refresh()
         let generation = refreshCoordinator.token()
         CodexLog.refresh.log("refresh start generation=\(generation, privacy: .public)")
         animateStateChange(.easeInOut(duration: 0.16)) {
@@ -558,6 +562,7 @@ final class CodexMenuBarModel {
         invalidateRefreshResults(cancelHelper: true)
         settingsStore.setPreviewModeEnabled(true)
         previewModeEnabled = true
+        apiMonitor.setPreview(true)
         authSession.apply(.previewEnabled)
         dashboard.applyPreview(now: Date())
         restartRefreshLoop()
@@ -570,6 +575,7 @@ final class CodexMenuBarModel {
         invalidateRefreshResults(cancelHelper: true)
         settingsStore.setPreviewModeEnabled(false)
         previewModeEnabled = false
+        apiMonitor.setPreview(false)
         authSession.apply(.previewDisabled)
         dashboard.clearSnapshot(keepHistory: false, keepLocalUsage: false)
         restartRefreshLoop()
@@ -613,6 +619,8 @@ final class CodexMenuBarModel {
     }
 
     func clearHelperStateForAppReset() async -> String? {
+        apiMonitor.setUnofficialBalanceEnabled(false)
+        await OpenAIBillingWebsiteData.clear()
         CodexLog.auth.log("reset helper sign-out start")
         invalidateRefreshResults(cancelHelper: true)
         do {
@@ -708,6 +716,7 @@ final class CodexMenuBarModel {
                 }
                 guard let self else { return }
                 guard Task.isCancelled == false else { return }
+                self.apiMonitor.refresh()
                 guard self.refreshBackoff.allowsAutomaticRefresh(now: self.clock.now()) else {
                     continue
                 }

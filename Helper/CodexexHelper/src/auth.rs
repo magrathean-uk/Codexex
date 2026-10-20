@@ -480,6 +480,7 @@ fn persist_tokens(opts: &codex_login::ServerOptions, tokens: TokenExchangeResp) 
         agent_identity: None,
         personal_access_token: None,
         bedrock_api_key: None,
+        bedrock_access_keys: None,
     };
     save_auth(
         &opts.codex_home,

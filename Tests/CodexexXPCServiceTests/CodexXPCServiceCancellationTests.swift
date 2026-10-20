@@ -4,6 +4,25 @@ import CodexMeterCore
 
 @MainActor
 final class CodexXPCServiceCancellationTests: XCTestCase {
+    func testDefaultHelperLookupLaunchesFromAPathWithSpacesAndReservedCharacters() throws {
+        let fileManager = FileManager.default
+        let directory = fileManager.temporaryDirectory.appendingPathComponent(
+            "Codex helper #50% \(UUID().uuidString)", isDirectory: true
+        )
+        try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? fileManager.removeItem(at: directory) }
+
+        let helperURL = directory.appendingPathComponent("codexex-helper")
+        // Keep the system-signed binary at its original location.
+        try Data("#!/bin/sh\nexec /bin/cat\n".utf8).write(to: helperURL)
+        try fileManager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: helperURL.path)
+        let missingURL = directory.appendingPathComponent("missing-helper")
+        let process = CodexHelperProcess(helperCandidateURLsProvider: { [missingURL, helperURL] })
+        defer { process.reset() }
+
+        XCTAssertEqual(try process.send("helper lookup succeeded"), "helper lookup succeeded")
+    }
+
     func testPersistedDeviceAuthCancellationUsesTypedHelperRequest() async {
         let helper = CancelRecordingHelperSession()
         let service = CodexXPCService(helper: helper)

@@ -1,0 +1,19 @@
+Test Suite 'All tests' started at 2026-10-14 04:35:51.713.
+Test Suite 'CodexexXPCServiceTests.xctest' started at 2026-10-14 04:35:51.718.
+Test Suite 'CodexXPCServiceCancellationTests' started at 2026-10-14 04:35:51.719.
+Test Case '-[CodexexXPCServiceTests.CodexXPCServiceCancellationTests testCancelInterruptsBlockedSendDrainsBeforeNextSendAndKeepsSessionReusable]' started.
+Test Case '-[CodexexXPCServiceTests.CodexXPCServiceCancellationTests testCancelInterruptsBlockedSendDrainsBeforeNextSendAndKeepsSessionReusable]' passed (0.021 seconds).
+Test Case '-[CodexexXPCServiceTests.CodexXPCServiceCancellationTests testDefaultHelperLookupLaunchesFromAPathWithSpacesAndReservedCharacters]' started.
+Test Case '-[CodexexXPCServiceTests.CodexXPCServiceCancellationTests testDefaultHelperLookupLaunchesFromAPathWithSpacesAndReservedCharacters]' passed (0.307 seconds).
+Test Case '-[CodexexXPCServiceTests.CodexXPCServiceCancellationTests testPersistedDeviceAuthCancellationUsesTypedHelperRequest]' started.
+Test Case '-[CodexexXPCServiceTests.CodexXPCServiceCancellationTests testPersistedDeviceAuthCancellationUsesTypedHelperRequest]' passed (0.001 seconds).
+Test Case '-[CodexexXPCServiceTests.CodexXPCServiceCancellationTests testRapidSecondCancelInterruptsNewSendAndKeepsFollowingSendReusable]' started.
+Test Case '-[CodexexXPCServiceTests.CodexXPCServiceCancellationTests testRapidSecondCancelInterruptsNewSendAndKeepsFollowingSendReusable]' passed (0.002 seconds).
+Test Case '-[CodexexXPCServiceTests.CodexXPCServiceCancellationTests testResetDuringLaunchCancelsUnpublishedProcessAndNextSendSucceeds]' started.
+Test Case '-[CodexexXPCServiceTests.CodexXPCServiceCancellationTests testResetDuringLaunchCancelsUnpublishedProcessAndNextSendSucceeds]' passed (0.005 seconds).
+Test Suite 'CodexXPCServiceCancellationTests' passed at 2026-10-14 04:35:52.059.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.336 (0.340) seconds
+Test Suite 'CodexexXPCServiceTests.xctest' passed at 2026-10-14 04:35:52.059.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.336 (0.341) seconds
+Test Suite 'All tests' passed at 2026-10-14 04:35:52.060.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.336 (0.347) seconds

@@ -366,7 +366,10 @@ final class CodexUsageInsightsTests: XCTestCase {
     }
 
     func testMonthlyHistoryUsesLastThirtyDailyWeeklyPeaks() {
-        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        // Keep the two recent observations on today's local calendar day.
+        // A fixed UTC instant can be midnight in another time zone.
+        let day = Calendar.autoupdatingCurrent.startOfDay(for: Date(timeIntervalSince1970: 1_800_000_000))
+        let now = day.addingTimeInterval(12 * 60 * 60)
         let samples = [
             makeSample(at: now.addingTimeInterval(-(31 * 24 * 60 * 60)), fiveHour: 20, weekly: 99),
             makeSample(at: now.addingTimeInterval(-(2 * 60 * 60)), fiveHour: 24, weekly: 32),

@@ -1,4 +1,5 @@
 import Foundation
+import CodexMeterCore
 
 enum CodexiOSAppResetter {
     static func resetLocalData(
@@ -9,9 +10,13 @@ enum CodexiOSAppResetter {
         clearPendingAuth: () throws -> Void = {
             try CodexiOSPendingAuthStore().clear()
         },
-        clearHistory: () throws -> Void = {}
+        clearHistory: () throws -> Void = {},
+        clearAPIKey: () throws -> Void = { try OpenAIAPICredentialStore().delete() }
     ) throws {
         var failures: [String] = []
+        defaults.removeObject(forKey: "codexex.unofficialOpenAIBalanceConsent.v1")
+        defaults.removeObject(forKey: "codexex.unofficialOpenAIBalanceConsent.v2")
+        do { try clearAPIKey() } catch { failures.append("API key could not be removed from Keychain.") }
         do { try clearTokens() } catch { failures.append(error.localizedDescription) }
         do { try clearPendingAuth() } catch { failures.append(error.localizedDescription) }
         do { try clearHistory() } catch { failures.append(error.localizedDescription) }
