@@ -1,0 +1,13 @@
+{
+  "$schema": "https://raw.githubusercontent.com/magrathean-uk/bolyki-dev/main/clean-development/schemas/project-config.schema.json",
+  "schemaVersion": 2,
+  "enabled": true,
+  "heavy": false,
+  "buildDirs": [
+    ".build",
+    "Prototypes/MatrixQuota/dist"
+  ],
+  "depDirs": [
+    "Prototypes/MatrixQuota/node_modules"
+  ]
+}

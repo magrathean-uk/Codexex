@@ -13,3 +13,7 @@ AppStore/Releases/
 
 # Rust helper build artefacts
 Helper/CodexexHelper/target/
+# --- secrets (clean-development) ---
+.env
+.env.*
+!.env.example
