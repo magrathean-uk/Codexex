@@ -1,42 +1,34 @@
-# Mobile Prototype Agent Guide
+# MatrixQuota prototype context
 
-## Local workflow
+The MatrixQuota prototype is React. SwiftUI and gyro details below describe its native counterpart. Commands run relative to `Prototypes/MatrixQuota`.
 
-Run commands from `Prototypes/MatrixQuota`. Run `npm run check:runtime` before
-a preview, then use `npm run dev` for the local preview. Inspect the rendered
-screen and its primary interactions. Do not deploy or publish unless the
-current task authorizes it.
+## Command reference
 
-When implementing from a selected generated mock, treat that image as the source of truth for layout, component anatomy, density, spacing, color, typography, visible content, and hierarchy.
+```sh
+npm run check:runtime
+npm run dev
+npm run build
+npm run test:sites
+```
 
-The Matrix decisions below are product and reference decisions. SwiftUI and
-gyro details describe the native counterpart; this prototype remains React.
+`check:runtime` checks recorded runtime hashes. `dev` starts the local preview. `test:sites` covers the Sites worker. Generated mock images provide references for layout, component anatomy, density, spacing, colour, typography, content, and hierarchy.
 
-## Matrix Theme Decisions
+## Matrix theme reference
 
-- The Matrix page contains only the live percentage, the code-fill surface, and one Settings button.
-- Settings > Display owns `Matrix theme` and `Show used quota` switches. Matrix theme persists through navigation; the gear opens Settings and a back action returns to Matrix while the switch remains on. Disabling Matrix theme returns to the normal theme.
-- Settings uses green native toggles. `Show used quota` is its own `Quota` section immediately after `Account`. Privacy contains only `Privacy Policy` and `Terms of Service` globe/external-link rows, linking to Codexex pages.
-- Live Activity has its own section directly after `Quota`, with a standard-height start/stop row. The same start/stop action lives on the normal dashboard. `Show used quota` immediately updates a running Live Activity's content state, so its Lock Screen/Dynamic Island text and progress switch together between remaining and used quota.
-- Show used quota defaults off: a 9% balance reads `9% left`; on, it reads `91% used` and inverts the standard quota fill and Matrix code-fill surface. This never reverses Matrix rain: every track starts above the device's top edge and falls downward.
-- Code rain follows the supplied GIF and track model: sparse medium-weight finite columns, stable glyphs, a white leading head at the bottom of every track, and green fading tails above it. Tracks fall down one character every 0.15 seconds at the default GIF-calibrated speed. The display uses an adaptive 120fps SwiftUI animation schedule, while gyro data samples at 30fps without triggering SwiftUI redraws. A hidden vertical drag ranges from 50% on pull-down to 100% on pull-up. A hidden horizontal drag maps left to 0% density and right to 100%; at 100% every safe grid cell below the waterline is filled, without glyph overlap. Phone tilt moves the code surface: horizontal gyro is inverted so a left tilt shifts water left. The water wave uses a 6.5pt amplitude. iPhone remains portrait-only; iPad permits landscape.
-- Battery: one display-owned render clock. Read the latest gyro sample while rendering; never trigger extra SwiftUI redraws for motion. Pause code and gyro whenever inactive or Reduce Motion is on. Canvas paints opaque black and presents asynchronously.
-- The Matrix percentage is always legible on a 15% ultra-thin-material frosted capsule with a near-invisible white edge.
+- The Matrix page displays the live percentage, code-fill surface, and a Settings button.
+- Settings > Display contains `Matrix theme` and `Show used quota` switches. Matrix theme persists through navigation. The gear opens Settings; the back action returns to Matrix with the switch still on. Disabling Matrix theme returns to the normal theme.
+- Settings uses green native toggles. `Show used quota` has a `Quota` section immediately after `Account`. Privacy has `Privacy Policy` and `Terms of Service` globe/external-link rows linked to Codexex pages.
+- Live Activity has a section directly after `Quota`, with a standard-height start/stop row. The same start/stop action appears on the normal dashboard. `Show used quota` immediately updates a running Live Activity's content state, switching its Lock Screen/Dynamic Island text and progress between remaining and used quota.
+- Show used quota defaults off: a 9% balance reads `9% left`; when on, it reads `91% used` and inverts the standard quota fill and Matrix code-fill surface. Matrix rain continues downward, with every track starting above the device's top edge.
+- Code rain follows the supplied GIF and track model: sparse medium-weight finite columns, stable glyphs, a white leading head at the bottom of each track, and green fading tails above it. Tracks fall one character every 0.15 seconds at the default GIF-calibrated speed. The native display uses an adaptive 120 fps SwiftUI animation schedule and gyro data sampled at 30 fps, independent of SwiftUI redraws.
+- A hidden vertical drag ranges from 50% on pull-down to 100% on pull-up. A hidden horizontal drag maps left to 0% density and right to 100%. At 100%, every safe grid cell below the waterline is filled without glyph overlap. Phone tilt moves the code surface; horizontal gyro is inverted so a left tilt shifts water left. The water wave has a 6.5 pt amplitude. iPhone orientation is portrait; iPad supports landscape.
+- A display-owned render clock reads the latest gyro sample while rendering. Code and gyro pause while inactive or with Reduce Motion enabled. Canvas paints opaque black and presents asynchronously.
+- The Matrix percentage is displayed on a 15% ultra-thin-material frosted capsule with a near-invisible white edge.
 
-## Editing Boundary
+## Source map and runtime references
 
-- Build app-specific UI in `src/Prototype.tsx` and `src/prototype.css`.
-- Treat `src/App.tsx`, `src/main.tsx`, `src/styles.css`, `src/mobile/`, `public/assets/iphone/`, `public/assets/android/`, `public/assets/status/`, `vite.config.ts`, `worker/index.js`, and `scripts/prepare-sites-build.mjs` as protected runtime files. Do not edit, replace, remove, or recreate them unless the user explicitly asks to change the mobile runtime itself. For an explicit runtime change, update the affected lock hashes only after verifying the new runtime behavior.
-- Run `npm run check:runtime` before preview or handoff. If it fails, restore the protected runtime instead of weakening or bypassing the check.
-- `npm run build` must preserve the mobile runtime. Run `npm run test:sites` when changing the worker or preparing a user-requested Sites handoff. Do not replace this project with a Vinext starter.
-
-## Moved detail
-
-Read `RUNTIME-CONTRACT.md` before changing the phone frame, status bar, scrolling, keyboard, carousels, bottom sheets or any pointer interaction: it holds the protected-runtime contract (FlowStack, MobileScroll, Carousel, keyboard and drag rules). `src/mobile/COMPONENTS.md` has the component and gesture reference. The editing boundary above still applies.
-
-## Working practice
-
-Preserve the protected runtime and existing visual decisions. Make changes only in
-the app-owned files unless the user explicitly authorizes a runtime change. Run
-`npm run check:runtime` before preview or handoff, and run the smallest relevant
-check after a change. Do not deploy or publish unless the user asks.
+- `src/Prototype.tsx` and `src/prototype.css` contain app-specific UI.
+- `src/App.tsx`, `src/main.tsx`, `src/styles.css`, `src/mobile/`, `public/assets/iphone/`, `public/assets/android/`, and `public/assets/status/` contain the mobile runtime and assets.
+- `vite.config.ts`, `worker/index.js`, and `scripts/prepare-sites-build.mjs` provide preview, worker, and Sites build integration.
+- `RUNTIME-CONTRACT.md` describes the phone frame, status bar, scrolling, keyboard, carousels, bottom sheets, pointer interaction, FlowStack, MobileScroll, Carousel, and drag behaviour.
+- `src/mobile/COMPONENTS.md` is the component and gesture reference.
