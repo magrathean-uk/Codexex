@@ -54,6 +54,7 @@ final class CodexiOSModelTests: XCTestCase {
         let model = CodexiOSModel(
             service: StubCodexiOSService(),
             defaults: makeDefaults(),
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -72,6 +73,7 @@ final class CodexiOSModelTests: XCTestCase {
         let model = CodexiOSModel(
             service: StubCodexiOSService(),
             defaults: defaults,
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -90,6 +92,7 @@ final class CodexiOSModelTests: XCTestCase {
         let model = CodexiOSModel(
             service: service,
             defaults: makeDefaults(),
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -114,6 +117,7 @@ final class CodexiOSModelTests: XCTestCase {
         let model = CodexiOSModel(
             service: service,
             defaults: defaults,
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -138,6 +142,7 @@ final class CodexiOSModelTests: XCTestCase {
         let model = CodexiOSModel(
             service: service,
             defaults: makeDefaults(),
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -161,6 +166,7 @@ final class CodexiOSModelTests: XCTestCase {
         let model = CodexiOSModel(
             service: service,
             defaults: defaults,
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -195,6 +201,7 @@ final class CodexiOSModelTests: XCTestCase {
         let model = CodexiOSModel(
             service: service,
             defaults: makeDefaults(),
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { url in
                 await recorder.record(url)
                 return true
@@ -244,6 +251,7 @@ final class CodexiOSModelTests: XCTestCase {
         let model = CodexiOSModel(
             service: service,
             defaults: defaults,
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { text in
                 copyRecorder.record(text)
@@ -274,6 +282,7 @@ final class CodexiOSModelTests: XCTestCase {
         let model = CodexiOSModel(
             service: service,
             defaults: makeDefaults(),
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -296,6 +305,7 @@ final class CodexiOSModelTests: XCTestCase {
         let model = CodexiOSModel(
             service: service,
             defaults: makeDefaults(),
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -317,6 +327,7 @@ final class CodexiOSModelTests: XCTestCase {
             service: StubCodexiOSService(),
             defaults: defaults,
             liveActivityManager: liveActivity,
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -353,6 +364,7 @@ final class CodexiOSModelTests: XCTestCase {
             service: StubCodexiOSService(),
             defaults: defaults,
             liveActivityManager: liveActivity,
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -381,6 +393,7 @@ final class CodexiOSModelTests: XCTestCase {
             service: StubCodexiOSService(),
             defaults: defaults,
             liveActivityManager: liveActivity,
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -422,6 +435,7 @@ final class CodexiOSModelTests: XCTestCase {
             service: service,
             defaults: makeDefaults(),
             liveActivityManager: liveActivity,
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -444,6 +458,7 @@ final class CodexiOSModelTests: XCTestCase {
             }),
             defaults: makeDefaults(),
             liveActivityManager: liveActivity,
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -473,6 +488,7 @@ final class CodexiOSModelTests: XCTestCase {
             }),
             defaults: makeDefaults(),
             liveActivityManager: liveActivity,
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -496,6 +512,7 @@ final class CodexiOSModelTests: XCTestCase {
             }),
             defaults: makeDefaults(),
             liveActivityManager: liveActivity,
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -520,6 +537,7 @@ final class CodexiOSModelTests: XCTestCase {
             service: StubCodexiOSService(),
             defaults: defaults,
             liveActivityManager: liveActivity,
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -555,6 +573,7 @@ final class CodexiOSModelTests: XCTestCase {
             service: StubCodexiOSService(),
             defaults: defaults,
             liveActivityManager: liveActivity,
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -590,6 +609,7 @@ final class CodexiOSModelTests: XCTestCase {
             liveActivityManager: StubCodexiOSLiveActivityManager(
                 state: .init(isAvailable: true, activityID: nil)
             ),
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -620,6 +640,7 @@ final class CodexiOSModelTests: XCTestCase {
             }),
             defaults: defaults,
             liveActivityManager: liveActivity,
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -646,6 +667,7 @@ final class CodexiOSModelTests: XCTestCase {
             service: StubCodexiOSService(),
             defaults: defaults,
             liveActivityManager: liveActivity,
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -678,6 +700,7 @@ final class CodexiOSModelTests: XCTestCase {
             service: service,
             defaults: makeDefaults(),
             liveActivityManager: liveActivity,
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -702,6 +725,7 @@ final class CodexiOSModelTests: XCTestCase {
                 state: .init(isAvailable: true, activityID: nil)
             ),
             pushRegistrationManager: push,
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true }, copyTextAction: { _ in }
         )
 
@@ -720,6 +744,7 @@ final class CodexiOSModelTests: XCTestCase {
                 state: .init(isAvailable: true, activityID: "running")
             ),
             pushRegistrationManager: RecordingWakeRegistration(),
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true }, copyTextAction: { _ in }
         )
 
@@ -734,17 +759,20 @@ final class CodexiOSModelTests: XCTestCase {
         defaults.set(true, forKey: CodexiOSSettingsKeys.hasCompletedOnboarding)
         defaults.set(true, forKey: CodexiOSSettingsKeys.previewModeEnabled)
         defaults.set(600, forKey: CodexiOSSettingsKeys.refreshIntervalSeconds)
+        var clearedAPIKey = false
 
         try CodexiOSAppResetter.resetLocalData(
             defaults: defaults,
             clearTokens: {},
             clearPendingAuth: {},
-            clearHistory: {}
+            clearHistory: {},
+            clearAPIKey: { clearedAPIKey = true }
         )
 
         XCTAssertNil(defaults.object(forKey: CodexiOSSettingsKeys.hasCompletedOnboarding))
         XCTAssertNil(defaults.object(forKey: CodexiOSSettingsKeys.previewModeEnabled))
         XCTAssertNil(defaults.object(forKey: CodexiOSSettingsKeys.refreshIntervalSeconds))
+        XCTAssertTrue(clearedAPIKey)
     }
 
     func testTypedAuthExpiryRequiresSignInWithoutShowingNetworkError() async {
@@ -753,6 +781,7 @@ final class CodexiOSModelTests: XCTestCase {
                 .authExpired("Sign-in expired. Sign in again.")
             }),
             defaults: makeDefaults(),
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -777,6 +806,7 @@ final class CodexiOSModelTests: XCTestCase {
                 )
             }),
             defaults: makeDefaults(),
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -799,6 +829,7 @@ final class CodexiOSModelTests: XCTestCase {
         let model = CodexiOSModel(
             service: service,
             defaults: makeDefaults(),
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -823,6 +854,7 @@ final class CodexiOSModelTests: XCTestCase {
         let model = CodexiOSModel(
             service: service,
             defaults: makeDefaults(),
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -851,6 +883,7 @@ final class CodexiOSModelTests: XCTestCase {
         let model = CodexiOSModel(
             service: service,
             defaults: makeDefaults(),
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in
                 XCTFail("Recovered sign-in must not open Safari without a tap.")
                 return false
@@ -871,6 +904,7 @@ final class CodexiOSModelTests: XCTestCase {
         let model = CodexiOSModel(
             service: service,
             defaults: makeDefaults(),
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -890,6 +924,7 @@ final class CodexiOSModelTests: XCTestCase {
         let model = CodexiOSModel(
             service: StubCodexiOSService(),
             defaults: makeDefaults(),
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { copyRecorder.record($0) }
         )
@@ -906,6 +941,7 @@ final class CodexiOSModelTests: XCTestCase {
         let model = CodexiOSModel(
             service: StubCodexiOSService(),
             defaults: makeDefaults(),
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in false },
             copyTextAction: { copyRecorder.record($0) }
         )
@@ -933,6 +969,7 @@ final class CodexiOSModelTests: XCTestCase {
             service: service,
             defaults: makeDefaults(),
             liveActivityManager: liveActivity,
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -971,6 +1008,7 @@ final class CodexiOSModelTests: XCTestCase {
             service: service,
             defaults: makeDefaults(),
             liveActivityManager: liveActivity,
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -1004,12 +1042,14 @@ final class CodexiOSModelTests: XCTestCase {
         let first = CodexiOSModel(
             service: StubCodexiOSService(),
             defaults: makeDefaults(),
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
         let second = CodexiOSModel(
             service: StubCodexiOSService(),
             defaults: makeDefaults(),
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -1021,12 +1061,14 @@ final class CodexiOSModelTests: XCTestCase {
         let first = CodexiOSModel(
             service: StubCodexiOSService(),
             defaults: makeDefaults(),
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
         let second = CodexiOSModel(
             service: StubCodexiOSService(),
             defaults: makeDefaults(),
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -1050,6 +1092,7 @@ final class CodexiOSModelTests: XCTestCase {
             service: StubCodexiOSService(),
             defaults: makeDefaults(),
             liveActivityCoordinator: coordinator,
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -1057,6 +1100,7 @@ final class CodexiOSModelTests: XCTestCase {
             service: StubCodexiOSService(),
             defaults: makeDefaults(),
             liveActivityCoordinator: coordinator,
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -1092,6 +1136,7 @@ final class CodexiOSModelTests: XCTestCase {
             service: StubCodexiOSService(fetchHandler: { await backgroundGate.wait() }),
             defaults: makeDefaults(),
             liveActivityCoordinator: coordinator,
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -1099,6 +1144,7 @@ final class CodexiOSModelTests: XCTestCase {
             service: StubCodexiOSService(outcomeHandler: { .loaded(newer) }),
             defaults: makeDefaults(),
             liveActivityCoordinator: coordinator,
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -1196,6 +1242,7 @@ final class CodexiOSModelTests: XCTestCase {
             liveActivityManager: StubCodexiOSLiveActivityManager(
                 state: .init(isAvailable: true, activityID: nil)
             ),
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -1206,6 +1253,7 @@ final class CodexiOSModelTests: XCTestCase {
             liveActivityManager: StubCodexiOSLiveActivityManager(
                 state: .init(isAvailable: true, activityID: "running")
             ),
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -1227,6 +1275,7 @@ final class CodexiOSModelTests: XCTestCase {
         let model = CodexiOSModel(
             service: service,
             defaults: makeDefaults(),
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -1256,6 +1305,7 @@ final class CodexiOSModelTests: XCTestCase {
             defaults: makeDefaults(),
             liveActivityManager: liveActivity,
             backgroundRefreshScheduler: scheduler,
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -1281,6 +1331,7 @@ final class CodexiOSModelTests: XCTestCase {
             service: service,
             defaults: defaults,
             historyStore: history,
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -1311,6 +1362,7 @@ final class CodexiOSModelTests: XCTestCase {
             }),
             defaults: defaults,
             historyStore: history,
+            apiMonitor: makeIsolatedMonitor(),
             openURLAction: { _ in true },
             copyTextAction: { _ in }
         )
@@ -1322,6 +1374,53 @@ final class CodexiOSModelTests: XCTestCase {
         XCTAssertFalse(fileManager.fileExists(atPath: fileURL.path))
         XCTAssertNil(defaults.object(forKey: CodexiOSSettingsKeys.hasCompletedOnboarding))
         XCTAssertTrue(model.hasCompletedOnboarding)
+    }
+
+    func testResetAttemptsAPIKeyRemovalInPreviewAndSurfacesFailureAfterClearingLocalData() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let fileURL = root.appendingPathComponent("history.json")
+        let history = CodexUsageHistoryStore(fileURL: fileURL)
+        _ = await history.append(snapshot: CodexiOSPreviewData.snapshot())
+        let defaults = makeDefaults()
+        defaults.set(true, forKey: CodexiOSSettingsKeys.previewModeEnabled)
+        defaults.set(true, forKey: CodexiOSSettingsKeys.hasCompletedOnboarding)
+        defaults.set(600, forKey: CodexiOSSettingsKeys.refreshIntervalSeconds)
+        var deletionAttempts = 0
+        let api = OpenAIMonitorModel(client: OpenAIAPIClient(transport: { _ in
+            XCTFail("Reset must not contact the provider.")
+            throw OpenAIAPIError.unavailable
+        }), load: { .init(key: "sk-preview-reset-fixture", kind: .regular) },
+            persist: { _ in XCTFail("Reset must not save a credential.") },
+            delete: { deletionAttempts += 1; throw OpenAIAPICredentialStore.CredentialError.unavailable },
+            loadConsent: { false }, persistConsent: { _ in })
+        let service = StubCodexiOSService()
+        let model = CodexiOSModel(service: service, defaults: defaults, historyStore: history,
+            liveActivityManager: StubCodexiOSLiveActivityManager(state: .init(isAvailable: true, activityID: nil)),
+            backgroundRefreshScheduler: StubBackgroundRefreshScheduler(),
+            pushRegistrationManager: RecordingWakeRegistration(), widgetPublisher: ResetTestWidgetPublisher(),
+            apiMonitor: api, openURLAction: { _ in false }, copyTextAction: { _ in })
+        XCTAssertTrue(model.previewModeEnabled)
+
+        await model.resetApp()
+
+        XCTAssertEqual(deletionAttempts, 1, "Reset must attempt the injected API store even while Preview was active.")
+        XCTAssertTrue(api.deletionPending)
+        XCTAssertEqual(model.liveAccountState, .unavailable)
+        XCTAssertEqual(model.errorMessage, "Some local data could not be deleted. API key could not be removed from Keychain.")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: fileURL.path))
+        XCTAssertNil(defaults.object(forKey: CodexiOSSettingsKeys.previewModeEnabled))
+        XCTAssertNil(defaults.object(forKey: CodexiOSSettingsKeys.refreshIntervalSeconds))
+        let signOutCount = await service.signOutCallCount()
+        XCTAssertEqual(signOutCount, 1)
+    }
+
+    private func makeIsolatedMonitor() -> OpenAIMonitorModel {
+        OpenAIMonitorModel(client: OpenAIAPIClient(transport: { _ in
+            XCTFail("Quota model tests must not perform provider API requests.")
+            throw OpenAIAPIError.unavailable
+        }), load: { nil }, persist: { _ in }, delete: {},
+            loadConsent: { false }, persistConsent: { _ in })
     }
 
     private func makeDefaults() -> UserDefaults {
@@ -1355,6 +1454,12 @@ final class CodexiOSModelTests: XCTestCase {
             ]
         )
     }
+}
+
+@MainActor private struct ResetTestWidgetPublisher: CodexiOSWidgetPublishing {
+    func publish(_ value: MonitoringWidgetSnapshot) {}
+    func clear() {}
+    func hasInstalledWidgets() async -> Bool { false }
 }
 
 actor SnapshotFetchGate {
