@@ -17,3 +17,6 @@ Helper/CodexexHelper/target/
 .env
 .env.*
 !.env.example
+
+# Coverage output
+*.profraw

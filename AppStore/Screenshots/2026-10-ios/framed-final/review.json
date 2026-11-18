@@ -7,9 +7,9 @@
       "id": "01-quota",
       "view": "Quota dashboard with Codex credits",
       "family": "iphone",
-      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/iphone/01-quota.png",
+      "source": "./AppStore/Screenshots/2026-10-ios/raw/iphone/01-quota.png",
       "source_sha256": "21fdaebfa86f5d7ec8a1059eda5cb23f8262ef9ce5aaede3d3377ebfe06e5dd8",
-      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/iphone/01-quota.png",
+      "output": "./AppStore/Screenshots/2026-10-ios/framed-final/en-US/iphone/01-quota.png",
       "size": [
         1320,
         2868
@@ -23,9 +23,9 @@
       "id": "01-quota",
       "view": "Quota dashboard with Codex credits",
       "family": "ipad",
-      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/ipad/01-quota.png",
+      "source": "./AppStore/Screenshots/2026-10-ios/raw/ipad/01-quota.png",
       "source_sha256": "4732c3b301a9b5c7283aec958e531ecabf6bba0dd416f05fdbafdce4d6a08193",
-      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/ipad/01-quota.png",
+      "output": "./AppStore/Screenshots/2026-10-ios/framed-final/en-US/ipad/01-quota.png",
       "size": [
         2064,
         2752
@@ -39,9 +39,9 @@
       "id": "02-weekly",
       "view": "Weekly-only quota dashboard",
       "family": "iphone",
-      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/iphone/02-weekly.png",
+      "source": "./AppStore/Screenshots/2026-10-ios/raw/iphone/02-weekly.png",
       "source_sha256": "aa256a5574d6ff049c67cd620e9f9201f389d5e8a076a07c64508b1450b25aab",
-      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/iphone/02-weekly.png",
+      "output": "./AppStore/Screenshots/2026-10-ios/framed-final/en-US/iphone/02-weekly.png",
       "size": [
         1320,
         2868
@@ -55,9 +55,9 @@
       "id": "02-weekly",
       "view": "Weekly-only quota dashboard",
       "family": "ipad",
-      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/ipad/02-weekly.png",
+      "source": "./AppStore/Screenshots/2026-10-ios/raw/ipad/02-weekly.png",
       "source_sha256": "9d33ad9c15a6544b1bd5d5a80d7be702f78537fd9972a4a9645510a1411699ff",
-      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/ipad/02-weekly.png",
+      "output": "./AppStore/Screenshots/2026-10-ios/framed-final/en-US/ipad/02-weekly.png",
       "size": [
         2064,
         2752
@@ -71,9 +71,9 @@
       "id": "03-history",
       "view": "Usage history",
       "family": "iphone",
-      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/iphone/03-history.png",
+      "source": "./AppStore/Screenshots/2026-10-ios/raw/iphone/03-history.png",
       "source_sha256": "4b5e00bdb4c7dcd8ec31d2a10d0944e08c19ba08cac95ebb0ea64373a47ca6d3",
-      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/iphone/03-history.png",
+      "output": "./AppStore/Screenshots/2026-10-ios/framed-final/en-US/iphone/03-history.png",
       "size": [
         1320,
         2868
@@ -87,9 +87,9 @@
       "id": "03-history",
       "view": "Usage history",
       "family": "ipad",
-      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/ipad/03-history.png",
+      "source": "./AppStore/Screenshots/2026-10-ios/raw/ipad/03-history.png",
       "source_sha256": "cd3a209e93ae4771f36d1d8427a1cac0bd7e64526257b8d17aac5766f39e8fbe",
-      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/ipad/03-history.png",
+      "output": "./AppStore/Screenshots/2026-10-ios/framed-final/en-US/ipad/03-history.png",
       "size": [
         2064,
         2752
@@ -103,9 +103,9 @@
       "id": "04-api-balance",
       "view": "Connected prepaid API balance",
       "family": "iphone",
-      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/iphone/04-api-balance.png",
+      "source": "./AppStore/Screenshots/2026-10-ios/raw/iphone/04-api-balance.png",
       "source_sha256": "72aa08c387ec1ff4bcfee3c6b227ef0d228664524d2bd19896566bfc0ecf8535",
-      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/iphone/04-api-balance.png",
+      "output": "./AppStore/Screenshots/2026-10-ios/framed-final/en-US/iphone/04-api-balance.png",
       "size": [
         1320,
         2868
@@ -119,9 +119,9 @@
       "id": "04-api-balance",
       "view": "Connected prepaid API balance",
       "family": "ipad",
-      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/ipad/04-api-balance.png",
+      "source": "./AppStore/Screenshots/2026-10-ios/raw/ipad/04-api-balance.png",
       "source_sha256": "f22095a8466642a6edf39fc2e0e83bf7f119854ab9256975eadc89a7e6407c91",
-      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/ipad/04-api-balance.png",
+      "output": "./AppStore/Screenshots/2026-10-ios/framed-final/en-US/ipad/04-api-balance.png",
       "size": [
         2064,
         2752
@@ -135,9 +135,9 @@
       "id": "05-settings",
       "view": "Settings",
       "family": "iphone",
-      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/iphone/05-settings.png",
+      "source": "./AppStore/Screenshots/2026-10-ios/raw/iphone/05-settings.png",
       "source_sha256": "e4f54219b71519d3906628dd34123e431cb3ff28266e72bd426469e517a44f4f",
-      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/iphone/05-settings.png",
+      "output": "./AppStore/Screenshots/2026-10-ios/framed-final/en-US/iphone/05-settings.png",
       "size": [
         1320,
         2868
@@ -151,9 +151,9 @@
       "id": "05-settings",
       "view": "Settings",
       "family": "ipad",
-      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/ipad/05-settings.png",
+      "source": "./AppStore/Screenshots/2026-10-ios/raw/ipad/05-settings.png",
       "source_sha256": "f330a519b9889d5c01970cd54618e4a2c311379bb161f0eb251821a98cb2878f",
-      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/ipad/05-settings.png",
+      "output": "./AppStore/Screenshots/2026-10-ios/framed-final/en-US/ipad/05-settings.png",
       "size": [
         2064,
         2752
@@ -167,9 +167,9 @@
       "id": "06-onboarding",
       "view": "Onboarding",
       "family": "iphone",
-      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/iphone/06-onboarding.png",
+      "source": "./AppStore/Screenshots/2026-10-ios/raw/iphone/06-onboarding.png",
       "source_sha256": "7698f9a2a49f78140b0686961fe93eae50635079252dfceb94b15b6942eacc82",
-      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/iphone/06-onboarding.png",
+      "output": "./AppStore/Screenshots/2026-10-ios/framed-final/en-US/iphone/06-onboarding.png",
       "size": [
         1320,
         2868
@@ -183,9 +183,9 @@
       "id": "06-onboarding",
       "view": "Onboarding",
       "family": "ipad",
-      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/ipad/06-onboarding.png",
+      "source": "./AppStore/Screenshots/2026-10-ios/raw/ipad/06-onboarding.png",
       "source_sha256": "d30719bb62f99f66f1a82b171e690a929586c311b54051312a9753f613070acf",
-      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/ipad/06-onboarding.png",
+      "output": "./AppStore/Screenshots/2026-10-ios/framed-final/en-US/ipad/06-onboarding.png",
       "size": [
         2064,
         2752
@@ -199,9 +199,9 @@
       "id": "07-api-setup",
       "view": "Connected API setup",
       "family": "iphone",
-      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/iphone/07-api-setup.png",
+      "source": "./AppStore/Screenshots/2026-10-ios/raw/iphone/07-api-setup.png",
       "source_sha256": "988c465fff5e39d0f2136f270a63f18eec4f132bda366f17180505f17a22e44a",
-      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/iphone/07-api-setup.png",
+      "output": "./AppStore/Screenshots/2026-10-ios/framed-final/en-US/iphone/07-api-setup.png",
       "size": [
         1320,
         2868
@@ -215,9 +215,9 @@
       "id": "07-api-setup",
       "view": "Connected API setup",
       "family": "ipad",
-      "source": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/raw/ipad/07-api-setup.png",
+      "source": "./AppStore/Screenshots/2026-10-ios/raw/ipad/07-api-setup.png",
       "source_sha256": "e6e1902e48aabc14459aa9d75e86af7ca9aba03b69ca66e346e95dfcd6192f6f",
-      "output": "/Users/bolyki/dev/source/Codexex/AppStore/Screenshots/2026-10-ios/framed-final/en-US/ipad/07-api-setup.png",
+      "output": "./AppStore/Screenshots/2026-10-ios/framed-final/en-US/ipad/07-api-setup.png",
       "size": [
         2064,
         2752
