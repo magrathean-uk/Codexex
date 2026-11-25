@@ -1,5 +1,3 @@
-Codexex 6.1.1 brings a clearer menu-bar dashboard:
+Codexex 6.3.0 adds OpenAI API monitoring alongside your Codex quota.
 
-- Any account leads with the next 5-hour reset when OpenAI reports one; otherwise weekly allowance and progress lead.
-- Quota windows are labelled only when their reported duration matches, avoiding misleading reset times.
-- Refined spacing, contrast, and refresh feedback make the compact view easier to read.
+Onboarding and Settings have been refreshed, with clearer account controls and appearance options.

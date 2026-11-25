@@ -1160,7 +1160,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1430;
+				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					020196355A81BE664A68010B = {
 						DevelopmentTeam = NPSQV9WYS5;
@@ -1735,14 +1735,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = iOSAppIcon;
 				CODE_SIGN_ENTITLEMENTS = AppStore/CodexexiOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 27;
+				CURRENT_PROJECT_VERSION = 28;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Sources/CodexMeteriOS/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 6.2.0;
+				MARKETING_VERSION = 6.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.magrathean.CodexexApp;
 				PRODUCT_NAME = Codexex;
 				SDKROOT = iphoneos;
@@ -1773,14 +1773,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = iOSAppIcon;
 				CODE_SIGN_ENTITLEMENTS = AppStore/CodexexiOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 27;
+				CURRENT_PROJECT_VERSION = 28;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Sources/CodexMeteriOS/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 6.2.0;
+				MARKETING_VERSION = 6.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.magrathean.CodexexApp;
 				PRODUCT_NAME = Codexex;
 				SDKROOT = iphoneos;
@@ -1898,7 +1898,7 @@
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = AppStore/CodexexWidgets.entitlements;
-				CURRENT_PROJECT_VERSION = 27;
+				CURRENT_PROJECT_VERSION = 28;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Sources/CodexMeterWidgets/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1906,7 +1906,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 6.2.0;
+				MARKETING_VERSION = 6.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.magrathean.CodexexApp.widgets;
 				PRODUCT_NAME = CodexMeterWidgets;
 				SDKROOT = iphoneos;
@@ -1950,7 +1950,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 26;
+				CURRENT_PROJECT_VERSION = 28;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = NPSQV9WYS5;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -1965,7 +1965,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 6.1.1;
+				MARKETING_VERSION = 6.3.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2038,7 +2038,7 @@
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = AppStore/CodexexWidgets.entitlements;
-				CURRENT_PROJECT_VERSION = 27;
+				CURRENT_PROJECT_VERSION = 28;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Sources/CodexMeterWidgets/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2046,7 +2046,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 6.2.0;
+				MARKETING_VERSION = 6.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.magrathean.CodexexApp.widgets;
 				PRODUCT_NAME = CodexMeterWidgets;
 				SDKROOT = iphoneos;
@@ -2146,7 +2146,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 26;
+				CURRENT_PROJECT_VERSION = 28;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = NPSQV9WYS5;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -2167,7 +2167,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 6.1.1;
+				MARKETING_VERSION = 6.3.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

@@ -148,12 +148,11 @@ if ! rustdoc_bin="$("$rustup_bin" which --toolchain "$rustup_toolchain" rustdoc 
 fi
 (
   cd "$repo_root/Helper/CodexexHelper"
-  # The adapter dispatches the literal tool name. Pin its resolved executable
-  # to the selected rustup toolchain without changing the caller's global PATH.
+  # Pin the selected toolchain and keep test output in the routed build directory.
   release_cargo_directory="$(dirname "$cargo_bin")"
   PATH="$release_cargo_directory:$PATH" RUSTC="$rustc_bin" RUSTDOC="$rustdoc_bin" \
-    clean-development run --session session-only -- cargo test --locked \
-      --manifest-path Cargo.toml
+    CARGO_TARGET_DIR="${CLEAN_DEV_BUILDS:?source dev/machine/env.zsh}/codexex-release-smoke-cargo" \
+    cargo test --locked --manifest-path Cargo.toml
 )
 
 if command -v xcodebuild >/dev/null 2>&1; then

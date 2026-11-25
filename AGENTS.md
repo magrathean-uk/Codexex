@@ -8,7 +8,7 @@ Apple-platform app for tracking Codex usage quota: Swift package, Xcode project 
 - `Sources/CodexMeterCore/` quota models, parsing, formatting, shared contracts.
 - `Sources/CodexMeterApp/` macOS menu bar app, onboarding, settings, local history. `Sources/CodexMeteriOS/` iPhone and iPad companion.
 - `Helper/CodexexHelper/` Rust device-auth and quota helper; `Sources/CodexexXPCService/` is the sandbox bridge.
-- `project.yml` defines targets; `CodexMeter.xcodeproj` is generated from it. Per-platform versions differ on purpose (iOS 6.2.0/27, macOS 6.1.1/26); regenerate after changing them.
+- `project.yml` defines targets; `CodexMeter.xcodeproj` is generated from it. Regenerate after changing versions.
 - `fastlane/metadata/`, `PRIVACY.md`, `AppStore/`: release metadata and privacy copy. `docs/development/runbook.md` and `Scripts/release-smoke.sh` describe release tooling.
 - `Prototypes/MatrixQuota/AGENTS.md` covers the Matrix prototype. Native UI uses SwiftUI and project tokens/components. Diagnostics are local.
 
@@ -31,4 +31,3 @@ bash Scripts/release-smoke.sh
 ## Constraints
 
 - No GitHub Releases; tags are annotated `vX.Y.Z` on the shipping commit.
-- URL migration to `https://magrathean.uk/solutions/<slug>/` and `contact+<slug>@magrathean.uk` is pending for the next release: [NEXT-RELEASE-URLS.md](NEXT-RELEASE-URLS.md).
