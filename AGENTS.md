@@ -1,22 +1,18 @@
-# Codexex project context
+<!-- clean-development-policy:v6 -->
+# Codexex
 
-Codexex is an Apple-platform app for tracking Codex usage quota. It has a Swift package, an Xcode project generated from `project.yml`, and a React prototype under `Prototypes/MatrixQuota`.
+Apple-platform app for tracking Codex usage quota: Swift package, Xcode project generated from `project.yml`, a Rust helper, and a React prototype under `Prototypes/MatrixQuota`. State and decisions live in `~/dev/records/Codexex/` (public repo, so nothing private here).
 
-## Structure and references
+## Layout
 
-- `README.md` describes the product and layout. `docs/development/runbook.md` and `Scripts/release-smoke.sh` describe release tooling.
-- `Sources/CodexMeterCore/` contains quota models, parsing, formatting, and shared contracts.
-- `Sources/CodexMeterApp/` contains the macOS menu bar app, onboarding, settings, and local history UI.
-- `Sources/CodexMeteriOS/` contains the iPhone and iPad companion, using shared core quota contracts.
-- `Helper/CodexexHelper/` implements device authentication and quota helper work. `Sources/CodexexXPCService/` contains the sandbox bridge.
-- `fastlane/metadata/` contains release metadata; `PRIVACY.md` contains privacy copy. Diagnostics are local.
-- `project.yml` defines Xcode targets and build settings; `xcodegen generate --spec project.yml` generates `CodexMeter.xcodeproj`. `Package.swift` defines the Swift package.
-- No project-local Codex hook is installed.
-- `Prototypes/MatrixQuota/AGENTS.md` describes the Matrix prototype. Native UI uses SwiftUI and project tokens/components.
+- `Sources/CodexMeterCore/` quota models, parsing, formatting, shared contracts.
+- `Sources/CodexMeterApp/` macOS menu bar app, onboarding, settings, local history. `Sources/CodexMeteriOS/` iPhone and iPad companion.
+- `Helper/CodexexHelper/` Rust device-auth and quota helper; `Sources/CodexexXPCService/` is the sandbox bridge.
+- `project.yml` defines targets; `CodexMeter.xcodeproj` is generated from it. Per-platform versions differ on purpose (iOS 6.2.0/27, macOS 6.1.1/26); regenerate after changing them.
+- `fastlane/metadata/`, `PRIVACY.md`, `AppStore/`: release metadata and privacy copy. `docs/development/runbook.md` and `Scripts/release-smoke.sh` describe release tooling.
+- `Prototypes/MatrixQuota/AGENTS.md` covers the Matrix prototype. Native UI uses SwiftUI and project tokens/components. Diagnostics are local.
 
-## Command and validation reference
-
-Xcode commands use the workstation's `XCODE_DERIVED_DATA_PATH` and `SWIFTPM_SHARED_CACHE` locations, provided by `~/dev/machine/env.zsh`.
+## Commands and acceptance
 
 ```bash
 source "$HOME/dev/machine/env.zsh"
@@ -30,10 +26,9 @@ bash Scripts/check-codexex-companions.sh
 bash Scripts/release-smoke.sh
 ```
 
-`.github/workflows/cargo-deny.yml` checks Rust dependency licences, sources, and bans. Local checks, device testing, APNs checks, deployment, signing, and App Store acceptance cover different environments.
+`.github/workflows/cargo-deny.yml` checks Rust licences, sources and bans. Device testing, APNs, signing and App Store acceptance are separate from these local checks.
 
-The workstation environment also provides `$TMPDIR` for session scratch, `$CLEAN_DEV_BUILDS` for throwaway build output, and tool-specific cache variables. `.clean-development.json` describes this project's build and dependency directories.
+## Constraints
 
-## URL migration reference
-
-[NEXT-RELEASE-URLS.md](NEXT-RELEASE-URLS.md) records the migration to `https://magrathean.uk/solutions/<slug>/` and `contact+<slug>@magrathean.uk`.
+- No GitHub Releases; tags are annotated `vX.Y.Z` on the shipping commit.
+- URL migration to `https://magrathean.uk/solutions/<slug>/` and `contact+<slug>@magrathean.uk` is pending for the next release: [NEXT-RELEASE-URLS.md](NEXT-RELEASE-URLS.md).
