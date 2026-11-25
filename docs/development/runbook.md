@@ -15,7 +15,7 @@ regenerate the Xcode project after changing them.
 
 ## Build loop
 
-The mandatory [Clean development](../../AGENTS.md#clean-development-mandatory) rules in `AGENTS.md` apply to every command below: run them through `clean-development run --session session-only -- <command>` and never unset, override or bypass the routed environment variables.
+Run the commands below in the routed workstation environment (`source ~/dev/machine/env.zsh`) and never unset or override the routed variables.
 
 Xcode commands take their derived-data and SwiftPM cache locations from the routed `XCODE_DERIVED_DATA_PATH` and `SWIFTPM_SHARED_CACHE` variables and fall back to `/tmp` only when those are unset.
 
