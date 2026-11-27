@@ -1,3 +1,1 @@
 OpenAI API monitoring, quota and API balance widgets, and clearer onboarding and Settings for iPhone and iPad.
-
-Optional quota notifications: 5-hour usage pressure, reset reminders and weekly forecast risk, computed on device.
